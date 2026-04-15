@@ -1,0 +1,48 @@
+{
+  "name": "@codespar/mcp",
+  "version": "0.1.0",
+  "description": "MCP transport for CodeSpar — connect Claude Desktop, Cursor, VS Code to CodeSpar sessions",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "codespar",
+    "mcp",
+    "model-context-protocol",
+    "claude-desktop",
+    "cursor"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codespar/codespar-core",
+    "directory": "packages/mcp"
+  },
+  "peerDependencies": {
+    "@codespar/core": "^0.1.0"
+  },
+  "devDependencies": {
+    "@codespar/core": "0.1.0",
+    "@types/node": "^25.6.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  }
+}
