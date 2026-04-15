@@ -6,7 +6,7 @@ Commerce infrastructure for AI agents. Payments, invoicing, shipping, notificati
 
 | Package | Description |
 |---------|-------------|
-| [`@codespar/core`](packages/core) | Sessions, managed auth, tool execution, Complete Loop orchestration |
+| [`@codespar/sdk`](packages/core) | Sessions, managed auth, tool execution, Complete Loop orchestration |
 | [`@codespar/vercel`](packages/vercel) | Vercel AI SDK adapter |
 | [`@codespar/claude`](packages/claude) | Claude Agent SDK adapter |
 | [`@codespar/openai`](packages/openai) | OpenAI Agents SDK adapter |
@@ -15,11 +15,11 @@ Commerce infrastructure for AI agents. Payments, invoicing, shipping, notificati
 ## Quick Start
 
 ```bash
-npm install @codespar/core
+npm install @codespar/sdk
 ```
 
 ```typescript
-import { CodeSpar } from "@codespar/core";
+import { CodeSpar } from "@codespar/sdk";
 
 const cs = new CodeSpar({ apiKey: "ak_..." });
 

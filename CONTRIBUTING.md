@@ -20,7 +20,7 @@ npm test
 To run tests for a specific package:
 
 ```bash
-npx turbo run test --filter=@codespar/core
+npx turbo run test --filter=@codespar/sdk
 ```
 
 ## Development Workflow

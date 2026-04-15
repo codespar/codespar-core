@@ -1,12 +1,12 @@
 /**
- * @codespar/core — Commerce SDK for AI agents
+ * @codespar/sdk — Commerce SDK for AI agents
  *
  * Sessions, managed auth, Complete Loop orchestration
  * for Latin American commercial APIs.
  *
  * @example
  * ```ts
- * import { CodeSpar } from "@codespar/core";
+ * import { CodeSpar } from "@codespar/sdk";
  *
  * const cs = new CodeSpar({ apiKey: "ak_..." });
  * const session = await cs.create("user_123", { preset: "brazilian" });

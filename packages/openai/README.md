@@ -5,13 +5,13 @@ OpenAI Agents SDK adapter for CodeSpar — convert session tools to OpenAI funct
 ## Install
 
 ```bash
-npm install @codespar/openai @codespar/core
+npm install @codespar/openai @codespar/sdk
 ```
 
 ## Usage
 
 ```ts
-import { CodeSpar } from "@codespar/core";
+import { CodeSpar } from "@codespar/sdk";
 import { getTools, handleToolCall } from "@codespar/openai";
 
 const cs = new CodeSpar({ apiKey: "ak_..." });

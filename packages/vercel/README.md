@@ -5,13 +5,13 @@ Vercel AI SDK adapter for CodeSpar — convert session tools to Vercel AI tool f
 ## Install
 
 ```bash
-npm install @codespar/vercel @codespar/core ai
+npm install @codespar/vercel @codespar/sdk ai
 ```
 
 ## Usage
 
 ```ts
-import { CodeSpar } from "@codespar/core";
+import { CodeSpar } from "@codespar/sdk";
 import { getTools } from "@codespar/vercel";
 import { generateText } from "ai";
 
