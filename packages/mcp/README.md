@@ -5,13 +5,13 @@ MCP transport for CodeSpar — connect Claude Desktop, Cursor, VS Code, and othe
 ## Install
 
 ```bash
-npm install @codespar/mcp @codespar/core
+npm install @codespar/mcp @codespar/sdk
 ```
 
 ## Usage
 
 ```ts
-import { CodeSpar } from "@codespar/core";
+import { CodeSpar } from "@codespar/sdk";
 import { getMcpConfig, getClaudeDesktopConfig } from "@codespar/mcp";
 
 const cs = new CodeSpar({ apiKey: "ak_..." });

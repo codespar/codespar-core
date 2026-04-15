@@ -1,17 +1,17 @@
-# @codespar/core
+# @codespar/sdk
 
 Commerce SDK for AI agents — sessions, managed auth, Complete Loop orchestration for Latin American commercial APIs.
 
 ## Install
 
 ```bash
-npm install @codespar/core
+npm install @codespar/sdk
 ```
 
 ## Usage
 
 ```typescript
-import { CodeSpar } from "@codespar/core";
+import { CodeSpar } from "@codespar/sdk";
 
 const cs = new CodeSpar({ apiKey: "ak_..." });
 

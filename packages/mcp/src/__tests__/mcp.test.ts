@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { getMcpConfig, getClaudeDesktopConfig, getCursorConfig } from "../index.js";
-import type { Session } from "@codespar/core";
+import type { Session } from "@codespar/sdk";
 
 /* ── Fixtures ── */
 

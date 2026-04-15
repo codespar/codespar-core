@@ -5,13 +5,13 @@ Claude Agent SDK adapter for CodeSpar — convert session tools to Anthropic Cla
 ## Install
 
 ```bash
-npm install @codespar/claude @codespar/core
+npm install @codespar/claude @codespar/sdk
 ```
 
 ## Usage
 
 ```ts
-import { CodeSpar } from "@codespar/core";
+import { CodeSpar } from "@codespar/sdk";
 import { getTools } from "@codespar/claude";
 
 const cs = new CodeSpar({ apiKey: "ak_..." });

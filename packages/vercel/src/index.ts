@@ -6,7 +6,7 @@
  *
  * @example
  * ```ts
- * import { CodeSpar } from "@codespar/core";
+ * import { CodeSpar } from "@codespar/sdk";
  * import { getTools } from "@codespar/vercel";
  * import { generateText } from "ai";
  *
@@ -22,7 +22,7 @@
  * ```
  */
 
-import type { Session, Tool } from "@codespar/core";
+import type { Session, Tool } from "@codespar/sdk";
 
 export interface VercelTool {
   description: string;

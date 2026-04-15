@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { getTools, toClaudeTool, getToolDefinitions } from "../index.js";
-import type { Session, Tool, ToolResult } from "@codespar/core";
+import type { Session, Tool, ToolResult } from "@codespar/sdk";
 
 /* ── Fixtures ── */
 

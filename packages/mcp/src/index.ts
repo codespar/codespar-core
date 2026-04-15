@@ -7,7 +7,7 @@
  *
  * @example
  * ```ts
- * import { CodeSpar } from "@codespar/core";
+ * import { CodeSpar } from "@codespar/sdk";
  * import { getMcpConfig, getClaudeDesktopConfig } from "@codespar/mcp";
  *
  * const cs = new CodeSpar({ apiKey: "ak_..." });
@@ -21,7 +21,7 @@
  * ```
  */
 
-import type { Session } from "@codespar/core";
+import type { Session } from "@codespar/sdk";
 
 export interface McpConfig {
   url: string;
