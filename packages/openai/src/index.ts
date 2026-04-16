@@ -1,20 +1,33 @@
 /**
- * @codespar/openai — OpenAI Agents SDK adapter
+ * @codespar/openai — OpenAI function-calling adapter
  *
- * Converts CodeSpar session tools into OpenAI function calling format.
+ * Bridges CodeSpar session tools to OpenAI's function calling format.
  *
  * @example
  * ```ts
  * import { CodeSpar } from "@codespar/sdk";
  * import { getTools, handleToolCall } from "@codespar/openai";
+ * import OpenAI from "openai";
  *
- * const cs = new CodeSpar({ apiKey: "ak_..." });
- * const session = await cs.create("user_123", { preset: "brazilian" });
- * const tools = getTools(session);
+ * const cs = new CodeSpar({ apiKey: "csk_live_..." });
+ * const session = await cs.create("user_123", { servers: ["zoop"] });
+ * const tools = await getTools(session);
+ *
+ * const openai = new OpenAI();
+ * const completion = await openai.chat.completions.create({
+ *   model: "gpt-4o",
+ *   tools,
+ *   messages: [{ role: "user", content: "Charge R$150 via Pix" }],
+ * });
+ *
+ * const call = completion.choices[0].message.tool_calls?.[0];
+ * if (call) {
+ *   const result = await handleToolCall(session, call.function.name, JSON.parse(call.function.arguments));
+ * }
  * ```
  */
 
-import type { Session, Tool } from "@codespar/sdk";
+import type { Session, Tool, ToolResult } from "@codespar/sdk";
 
 export interface OpenAIFunction {
   type: "function";
@@ -25,40 +38,32 @@ export interface OpenAIFunction {
   };
 }
 
-/**
- * Convert CodeSpar session tools to OpenAI function calling format.
- */
-export function getTools(session: Session): OpenAIFunction[] {
-  return session.tools().map((tool) => toOpenAITool(tool));
+/** Convert CodeSpar session tools to OpenAI function-calling format. */
+export async function getTools(session: Session): Promise<OpenAIFunction[]> {
+  const tools = await session.tools();
+  return tools.map(toOpenAITool);
 }
 
-/**
- * Convert a single CodeSpar tool to OpenAI format.
- */
+/** Convert a single CodeSpar tool to OpenAI format. */
 export function toOpenAITool(tool: Tool): OpenAIFunction {
   return {
     type: "function",
     function: {
-      name: tool.slug,
+      name: tool.name,
       description: tool.description,
-      parameters: tool.inputSchema,
+      parameters: tool.input_schema,
     },
   };
 }
 
 /**
- * Handle a tool call from OpenAI's response.
- * Pass the function name and arguments, get back the result.
+ * Execute a tool call returned by OpenAI. Routes through the CodeSpar
+ * session so billing and audit are recorded.
  */
 export async function handleToolCall(
   session: Session,
   functionName: string,
-  args: Record<string, unknown>
-): Promise<string> {
-  const tools = session.tools();
-  const tool = tools.find((t) => t.slug === functionName);
-  if (!tool) throw new Error(`Unknown tool: ${functionName}`);
-
-  const result = await session.execute(tool.name, args);
-  return JSON.stringify(result.data);
+  args: Record<string, unknown>,
+): Promise<ToolResult> {
+  return session.execute(functionName, args);
 }

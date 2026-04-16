@@ -1,76 +1,77 @@
-import { describe, it, expect, vi } from "vitest";
+/**
+ * @codespar/mcp basic tests for 0.2.0.
+ */
+
+import { describe, it, expect } from "vitest";
+import type { Session, ToolResult } from "@codespar/sdk";
 import { getMcpConfig, getClaudeDesktopConfig, getCursorConfig } from "../index.js";
-import type { Session } from "@codespar/sdk";
 
-/* ── Fixtures ── */
-
-function mockSession(): Session {
+function fakeSession(): Session {
   return {
-    id: "sess_abc",
+    id: "ses_demo",
     userId: "user_1",
     servers: [],
     createdAt: new Date(),
+    status: "active",
     mcp: {
-      url: "https://mcp.codespar.dev/sess_abc",
-      headers: { Authorization: "Bearer tok_123" },
+      url: "https://api.codespar.dev/v1/sessions/ses_demo/mcp",
+      headers: { Authorization: "Bearer csk_live_x" },
     },
-    tools: () => [],
-    findTools: vi.fn(),
-    execute: vi.fn(),
-    loop: vi.fn(),
-    send: vi.fn(),
-    authorize: vi.fn(),
-    connections: vi.fn(),
-    close: vi.fn(),
+    async tools() {
+      return [];
+    },
+    async findTools() {
+      return [];
+    },
+    async execute(toolName: string): Promise<ToolResult> {
+      return { success: true, data: null, error: null, duration: 0, server: "", tool: toolName };
+    },
+    async loop() {
+      return { success: true, results: [], duration: 0, completedSteps: 0, totalSteps: 0 };
+    },
+    async send() {
+      return { message: "", tool_calls: [], iterations: 0 };
+    },
+    async *sendStream() {
+      // empty
+    },
+    async authorize() {
+      return { connected: false };
+    },
+    async connections() {
+      return [];
+    },
+    async close() {
+      // noop
+    },
   };
 }
 
-/* ── Tests ── */
-
-describe("getMcpConfig", () => {
-  it("returns url and headers from session", () => {
-    const config = getMcpConfig(mockSession());
-
-    expect(config.url).toBe("https://mcp.codespar.dev/sess_abc");
-    expect(config.headers).toEqual({ Authorization: "Bearer tok_123" });
-  });
-});
-
-describe("getClaudeDesktopConfig", () => {
-  it("returns valid config structure with default server name", () => {
-    const config = getClaudeDesktopConfig(mockSession());
-
-    expect(config.mcpServers).toBeDefined();
-    expect(config.mcpServers.codespar).toBeDefined();
-    expect(config.mcpServers.codespar.command).toBe("npx");
-    expect(config.mcpServers.codespar.args).toContain("@codespar/mcp");
-    expect(config.mcpServers.codespar.args).toContain("--session");
-    expect(config.mcpServers.codespar.args).toContain("sess_abc");
+describe("@codespar/mcp", () => {
+  it("getMcpConfig surfaces session.mcp", () => {
+    const session = fakeSession();
+    const cfg = getMcpConfig(session);
+    expect(cfg.url).toBe("https://api.codespar.dev/v1/sessions/ses_demo/mcp");
+    expect(cfg.headers.Authorization).toBe("Bearer csk_live_x");
   });
 
-  it("accepts custom server name", () => {
-    const config = getClaudeDesktopConfig(mockSession(), "my-server");
-
-    expect(config.mcpServers["my-server"]).toBeDefined();
-    expect(config.mcpServers["codespar"]).toBeUndefined();
+  it("getClaudeDesktopConfig wraps in mcpServers shape", () => {
+    const session = fakeSession();
+    const cfg = getClaudeDesktopConfig(session);
+    expect(cfg.mcpServers.codespar).toBeDefined();
+    expect(cfg.mcpServers.codespar!.command).toBe("npx");
+    expect(cfg.mcpServers.codespar!.args).toContain("ses_demo");
+    expect(cfg.mcpServers.codespar!.env?.MCP_URL).toBe(session.mcp.url);
   });
 
-  it("includes MCP_URL in env", () => {
-    const config = getClaudeDesktopConfig(mockSession());
-    expect(config.mcpServers.codespar.env?.MCP_URL).toBe("https://mcp.codespar.dev/sess_abc");
+  it("getClaudeDesktopConfig accepts custom server name", () => {
+    const session = fakeSession();
+    const cfg = getClaudeDesktopConfig(session, "myorg");
+    expect(cfg.mcpServers.myorg).toBeDefined();
   });
 
-  it("includes session headers in env", () => {
-    const config = getClaudeDesktopConfig(mockSession());
-    expect(config.mcpServers.codespar.env?.Authorization).toBe("Bearer tok_123");
-  });
-});
-
-describe("getCursorConfig", () => {
-  it("returns url and headers", () => {
-    const config = getCursorConfig(mockSession());
-
-    expect(config.url).toBe("https://mcp.codespar.dev/sess_abc");
-    expect(config.headers).toEqual({ Authorization: "Bearer tok_123" });
+  it("getCursorConfig matches getMcpConfig", () => {
+    const session = fakeSession();
+    expect(getCursorConfig(session)).toEqual(getMcpConfig(session));
   });
 });

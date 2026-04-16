@@ -1,95 +1,88 @@
-import { describe, it, expect, vi } from "vitest";
-import { getTools, toOpenAITool, handleToolCall } from "../index.js";
+/**
+ * @codespar/openai basic tests for 0.2.0.
+ */
+
+import { describe, it, expect } from "vitest";
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import { toOpenAITool, getTools, handleToolCall } from "../index.js";
 
-/* ── Fixtures ── */
-
-function mockTool(overrides: Partial<Tool> = {}): Tool {
+function makeTool(overrides: Partial<Tool> = {}): Tool {
   return {
-    name: "ZOOP_CREATE_CHARGE",
-    slug: "zoop_create_charge",
-    description: "Create a Pix charge",
-    server: "zoop",
-    inputSchema: { type: "object", properties: { amount: { type: "number" } } },
+    name: "codespar_pay",
+    description: "Execute a payment",
+    input_schema: { type: "object", properties: { amount: { type: "number" } } },
+    server: "codespar",
     ...overrides,
   };
 }
 
-function mockSession(tools: Tool[] = [mockTool()]): Session {
+function fakeSession(tools: Tool[]): Session {
   return {
-    id: "sess_1",
+    id: "ses_fake",
     userId: "user_1",
     servers: [],
     createdAt: new Date(),
-    mcp: { url: "https://mcp.test", headers: {} },
-    tools: () => tools,
-    findTools: vi.fn(),
-    execute: vi.fn().mockResolvedValue({
-      success: true,
-      data: { id: "ch_1" },
-      duration: 42,
-      server: "zoop",
-      tool: "ZOOP_CREATE_CHARGE",
-    } as ToolResult),
-    loop: vi.fn(),
-    send: vi.fn(),
-    authorize: vi.fn(),
-    connections: vi.fn(),
-    close: vi.fn(),
+    status: "active",
+    mcp: { url: "https://api.example.com/v1/sessions/ses_fake/mcp", headers: {} },
+    async tools() {
+      return tools;
+    },
+    async findTools() {
+      return tools;
+    },
+    async execute(toolName: string): Promise<ToolResult> {
+      return {
+        success: true,
+        data: { ok: true },
+        error: null,
+        duration: 10,
+        server: "codespar",
+        tool: toolName,
+      };
+    },
+    async loop() {
+      return { success: true, results: [], duration: 0, completedSteps: 0, totalSteps: 0 };
+    },
+    async send() {
+      return { message: "", tool_calls: [], iterations: 0 };
+    },
+    async *sendStream() {
+      // empty
+    },
+    async authorize() {
+      return { connected: false };
+    },
+    async connections() {
+      return [];
+    },
+    async close() {
+      // noop
+    },
   };
 }
 
-/* ── Tests ── */
-
-describe("getTools", () => {
-  it("returns OpenAI function format", () => {
-    const session = mockSession([mockTool(), mockTool({ slug: "nfe_issue", name: "NFE_ISSUE", description: "Issue NF-e" })]);
-    const tools = getTools(session);
-
-    expect(tools).toHaveLength(2);
-    expect(tools[0]).toEqual({
-      type: "function",
-      function: {
-        name: "zoop_create_charge",
-        description: "Create a Pix charge",
-        parameters: expect.any(Object),
-      },
-    });
+describe("@codespar/openai", () => {
+  it("toOpenAITool wraps tool in function envelope", () => {
+    const tool = makeTool();
+    const fn = toOpenAITool(tool);
+    expect(fn.type).toBe("function");
+    expect(fn.function.name).toBe("codespar_pay");
+    expect(fn.function.description).toBe("Execute a payment");
+    expect(fn.function.parameters).toEqual(tool.input_schema);
   });
 
-  it("returns empty array when no tools", () => {
-    const session = mockSession([]);
-    expect(getTools(session)).toEqual([]);
-  });
-});
-
-describe("toOpenAITool", () => {
-  it("wraps in type: function", () => {
-    const tool = mockTool();
-    const openai = toOpenAITool(tool);
-
-    expect(openai.type).toBe("function");
-    expect(openai.function.name).toBe("zoop_create_charge");
-    expect(openai.function.description).toBe("Create a Pix charge");
-    expect(openai.function.parameters).toEqual(tool.inputSchema);
-  });
-});
-
-describe("handleToolCall", () => {
-  it("finds and executes correct tool", async () => {
-    const session = mockSession([
-      mockTool({ slug: "zoop_create_charge", name: "ZOOP_CREATE_CHARGE" }),
-      mockTool({ slug: "nfe_issue", name: "NFE_ISSUE" }),
-    ]);
-
-    const result = await handleToolCall(session, "zoop_create_charge", { amount: 150 });
-
-    expect(session.execute).toHaveBeenCalledWith("ZOOP_CREATE_CHARGE", { amount: 150 });
-    expect(JSON.parse(result)).toEqual({ id: "ch_1" });
+  it("getTools returns OpenAI function array", async () => {
+    const session = fakeSession([makeTool(), makeTool({ name: "codespar_invoice" })]);
+    const fns = await getTools(session);
+    expect(fns).toHaveLength(2);
+    expect(fns[0]!.function.name).toBe("codespar_pay");
+    expect(fns[1]!.function.name).toBe("codespar_invoice");
   });
 
-  it("throws for unknown tool", async () => {
-    const session = mockSession([]);
-    await expect(handleToolCall(session, "nonexistent", {})).rejects.toThrow("Unknown tool: nonexistent");
+  it("handleToolCall executes via session", async () => {
+    const session = fakeSession([makeTool()]);
+    const result = await handleToolCall(session, "codespar_pay", { amount: 50 });
+    expect(result.success).toBe(true);
+    expect(result.tool).toBe("codespar_pay");
   });
 });

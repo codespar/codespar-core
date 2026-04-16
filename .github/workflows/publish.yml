@@ -27,26 +27,32 @@ jobs:
       - name: Test
         run: npx turbo run test
 
-      - name: Publish @codespar/core
+      - name: Publish @codespar/sdk
         working-directory: packages/core
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish @codespar/adapter-express
-        working-directory: packages/adapter-express
+      - name: Publish @codespar/claude
+        working-directory: packages/claude
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish @codespar/adapter-fastify
-        working-directory: packages/adapter-fastify
+      - name: Publish @codespar/openai
+        working-directory: packages/openai
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish @codespar/adapter-next
-        working-directory: packages/adapter-next
+      - name: Publish @codespar/vercel
+        working-directory: packages/vercel
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @codespar/mcp
+        working-directory: packages/mcp
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
