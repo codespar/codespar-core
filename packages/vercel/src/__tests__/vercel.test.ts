@@ -1,105 +1,103 @@
-import { describe, it, expect, vi } from "vitest";
-import { getTools, toVercelTool } from "../index.js";
+/**
+ * @codespar/vercel basic tests for 0.2.0.
+ */
+
+import { describe, it, expect } from "vitest";
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import { toVercelTool, getTools } from "../index.js";
 
-/* ── Fixtures ── */
-
-function mockTool(overrides: Partial<Tool> = {}): Tool {
+function makeTool(overrides: Partial<Tool> = {}): Tool {
   return {
-    name: "ZOOP_CREATE_CHARGE",
-    slug: "zoop_create_charge",
-    description: "Create a Pix charge",
-    server: "zoop",
-    inputSchema: { type: "object", properties: { amount: { type: "number" } } },
+    name: "codespar_pay",
+    description: "Execute a payment",
+    input_schema: { type: "object", properties: { amount: { type: "number" } } },
+    server: "codespar",
     ...overrides,
   };
 }
 
-function mockSession(tools: Tool[] = [mockTool()]): Session {
+function fakeSession(tools: Tool[], execResult?: ToolResult): Session {
   return {
-    id: "sess_1",
+    id: "ses_fake",
     userId: "user_1",
     servers: [],
     createdAt: new Date(),
-    mcp: { url: "https://mcp.test", headers: {} },
-    tools: () => tools,
-    findTools: vi.fn(),
-    execute: vi.fn().mockResolvedValue({
-      success: true,
-      data: { id: "ch_1" },
-      duration: 42,
-      server: "zoop",
-      tool: "ZOOP_CREATE_CHARGE",
-    } as ToolResult),
-    loop: vi.fn(),
-    send: vi.fn(),
-    authorize: vi.fn(),
-    connections: vi.fn(),
-    close: vi.fn(),
+    status: "active",
+    mcp: { url: "https://api.example.com/v1/sessions/ses_fake/mcp", headers: {} },
+    async tools() {
+      return tools;
+    },
+    async findTools() {
+      return tools;
+    },
+    async execute(toolName: string): Promise<ToolResult> {
+      return (
+        execResult ?? {
+          success: true,
+          data: { ok: true },
+          error: null,
+          duration: 10,
+          server: "codespar",
+          tool: toolName,
+        }
+      );
+    },
+    async loop() {
+      return { success: true, results: [], duration: 0, completedSteps: 0, totalSteps: 0 };
+    },
+    async send() {
+      return { message: "", tool_calls: [], iterations: 0 };
+    },
+    async *sendStream() {
+      // empty
+    },
+    async authorize() {
+      return { connected: false };
+    },
+    async connections() {
+      return [];
+    },
+    async close() {
+      // noop
+    },
   };
 }
 
-/* ── Tests ── */
-
-describe("getTools", () => {
-  it("converts session tools to Vercel format", () => {
-    const session = mockSession([
-      mockTool({ slug: "zoop_create_charge" }),
-      mockTool({ slug: "nfe_issue", name: "NFE_ISSUE", description: "Issue NF-e" }),
-    ]);
-
-    const tools = getTools(session);
-
-    expect(Object.keys(tools)).toEqual(["zoop_create_charge", "nfe_issue"]);
-    expect(tools.zoop_create_charge.description).toBe("Create a Pix charge");
-    expect(tools.zoop_create_charge.parameters).toBeDefined();
-    expect(typeof tools.zoop_create_charge.execute).toBe("function");
+describe("@codespar/vercel", () => {
+  it("toVercelTool produces { description, parameters, execute }", () => {
+    const tool = makeTool();
+    const session = fakeSession([tool]);
+    const vt = toVercelTool(tool, session);
+    expect(vt.description).toBe("Execute a payment");
+    expect(vt.parameters).toEqual(tool.input_schema);
+    expect(typeof vt.execute).toBe("function");
   });
 
-  it("returns empty object when no tools", () => {
-    const session = mockSession([]);
-    expect(getTools(session)).toEqual({});
-  });
-});
-
-describe("toVercelTool", () => {
-  it("produces correct structure", () => {
-    const tool = mockTool();
-    const session = mockSession();
-    const vercel = toVercelTool(tool, session);
-
-    expect(vercel).toEqual(
-      expect.objectContaining({
-        description: "Create a Pix charge",
-        parameters: tool.inputSchema,
-      })
-    );
-    expect(typeof vercel.execute).toBe("function");
-  });
-});
-
-describe("execute delegation", () => {
-  it("delegates to session.execute and returns data", async () => {
-    const session = mockSession();
-    const tools = getTools(session);
-    const result = await tools.zoop_create_charge.execute({ amount: 150 });
-
-    expect(session.execute).toHaveBeenCalledWith("ZOOP_CREATE_CHARGE", { amount: 150 });
-    expect(result).toEqual({ id: "ch_1" });
+  it("getTools returns a record keyed by tool name", async () => {
+    const session = fakeSession([makeTool(), makeTool({ name: "codespar_invoice" })]);
+    const tools = await getTools(session);
+    expect(Object.keys(tools).sort()).toEqual(["codespar_invoice", "codespar_pay"]);
   });
 
-  it("throws on failed execution", async () => {
-    const session = mockSession();
-    (session.execute as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+  it("execute returns data on success", async () => {
+    const tool = makeTool();
+    const session = fakeSession([tool]);
+    const vt = toVercelTool(tool, session);
+    const data = await vt.execute({ amount: 50 });
+    expect(data).toEqual({ ok: true });
+  });
+
+  it("execute throws on failure", async () => {
+    const tool = makeTool();
+    const session = fakeSession([tool], {
       success: false,
       data: null,
-      error: "Charge failed",
-      duration: 10,
-      server: "zoop",
-      tool: "ZOOP_CREATE_CHARGE",
+      error: "boom",
+      duration: 5,
+      server: "codespar",
+      tool: tool.name,
     });
-
-    const tools = getTools(session);
-    await expect(tools.zoop_create_charge.execute({ amount: 150 })).rejects.toThrow("Charge failed");
+    const vt = toVercelTool(tool, session);
+    await expect(vt.execute({ amount: 50 })).rejects.toThrow("boom");
   });
 });

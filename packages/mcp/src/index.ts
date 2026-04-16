@@ -1,23 +1,26 @@
 /**
- * @codespar/mcp — MCP transport for IDE integration
+ * @codespar/mcp — MCP transport config helper
  *
- * Provides MCP server URLs and config for connecting
- * Claude Desktop, Cursor, VS Code, and other MCP clients
- * to a CodeSpar session.
+ * Generates Model Context Protocol configuration files for connecting
+ * external MCP clients (Claude Desktop, Cursor, VS Code) to a CodeSpar
+ * session.
+ *
+ * **Status (0.2.0):** Config files are generated correctly. The runtime
+ * MCP endpoint on the backend is planned for Marco 3 — until then, the
+ * generated configs reference an endpoint that returns 404. This package
+ * is shipped now so devs can wire their tooling and have it work the
+ * moment the backend MCP transport ships.
  *
  * @example
  * ```ts
  * import { CodeSpar } from "@codespar/sdk";
- * import { getMcpConfig, getClaudeDesktopConfig } from "@codespar/mcp";
+ * import { getClaudeDesktopConfig, getCursorConfig } from "@codespar/mcp";
  *
- * const cs = new CodeSpar({ apiKey: "ak_..." });
- * const session = await cs.create("user_123", { preset: "brazilian" });
+ * const cs = new CodeSpar({ apiKey: "csk_live_..." });
+ * const session = await cs.create("user_123", { servers: ["zoop"] });
  *
- * // Get MCP URL and headers for any client
- * const { url, headers } = getMcpConfig(session);
- *
- * // Get Claude Desktop config JSON
- * const config = getClaudeDesktopConfig(session);
+ * const claudeDesktop = getClaudeDesktopConfig(session);
+ * // → drop into ~/Library/Application Support/Claude/claude_desktop_config.json
  * ```
  */
 
@@ -47,11 +50,14 @@ export function getMcpConfig(session: Session): McpConfig {
 
 /**
  * Generate Claude Desktop configuration for a CodeSpar session.
- * Output goes in ~/Library/Application Support/Claude/claude_desktop_config.json
+ *
+ * Output goes in:
+ *   macOS:   ~/Library/Application Support/Claude/claude_desktop_config.json
+ *   Windows: %APPDATA%\Claude\claude_desktop_config.json
  */
 export function getClaudeDesktopConfig(
   session: Session,
-  serverName = "codespar"
+  serverName = "codespar",
 ): { mcpServers: Record<string, ClaudeDesktopServerConfig> } {
   return {
     mcpServers: {
@@ -69,10 +75,8 @@ export function getClaudeDesktopConfig(
 
 /**
  * Generate Cursor / VS Code MCP configuration.
+ * Both tools accept the same `{ url, headers }` shape.
  */
-export function getCursorConfig(session: Session): { url: string; headers: Record<string, string> } {
-  return {
-    url: session.mcp.url,
-    headers: session.mcp.headers,
-  };
+export function getCursorConfig(session: Session): McpConfig {
+  return getMcpConfig(session);
 }
