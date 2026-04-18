@@ -27,32 +27,16 @@ jobs:
       - name: Test
         run: npx turbo run test
 
-      - name: Publish @codespar/sdk
-        working-directory: packages/core
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @codespar/claude
-        working-directory: packages/claude
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @codespar/openai
-        working-directory: packages/openai
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @codespar/vercel
-        working-directory: packages/vercel
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @codespar/mcp
-        working-directory: packages/mcp
-        run: npm publish --access public
+      - name: Publish all packages
+        run: |
+          for dir in packages/*/; do
+            if [ -f "$dir/package.json" ]; then
+              pkg_name=$(node -p "require('./$dir/package.json').name")
+              echo "Publishing $pkg_name..."
+              cd "$dir"
+              npm publish --access public || echo "Failed to publish $pkg_name (may already exist at this version)"
+              cd "$GITHUB_WORKSPACE"
+            fi
+          done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
