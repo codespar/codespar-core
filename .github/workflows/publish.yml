@@ -29,12 +29,30 @@ jobs:
 
       - name: Publish all packages
         run: |
+          set +e  # Don't fail the job on individual publish errors
           for dir in packages/*/; do
             if [ -f "$dir/package.json" ]; then
               pkg_name=$(node -p "require('./$dir/package.json').name")
-              echo "Publishing $pkg_name..."
+              echo ""
+              echo "::group::Publishing $pkg_name"
               cd "$dir"
-              npm publish --access public || echo "Failed to publish $pkg_name (may already exist at this version)"
+              out=$(npm publish --access public 2>&1)
+              code=$?
+              if [ $code -ne 0 ]; then
+                # Treat "version already exists" as success so republishing
+                # the same tag doesn't break the workflow — but surface any
+                # other failure mode loudly for debugging.
+                if echo "$out" | grep -q "You cannot publish over the previously published versions"; then
+                  echo "✓ $pkg_name already at this version, skipping"
+                else
+                  echo "✗ $pkg_name FAILED:"
+                  echo "$out"
+                fi
+              else
+                echo "$out"
+                echo "✓ $pkg_name published"
+              fi
+              echo "::endgroup::"
               cd "$GITHUB_WORKSPACE"
             fi
           done
