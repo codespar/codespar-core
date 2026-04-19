@@ -52,6 +52,20 @@ codespar sessions close ses_abc123
 | `sessions list` | List recent sessions (filter by `--status`, `--limit`) |
 | `sessions show <id>` | Show session details (add `--logs` for tool calls) |
 | `sessions close <id>` | Close an active session |
+| `connect list` | List active Connect Links per user |
+| `connect start <server>` | Start an OAuth Connect Link flow (add `--open` to launch it) |
+| `connect revoke <server>` | Revoke a connection |
+| `logs tail` | Stream tool-call logs in real time (filter by `--server`, `--status`, `--tool`) |
+| `init <name>` | Scaffold a new commerce agent from a template |
+
+### Templates available via `init`
+
+| Slug | Stack | What you get |
+|------|-------|--------------|
+| `pix-agent` | Node + OpenAI | Minimal Pix charge + WhatsApp notify loop |
+| `ecommerce-checkout` | Node + Claude | Full Complete Loop: checkout → invoice → ship → notify |
+| `streaming-chat` | Next.js + Vercel AI | Token-by-token streaming commerce chat |
+| `multi-tenant` | Next.js + OpenAI | One API key, N tenants, per-tenant billing |
 
 Every command supports:
 

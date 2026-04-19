@@ -11,9 +11,16 @@ import {
   listSessionsCommand,
   showSessionCommand,
 } from "./commands/sessions.js";
+import {
+  listConnectionsCommand,
+  revokeConnectCommand,
+  startConnectCommand,
+} from "./commands/connect.js";
+import { tailLogsCommand } from "./commands/logs.js";
+import { initCommand } from "./commands/init.js";
 import { c } from "./output.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 
 const program = new Command();
 program
@@ -155,6 +162,66 @@ sessions
   .action(async (id: string) => {
     const client = await authedClient();
     await closeSessionCommand(client, id);
+  });
+
+// ============ connect ============
+const connect = program.command("connect").description("Manage Connect Links for end-user provider OAuth");
+
+connect
+  .command("list")
+  .description("List active connections")
+  .option("-u, --user <id>", "Filter by user")
+  .option("--status <s>", "Filter by status: connected, pending, revoked, expired")
+  .action(async (opts: { user?: string; status?: string }) => {
+    const client = await authedClient();
+    await listConnectionsCommand(client, { ...opts, json: rootJsonFlag() });
+  });
+
+connect
+  .command("start <server>")
+  .description("Start a Connect Link flow for a server")
+  .option("-u, --user <id>", "User id (default: cli-user)")
+  .option("--open", "Open the link in the system browser")
+  .action(async (server: string, opts: { user?: string; open?: boolean }) => {
+    const client = await authedClient();
+    await startConnectCommand(client, server, { ...opts, json: rootJsonFlag() });
+  });
+
+connect
+  .command("revoke <server>")
+  .description("Revoke an existing connection")
+  .option("-u, --user <id>", "User id (default: cli-user)")
+  .action(async (server: string, opts: { user?: string }) => {
+    const client = await authedClient();
+    await revokeConnectCommand(client, server, opts);
+  });
+
+// ============ logs ============
+const logs = program.command("logs").description("Inspect tool-call execution logs");
+
+logs
+  .command("tail")
+  .description("Stream logs in real time (SSE)")
+  .option("-s, --server <id>", "Filter by server")
+  .option("--status <s>", "Filter by status: success, error, running")
+  .option("-t, --tool <name>", "Filter by tool name")
+  .option("--limit <n>", "Request up to N backfilled entries before tailing")
+  .action(async (opts: { server?: string; status?: string; tool?: string; limit?: string }) => {
+    const config = await loadConfig();
+    const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
+    const apiKey = root.apiKey ?? requireApiKey(config);
+    const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+    await tailLogsCommand({ apiKey, baseUrl }, { ...opts, json: rootJsonFlag() });
+  });
+
+// ============ init ============
+program
+  .command("init <name>")
+  .description("Scaffold a new commerce agent from a template")
+  .option("-t, --template <slug>", "Template slug (pix-agent, ecommerce-checkout, streaming-chat, multi-tenant)")
+  .option("-y, --yes", "Use default template without prompting")
+  .action(async (name: string, opts: { template?: string; yes?: boolean }) => {
+    await initCommand(name, opts);
   });
 
 // ============ global error handling ============

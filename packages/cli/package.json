@@ -1,13 +1,14 @@
 {
   "name": "@codespar/cli",
-  "version": "0.1.0",
-  "description": "CodeSpar CLI — authenticate, list servers, execute tools, and manage sessions from your terminal.",
+  "version": "0.2.0",
+  "description": "CodeSpar CLI — authenticate, browse servers, execute tools, manage sessions, stream logs, and scaffold projects from your terminal.",
   "type": "module",
   "bin": {
     "codespar": "./dist/index.js"
   },
   "files": [
     "dist",
+    "templates",
     "README.md",
     "LICENSE"
   ],
