@@ -72,6 +72,15 @@ export interface Session {
   loop(config: LoopConfig): Promise<LoopResult>;
 
   /**
+   * Proxy a raw HTTP request to a connected server's upstream API with
+   * credentials injected server-side. Lets an agent call any endpoint of
+   * a toolkit — not just pre-defined tools — without ever seeing the
+   * provider API key. The backend handles auth injection, rate limiting,
+   * and logs the call for audit/billing.
+   */
+  proxyExecute(request: ProxyRequest): Promise<ProxyResult>;
+
+  /**
    * Send a natural-language message. Drives a Claude tool-use loop on
    * the backend and returns the full transcript when done.
    */
@@ -169,6 +178,38 @@ export interface LoopResult {
   completedSteps: number;
   /** Total steps attempted */
   totalSteps: number;
+}
+
+/* ── Tool Router / proxy ──────────────────────────────────────── */
+
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+export interface ProxyRequest {
+  /** Server id that owns the upstream API (e.g. "stripe", "asaas"). */
+  server: string;
+  /** Upstream path, relative to the server's base URL (e.g. "/v1/charges"). */
+  endpoint: string;
+  /** HTTP method. */
+  method: HttpMethod;
+  /** JSON body. Ignored for GET. */
+  body?: unknown;
+  /** Query string parameters. */
+  params?: Record<string, string | number | boolean>;
+  /** Extra headers to forward. Auth headers are injected by the backend — never send them here. */
+  headers?: Record<string, string>;
+}
+
+export interface ProxyResult {
+  /** HTTP status code returned by the upstream API. */
+  status: number;
+  /** Parsed JSON response body, or raw string if not JSON. */
+  data: unknown;
+  /** Response headers (lowercased keys). */
+  headers: Record<string, string>;
+  /** Upstream call duration in ms, as measured by the backend. */
+  duration: number;
+  /** Backend proxy-call id for cross-referencing logs. */
+  proxy_call_id?: string;
 }
 
 /* ── Auth ─────────────────────────────────────────────────────── */

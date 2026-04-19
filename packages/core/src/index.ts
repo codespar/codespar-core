@@ -40,6 +40,9 @@ export type {
   SendResult,
   ToolCallRecord,
   StreamEvent,
+  ProxyRequest,
+  ProxyResult,
+  HttpMethod,
 } from "./types.js";
 
 export { SessionConfigSchema } from "./types.js";

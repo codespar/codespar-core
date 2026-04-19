@@ -34,6 +34,7 @@ function fakeSession(tools: Tool[]): Session {
       return { success: true, data: { ok: true }, error: null, duration: 10, server: "codespar", tool: toolName };
     },
     async loop() { return { success: true, results: [], duration: 0, completedSteps: 0, totalSteps: 0 }; },
+    async proxyExecute() { return { status: 200, data: null, headers: {}, duration: 0 }; },
     async send() { return { message: "", tool_calls: [], iterations: 0 }; },
     async *sendStream() {},
     async authorize() { return { connected: false }; },
