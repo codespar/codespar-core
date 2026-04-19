@@ -142,14 +142,14 @@ Sequência correta:
 
 ## 3. Onde cada coisa vive no repo
 
-### `codespar-core` (público, MIT)
+### `codespar-core` (público, MIT) — SDK + CLI do produto commerce
 
 - `packages/core/src/types.ts` — `ProxyRequest`, `ProxyResult`, `HttpMethod`
 - `packages/core/src/session.ts` — `session.proxyExecute()` implementation
 - `packages/core/src/__tests__/codespar.test.ts` — 14 testes (incluindo proxy)
 - `packages/cli/` — `@codespar/cli` publicado no npm (`codespar execute`, `codespar connect list`, etc.)
 
-### `codespar-enterprise` (privado, commercial)
+### `codespar-enterprise` (privado, commercial) — backend API + features pagas
 
 - `packages/api/src/routes/sessions.ts` — `POST /sessions/:id/proxy_execute`
 - `packages/api/src/routes/connections.ts` — CRUD `/v1/connections` (Marco 3a)
@@ -159,10 +159,22 @@ Sequência correta:
 - `packages/api/src/migrations/` — `0003_proxy_calls`, `0004_connected_accounts`, `0005_server_endpoints`
 - `packages/secrets-vault/` — AES-256-GCM vault (Map in-memory; Marco 3c moves to DB)
 
-### `codespar-web` (privado)
+### `codespar-web` (privado) — marketing site + dashboard + docs
 
 - `content/docs/concepts/tool-router.mdx` — doc pública do conceito
 - `content/docs/concepts/sessions.mdx`, `tools.mdx`, `authentication.mdx` — contexto relacionado
+
+### `codespar-opensource` (público, MIT) — produto legado multi-agent
+
+Repo do produto **pré-pivot** (autonomous agents for every project — WhatsApp/Slack/Discord/Telegram). Mantido no ar por:
+
+- **OSS presence** — nossa marca pública de open source vem daqui (licença MIT).
+- **Community** — contribuições externas, issues, stars.
+- **Compat** — algumas ferramentas internas ainda apontam pra ele.
+
+**Não tem Tool Router nem código de commerce.** É uma stack completamente diferente: 8 agent types (Project, Task, Review, Deploy, Incident, Coordinator, Planning, Lens), channel adapters, RBAC, audit trail com hash chain, vector memory (TF-IDF).
+
+Quando este doc fala "CodeSpar", está falando do produto commerce (core + enterprise + web). O `codespar-opensource` existe em paralelo e **não é onde a gente está investindo energia agora**. Daniel provavelmente não precisa tocar nele — mencionado aqui só pra não causar confusão quando ele clonar o GitHub org e encontrar o repo.
 
 ---
 

@@ -4,13 +4,14 @@ Snapshot do que está em produção, o que está em dev, o que ficou pra trás e
 
 ---
 
-## 1. Três repos
+## 1. Quatro repos
 
 | Repo | Visibilidade | Stack | O que tem |
 |------|--------------|-------|-----------|
 | **`codespar-core`** | pública (MIT) | Turborepo + TypeScript ESM | SDK (`@codespar/sdk`), CLI (`@codespar/cli`), adapters (claude, openai, vercel, mcp, langchain, etc.) |
 | **`codespar-enterprise`** | privada (commercial) | Turborepo + Fastify + Postgres (Railway) | API backend (`/v1/*`), policy-engine, secrets-vault, mandate, payment-gateway, payment-router, compliance, 20 pacotes total |
 | **`codespar-web`** | privada | Next.js 15 (App Router) + Fumadocs | Marketing site, dashboard, docs (MDX), blog |
+| **`codespar-opensource`** | pública (MIT) | Turborepo + TypeScript + Docker | Produto **legado** pré-pivot: autonomous agents para WhatsApp/Slack/Discord/Telegram. Não é onde investimos energia. Mantido pela marca OSS + compat com ferramentas internas. Daniel normalmente não toca. |
 
 Publicados no npm: `@codespar/sdk@0.2.0`, `@codespar/cli@0.2.1`, adapters em `0.2.0`.
 
@@ -362,9 +363,10 @@ Depois de 3c estar estável:
 ## 9. Links úteis
 
 - Repos:
-  - https://github.com/codespar/codespar-core
-  - https://github.com/codespar/codespar-enterprise
-  - https://github.com/codespar/codespar-web
+  - https://github.com/codespar/codespar-core (público, MIT)
+  - https://github.com/codespar/codespar-enterprise (privado, commercial)
+  - https://github.com/codespar/codespar-web (privado)
+  - https://github.com/codespar/codespar-opensource (público, MIT, produto legado)
 - Docs (hoje, pode ir mudando): https://codespar.dev/docs
 - API (Railway): `https://api.codespar.dev/v1/*`
 - Dashboard: https://codespar.dev/dashboard
