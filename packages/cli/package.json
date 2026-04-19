@@ -1,0 +1,54 @@
+{
+  "name": "@codespar/cli",
+  "version": "0.1.0",
+  "description": "CodeSpar CLI — authenticate, list servers, execute tools, and manage sessions from your terminal.",
+  "type": "module",
+  "bin": {
+    "codespar": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "cli",
+    "codespar",
+    "ai-agent",
+    "commerce",
+    "mcp",
+    "pix",
+    "latam"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codespar/codespar-core",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://codespar.dev/docs/cli",
+  "bugs": {
+    "url": "https://github.com/codespar/codespar-core/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@codespar/sdk": "^0.2.0",
+    "commander": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^5.8.0"
+  }
+}
