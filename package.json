@@ -12,6 +12,7 @@
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
+    "tsx": "^4.21.0",
     "turbo": "^2.5.0",
     "typescript": "^5.8.0"
   },
