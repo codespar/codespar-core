@@ -1,6 +1,6 @@
 {
   "name": "@codespar/cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CodeSpar CLI — authenticate, browse servers, execute tools, manage sessions, stream logs, and scaffold projects from your terminal.",
   "type": "module",
   "bin": {
