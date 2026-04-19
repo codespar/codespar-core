@@ -20,7 +20,7 @@ import { tailLogsCommand } from "./commands/logs.js";
 import { initCommand } from "./commands/init.js";
 import { c } from "./output.js";
 
-const VERSION = "0.2.0";
+const VERSION = "0.2.1";
 
 const program = new Command();
 program

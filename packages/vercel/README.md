@@ -41,6 +41,10 @@ const result = await generateText({
 | `parameters` | `Record<string, unknown>` | JSON Schema for tool input |
 | `execute` | `(params) => Promise<unknown>` | Executes the tool via the session |
 
+## Need more?
+
+For production workloads with governance, audit trails, policy engines, self-hosted runtimes, and enterprise commerce primitives (mandates, escrow, payment routing), see **[CodeSpar Enterprise](https://codespar.dev/enterprise)**.
+
 ## License
 
 MIT — [codespar.dev](https://codespar.dev)

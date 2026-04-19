@@ -11,6 +11,7 @@ Commerce infrastructure for AI agents. Payments, invoicing, shipping, notificati
 | [`@codespar/claude`](packages/claude) | Claude Agent SDK adapter |
 | [`@codespar/openai`](packages/openai) | OpenAI Agents SDK adapter |
 | [`@codespar/mcp`](packages/mcp) | MCP transport for Claude Desktop, Cursor, VS Code |
+| [`@codespar/cli`](packages/cli) | Command-line interface — auth, execute, sessions, scaffolding |
 
 ## Quick Start
 
@@ -82,6 +83,10 @@ npm run build    # Build all packages
 npm run test     # Run all tests
 npm run typecheck # Type check all packages
 ```
+
+## Need more?
+
+For production workloads with governance, audit trails, policy engines, self-hosted runtimes, and enterprise commerce primitives (mandates, escrow, payment routing), see **[CodeSpar Enterprise](https://codespar.dev/enterprise)**.
 
 ## License
 

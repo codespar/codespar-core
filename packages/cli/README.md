@@ -1,6 +1,6 @@
 # @codespar/cli
 
-Command-line interface for [CodeSpar](https://codespar.dev) — authenticate, inspect servers, execute tools, and manage sessions from your terminal.
+Command-line interface for CodeSpar — authenticate, browse servers, execute tools, manage sessions, stream logs, and scaffold projects from your terminal.
 
 ## Install
 
@@ -8,43 +8,37 @@ Command-line interface for [CodeSpar](https://codespar.dev) — authenticate, in
 npm install -g @codespar/cli
 ```
 
-Verify:
+## Usage
 
 ```bash
-codespar --version
-```
-
-## Quick start
-
-```bash
-# One-time: authenticate with your API key
+# Authenticate (stores API key in ~/.codespar/config.json)
 codespar login
 
-# Inspect the catalog
+# Browse the catalog
 codespar servers list
-codespar servers show stripe
 codespar tools list --server asaas
-codespar tools show codespar_pay
 
-# Run a one-shot tool call
+# Run a single tool call
 codespar execute codespar_pay \
   --server asaas \
   --input '{"method":"pix","amount":15000,"currency":"BRL"}'
 
-# Manage sessions
+# Manage sessions and logs
 codespar sessions list
-codespar sessions show ses_abc123 --logs
-codespar sessions close ses_abc123
+codespar logs tail --server stripe
+
+# Scaffold a new agent
+codespar init my-agent
 ```
 
 ## Commands
 
-| Command | What it does |
-|---------|--------------|
-| `login` | Save your API key to `~/.codespar/config.json` |
+| Command | Description |
+|---------|-------------|
+| `login` | Save API key to `~/.codespar/config.json` |
 | `logout` | Clear the stored API key |
-| `whoami` | Show authenticated user, org, project, and key scopes |
-| `servers list` | List the server catalog (filter by `--category`, `--region`) |
+| `whoami` | Show authenticated user, org, project, and scopes |
+| `servers list` | List servers (filter by `--category`, `--region`) |
 | `servers show <id>` | Show a server's details and tools |
 | `tools list` | List tools (filter by `--server`) |
 | `tools show <name>` | Show a tool's full input/output schema |
@@ -53,25 +47,18 @@ codespar sessions close ses_abc123
 | `sessions show <id>` | Show session details (add `--logs` for tool calls) |
 | `sessions close <id>` | Close an active session |
 | `connect list` | List active Connect Links per user |
-| `connect start <server>` | Start an OAuth Connect Link flow (add `--open` to launch it) |
+| `connect start <server>` | Start an OAuth Connect Link flow (add `--open`) |
 | `connect revoke <server>` | Revoke a connection |
-| `logs tail` | Stream tool-call logs in real time (filter by `--server`, `--status`, `--tool`) |
+| `logs tail` | Stream tool-call logs in real time (SSE) |
 | `init <name>` | Scaffold a new commerce agent from a template |
 
-### Templates available via `init`
+## Global flags
 
-| Slug | Stack | What you get |
-|------|-------|--------------|
-| `pix-agent` | Node + OpenAI | Minimal Pix charge + WhatsApp notify loop |
-| `ecommerce-checkout` | Node + Claude | Full Complete Loop: checkout → invoice → ship → notify |
-| `streaming-chat` | Next.js + Vercel AI | Token-by-token streaming commerce chat |
-| `multi-tenant` | Next.js + OpenAI | One API key, N tenants, per-tenant billing |
-
-Every command supports:
-
-- `--json` — machine-readable JSON output (pipe into `jq`)
-- `--api-key <key>` — override the stored key
-- `--base-url <url>` — point at a custom API (staging, self-hosted)
+| Flag | Description |
+|------|-------------|
+| `--json` | Machine-readable JSON output (pipe into `jq`) |
+| `--api-key <key>` | Override the stored key |
+| `--base-url <url>` | Point at a custom API (staging, self-hosted) |
 
 ## Configuration
 
@@ -81,36 +68,19 @@ Resolution order (first match wins):
 2. Environment variables (`CODESPAR_API_KEY`, `CODESPAR_BASE_URL`)
 3. Config file at `~/.codespar/config.json` (chmod 600)
 
-## Scripting
+## Templates
 
-Output is valid JSON on stdout and human messages on stderr, so you can pipe cleanly:
+| Slug | Stack |
+|------|-------|
+| `pix-agent` | Node + OpenAI — minimal Pix charge + WhatsApp notify |
+| `ecommerce-checkout` | Node + Claude — full Complete Loop |
+| `streaming-chat` | Next.js + Vercel AI — token-by-token streaming |
+| `multi-tenant` | Next.js + OpenAI — one API key, N tenants |
 
-```bash
-# IDs of all servers that handle Pix
-codespar servers list --json \
-  | jq -r '.[] | select(.capabilities | contains(["pix"])) | .id'
+## Need more?
 
-# p95 latency of the last 100 stripe calls in a session
-codespar sessions show ses_abc123 --logs --json \
-  | jq '[.logs[] | select(.server == "stripe") | .duration_ms] | sort | .[95]'
-```
-
-Use `--json` explicitly when piping — the CLI defaults to tables in a TTY.
-
-## Development
-
-This package lives in the `codespar-core` monorepo.
-
-```bash
-# From repo root
-npm install
-npm run build --workspace @codespar/cli
-npm run typecheck --workspace @codespar/cli
-
-# Run the local build directly
-node packages/cli/dist/index.js --help
-```
+For production workloads with governance, audit trails, policy engines, self-hosted runtimes, and enterprise commerce primitives (mandates, escrow, payment routing), see **[CodeSpar Enterprise](https://codespar.dev/enterprise)**.
 
 ## License
 
-MIT © CodeSpar
+MIT — [codespar.dev](https://codespar.dev)
