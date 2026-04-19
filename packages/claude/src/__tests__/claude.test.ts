@@ -43,6 +43,9 @@ function fakeSession(tools: Tool[]): Session {
     async loop() {
       return { success: true, results: [], duration: 0, completedSteps: 0, totalSteps: 0 };
     },
+    async proxyExecute() {
+      return { status: 200, data: null, headers: {}, duration: 0 };
+    },
     async send() {
       return { message: "", tool_calls: [], iterations: 0 };
     },

@@ -18,6 +18,8 @@ import type {
   ServerConnection,
   SendResult,
   StreamEvent,
+  ProxyRequest,
+  ProxyResult,
 } from "./types.js";
 
 interface SessionDeps {
@@ -187,6 +189,26 @@ export async function createSession(
         completedSteps: results.filter((r) => r.success).length,
         totalSteps: loopConfig.steps.length,
       };
+    },
+
+    async proxyExecute(request: ProxyRequest): Promise<ProxyResult> {
+      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/proxy_execute`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          server: request.server,
+          endpoint: request.endpoint,
+          method: request.method,
+          body: request.body,
+          params: request.params,
+          headers: request.headers,
+        }),
+      });
+      if (!r.ok) {
+        const body = await r.text();
+        throw new Error(`proxyExecute failed: ${r.status} ${body}`);
+      }
+      return (await r.json()) as ProxyResult;
     },
 
     async send(message: string): Promise<SendResult> {

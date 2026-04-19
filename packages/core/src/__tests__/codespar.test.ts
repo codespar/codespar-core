@@ -131,6 +131,95 @@ describe("CodeSpar.create wires fetch correctly", () => {
     expect(body.user_id).toBe("user_42");
   });
 
+  it("proxyExecute POSTs to /v1/sessions/:id/proxy_execute", async () => {
+    const sessionCreate = {
+      ok: true,
+      status: 201,
+      text: async () => "",
+      json: async () => ({
+        id: "ses_px",
+        org_id: "org_test",
+        user_id: "u1",
+        servers: ["stripe"],
+        status: "active",
+        created_at: new Date().toISOString(),
+        closed_at: null,
+      }),
+    };
+    const proxyResponse = {
+      ok: true,
+      status: 200,
+      text: async () => "",
+      json: async () => ({
+        status: 201,
+        data: { id: "ch_abc" },
+        headers: { "content-type": "application/json" },
+        duration: 142,
+        proxy_call_id: "px_1",
+      }),
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(sessionCreate)
+      .mockResolvedValueOnce(proxyResponse);
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const cs = new CodeSpar({ apiKey: "csk_live_test", baseUrl: "https://api.example.com" });
+    const session = await cs.create("u1", { servers: ["stripe"] });
+
+    const result = await session.proxyExecute({
+      server: "stripe",
+      endpoint: "/v1/charges",
+      method: "POST",
+      body: { amount: 1000, currency: "usd" },
+    });
+
+    expect(result.status).toBe(201);
+    expect(result.data).toEqual({ id: "ch_abc" });
+    expect(result.proxy_call_id).toBe("px_1");
+
+    const [url, init] = fetchMock.mock.calls[1]!;
+    expect(url).toBe("https://api.example.com/v1/sessions/ses_px/proxy_execute");
+    const req = init as { method: string; body: string };
+    expect(req.method).toBe("POST");
+    const sent = JSON.parse(req.body);
+    expect(sent.server).toBe("stripe");
+    expect(sent.endpoint).toBe("/v1/charges");
+    expect(sent.method).toBe("POST");
+    expect(sent.body).toEqual({ amount: 1000, currency: "usd" });
+  });
+
+  it("proxyExecute throws on non-2xx backend response", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        text: async () => "",
+        json: async () => ({
+          id: "ses_err",
+          org_id: "o",
+          user_id: "u",
+          servers: [],
+          status: "active",
+          created_at: new Date().toISOString(),
+          closed_at: null,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        text: async () => '{"message":"server not connected"}',
+      });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const cs = new CodeSpar({ apiKey: "csk_live_test", baseUrl: "https://api.example.com" });
+    const session = await cs.create("u");
+    await expect(
+      session.proxyExecute({ server: "stripe", endpoint: "/x", method: "GET" }),
+    ).rejects.toThrow(/proxyExecute failed: 404/);
+  });
+
   it("populates session.mcp as a placeholder", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
