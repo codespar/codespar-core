@@ -240,57 +240,36 @@ Esse é o foco das últimas 3 sessões. Detalhamento extra porque é o carro-che
 - Integração no proxy_execute: resolver chamado sempre; flag `PROXY_REQUIRE_CONNECTION=true` liga 424
 - 7 testes novos (`formatAuthHeader`), 18/18 API total
 
-### Marco 3b — HTTP real 🚧 em dev
+### Marco 3b — HTTP real ✅ em `main`
 
-**Status:** `proxy-executor.ts` esqueleto escrito, não commitado ainda. Rota ainda usa só mock.
+**Commit:** `codespar-enterprise@a736bf3`
 
-**O que precisa fechar:**
+- `proxy-executor.ts`: HTTP client real com `AbortController` timeout, `buildUpstreamUrl` (strip trailing slash, URL encode, auth via query opcional), `buildUpstreamHeaders` (auth wins last-write), parse JSON defensivo (`error_code: "invalid_json"` quando content-type mente), `dereferenceCredential` via env (`CODESPAR_CRED_<ref>`).
+- Belt-and-suspenders: `auth_type != none && !token` → retorna `credential_unavailable` sem chamar fetch.
+- `rate-limiter.ts`: token bucket in-memory per `(org_id, server_id)`, sweep idle 60s, stripe/asaas com ceilings maiores, retorna 429 + header `Retry-After`.
+- Route wire: `PROXY_MODE=real` + resolver `kind=ok` pluga `executeProxyReal`; caso contrário cai no mock. Default mantém mock.
+- Testes: 45 (proxy-executor) + 15 (rate-limiter) = 60 novos.
 
-1. ✅ `proxy-executor.ts` com:
-   - `dereferenceCredential(ref)` — lê env `CODESPAR_CRED_<ref>` (normalize ref: uppercase + non-alnum → `_`)
-   - `buildUpstreamUrl(baseUrl, endpoint, params, authQueryKey, token)` — strip trailing slash, URL encode params, auth via query opcional
-   - `buildUpstreamHeaders(ctx, token, callerHeaders, hasBody)` — auth wins last-write, caller headers lowercased, default Content-Type pra bodied
-   - `executeProxyReal(ctx, req)` — fetch com AbortController timeout, parse JSON defensivo (surface raw quando content-type não bate), erro mapping (`AbortError → timeout`, outros → `network_error`)
-   - Belt-and-suspenders: se `auth_type != none && !token`, retorna `credential_unavailable` sem chamar fetch
+### Marco 3c — Vault persistente + Connect Links reais ✅ em `main`
 
-2. ❌ Rate limiter:
-   - In-memory token bucket per `(org_id, server_id)` — refill rate configurável por server
-   - Retornar 429 com `retry-after` header
-   - Postgres advisory lock opcional pra caso de múltiplas instâncias (decisão em aberto)
+**Commit:** `codespar-enterprise@8788c61`
 
-3. ❌ Wire do `PROXY_MODE=real` no handler (branch entre `executeProxyReal` e `executeProxyMock`)
+- **Vault em DB:**
+  - Migration `0006_secrets` — tabela `secrets` org-scoped com AES-256-GCM (per-tenant key via `scryptSync(master, org_id, 32)`).
+  - `vault.ts`: classe `Vault` com `put/getByRef/delete/encrypt/decrypt`, singleton `getVault()`.
+  - `dereferenceCredential` agora async, flag `VAULT_BACKEND=postgres|env` (default env; fallback limpo quando sql/orgId ausentes).
+- **Connect Links OAuth:**
+  - Migration `0007_oauth_state` — state tokens one-shot, TTL 10min, `used_at` pra replay protection.
+  - Migration `0008_server_oauth_configs` — authorize/token URLs por provider, seed stripe + mercadopago.
+  - `POST /v1/connect/start` (authed): gera state 32-byte base64url, persiste row, retorna `{ link_token, authorize_url, expires_at }`.
+  - `GET /v1/connect/callback/:server_id` (UNAUTHED, registrado fora do dual-auth subtree): valida state + expiry, `UPDATE used_at BEFORE exchange` (replay impossível mesmo em falha), POST form-encoded ao `token_url`, guarda access + refresh tokens no vault, revoga conexão antiga pra respeitar partial unique index, INSERT `connected_accounts ca_<nanoid>`, redirect 302 com `?status=connected&connection_id=<ca_...>`.
+- **Testes:** 34 (vault) + 22 (connect schemas/helpers) = 56 novos. Suite total 134/134.
 
-4. ❌ Testes:
-   - `buildUpstreamUrl` — casos de trailing slash, params, authQueryKey
-   - `buildUpstreamHeaders` — precedência, case-insensitivity
-   - `executeProxyReal` com fetch mockado (vitest `vi.spyOn(globalThis, "fetch")`)
-   - Timeout → `error_code: "timeout"`
-   - Invalid JSON response → `error_code: "invalid_json"` + raw body em `data`
-
-5. ❌ Commit + push
-
-### Marco 3c — Vault persistente + Connect Links reais 📋 pendente
-
-**Escopo:**
-
-1. **Vault em DB:**
-   - Migration `0006_secrets.sql` — tabela `secrets (id, org_id, ref_key, encrypted_value, iv, tag, expires_at, rotation_interval_days, created_at, last_rotated_at)`
-   - `VaultStore` interface (impl Map + impl Postgres)
-   - `SecretsVault.setStore(store)` pra DI
-   - Background job: reap expired, rotation warnings
-
-2. **Connect Links (OAuth flow server-side):**
-   - Migration `0007_oauth_state.sql` — tabela `oauth_state (state_token, org_id, user_id, server_id, redirect_uri, created_at, expires_at)` com TTL 10min
-   - Rota `POST /v1/connect/start` — recebe `{ server_id, user_id, redirect_uri? }`, retorna `{ link_token, authorize_url }`
-   - Rota `GET /v1/connect/callback/:server_id` — recebe `?code=...&state=...`, troca por access+refresh token, guarda no vault, cria `connected_accounts` row
-   - Rota `POST /v1/connect/refresh` — refresh token rotation
-   - Config por server: `authorize_url`, `token_url`, `scopes`, `client_id/secret` (do vault da org)
-
-3. **Wire fim do `credential_ref`:**
-   - Dereference via `SecretsVault.get(orgId, credentialRef)` em vez de env
-   - Remove feature flag `PROXY_MODE` (passa a ser sempre real)
-
-4. **Tests:** integration suite completa com Postgres de teste, fixtures de orgs/sessions/connections
+**Deferido pra Marco 4:**
+- Refresh token rotation job
+- Upstream revoke no `/connections/:id/revoke`
+- KMS envelope encryption (requisito SOC2)
+- Fix TOCTOU em `vault.put` (1 linha `ON CONFLICT`)
 
 ### Marco 4 (nome em aberto) — Observability + rate limit real + produção
 
@@ -374,4 +353,4 @@ Depois de 3c estar estável:
 
 ---
 
-**Última atualização:** 2026-04-19, durante Marco 3b em dev.
+**Última atualização:** 2026-04-19, Marco 3c entregue. Tool Router feature-complete dev/staging.

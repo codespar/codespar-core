@@ -37,7 +37,7 @@ function fakeSession(tools: Tool[]): Session {
     async proxyExecute() { return { status: 200, data: null, headers: {}, duration: 0 }; },
     async send() { return { message: "", tool_calls: [], iterations: 0 }; },
     async *sendStream() {},
-    async authorize() { return { connected: false }; },
+    async authorize() { return { linkToken: "tok_test", authorizeUrl: "https://provider.example.com/authorize", expiresAt: new Date(Date.now() + 600_000).toISOString() }; },
     async connections() { return []; },
     async close() {},
   };
