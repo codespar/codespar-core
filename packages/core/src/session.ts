@@ -237,12 +237,30 @@ export async function createSession(
       yield* parseSseStream(r.body);
     },
 
-    async authorize(_serverId: string, _config?: AuthConfig): Promise<AuthResult> {
+    async authorize(serverId: string, config: AuthConfig): Promise<AuthResult> {
+      const r = await fetch(`${baseUrl}/v1/connect/start`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          server_id: serverId,
+          user_id: data.user_id,
+          redirect_uri: config.redirectUri,
+          scopes: config.scopes,
+        }),
+      });
+      if (!r.ok) {
+        const body = await r.text();
+        throw new Error(`authorize failed: ${r.status} ${body}`);
+      }
+      const payload = (await r.json()) as {
+        link_token: string;
+        authorize_url: string;
+        expires_at: string;
+      };
       return {
-        connected: false,
-        error:
-          "session.authorize() is not implemented in @codespar/sdk@0.2.0 — coming in Marco 3. " +
-          "For now, configure auth via the dashboard at https://codespar.dev/dashboard/auth-configs",
+        linkToken: payload.link_token,
+        authorizeUrl: payload.authorize_url,
+        expiresAt: payload.expires_at,
       };
     },
 

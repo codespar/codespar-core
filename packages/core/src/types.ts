@@ -93,10 +93,15 @@ export interface Session {
   sendStream(message: string): AsyncIterable<StreamEvent>;
 
   /**
-   * Initiate OAuth flow for a server.
-   * @deprecated Not implemented in 0.2.0 — coming in Marco 3.
+   * Start a Connect Link OAuth flow for a server. Returns a link token
+   * + authorize URL the end-user opens to grant provider access.
+   *
+   * Pass `config.redirectUri` so the provider redirects back to your
+   * UI after the user authorizes — CodeSpar's callback stores the
+   * tokens in the vault and forwards the user there with
+   * `?status=connected&connection_id=<id>` appended.
    */
-  authorize(serverId: string, config?: AuthConfig): Promise<AuthResult>;
+  authorize(serverId: string, config: AuthConfig): Promise<AuthResult>;
 
   /**
    * List server connections + available tools. Refreshes the internal
@@ -215,20 +220,19 @@ export interface ProxyResult {
 /* ── Auth ─────────────────────────────────────────────────────── */
 
 export interface AuthConfig {
-  /** API key for direct auth */
-  token?: string;
-  /** OAuth2 client credentials */
-  clientId?: string;
-  clientSecret?: string;
+  /** Where the provider sends the user after authorizing. HTTPS only. */
+  redirectUri: string;
+  /** Optional scope override (format is provider-specific). */
+  scopes?: string;
 }
 
 export interface AuthResult {
-  /** Whether auth was successful */
-  connected: boolean;
-  /** OAuth redirect URL (if OAuth flow required) */
-  redirectUrl?: string;
-  /** Error message if failed */
-  error?: string;
+  /** Opaque one-shot state token — echoed back on callback. */
+  linkToken: string;
+  /** URL the end-user opens to grant access. */
+  authorizeUrl: string;
+  /** When the state token expires (10min default). */
+  expiresAt: string;
 }
 
 /* ── Server connections ───────────────────────────────────────── */

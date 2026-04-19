@@ -54,9 +54,7 @@ function fakeSession(tools: Tool[], execResult?: ToolResult): Session {
     async *sendStream() {
       // empty
     },
-    async authorize() {
-      return { connected: false };
-    },
+    async authorize() { return { linkToken: "tok_test", authorizeUrl: "https://provider.example.com/authorize", expiresAt: new Date(Date.now() + 600_000).toISOString() }; },
     async connections() {
       return [];
     },

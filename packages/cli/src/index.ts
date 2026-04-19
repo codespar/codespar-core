@@ -20,7 +20,7 @@ import { tailLogsCommand } from "./commands/logs.js";
 import { initCommand } from "./commands/init.js";
 import { c } from "./output.js";
 
-const VERSION = "0.2.1";
+const VERSION = "0.2.2";
 
 const program = new Command();
 program
@@ -179,21 +179,28 @@ connect
 
 connect
   .command("start <server>")
-  .description("Start a Connect Link flow for a server")
+  .description("Start an OAuth Connect Link flow for a server")
   .option("-u, --user <id>", "User id (default: cli-user)")
+  .option("-r, --redirect-uri <url>", "Where the provider returns the user (default: http://localhost:3000/connect/success)")
+  .option("--scopes <scopes>", "Provider-specific scope override")
   .option("--open", "Open the link in the system browser")
-  .action(async (server: string, opts: { user?: string; open?: boolean }) => {
-    const client = await authedClient();
-    await startConnectCommand(client, server, { ...opts, json: rootJsonFlag() });
-  });
+  .action(
+    async (
+      server: string,
+      opts: { user?: string; redirectUri?: string; scopes?: string; open?: boolean },
+    ) => {
+      const client = await authedClient();
+      await startConnectCommand(client, server, { ...opts, json: rootJsonFlag() });
+    },
+  );
 
 connect
-  .command("revoke <server>")
-  .description("Revoke an existing connection")
-  .option("-u, --user <id>", "User id (default: cli-user)")
-  .action(async (server: string, opts: { user?: string }) => {
+  .command("revoke <connection-or-server>")
+  .description("Revoke a connection by id (ca_...) or by server (revokes active connection for the user)")
+  .option("-u, --user <id>", "User id when revoking by server (default: cli-user)")
+  .action(async (connectionOrServer: string, opts: { user?: string }) => {
     const client = await authedClient();
-    await revokeConnectCommand(client, server, opts);
+    await revokeConnectCommand(client, connectionOrServer, opts);
   });
 
 // ============ logs ============

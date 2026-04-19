@@ -7,17 +7,20 @@ import { info, json, success, table } from "../output.js";
 const execAsync = promisify(exec);
 
 interface Connection {
-  server: string;
-  user_id?: string;
+  id: string;
+  server_id: string;
+  user_id: string;
+  auth_type: string;
   status: "connected" | "pending" | "revoked" | "expired";
-  connected_at?: string;
-  expires_at?: string;
+  display_name: string | null;
+  connected_at: string | null;
+  expires_at: string | null;
 }
 
 interface StartResponse {
-  connect_url: string;
-  connection_id: string;
-  expires_at?: string;
+  link_token: string;
+  authorize_url: string;
+  expires_at: string;
 }
 
 interface ListOptions {
@@ -27,21 +30,22 @@ interface ListOptions {
 }
 
 export async function listConnectionsCommand(client: ApiClient, opts: ListOptions): Promise<void> {
-  const data = await client.get<{ data: Connection[] }>("/v1/connections", {
-    user: opts.user,
+  const data = await client.get<{ connections: Connection[] }>("/v1/connections", {
+    user_id: opts.user,
     status: opts.status,
   });
 
   if (opts.json) {
-    json(data.data);
+    json(data.connections);
     return;
   }
 
   table(
-    ["SERVER", "USER", "STATUS", "CONNECTED", "EXPIRES"],
-    data.data.map((c) => [
-      c.server,
-      c.user_id ?? "-",
+    ["ID", "SERVER", "USER", "STATUS", "CONNECTED", "EXPIRES"],
+    data.connections.map((c) => [
+      c.id,
+      c.server_id,
+      c.user_id,
       c.status,
       c.connected_at ? new Date(c.connected_at).toISOString().slice(0, 10) : "-",
       c.expires_at ? new Date(c.expires_at).toISOString().slice(0, 10) : "-",
@@ -51,14 +55,16 @@ export async function listConnectionsCommand(client: ApiClient, opts: ListOption
 
 interface StartOptions {
   user?: string;
+  redirectUri?: string;
+  scopes?: string;
   open?: boolean;
   json?: boolean;
 }
 
 /**
- * Start a Connect Link flow for a server. Prints the authorization URL so
- * the user can click or share it; optionally opens it in the default browser.
- * This is the CLI equivalent of `session.authorize(serverId)`.
+ * Start a Connect Link OAuth flow for a server. Prints the authorize URL
+ * so the user can click or share it; optionally opens it in the default
+ * browser. This is the CLI equivalent of `session.authorize(serverId, {...})`.
  */
 export async function startConnectCommand(
   client: ApiClient,
@@ -68,7 +74,16 @@ export async function startConnectCommand(
   if (!server) throw new CliError("Server id is required. Example: `codespar connect start stripe`");
 
   const userId = opts.user ?? "cli-user";
-  const res = await client.post<StartResponse>("/v1/connections", { server, user_id: userId });
+  // Default to a localhost landing so the CLI works end-to-end without
+  // a hosted UI. Users with a real app should pass --redirect-uri.
+  const redirectUri = opts.redirectUri ?? "http://localhost:3000/connect/success";
+
+  const res = await client.post<StartResponse>("/v1/connect/start", {
+    server_id: server,
+    user_id: userId,
+    redirect_uri: redirectUri,
+    scopes: opts.scopes,
+  });
 
   if (opts.json) {
     json(res);
@@ -76,13 +91,11 @@ export async function startConnectCommand(
   }
 
   info(`Connect ${server} for user ${userId}:`);
-  process.stdout.write(`\n  ${res.connect_url}\n\n`);
-  if (res.expires_at) {
-    info(`Link expires ${new Date(res.expires_at).toLocaleString()}`);
-  }
+  process.stdout.write(`\n  ${res.authorize_url}\n\n`);
+  info(`Link expires ${new Date(res.expires_at).toLocaleString()}`);
 
   if (opts.open) {
-    await openInBrowser(res.connect_url).catch(() => {
+    await openInBrowser(res.authorize_url).catch(() => {
       // Silent fail — user can copy/paste from stdout.
     });
   } else {
@@ -92,17 +105,41 @@ export async function startConnectCommand(
 
 interface RevokeOptions {
   user?: string;
+  id?: string;
 }
 
+/**
+ * Revoke a connection. Requires the connection id (ca_<nanoid>). If the
+ * user doesn't know the id, `codespar connect list` shows them — revoke
+ * by (server, user) would require a DB lookup the backend doesn't expose
+ * as a shortcut.
+ */
 export async function revokeConnectCommand(
   client: ApiClient,
-  server: string,
+  serverOrId: string,
   opts: RevokeOptions,
 ): Promise<void> {
-  if (!server) throw new CliError("Server id is required. Example: `codespar connect revoke stripe`");
-  const userId = opts.user ?? "cli-user";
-  await client.delete(`/v1/connections/${encodeURIComponent(server)}?user=${encodeURIComponent(userId)}`);
-  success(`Revoked ${server} for user ${userId}.`);
+  if (!serverOrId) throw new CliError("Connection id is required. Example: `codespar connect revoke ca_abc123`");
+
+  // If the argument looks like a connection id (ca_...), revoke directly.
+  // Otherwise treat it as a server_id and look up the active connection
+  // for the given user so the CLI keeps the old "revoke stripe" ergonomics.
+  let connectionId = serverOrId;
+  if (!serverOrId.startsWith("ca_")) {
+    const userId = opts.user ?? "cli-user";
+    const list = await client.get<{ connections: Connection[] }>("/v1/connections", {
+      user_id: userId,
+      server_id: serverOrId,
+      status: "connected",
+    });
+    if (list.connections.length === 0) {
+      throw new CliError(`No active connection for server "${serverOrId}" and user "${userId}".`);
+    }
+    connectionId = list.connections[0]!.id;
+  }
+
+  await client.post(`/v1/connections/${encodeURIComponent(connectionId)}/revoke`, {});
+  success(`Revoked connection ${connectionId}.`);
 }
 
 /**
