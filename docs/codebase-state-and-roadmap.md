@@ -26,6 +26,7 @@ Publicados no npm: `@codespar/sdk@0.2.0`, `@codespar/cli@0.2.1`, adapters em `0.
 - `cs.create(userId, config)` → cria sessão no backend, retorna `Session`
 - `Session` com métodos: `tools()`, `findTools(intent)`, `execute(tool, params)`, `loop(config)`, `send(message)`, `sendStream(message)`, `proxyExecute(request)` ⬅ Marco 1 novo, `authorize(serverId)` (stub, Marco 3), `connections()`, `close()`
 - Types: `SessionConfig`, `Tool`, `ToolResult`, `LoopConfig`, `LoopStep`, `LoopResult`, `SendResult`, `StreamEvent`, `ToolCallRecord`, `ProxyRequest`, `ProxyResult`, `HttpMethod`, `AuthConfig`, `AuthResult`, `ServerConnection`
+- Optional `projectId` em `CodeSparConfig` (client-wide default) e em `SessionConfig` (override per session). Session wins > client > org default. Formato `prj_<16alphanum>`, validado por Zod; quando set, SDK envia header `x-codespar-project` na criação da sessão e nas headers do transporte MCP.
 - Parser SSE (`parseSseStream`) em `session.ts` pro `sendStream`
 - `SessionConfigSchema` (Zod) pra validar config no constructor
 - 14 testes unitários (mock de fetch)

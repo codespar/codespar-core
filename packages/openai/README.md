@@ -15,6 +15,7 @@ import { CodeSpar } from "@codespar/sdk";
 import { getTools, handleToolCall } from "@codespar/openai";
 
 const cs = new CodeSpar({ apiKey: "ak_..." });
+// Optionally pin to a project: new CodeSpar({ apiKey: "ak_...", projectId: "prj_..." })
 const session = await cs.create("user_123", { preset: "brazilian" });
 const tools = getTools(session);
 ```

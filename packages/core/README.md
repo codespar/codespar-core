@@ -18,6 +18,7 @@ const cs = new CodeSpar({ apiKey: "ak_..." });
 const session = await cs.create("user_123", {
   preset: "brazilian",
   manageConnections: { waitForConnections: true },
+  // projectId: "prj_a1b2c3d4e5f6g7h8", // optional — overrides client default, falls back to org's default project
 });
 
 // Natural language
@@ -51,6 +52,7 @@ const loop = await session.loop({
 | `apiKey` | `string` | `CODESPAR_API_KEY` env | Your API key |
 | `baseUrl` | `string` | `https://api.codespar.dev` | API base URL |
 | `managed` | `boolean` | `true` | Enable managed billing/logging |
+| `projectId` | `string` | — | Optional `prj_<16alphanum>`. Client-wide default project; sent as `x-codespar-project`. Falls back to the org's default project when omitted. |
 
 ### `cs.create(userId, config)`
 
@@ -59,6 +61,7 @@ const loop = await session.loop({
 | `servers` | `string[]` | MCP servers to connect |
 | `preset` | `string` | `"brazilian"`, `"mexican"`, `"argentinian"`, `"colombian"`, `"all"` |
 | `manageConnections.waitForConnections` | `boolean` | Block until all servers connected |
+| `projectId` | `string` | Optional `prj_<16alphanum>`. Overrides the client-level `projectId`; falls back to the org's default project when both are unset. |
 
 ### Session Methods
 

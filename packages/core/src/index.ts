@@ -60,6 +60,7 @@ export class CodeSpar {
     this.config = {
       apiKey: config.apiKey || process.env.CODESPAR_API_KEY || "",
       baseUrl: config.baseUrl || process.env.CODESPAR_BASE_URL || DEFAULT_BASE_URL,
+      projectId: config.projectId || "",
     };
 
     if (!this.config.apiKey) {
@@ -78,9 +79,11 @@ export class CodeSpar {
    */
   async create(userId: string, config: SessionConfig = {}): Promise<Session> {
     SessionConfigSchema.parse(config);
+    const projectId = config.projectId ?? this.config.projectId ?? undefined;
     return createSession(userId, config, {
       baseUrl: this.config.baseUrl,
       apiKey: this.config.apiKey,
+      projectId: projectId || undefined,
     });
   }
 }

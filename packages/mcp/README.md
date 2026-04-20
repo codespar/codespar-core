@@ -15,6 +15,7 @@ import { CodeSpar } from "@codespar/sdk";
 import { getMcpConfig, getClaudeDesktopConfig } from "@codespar/mcp";
 
 const cs = new CodeSpar({ apiKey: "ak_..." });
+// Optionally pin to a project: new CodeSpar({ apiKey: "ak_...", projectId: "prj_..." })
 const session = await cs.create("user_123", { preset: "brazilian" });
 
 // Get MCP URL and headers for any client
