@@ -28,6 +28,7 @@ const cs = new CodeSpar({ apiKey: "ak_..." });
 const session = await cs.create("user_123", {
   preset: "brazilian",
   manageConnections: { waitForConnections: true },
+  // projectId: "prj_a1b2c3d4e5f6g7h8", // optional — defaults to the org's default project
 });
 
 // Natural language
@@ -74,6 +75,12 @@ const tools = getTools(session);
 import { getMcpConfig } from "@codespar/mcp";
 const { url, headers } = getMcpConfig(session);
 ```
+
+## Multi-environment (dev/staging/prod)
+
+Projects let you run independent environments — dev, staging, prod — inside a single org, each with its own connections, usage, and audit trail. Pin a client to a project with `new CodeSpar({ apiKey, projectId: "prj_..." })`, or override per call via `cs.create(userId, { projectId: "prj_..." })`. Session-level `projectId` wins over client-level; omit both and requests fall back to the org's default project.
+
+When set, the SDK sends an `x-codespar-project` header on session creation and on all MCP transport calls. See [docs.codespar.dev/concepts/projects](https://docs.codespar.dev/concepts/projects) for the full managed-tier concept.
 
 ## Development
 

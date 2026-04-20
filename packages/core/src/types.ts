@@ -7,6 +7,8 @@ export interface CodeSparConfig {
   apiKey?: string;
   /** Base URL for CodeSpar API. Defaults to https://api.codespar.dev */
   baseUrl?: string;
+  /** Optional project scope. Defaults to the org's default project when omitted. */
+  projectId?: string;
 }
 
 /* ── Session ──────────────────────────────────────────────────── */
@@ -25,6 +27,8 @@ export interface SessionConfig {
   };
   /** Metadata attached to every tool call in this session */
   metadata?: Record<string, string>;
+  /** Optional project scope. Defaults to the org's default project when omitted. */
+  projectId?: string;
 }
 
 export interface Session {
@@ -300,4 +304,5 @@ export const SessionConfigSchema = z.object({
     })
     .optional(),
   metadata: z.record(z.string()).optional(),
+  projectId: z.string().regex(/^prj_[A-Za-z0-9]{16}$/).optional(),
 });

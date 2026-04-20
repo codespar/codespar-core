@@ -25,6 +25,7 @@ import type {
 interface SessionDeps {
   baseUrl: string;
   apiKey: string;
+  projectId?: string;
 }
 
 interface BackendSessionResponse {
@@ -48,10 +49,12 @@ export async function createSession(
   deps: SessionDeps,
 ): Promise<Session> {
   const { baseUrl, apiKey } = deps;
+  const projectId = config.projectId ?? deps.projectId;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${apiKey}`,
   };
+  if (projectId) headers["x-codespar-project"] = projectId;
 
   // Resolve servers from preset if not explicit. The backend doesn't know
   // about presets — it expects an explicit array of server ids.
@@ -81,7 +84,10 @@ export async function createSession(
     // Kept here so @codespar/mcp config helpers work today.
     mcp: {
       url: `${baseUrl}/v1/sessions/${data.id}/mcp`,
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        ...(projectId ? { "x-codespar-project": projectId } : {}),
+      },
     },
 
     async tools(): Promise<Tool[]> {

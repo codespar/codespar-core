@@ -84,6 +84,24 @@ describe("SessionConfigSchema", () => {
       SessionConfigSchema.parse({ metadata: { source: "sandbox" } }),
     ).not.toThrow();
   });
+
+  it("accepts a valid projectId", () => {
+    expect(() =>
+      SessionConfigSchema.parse({ projectId: "prj_abc123DEF456ghi7" }),
+    ).not.toThrow();
+  });
+
+  it("rejects an invalid projectId format", () => {
+    expect(() =>
+      SessionConfigSchema.parse({ projectId: "not-a-project-id" }),
+    ).toThrow();
+    expect(() =>
+      SessionConfigSchema.parse({ projectId: "prj_tooshort" }),
+    ).toThrow();
+    expect(() =>
+      SessionConfigSchema.parse({ projectId: "prj_hasdash-abcde12" }),
+    ).toThrow();
+  });
 });
 
 describe("CodeSpar.create wires fetch correctly", () => {
@@ -218,6 +236,89 @@ describe("CodeSpar.create wires fetch correctly", () => {
     await expect(
       session.proxyExecute({ server: "stripe", endpoint: "/x", method: "GET" }),
     ).rejects.toThrow(/proxyExecute failed: 404/);
+  });
+
+  it("omits x-codespar-project header when no projectId is set", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      text: async () => "",
+      json: async () => ({
+        id: "ses_noproj",
+        org_id: "org_test",
+        user_id: "u1",
+        servers: [],
+        status: "active",
+        created_at: new Date().toISOString(),
+        closed_at: null,
+      }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const cs = new CodeSpar({ apiKey: "csk_live_test", baseUrl: "https://api.example.com" });
+    const session = await cs.create("u1");
+
+    const init = fetchMock.mock.calls[0]![1] as { headers: Record<string, string> };
+    expect(init.headers["x-codespar-project"]).toBeUndefined();
+    expect(session.mcp.headers["x-codespar-project"]).toBeUndefined();
+  });
+
+  it("sends x-codespar-project header when client-level projectId is set", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      text: async () => "",
+      json: async () => ({
+        id: "ses_clientproj",
+        org_id: "org_test",
+        user_id: "u1",
+        servers: [],
+        status: "active",
+        created_at: new Date().toISOString(),
+        closed_at: null,
+      }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const cs = new CodeSpar({
+      apiKey: "csk_live_test",
+      baseUrl: "https://api.example.com",
+      projectId: "prj_clientDefault001",
+    });
+    const session = await cs.create("u1");
+
+    const init = fetchMock.mock.calls[0]![1] as { headers: Record<string, string> };
+    expect(init.headers["x-codespar-project"]).toBe("prj_clientDefault001");
+    expect(session.mcp.headers["x-codespar-project"]).toBe("prj_clientDefault001");
+  });
+
+  it("session-level projectId overrides client-level projectId", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      text: async () => "",
+      json: async () => ({
+        id: "ses_override",
+        org_id: "org_test",
+        user_id: "u1",
+        servers: [],
+        status: "active",
+        created_at: new Date().toISOString(),
+        closed_at: null,
+      }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const cs = new CodeSpar({
+      apiKey: "csk_live_test",
+      baseUrl: "https://api.example.com",
+      projectId: "prj_clientDefault001",
+    });
+    const session = await cs.create("u1", { projectId: "prj_sessionOverride2" });
+
+    const init = fetchMock.mock.calls[0]![1] as { headers: Record<string, string> };
+    expect(init.headers["x-codespar-project"]).toBe("prj_sessionOverride2");
+    expect(session.mcp.headers["x-codespar-project"]).toBe("prj_sessionOverride2");
   });
 
   it("populates session.mcp as a placeholder", async () => {
