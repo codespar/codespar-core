@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ToolResult } from "@codespar/session-contract";
+import type { ToolResult } from "@codespar/types";
 
 /* ── Configuration ─────────────────────────────────────────────── */
 

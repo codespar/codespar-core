@@ -1,4 +1,4 @@
-import type { SessionBase, ToolResult } from "@codespar/session-contract";
+import type { SessionBase, ToolResult } from "@codespar/types";
 import type { LoopConfig, LoopResult } from "./types.js";
 
 export async function loop(session: SessionBase, config: LoopConfig): Promise<LoopResult> {

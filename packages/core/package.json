@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "zod": "^3.24.0",
-    "@codespar/session-contract": "*"
+    "@codespar/types": "*"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

@@ -37,11 +37,11 @@
     "node": ">=20"
   },
   "peerDependencies": {
-    "@codespar/session-contract": "*"
+    "@codespar/types": "*"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
-    "@codespar/session-contract": "*",
+    "@codespar/types": "*",
     "typescript": "^5.8.0",
     "vitest": "^3.1.0"
   }

@@ -1,4 +1,4 @@
-# @codespar/session-contract
+# @codespar/types
 
 Zero-dependency TypeScript package defining the shared session interface hierarchy for CodeSpar runtimes.
 
@@ -7,7 +7,7 @@ Any runtime that implements `SessionBase` — the managed CodeSpar backend, Anth
 ## Install
 
 ```bash
-npm install @codespar/session-contract
+npm install @codespar/types
 ```
 
 ## Interfaces
@@ -17,7 +17,7 @@ npm install @codespar/session-contract
 The minimal interface any runtime must implement.
 
 ```typescript
-import type { SessionBase } from "@codespar/session-contract";
+import type { SessionBase } from "@codespar/types";
 
 interface SessionBase {
   readonly id: string;
@@ -36,7 +36,7 @@ interface SessionBase {
 The codespar-specific extension of `SessionBase`, used when a session was created through the managed CodeSpar API.
 
 ```typescript
-import type { Session } from "@codespar/session-contract";
+import type { Session } from "@codespar/types";
 
 interface Session extends SessionBase {
   proxyExecute(request: ProxyRequest): Promise<ProxyResult>;
@@ -53,7 +53,7 @@ interface Session extends SessionBase {
 Type guard to narrow a `SessionBase` to `Session` when you need codespar-specific methods.
 
 ```typescript
-import { isCodesparSession } from "@codespar/session-contract";
+import { isCodesparSession } from "@codespar/types";
 
 function useSession(session: SessionBase) {
   if (isCodesparSession(session)) {
@@ -79,11 +79,11 @@ function useSession(session: SessionBase) {
 
 ## Conformance testing
 
-`@codespar/session-contract` ships a `runContractSuite` helper under a `/testing` subpath export. It registers a standard Vitest/Jest test suite that exercises the five `SessionBase` methods against a live HTTP endpoint.
+`@codespar/types` ships a `runContractSuite` helper under a `/testing` subpath export. It registers a standard Vitest/Jest test suite that exercises the five `SessionBase` methods against a live HTTP endpoint.
 
 ```typescript
 // my-runtime.test.ts
-import { runContractSuite } from "@codespar/session-contract/testing";
+import { runContractSuite } from "@codespar/types/testing";
 
 // Skip unless the env vars are present
 const apiKey = process.env["MY_RUNTIME_API_KEY"];

@@ -18,7 +18,7 @@ import type {
   StreamEvent,
   ProxyRequest,
   ProxyResult,
-} from "@codespar/session-contract";
+} from "@codespar/types";
 
 interface SessionDeps {
   baseUrl: string;

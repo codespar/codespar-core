@@ -1,4 +1,4 @@
-import type { SessionBase } from "@codespar/session-contract";
+import type { SessionBase } from "@codespar/types";
 import type { Tool } from "./types.js";
 
 // The SDK's concrete session exposes an internal tools() implementation that
