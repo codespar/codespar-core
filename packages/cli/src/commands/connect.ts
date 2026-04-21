@@ -94,12 +94,20 @@ export async function startConnectCommand(
   process.stdout.write(`\n  ${res.authorize_url}\n\n`);
   info(`Link expires ${new Date(res.expires_at).toLocaleString()}`);
 
-  if (opts.open) {
+  // Auto-open when we're in an interactive terminal — matches what devs
+  // expect from `gh auth login` / `vercel login` / etc. In CI or piped
+  // runs stdout is not a TTY, so we skip and let the caller grab the
+  // URL from the printed output. `--no-open` also skips explicitly.
+  const shouldOpen =
+    opts.open !== false && Boolean(process.stdout.isTTY);
+
+  if (shouldOpen) {
     await openInBrowser(res.authorize_url).catch(() => {
       // Silent fail — user can copy/paste from stdout.
     });
-  } else {
-    info("Tip: pass --open to launch the link in your browser automatically.");
+    info("Opened in your default browser. If nothing appeared, copy the URL above.");
+  } else if (!opts.open) {
+    info("Tip: pass --open on a future run to launch the link automatically.");
   }
 }
 

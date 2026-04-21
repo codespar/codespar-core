@@ -48,7 +48,26 @@ export async function tailLogsCommand(
   }
 
   if (!res.ok || !res.body) {
-    throw new CliError(`Log stream returned ${res.status}. Check your API key.`);
+    // Spell out the three common failure modes so the user isn't left
+    // wondering whether it's their key, their env, or a server the CLI
+    // is advertising but the backend doesn't expose yet.
+    if (res.status === 404) {
+      throw new CliError(
+        "Log streaming isn't available on this backend yet. " +
+          "GET /v1/logs/stream is a planned endpoint; until it ships, " +
+          "use `codespar sessions show <id> --logs` for a one-shot dump.",
+      );
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new CliError(
+        `Auth failed (${res.status}). Check CODESPAR_API_KEY or re-run ` +
+          "`codespar login`.",
+      );
+    }
+    throw new CliError(
+      `Log stream returned ${res.status}. ` +
+        "Try again; if it persists, report at github.com/codespar/codespar-core/issues.",
+    );
   }
 
   process.stderr.write(c.dim("Tailing logs — press Ctrl-C to stop\n\n"));

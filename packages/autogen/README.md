@@ -14,8 +14,8 @@ npm install @codespar/autogen @codespar/sdk
 import { CodeSpar } from "@codespar/sdk";
 import { getTools } from "@codespar/autogen";
 
-const cs = new CodeSpar({ apiKey: "csk_live_..." });
-const session = await cs.sessions.create({ preset: "brazilian" });
+const cs = new CodeSpar({ apiKey: process.env.CODESPAR_API_KEY! });
+const session = await cs.create("user_123", { preset: "brazilian" });
 const tools = await getTools(session);
 ```
 

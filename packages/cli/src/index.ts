@@ -183,7 +183,10 @@ connect
   .option("-u, --user <id>", "User id (default: cli-user)")
   .option("-r, --redirect-uri <url>", "Where the provider returns the user (default: http://localhost:3000/connect/success)")
   .option("--scopes <scopes>", "Provider-specific scope override")
-  .option("--open", "Open the link in the system browser")
+  // Default behaviour: auto-open when stdout is a TTY (interactive
+  // terminal). `--no-open` forces print-only for CI / piped runs.
+  .option("--open", "Force-open the link in the system browser")
+  .option("--no-open", "Print the link only; don't auto-open")
   .action(
     async (
       server: string,
