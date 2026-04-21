@@ -42,6 +42,7 @@ export interface ClaudeDesktopServerConfig {
  * Works with any MCP-compatible client.
  */
 export function getMcpConfig(session: Session): McpConfig {
+  if (!session.mcp) throw new Error("Session does not have an MCP transport configured.");
   return {
     url: session.mcp.url,
     headers: session.mcp.headers,
@@ -59,6 +60,7 @@ export function getClaudeDesktopConfig(
   session: Session,
   serverName = "codespar",
 ): { mcpServers: Record<string, ClaudeDesktopServerConfig> } {
+  if (!session.mcp) throw new Error("Session does not have an MCP transport configured.");
   return {
     mcpServers: {
       [serverName]: {

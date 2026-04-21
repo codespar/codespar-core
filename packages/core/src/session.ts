@@ -21,6 +21,7 @@ import type {
   ProxyRequest,
   ProxyResult,
 } from "./types.js";
+import type { CreateSessionRequest } from "@codespar/session-contract";
 
 interface SessionDeps {
   baseUrl: string;
@@ -56,14 +57,16 @@ export async function createSession(
   };
   if (projectId) headers["x-codespar-project"] = projectId;
 
-  // Resolve servers from preset if not explicit. The backend doesn't know
-  // about presets — it expects an explicit array of server ids.
-  const servers = config.servers ?? presetToServers(config.preset);
+  const req: CreateSessionRequest = {
+    servers: config.servers ?? presetToServers(config.preset),
+    metadata: config.metadata,
+    projectId: config.projectId ?? deps.projectId,
+  };
 
   const res = await fetch(`${baseUrl}/v1/sessions`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ servers, user_id: userId }),
+    body: JSON.stringify({ servers: req.servers, user_id: userId }),
   });
   if (!res.ok) {
     const body = await res.text();
@@ -74,7 +77,7 @@ export async function createSession(
   let cachedTools: Tool[] | null = null;
   let cachedConnections: ServerConnection[] | null = null;
 
-  const session: Session = {
+  const session = {
     id: data.id,
     userId: data.user_id,
     servers: data.servers,
