@@ -1,6 +1,6 @@
 {
   "name": "@codespar/openai",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "OpenAI Agents SDK adapter for CodeSpar — convert MCP tools to OpenAI function calling format",
   "type": "module",
   "main": "./dist/index.js",

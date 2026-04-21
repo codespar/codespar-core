@@ -25,28 +25,11 @@
  * @packageDocumentation
  */
 
-export type {
-  SessionBase,
-  BaseConnection,
-  ServerConnection,
-  CreateSessionRequest,
-  ToolResult,
-  SendResult,
-  ToolCallRecord,
-  StreamEvent,
-  HttpMethod,
-  ProxyRequest,
-  ProxyResult,
-  AuthConfig,
-  AuthResult,
-} from "@codespar/session-contract";
-
-export { isCodesparSession } from "@codespar/session-contract";
+export * from "@codespar/session-contract";
 
 export type {
   CodeSparConfig,
   SessionConfig,
-  Session,
   Tool,
   LoopConfig,
   LoopStep,
@@ -54,8 +37,11 @@ export type {
 } from "./types.js";
 
 export { SessionConfigSchema } from "./types.js";
+export { loop } from "./loop.js";
+export { tools, findTools } from "./tools.js";
 
-import type { CodeSparConfig, SessionConfig, Session } from "./types.js";
+import type { CodeSparConfig, SessionConfig } from "./types.js";
+import type { Session } from "@codespar/session-contract";
 import { SessionConfigSchema } from "./types.js";
 import { createSession } from "./session.js";
 

@@ -27,9 +27,6 @@ function fakeSession(tools: Tool[], execResult?: ToolResult): Session {
     async tools() {
       return tools;
     },
-    async findTools() {
-      return tools;
-    },
     async execute(toolName: string): Promise<ToolResult> {
       return (
         execResult ?? {
@@ -41,9 +38,6 @@ function fakeSession(tools: Tool[], execResult?: ToolResult): Session {
           tool: toolName,
         }
       );
-    },
-    async loop() {
-      return { success: true, results: [], duration: 0, completedSteps: 0, totalSteps: 0 };
     },
     async proxyExecute() {
       return { status: 200, data: null, headers: {}, duration: 0 };

@@ -1,6 +1,6 @@
 {
   "name": "@codespar/llama-index",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "LlamaIndex.TS adapter for CodeSpar — convert session tools to LlamaIndex FunctionTool format",
   "type": "module",
   "main": "./dist/index.js",

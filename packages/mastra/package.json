@@ -1,6 +1,6 @@
 {
   "name": "@codespar/mastra",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Mastra adapter for CodeSpar — convert session tools to Mastra tool format",
   "type": "module",
   "main": "./dist/index.js",

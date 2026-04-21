@@ -20,14 +20,8 @@ function fakeSession(): Session {
     async tools() {
       return [];
     },
-    async findTools() {
-      return [];
-    },
     async execute(toolName: string): Promise<ToolResult> {
       return { success: true, data: null, error: null, duration: 0, server: "", tool: toolName };
-    },
-    async loop() {
-      return { success: true, results: [], duration: 0, completedSteps: 0, totalSteps: 0 };
     },
     async proxyExecute() {
       return { status: 200, data: null, headers: {}, duration: 0 };

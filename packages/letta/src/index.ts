@@ -20,6 +20,7 @@
  */
 
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import { tools as getSessionTools } from "@codespar/sdk";
 
 export interface LettaTool {
   name: string;
@@ -30,7 +31,7 @@ export interface LettaTool {
 
 /** Convert CodeSpar session tools to Letta tool format. */
 export async function getTools(session: Session): Promise<LettaTool[]> {
-  const tools = await session.tools();
+  const tools = await getSessionTools(session);
   return tools.map((t) => toLettaTool(t, session));
 }
 

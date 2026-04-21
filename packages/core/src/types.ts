@@ -1,31 +1,5 @@
 import { z } from "zod";
-import type { Session as ContractSession, ToolResult } from "@codespar/session-contract";
-
-export type {
-  SessionBase,
-  BaseConnection,
-  ServerConnection,
-  CreateSessionRequest,
-  ToolResult,
-  SendResult,
-  ToolCallRecord,
-  StreamEvent,
-  HttpMethod,
-  ProxyRequest,
-  ProxyResult,
-  AuthConfig,
-  AuthResult,
-} from "@codespar/session-contract";
-
-export { isCodesparSession } from "@codespar/session-contract";
-
-/* ── SDK Session (extends the contract with higher-level methods) ─ */
-
-export interface Session extends ContractSession {
-  tools(): Promise<Tool[]>;
-  findTools(intent: string): Promise<Tool[]>;
-  loop(config: LoopConfig): Promise<LoopResult>;
-}
+import type { ToolResult } from "@codespar/session-contract";
 
 /* ── Configuration ─────────────────────────────────────────────── */
 
