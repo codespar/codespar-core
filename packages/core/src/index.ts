@@ -25,7 +25,7 @@
  * @packageDocumentation
  */
 
-export * from "@codespar/session-contract";
+export * from "@codespar/types";
 
 export type {
   CodeSparConfig,
@@ -41,7 +41,7 @@ export { loop } from "./loop.js";
 export { tools, findTools } from "./tools.js";
 
 import type { CodeSparConfig, SessionConfig } from "./types.js";
-import type { Session } from "@codespar/session-contract";
+import type { Session } from "@codespar/types";
 import { SessionConfigSchema } from "./types.js";
 import { createSession } from "./session.js";
 

@@ -1,6 +1,6 @@
 # Implementing a custom session runtime
 
-The `@codespar/sdk` free functions (`tools`, `findTools`, `loop`) and all framework adapters accept any object that implements `SessionBase` from `@codespar/session-contract`. This guide walks through building, testing, and shipping a custom session runtime.
+The `@codespar/sdk` free functions (`tools`, `findTools`, `loop`) and all framework adapters accept any object that implements `SessionBase` from `@codespar/types`. This guide walks through building, testing, and shipping a custom session runtime.
 
 ## When you'd do this
 
@@ -13,7 +13,7 @@ The managed CodeSpar runtime is still the simplest path for production. Custom r
 ## The interface
 
 ```typescript
-import type { SessionBase, ToolResult, SendResult, StreamEvent, BaseConnection } from "@codespar/session-contract";
+import type { SessionBase, ToolResult, SendResult, StreamEvent, BaseConnection } from "@codespar/types";
 
 class MySession implements SessionBase {
   readonly id: string;
@@ -135,11 +135,11 @@ This lets callers use `tools(session)` and `findTools(session, query)` without k
 
 ## Testing with `runContractSuite`
 
-`@codespar/session-contract` ships a conformance suite under `/testing`. It runs five standard Vitest/Jest tests against a live HTTP endpoint that creates and operates a session.
+`@codespar/types` ships a conformance suite under `/testing`. It runs five standard Vitest/Jest tests against a live HTTP endpoint that creates and operates a session.
 
 ```typescript
 // my-runtime-contract.test.ts
-import { runContractSuite } from "@codespar/session-contract/testing";
+import { runContractSuite } from "@codespar/types/testing";
 
 const apiKey = process.env["MY_API_KEY"];
 const baseUrl = process.env["MY_BASE_URL"] ?? "http://localhost:3000";
@@ -164,7 +164,7 @@ The suite skips automatically when `MY_API_KEY` is not set, so it's safe to incl
 If your runtime also implements the codespar-specific extensions (`proxyExecute`, `authorize`, `mcp`), implement the `Session` interface instead. You can then use `isCodesparSession` to offer the additional capabilities where available:
 
 ```typescript
-import { isCodesparSession } from "@codespar/session-contract";
+import { isCodesparSession } from "@codespar/types";
 import { getMcpConfig } from "@codespar/mcp";
 
 function configureMcp(session: SessionBase) {

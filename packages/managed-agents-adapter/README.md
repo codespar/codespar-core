@@ -7,7 +7,7 @@ Bridges the Anthropic Managed Agents API to the CodeSpar `SessionBase` interface
 ## Install
 
 ```bash
-npm install @codespar/managed-agents-adapter @codespar/session-contract
+npm install @codespar/managed-agents-adapter @codespar/types
 ```
 
 ## Usage

@@ -19,7 +19,7 @@ import type {
   SendResult,
   StreamEvent,
   BaseConnection,
-} from "@codespar/session-contract";
+} from "@codespar/types";
 
 import {
   type PolicyDecision,
