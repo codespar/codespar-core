@@ -20,6 +20,7 @@
  */
 
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import { tools as getSessionTools } from "@codespar/sdk";
 
 export interface CrewAITool {
   name: string;
@@ -30,7 +31,7 @@ export interface CrewAITool {
 
 /** Convert CodeSpar session tools to CrewAI tool format. */
 export async function getTools(session: Session): Promise<CrewAITool[]> {
-  const tools = await session.tools();
+  const tools = await getSessionTools(session);
   return tools.map((t) => toCrewAITool(t, session));
 }
 

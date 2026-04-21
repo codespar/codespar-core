@@ -19,6 +19,7 @@
  */
 
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import { tools as getSessionTools } from "@codespar/sdk";
 
 export interface MastraTool {
   id: string;
@@ -32,7 +33,7 @@ export interface MastraTool {
  * Returns a keyed record (by tool name) ready to pass to a Mastra Agent.
  */
 export async function getTools(session: Session): Promise<Record<string, MastraTool>> {
-  const tools = await session.tools();
+  const tools = await getSessionTools(session);
   const result: Record<string, MastraTool> = {};
   for (const tool of tools) {
     result[tool.name] = toMastraTool(tool, session);

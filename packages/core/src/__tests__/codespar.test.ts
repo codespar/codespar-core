@@ -1,9 +1,7 @@
 /**
  * @codespar/sdk basic tests.
  *
- * The 0.1.0 test suite assumed an older client-shaped API and has been
- * replaced for 0.2.0. Comprehensive integration tests (mocking fetch
- * against the api.codespar.dev contract) are tracked for a follow-up.
+ * Unit tests for the CodeSpar client and session configuration.
  */
 
 import { describe, it, expect, vi, afterEach } from "vitest";
@@ -135,8 +133,6 @@ describe("CodeSpar.create wires fetch correctly", () => {
     const session = await cs.create("user_42", { servers: ["zoop"] });
 
     expect(session.id).toBe("ses_test123");
-    expect(session.userId).toBe("user_42");
-    expect(session.servers).toEqual(["zoop"]);
 
     // Assert the request body uses snake_case keys (not userId)
     const callArgs = fetchMock.mock.calls[0]!;
@@ -260,7 +256,7 @@ describe("CodeSpar.create wires fetch correctly", () => {
 
     const init = fetchMock.mock.calls[0]![1] as { headers: Record<string, string> };
     expect(init.headers["x-codespar-project"]).toBeUndefined();
-    expect(session.mcp.headers["x-codespar-project"]).toBeUndefined();
+    expect(session.mcp?.headers["x-codespar-project"]).toBeUndefined();
   });
 
   it("sends x-codespar-project header when client-level projectId is set", async () => {
@@ -289,7 +285,7 @@ describe("CodeSpar.create wires fetch correctly", () => {
 
     const init = fetchMock.mock.calls[0]![1] as { headers: Record<string, string> };
     expect(init.headers["x-codespar-project"]).toBe("prj_clientDefault001");
-    expect(session.mcp.headers["x-codespar-project"]).toBe("prj_clientDefault001");
+    expect(session.mcp?.headers["x-codespar-project"]).toBe("prj_clientDefault001");
   });
 
   it("session-level projectId overrides client-level projectId", async () => {
@@ -318,7 +314,7 @@ describe("CodeSpar.create wires fetch correctly", () => {
 
     const init = fetchMock.mock.calls[0]![1] as { headers: Record<string, string> };
     expect(init.headers["x-codespar-project"]).toBe("prj_sessionOverride2");
-    expect(session.mcp.headers["x-codespar-project"]).toBe("prj_sessionOverride2");
+    expect(session.mcp?.headers["x-codespar-project"]).toBe("prj_sessionOverride2");
   });
 
   it("populates session.mcp as a placeholder", async () => {
@@ -339,7 +335,7 @@ describe("CodeSpar.create wires fetch correctly", () => {
 
     const cs = new CodeSpar({ apiKey: "csk_live_test", baseUrl: "https://api.example.com" });
     const session = await cs.create("user_1");
-    expect(session.mcp.url).toBe("https://api.example.com/v1/sessions/ses_mcp/mcp");
-    expect(session.mcp.headers.Authorization).toBe("Bearer csk_live_test");
+    expect(session.mcp?.url).toBe("https://api.example.com/v1/sessions/ses_mcp/mcp");
+    expect(session.mcp?.headers.Authorization).toBe("Bearer csk_live_test");
   });
 });

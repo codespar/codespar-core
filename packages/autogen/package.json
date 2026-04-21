@@ -1,6 +1,6 @@
 {
   "name": "@codespar/autogen",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Microsoft AutoGen adapter for CodeSpar — convert session tools to AutoGen function tool format",
   "type": "module",
   "main": "./dist/index.js",
@@ -11,7 +11,11 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -19,7 +23,14 @@
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["codespar", "autogen", "microsoft", "tools", "adapter", "multi-agent"],
+  "keywords": [
+    "codespar",
+    "autogen",
+    "microsoft",
+    "tools",
+    "adapter",
+    "multi-agent"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -27,10 +38,10 @@
     "directory": "packages/autogen"
   },
   "peerDependencies": {
-    "@codespar/sdk": "^0.2.0"
+    "@codespar/sdk": "^0.3.0"
   },
   "devDependencies": {
-    "@codespar/sdk": "0.2.0",
+    "@codespar/sdk": "*",
     "@types/node": "^25.6.0",
     "typescript": "^5.8.0",
     "vitest": "^3.1.0"

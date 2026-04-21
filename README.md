@@ -7,6 +7,8 @@ Commerce infrastructure for AI agents. Payments, invoicing, shipping, notificati
 | Package | Description |
 |---------|-------------|
 | [`@codespar/sdk`](packages/core) | Sessions, managed auth, tool execution, Complete Loop orchestration |
+| [`@codespar/types`](packages/types) | Zero-dependency `SessionBase`/`Session` interface hierarchy and conformance test suite |
+| [`@codespar/managed-agents-adapter`](packages/managed-agents-adapter) | Anthropic Managed Agents adapter — runs `SessionBase` tools against Managed Agents sessions |
 | [`@codespar/vercel`](packages/vercel) | Vercel AI SDK adapter |
 | [`@codespar/claude`](packages/claude) | Claude Agent SDK adapter |
 | [`@codespar/openai`](packages/openai) | OpenAI Agents SDK adapter |
@@ -43,15 +45,17 @@ const charge = await session.execute("ZOOP_CREATE_CHARGE", {
 });
 
 // Complete Loop — full commerce workflow
-const loop = await session.loop({
+import { loop } from "@codespar/sdk";
+
+const result = await loop(session, {
   steps: [
-    { server: "mcp-zoop", tool: "ZOOP_CREATE_CHARGE", params: { amount: 150, payment_type: "pix" } },
-    { server: "mcp-nuvem-fiscal", tool: "NUVEMFISCAL_EMITIR_NFE", params: (prev) => ({ chargeId: prev[0].data }) },
-    { server: "mcp-melhor-envio", tool: "MELHORENVIO_GENERATE_LABEL", params: { /* ... */ } },
-    { server: "mcp-z-api", tool: "ZAPI_SEND_MESSAGE", params: { text: "Your order is on the way!" } },
-    { server: "mcp-omie", tool: "OMIE_CREATE_ORDER", params: { /* ... */ } },
+    { tool: "ZOOP_CREATE_CHARGE", params: { amount: 150, payment_type: "pix" } },
+    { tool: "NUVEMFISCAL_EMITIR_NFE", params: (prev) => ({ chargeId: prev[0].data }) },
+    { tool: "MELHORENVIO_GENERATE_LABEL", params: { /* ... */ } },
+    { tool: "ZAPI_SEND_MESSAGE", params: { text: "Your order is on the way!" } },
+    { tool: "OMIE_CREATE_ORDER", params: { /* ... */ } },
   ],
-  onStepComplete: (step, result) => console.log(`✓ ${step.tool}: ${result.duration}ms`),
+  onStepComplete: (step, r) => console.log(`✓ ${step.tool}: ${r.duration}ms`),
 });
 ```
 

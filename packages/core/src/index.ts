@@ -2,8 +2,7 @@
  * @codespar/sdk — Commerce SDK for AI agents
  *
  * Sessions, managed auth, Complete Loop orchestration for Latin American
- * commercial APIs. Talks to api.codespar.dev — see the backend at
- * codespar/codespar-enterprise (packages/api) for the wire contract.
+ * commercial APIs.
  *
  * @example
  * ```ts
@@ -25,29 +24,23 @@
  * @packageDocumentation
  */
 
+export * from "@codespar/types";
+
 export type {
   CodeSparConfig,
-  Session,
   SessionConfig,
   Tool,
-  ToolResult,
   LoopConfig,
   LoopStep,
   LoopResult,
-  AuthConfig,
-  AuthResult,
-  ServerConnection,
-  SendResult,
-  ToolCallRecord,
-  StreamEvent,
-  ProxyRequest,
-  ProxyResult,
-  HttpMethod,
 } from "./types.js";
 
 export { SessionConfigSchema } from "./types.js";
+export { loop } from "./loop.js";
+export { tools, findTools } from "./tools.js";
 
-import type { CodeSparConfig, Session, SessionConfig } from "./types.js";
+import type { CodeSparConfig, SessionConfig } from "./types.js";
+import type { Session } from "@codespar/types";
 import { SessionConfigSchema } from "./types.js";
 import { createSession } from "./session.js";
 

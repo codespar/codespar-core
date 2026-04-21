@@ -28,6 +28,7 @@
  */
 
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import { tools as getSessionTools } from "@codespar/sdk";
 
 export interface OpenAIFunction {
   type: "function";
@@ -40,7 +41,7 @@ export interface OpenAIFunction {
 
 /** Convert CodeSpar session tools to OpenAI function-calling format. */
 export async function getTools(session: Session): Promise<OpenAIFunction[]> {
-  const tools = await session.tools();
+  const tools = await getSessionTools(session);
   return tools.map(toOpenAITool);
 }
 

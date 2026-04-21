@@ -17,17 +17,14 @@ function makeTool(overrides: Partial<Tool> = {}): Tool {
 }
 
 function fakeSession(tools: Tool[]): Session {
-  return {
+  const session = {
     id: "ses_fake",
     userId: "user_1",
     servers: [],
     createdAt: new Date(),
-    status: "active",
+    status: "active" as const,
     mcp: { url: "https://api.example.com/v1/sessions/ses_fake/mcp", headers: {} },
     async tools() {
-      return tools;
-    },
-    async findTools() {
       return tools;
     },
     async execute(toolName: string): Promise<ToolResult> {
@@ -39,9 +36,6 @@ function fakeSession(tools: Tool[]): Session {
         server: "codespar",
         tool: toolName,
       };
-    },
-    async loop() {
-      return { success: true, results: [], duration: 0, completedSteps: 0, totalSteps: 0 };
     },
     async proxyExecute() {
       return { status: 200, data: null, headers: {}, duration: 0 };
@@ -60,6 +54,7 @@ function fakeSession(tools: Tool[]): Session {
       // noop
     },
   };
+  return session;
 }
 
 describe("@codespar/claude", () => {
