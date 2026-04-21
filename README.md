@@ -49,11 +49,11 @@ import { loop } from "@codespar/sdk";
 
 const result = await loop(session, {
   steps: [
-    { server: "mcp-zoop", tool: "ZOOP_CREATE_CHARGE", params: { amount: 150, payment_type: "pix" } },
-    { server: "mcp-nuvem-fiscal", tool: "NUVEMFISCAL_EMITIR_NFE", params: (prev) => ({ chargeId: prev[0].data }) },
-    { server: "mcp-melhor-envio", tool: "MELHORENVIO_GENERATE_LABEL", params: { /* ... */ } },
-    { server: "mcp-z-api", tool: "ZAPI_SEND_MESSAGE", params: { text: "Your order is on the way!" } },
-    { server: "mcp-omie", tool: "OMIE_CREATE_ORDER", params: { /* ... */ } },
+    { tool: "ZOOP_CREATE_CHARGE", params: { amount: 150, payment_type: "pix" } },
+    { tool: "NUVEMFISCAL_EMITIR_NFE", params: (prev) => ({ chargeId: prev[0].data }) },
+    { tool: "MELHORENVIO_GENERATE_LABEL", params: { /* ... */ } },
+    { tool: "ZAPI_SEND_MESSAGE", params: { text: "Your order is on the way!" } },
+    { tool: "OMIE_CREATE_ORDER", params: { /* ... */ } },
   ],
   onStepComplete: (step, r) => console.log(`✓ ${step.tool}: ${r.duration}ms`),
 });

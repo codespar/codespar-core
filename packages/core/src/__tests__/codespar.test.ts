@@ -1,9 +1,7 @@
 /**
  * @codespar/sdk basic tests.
  *
- * The 0.1.0 test suite assumed an older client-shaped API and has been
- * replaced for 0.2.0. Comprehensive integration tests (mocking fetch
- * against the api.codespar.dev contract) are tracked for a follow-up.
+ * Unit tests for the CodeSpar client and session configuration.
  */
 
 import { describe, it, expect, vi, afterEach } from "vitest";

@@ -202,6 +202,70 @@ describe("mutex — concurrent operation guard", () => {
     await expect(iter.next()).rejects.toThrow("stream failed");
     await expect(session.send("hello")).resolves.toBeDefined();
   });
+
+  it("throws ConcurrentOperationError when send() is called while execute() is in progress", async () => {
+    let resolveStream!: () => void;
+    const held = new Promise<void>((r) => { resolveStream = r; });
+
+    const runtime = makeRuntime({
+      streamEvents: vi.fn().mockImplementation(async function* (): AsyncGenerator<AgentEvent> {
+        await held;
+        yield { type: "tool_result", success: true, data: null, error: null, duration: 0, server: "" };
+      }),
+    });
+
+    const session = await openSession(runtime);
+    const first = session.execute("tool", {});
+    await expect(session.send("hello")).rejects.toBeInstanceOf(ConcurrentOperationError);
+    resolveStream();
+    await first;
+  });
+
+  it("throws ConcurrentOperationError when execute() is called while send() is in progress", async () => {
+    let resolveStream!: () => void;
+    const held = new Promise<void>((r) => { resolveStream = r; });
+
+    const runtime = makeRuntime({
+      streamEvents: vi.fn().mockImplementation(async function* (): AsyncGenerator<AgentEvent> {
+        await held;
+        yield { type: "done", result: { message: "ok", tool_calls: [], iterations: 1 } };
+      }),
+    });
+
+    const session = await openSession(runtime);
+    const first = session.send("hello");
+    await expect(session.execute("tool", {})).rejects.toBeInstanceOf(ConcurrentOperationError);
+    resolveStream();
+    await first;
+  });
+});
+
+describe("close() while operation in flight", () => {
+  it("waits for the in-flight operation before resolving", async () => {
+    let resolveStream!: () => void;
+    const held = new Promise<void>((r) => { resolveStream = r; });
+
+    const runtime = makeRuntime({
+      streamEvents: vi.fn().mockImplementation(async function* (): AsyncGenerator<AgentEvent> {
+        await held;
+        yield { type: "tool_result", success: true, data: null, error: null, duration: 0, server: "" };
+      }),
+    });
+
+    const session = await openSession(runtime);
+    const executePromise = session.execute("tool", {});
+
+    let closedAt = 0;
+    let executedAt = 0;
+    const closePromise = session.close().then(() => { closedAt = Date.now(); });
+    resolveStream();
+    await executePromise.then(() => { executedAt = Date.now(); });
+    await closePromise;
+
+    expect(session.status).toBe("closed");
+    // close resolved after or at the same tick as execute
+    expect(closedAt).toBeGreaterThanOrEqual(executedAt);
+  });
 });
 
 describe("DrainTimeoutError", () => {

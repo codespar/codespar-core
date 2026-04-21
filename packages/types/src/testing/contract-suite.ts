@@ -179,7 +179,7 @@ async function openSession(baseUrl: string, apiKey: string): Promise<SessionBase
  * invalid URLs so misconfigured CI environments fail early rather than
  * leaking the apiKey to an arbitrary host.
  *
- * @param baseUrl - API base URL (e.g. "https://api.codespar.dev")
+ * @param baseUrl - API base URL (e.g. "https://your-runtime.example" or "http://localhost:3000")
  * @param apiKey  - Bearer token for session creation
  */
 export function runContractSuite(baseUrl: string, apiKey: string): void {

@@ -14,7 +14,7 @@ function fakeSession(): Session {
     createdAt: new Date(),
     status: "active" as const,
     mcp: {
-      url: "https://api.codespar.dev/v1/sessions/ses_demo/mcp",
+      url: "https://mcp.example.com/v1/sessions/ses_demo/mcp",
       headers: { Authorization: "Bearer csk_live_x" },
     },
     async tools() {
@@ -47,7 +47,7 @@ describe("@codespar/mcp", () => {
   it("getMcpConfig surfaces session.mcp", () => {
     const session = fakeSession();
     const cfg = getMcpConfig(session);
-    expect(cfg.url).toBe("https://api.codespar.dev/v1/sessions/ses_demo/mcp");
+    expect(cfg.url).toBe("https://mcp.example.com/v1/sessions/ses_demo/mcp");
     expect(cfg.headers.Authorization).toBe("Bearer csk_live_x");
   });
 

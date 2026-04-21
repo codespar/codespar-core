@@ -1,9 +1,5 @@
 /**
- * Session implementation — talks to api.codespar.dev backend.
- *
- * The shape of every request and response in this file matches what the
- * backend (codespar-enterprise/packages/api) actually exposes. Do not edit
- * one without the other.
+ * Session implementation for the CodeSpar managed runtime.
  */
 
 import type { SessionConfig, Tool } from "./types.js";
