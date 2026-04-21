@@ -120,18 +120,7 @@ async close(): Promise<void> {
 
 ## Exposing `tools` for free function support
 
-The `tools(session)` free function in `@codespar/sdk` uses duck typing: if the session object has an internal `tools()` method, it calls it; otherwise it returns `[]`. If your runtime has a tool catalog, expose it:
-
-```typescript
-class MySession implements SessionBase {
-  // Not part of SessionBase — picked up by duck-typing in tools() free function
-  async tools(): Promise<Tool[]> {
-    return this.client.listTools();
-  }
-}
-```
-
-This lets callers use `tools(session)` and `findTools(session, query)` without knowing the runtime type.
+The `tools(session)` free function in `@codespar/sdk` checks via duck-typing whether the session object has an internal `tools()` method. This is an internal SDK mechanism, not a stable extension point — if you rely on it, pin your `@codespar/sdk` version. For custom runtimes that don't carry this internal method, `tools(session)` returns `[]`.
 
 ## Testing with `runContractSuite`
 

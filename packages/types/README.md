@@ -40,7 +40,7 @@ import type { Session } from "@codespar/types";
 
 interface Session extends SessionBase {
   proxyExecute(request: ProxyRequest): Promise<ProxyResult>;
-  authorize(serverId: string, config?: AuthConfig): Promise<AuthResult>;
+  authorize(serverId: string, config: AuthConfig): Promise<AuthResult>;
   mcp?: {
     url: string;
     headers: Record<string, string>;
@@ -74,12 +74,12 @@ function useSession(session: SessionBase) {
 | `ServerConnection` | Extended connection with name and provider metadata |
 | `ProxyRequest` | Input to `proxyExecute()` — `server`, `endpoint`, `method`, `body`, `headers` |
 | `ProxyResult` | Return value of `proxyExecute()` — `status`, `data`, `headers`, `duration`, `proxy_call_id` |
-| `AuthConfig` | Input to `authorize()` — `redirectUrl` |
-| `AuthResult` | Return value of `authorize()` — `authUrl`, `state` |
+| `AuthConfig` | Input to `authorize()` — `redirectUri`, `scopes?` |
+| `AuthResult` | Return value of `authorize()` — `linkToken`, `authorizeUrl`, `expiresAt` |
 
 ## Conformance testing
 
-`@codespar/types` ships a `runContractSuite` helper under a `/testing` subpath export. It registers a standard Vitest/Jest test suite that exercises the five `SessionBase` methods against a live HTTP endpoint.
+`@codespar/types` ships a `runContractSuite` helper under a `/testing` subpath export. It registers a Vitest test suite that exercises the five `SessionBase` methods against a live HTTP endpoint.
 
 ```typescript
 // my-runtime.test.ts
@@ -94,7 +94,7 @@ if (apiKey) {
 }
 ```
 
-The suite validates:
+The suite opens a session via `POST /v1/sessions` with `Authorization: Bearer <apiKey>` and body `{ servers: [], user_id: "contract-suite" }`, then validates:
 - `execute()` calls a registered tool and returns a `ToolResult`
 - `send()` returns a `SendResult` with a `message` field
 - `sendStream()` yields well-typed `StreamEvent`s including a `done` event

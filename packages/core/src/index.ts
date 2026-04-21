@@ -2,8 +2,7 @@
  * @codespar/sdk — Commerce SDK for AI agents
  *
  * Sessions, managed auth, Complete Loop orchestration for Latin American
- * commercial APIs. Talks to api.codespar.dev — see the backend at
- * codespar/codespar-enterprise (packages/api) for the wire contract.
+ * commercial APIs.
  *
  * @example
  * ```ts

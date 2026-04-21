@@ -38,10 +38,10 @@ const payments = await findTools(session, "payment");
 
 const result = await loop(session, {
   steps: [
-    { server: "mcp-zoop", tool: "ZOOP_CREATE_CHARGE", params: { amount: 150, payment_type: "pix" } },
-    { server: "mcp-nuvem-fiscal", tool: "NUVEMFISCAL_EMITIR_NFE", params: (prev) => ({ chargeId: prev[0].data }) },
-    { server: "mcp-melhor-envio", tool: "MELHORENVIO_GENERATE_LABEL", params: {} },
-    { server: "mcp-z-api", tool: "ZAPI_SEND_MESSAGE", params: { text: "Your order is on the way!" } },
+    { tool: "ZOOP_CREATE_CHARGE", params: { amount: 150, payment_type: "pix" } },
+    { tool: "NUVEMFISCAL_EMITIR_NFE", params: (prev) => ({ chargeId: prev[0].data }) },
+    { tool: "MELHORENVIO_GENERATE_LABEL", params: {} },
+    { tool: "ZAPI_SEND_MESSAGE", params: { text: "Your order is on the way!" } },
   ],
   onStepComplete: (step, r) => console.log(`✓ ${step.tool}`),
   retryPolicy: { maxRetries: 3, backoff: "exponential" },
@@ -90,6 +90,23 @@ const result = await loop(session, {
 | `tools(session)` | Get all available tools from the session |
 | `findTools(session, query)` | Search tools by name or description |
 | `loop(session, config)` | Run a Complete Loop workflow |
+
+## Migrating from 0.2.x
+
+`tools`, `findTools`, and `loop` moved from session instance methods to free functions in 0.3.0.
+
+```typescript
+// 0.2.x
+const tools = await session.tools();
+const found = await session.findTools("payment");
+const result = await session.loop({ steps: [...] });
+
+// 0.3.0
+import { tools, findTools, loop } from "@codespar/sdk";
+const available = await tools(session);
+const found = await findTools(session, "payment");
+const result = await loop(session, { steps: [...] });
+```
 
 ## Need more?
 
