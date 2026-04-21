@@ -1,6 +1,6 @@
 {
   "name": "@codespar/autogen",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Microsoft AutoGen adapter for CodeSpar — convert session tools to AutoGen function tool format",
   "type": "module",
   "main": "./dist/index.js",

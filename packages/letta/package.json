@@ -1,6 +1,6 @@
 {
   "name": "@codespar/letta",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Letta (MemGPT) adapter for CodeSpar — convert session tools to Letta tool format",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,6 +1,6 @@
 {
   "name": "@codespar/crewai",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "CrewAI adapter for CodeSpar — convert session tools to CrewAI tool format",
   "type": "module",
   "main": "./dist/index.js",

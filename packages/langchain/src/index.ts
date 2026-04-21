@@ -25,6 +25,7 @@
 
 import { z } from "zod";
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import { tools as getSessionTools } from "@codespar/sdk";
 
 /** Convert a JSON Schema object to a Zod object schema. */
 function jsonSchemaToZod(schema: Record<string, unknown>): z.ZodObject<z.ZodRawShape> {
@@ -71,7 +72,7 @@ export interface CodeSparLangChainTool {
  * the CodeSpar session.
  */
 export async function getTools(session: Session): Promise<CodeSparLangChainTool[]> {
-  const tools = await session.tools();
+  const tools = await getSessionTools(session);
   return tools.map((t) => toLangChainTool(t, session));
 }
 

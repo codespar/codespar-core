@@ -24,6 +24,7 @@
  */
 
 import type { Session, Tool } from "@codespar/sdk";
+import { tools as getSessionTools } from "@codespar/sdk";
 
 export interface VercelTool {
   description: string;
@@ -37,7 +38,7 @@ export interface VercelTool {
  * generateText({ tools }).
  */
 export async function getTools(session: Session): Promise<Record<string, VercelTool>> {
-  const tools = await session.tools();
+  const tools = await getSessionTools(session);
   const result: Record<string, VercelTool> = {};
   for (const tool of tools) {
     result[tool.name] = toVercelTool(tool, session);

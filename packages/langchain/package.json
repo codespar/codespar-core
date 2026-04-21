@@ -1,6 +1,6 @@
 {
   "name": "@codespar/langchain",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "LangChain.js adapter for CodeSpar — convert session tools to LangChain StructuredTool format",
   "type": "module",
   "main": "./dist/index.js",

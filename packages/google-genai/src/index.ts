@@ -23,6 +23,7 @@
  */
 
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import { tools as getSessionTools } from "@codespar/sdk";
 
 export interface GeminiFunctionDeclaration {
   name: string;
@@ -36,7 +37,7 @@ export interface GeminiFunctionDeclaration {
 
 /** Convert CodeSpar session tools to Gemini FunctionDeclaration array. */
 export async function getTools(session: Session): Promise<GeminiFunctionDeclaration[]> {
-  const tools = await session.tools();
+  const tools = await getSessionTools(session);
   return tools.map(toGeminiTool);
 }
 

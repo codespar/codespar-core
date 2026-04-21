@@ -27,9 +27,6 @@ function fakeSession(tools: Tool[]): Session {
     async tools() {
       return tools;
     },
-    async findTools() {
-      return tools;
-    },
     async execute(toolName: string): Promise<ToolResult> {
       return {
         success: true,
@@ -39,9 +36,6 @@ function fakeSession(tools: Tool[]): Session {
         server: "codespar",
         tool: toolName,
       };
-    },
-    async loop() {
-      return { success: true, results: [], duration: 0, completedSteps: 0, totalSteps: 0 };
     },
     async proxyExecute() {
       return { status: 200, data: null, headers: {}, duration: 0 };

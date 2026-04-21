@@ -1,6 +1,6 @@
 {
   "name": "@codespar/mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP transport for CodeSpar — connect Claude Desktop, Cursor, VS Code to CodeSpar sessions",
   "type": "module",
   "main": "./dist/index.js",
