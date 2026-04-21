@@ -36,7 +36,7 @@
     "directory": "packages/vercel"
   },
   "peerDependencies": {
-    "@codespar/sdk": "^0.2.0",
+    "@codespar/sdk": "^0.3.0",
     "ai": ">=3.0.0"
   },
   "devDependencies": {
