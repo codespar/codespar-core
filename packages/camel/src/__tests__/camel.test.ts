@@ -17,12 +17,12 @@ function makeTool(overrides: Partial<Tool> = {}): Tool {
 }
 
 function fakeSession(tools: Tool[]): Session {
-  return {
+  const session = {
     id: "ses_fake",
     userId: "user_1",
     servers: [],
     createdAt: new Date(),
-    status: "active",
+    status: "active" as const,
     mcp: { url: "https://api.example.com/v1/sessions/ses_fake/mcp", headers: {} },
     async tools() { return tools; },
     async findTools() { return tools; },
@@ -37,6 +37,7 @@ function fakeSession(tools: Tool[]): Session {
     async connections() { return []; },
     async close() {},
   };
+  return session;
 }
 
 describe("@codespar/camel", () => {

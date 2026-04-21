@@ -7,12 +7,12 @@ import type { Session, ToolResult } from "@codespar/sdk";
 import { getMcpConfig, getClaudeDesktopConfig, getCursorConfig } from "../index.js";
 
 function fakeSession(): Session {
-  return {
+  const session = {
     id: "ses_demo",
     userId: "user_1",
     servers: [],
     createdAt: new Date(),
-    status: "active",
+    status: "active" as const,
     mcp: {
       url: "https://api.codespar.dev/v1/sessions/ses_demo/mcp",
       headers: { Authorization: "Bearer csk_live_x" },
@@ -46,6 +46,7 @@ function fakeSession(): Session {
       // noop
     },
   };
+  return session;
 }
 
 describe("@codespar/mcp", () => {
@@ -62,7 +63,7 @@ describe("@codespar/mcp", () => {
     expect(cfg.mcpServers.codespar).toBeDefined();
     expect(cfg.mcpServers.codespar!.command).toBe("npx");
     expect(cfg.mcpServers.codespar!.args).toContain("ses_demo");
-    expect(cfg.mcpServers.codespar!.env?.MCP_URL).toBe(session.mcp.url);
+    expect(cfg.mcpServers.codespar!.env?.MCP_URL).toBe(session.mcp!.url);
   });
 
   it("getClaudeDesktopConfig accepts custom server name", () => {

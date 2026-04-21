@@ -26,28 +26,36 @@
  */
 
 export type {
-  CodeSparConfig,
-  Session,
-  SessionConfig,
-  Tool,
-  ToolResult,
-  LoopConfig,
-  LoopStep,
-  LoopResult,
-  AuthConfig,
-  AuthResult,
+  SessionBase,
+  BaseConnection,
   ServerConnection,
+  CreateSessionRequest,
+  ToolResult,
   SendResult,
   ToolCallRecord,
   StreamEvent,
+  HttpMethod,
   ProxyRequest,
   ProxyResult,
-  HttpMethod,
+  AuthConfig,
+  AuthResult,
+} from "@codespar/session-contract";
+
+export { isCodesparSession } from "@codespar/session-contract";
+
+export type {
+  CodeSparConfig,
+  SessionConfig,
+  Session,
+  Tool,
+  LoopConfig,
+  LoopStep,
+  LoopResult,
 } from "./types.js";
 
 export { SessionConfigSchema } from "./types.js";
 
-import type { CodeSparConfig, Session, SessionConfig } from "./types.js";
+import type { CodeSparConfig, SessionConfig, Session } from "./types.js";
 import { SessionConfigSchema } from "./types.js";
 import { createSession } from "./session.js";
 

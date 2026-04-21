@@ -1,2 +1,2 @@
-// Types and type guard exported in subsequent issues
-export {};
+export * from "./types.js";
+export * from "./guards.js";
