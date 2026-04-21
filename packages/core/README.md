@@ -108,6 +108,30 @@ const found = await findTools(session, "payment");
 const result = await loop(session, { steps: [...] });
 ```
 
+## Multi-environment (projects)
+
+CodeSpar orgs have a second tenancy tier — **projects** — so dev / staging / prod each get isolated API keys, connected accounts, triggers, and sessions while billing stays at the org level. Every request accepts an optional `x-codespar-project: prj_<16 hex>` header; omit it and the backend resolves the org's default project (self-healed on first read).
+
+Pin the whole client to one environment:
+
+```typescript
+const cs = new CodeSpar({
+  apiKey: process.env.CODESPAR_API_KEY!,
+  projectId: "prj_staging0123abcd", // every session this client spawns scopes here
+});
+```
+
+Or override per session:
+
+```typescript
+const session = await cs.create("user_123", {
+  preset: "brazilian",
+  projectId: "prj_prod0123abcd", // overrides the client default
+});
+```
+
+Precedence: `sessionConfig.projectId` > `clientConfig.projectId` > backend's org default. Format is validated at construction via Zod (`/^prj_[A-Za-z0-9]{16}$/`) so typos fail fast. See the [Projects concept doc](https://docs.codespar.dev/concepts/projects) for the full tenancy model.
+
 ## Need more?
 
 For production workloads with governance, audit trails, policy engines, self-hosted runtimes, and enterprise commerce primitives (mandates, escrow, payment routing), see **[CodeSpar Enterprise](https://codespar.dev/enterprise)**.
