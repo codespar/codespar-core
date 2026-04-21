@@ -1,6 +1,6 @@
 {
   "name": "@codespar/mastra",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Mastra adapter for CodeSpar — convert session tools to Mastra tool format",
   "type": "module",
   "main": "./dist/index.js",
@@ -11,7 +11,11 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -19,7 +23,13 @@
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["codespar", "mastra", "tools", "adapter", "ai-agents"],
+  "keywords": [
+    "codespar",
+    "mastra",
+    "tools",
+    "adapter",
+    "ai-agents"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -27,10 +37,10 @@
     "directory": "packages/mastra"
   },
   "peerDependencies": {
-    "@codespar/sdk": "^0.2.0"
+    "@codespar/sdk": "^0.3.0"
   },
   "devDependencies": {
-    "@codespar/sdk": "0.2.0",
+    "@codespar/sdk": "*",
     "@types/node": "^25.6.0",
     "typescript": "^5.8.0",
     "vitest": "^3.1.0"

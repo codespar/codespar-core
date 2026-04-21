@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ToolResult } from "@codespar/types";
 
 /* ── Configuration ─────────────────────────────────────────────── */
 
@@ -11,7 +12,7 @@ export interface CodeSparConfig {
   projectId?: string;
 }
 
-/* ── Session ──────────────────────────────────────────────────── */
+/* ── Session config (SDK-level, not the wire contract) ──────────── */
 
 export interface SessionConfig {
   /** MCP servers to connect, by id (e.g. "zoop", "nuvem-fiscal") */
@@ -31,92 +32,6 @@ export interface SessionConfig {
   projectId?: string;
 }
 
-export interface Session {
-  /** Unique session ID (e.g. "ses_HZb4d5yxIAxLawb4") */
-  id: string;
-  /** User ID that owns this session */
-  userId: string;
-  /** IDs of the servers attached to this session */
-  servers: string[];
-  /** Session creation timestamp */
-  createdAt: Date;
-  /** Session status */
-  status: "active" | "closed" | "error";
-
-  /**
-   * MCP transport endpoint for this session. Pass to @codespar/mcp helpers
-   * (getClaudeDesktopConfig, getCursorConfig) to generate config files for
-   * MCP-compatible clients.
-   *
-   * Note: the runtime MCP endpoint is not yet implemented in the backend
-   * (planned for Marco 3). The URL is provided so config generators can
-   * produce the correct values today; runtime connection will work once
-   * the backend MCP transport ships.
-   */
-  mcp: { url: string; headers: Record<string, string> };
-
-  /**
-   * Get tools available in this session. Loads from the backend on first
-   * call and caches. Call connections() to refresh.
-   */
-  tools(): Promise<Tool[]>;
-
-  /**
-   * Find tools by intent description. Loads tools first if not cached.
-   */
-  findTools(intent: string): Promise<Tool[]>;
-
-  /**
-   * Execute a specific tool by name. Tool calls are logged on the
-   * backend with input + output for billing and audit.
-   */
-  execute(toolName: string, params: Record<string, unknown>): Promise<ToolResult>;
-
-  /** Run a Complete Loop workflow. */
-  loop(config: LoopConfig): Promise<LoopResult>;
-
-  /**
-   * Proxy a raw HTTP request to a connected server's upstream API with
-   * credentials injected server-side. Lets an agent call any endpoint of
-   * a toolkit — not just pre-defined tools — without ever seeing the
-   * provider API key. The backend handles auth injection, rate limiting,
-   * and logs the call for audit/billing.
-   */
-  proxyExecute(request: ProxyRequest): Promise<ProxyResult>;
-
-  /**
-   * Send a natural-language message. Drives a Claude tool-use loop on
-   * the backend and returns the full transcript when done.
-   */
-  send(message: string): Promise<SendResult>;
-
-  /**
-   * Stream a natural-language message. Yields events as the agent
-   * runs (assistant text, tool_use, tool_result, done).
-   */
-  sendStream(message: string): AsyncIterable<StreamEvent>;
-
-  /**
-   * Start a Connect Link OAuth flow for a server. Returns a link token
-   * + authorize URL the end-user opens to grant provider access.
-   *
-   * Pass `config.redirectUri` so the provider redirects back to your
-   * UI after the user authorizes — CodeSpar's callback stores the
-   * tokens in the vault and forwards the user there with
-   * `?status=connected&connection_id=<id>` appended.
-   */
-  authorize(serverId: string, config: AuthConfig): Promise<AuthResult>;
-
-  /**
-   * List server connections + available tools. Refreshes the internal
-   * tools cache as a side effect.
-   */
-  connections(): Promise<ServerConnection[]>;
-
-  /** Close session and release resources. */
-  close(): Promise<void>;
-}
-
 /* ── Tools ────────────────────────────────────────────────────── */
 
 export interface Tool {
@@ -128,25 +43,6 @@ export interface Tool {
   input_schema: Record<string, unknown>;
   /** Server that provides this tool (for routing/billing). May be "codespar" for meta-tools. */
   server: string;
-}
-
-export interface ToolResult {
-  /** Whether the call succeeded */
-  success: boolean;
-  /** Tool output (varies by tool) */
-  data: unknown;
-  /** Error message if failed */
-  error: string | null;
-  /** Execution time in ms */
-  duration: number;
-  /** Server that executed the tool */
-  server: string;
-  /** Tool that was executed */
-  tool: string;
-  /** Backend tool-call id for cross-referencing logs */
-  tool_call_id?: string;
-  /** Timestamp the call was logged */
-  called_at?: string;
 }
 
 /* ── Complete Loop ────────────────────────────────────────────── */
@@ -188,109 +84,6 @@ export interface LoopResult {
   /** Total steps attempted */
   totalSteps: number;
 }
-
-/* ── Tool Router / proxy ──────────────────────────────────────── */
-
-export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-
-export interface ProxyRequest {
-  /** Server id that owns the upstream API (e.g. "stripe", "asaas"). */
-  server: string;
-  /** Upstream path, relative to the server's base URL (e.g. "/v1/charges"). */
-  endpoint: string;
-  /** HTTP method. */
-  method: HttpMethod;
-  /** JSON body. Ignored for GET. */
-  body?: unknown;
-  /** Query string parameters. */
-  params?: Record<string, string | number | boolean>;
-  /** Extra headers to forward. Auth headers are injected by the backend — never send them here. */
-  headers?: Record<string, string>;
-}
-
-export interface ProxyResult {
-  /** HTTP status code returned by the upstream API. */
-  status: number;
-  /** Parsed JSON response body, or raw string if not JSON. */
-  data: unknown;
-  /** Response headers (lowercased keys). */
-  headers: Record<string, string>;
-  /** Upstream call duration in ms, as measured by the backend. */
-  duration: number;
-  /** Backend proxy-call id for cross-referencing logs. */
-  proxy_call_id?: string;
-}
-
-/* ── Auth ─────────────────────────────────────────────────────── */
-
-export interface AuthConfig {
-  /** Where the provider sends the user after authorizing. HTTPS only. */
-  redirectUri: string;
-  /** Optional scope override (format is provider-specific). */
-  scopes?: string;
-}
-
-export interface AuthResult {
-  /** Opaque one-shot state token — echoed back on callback. */
-  linkToken: string;
-  /** URL the end-user opens to grant access. */
-  authorizeUrl: string;
-  /** When the state token expires (10min default). */
-  expiresAt: string;
-}
-
-/* ── Server connections ───────────────────────────────────────── */
-
-export interface ServerConnection {
-  /** Server id (e.g. "zoop") */
-  id: string;
-  /** Display name */
-  name: string;
-  /** Category (payments, fiscal, ecommerce, etc.) */
-  category: string;
-  /** Country code (BR, MX, AR, CO, GLOBAL) */
-  country: string;
-  /** Auth method */
-  auth_type: "oauth" | "api_key" | "cert" | "none";
-  /** Whether the server is connected and tools are callable */
-  connected: boolean;
-}
-
-/* ── Send (natural language) ──────────────────────────────────── */
-
-export interface SendResult {
-  /** Final agent message text */
-  message: string;
-  /** Tools called during the run, in order */
-  tool_calls: ToolCallRecord[];
-  /** How many model iterations the loop ran */
-  iterations: number;
-}
-
-/**
- * Single tool-call record returned by send / sendStream.
- * Mirrors the backend's session_tool_calls row shape.
- */
-export interface ToolCallRecord {
-  id: string;
-  tool_name: string;
-  server_id: string;
-  status: "success" | "error";
-  duration_ms: number;
-  input: unknown;
-  output: unknown;
-  error_code: string | null;
-}
-
-/* ── Streaming events (sendStream) ─────────────────────────────── */
-
-export type StreamEvent =
-  | { type: "user_message"; content: string }
-  | { type: "assistant_text"; content: string; iteration: number }
-  | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
-  | { type: "tool_result"; toolCall: ToolCallRecord }
-  | { type: "done"; result: SendResult }
-  | { type: "error"; error: string; message?: string };
 
 /* ── Validation schemas ───────────────────────────────────────── */
 

@@ -20,6 +20,7 @@
  */
 
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import { tools as getSessionTools } from "@codespar/sdk";
 
 export interface LlamaIndexTool {
   name: string;
@@ -30,7 +31,7 @@ export interface LlamaIndexTool {
 
 /** Convert CodeSpar session tools to LlamaIndex tool format. */
 export async function getTools(session: Session): Promise<LlamaIndexTool[]> {
-  const tools = await session.tools();
+  const tools = await getSessionTools(session);
   return tools.map((t) => toLlamaIndexTool(t, session));
 }
 

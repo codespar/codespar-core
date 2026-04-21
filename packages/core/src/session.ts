@@ -1,18 +1,12 @@
 /**
- * Session implementation — talks to api.codespar.dev backend.
- *
- * The shape of every request and response in this file matches what the
- * backend (codespar-enterprise/packages/api) actually exposes. Do not edit
- * one without the other.
+ * Session implementation for the CodeSpar managed runtime.
  */
 
+import type { SessionConfig, Tool } from "./types.js";
 import type {
   Session,
-  SessionConfig,
-  Tool,
+  CreateSessionRequest,
   ToolResult,
-  LoopConfig,
-  LoopResult,
   AuthConfig,
   AuthResult,
   ServerConnection,
@@ -20,7 +14,7 @@ import type {
   StreamEvent,
   ProxyRequest,
   ProxyResult,
-} from "./types.js";
+} from "@codespar/types";
 
 interface SessionDeps {
   baseUrl: string;
@@ -43,6 +37,9 @@ interface BackendConnectionsResponse {
   tools: Tool[];
 }
 
+// The concrete session object satisfies the Session interface and carries extra
+// internal methods (tools, findTools) that the free functions in tools.ts access
+// via duck-typing. They are intentionally not declared on the Session interface.
 export async function createSession(
   userId: string,
   config: SessionConfig,
@@ -56,14 +53,16 @@ export async function createSession(
   };
   if (projectId) headers["x-codespar-project"] = projectId;
 
-  // Resolve servers from preset if not explicit. The backend doesn't know
-  // about presets — it expects an explicit array of server ids.
-  const servers = config.servers ?? presetToServers(config.preset);
+  const req: CreateSessionRequest = {
+    servers: config.servers ?? presetToServers(config.preset),
+    metadata: config.metadata,
+    projectId: config.projectId ?? deps.projectId,
+  };
 
   const res = await fetch(`${baseUrl}/v1/sessions`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ servers, user_id: userId }),
+    body: JSON.stringify({ servers: req.servers, user_id: userId }),
   });
   if (!res.ok) {
     const body = await res.text();
@@ -74,7 +73,7 @@ export async function createSession(
   let cachedTools: Tool[] | null = null;
   let cachedConnections: ServerConnection[] | null = null;
 
-  const session: Session = {
+  const session = {
     id: data.id,
     userId: data.user_id,
     servers: data.servers,
@@ -126,75 +125,6 @@ export async function createSession(
       }
       const result = (await r.json()) as ToolResult;
       return result;
-    },
-
-    async loop(loopConfig: LoopConfig): Promise<LoopResult> {
-      const start = Date.now();
-      const results: ToolResult[] = [];
-      const maxRetries = loopConfig.retryPolicy?.maxRetries ?? 0;
-      const abortOnError = loopConfig.abortOnError ?? true;
-
-      for (let i = 0; i < loopConfig.steps.length; i++) {
-        const step = loopConfig.steps[i]!;
-        if (step.when && !step.when(results)) continue;
-
-        const params =
-          typeof step.params === "function" ? step.params(results) : step.params;
-
-        let lastError: Error | null = null;
-        let result: ToolResult | null = null;
-
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-          try {
-            result = await session.execute(step.tool, params);
-            if (result.success) {
-              lastError = null;
-              break;
-            }
-            lastError = new Error(result.error || "Tool execution failed");
-          } catch (err) {
-            lastError = err instanceof Error ? err : new Error(String(err));
-          }
-          if (attempt < maxRetries) {
-            const baseDelay = loopConfig.retryPolicy?.baseDelay ?? 1000;
-            const delay =
-              loopConfig.retryPolicy?.backoff === "exponential"
-                ? baseDelay * Math.pow(2, attempt)
-                : baseDelay * (attempt + 1);
-            await new Promise((resolve) => setTimeout(resolve, delay));
-          }
-        }
-
-        if (lastError || !result?.success) {
-          if (loopConfig.onStepError) {
-            loopConfig.onStepError(step, lastError || new Error("Unknown error"), i);
-          }
-          if (result) results.push(result);
-          if (abortOnError) {
-            return {
-              success: false,
-              results,
-              duration: Date.now() - start,
-              completedSteps: results.filter((r) => r.success).length,
-              totalSteps: loopConfig.steps.length,
-            };
-          }
-          continue;
-        }
-
-        results.push(result);
-        if (loopConfig.onStepComplete) {
-          loopConfig.onStepComplete(step, result, i);
-        }
-      }
-
-      return {
-        success: results.every((r) => r.success),
-        results,
-        duration: Date.now() - start,
-        completedSteps: results.filter((r) => r.success).length,
-        totalSteps: loopConfig.steps.length,
-      };
     },
 
     async proxyExecute(request: ProxyRequest): Promise<ProxyResult> {

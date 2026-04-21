@@ -34,6 +34,7 @@
  */
 
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import { tools as getSessionTools } from "@codespar/sdk";
 
 /** Claude tool definition (matches Anthropic.Tool from @anthropic-ai/sdk). */
 export interface ClaudeTool {
@@ -47,7 +48,7 @@ export interface ClaudeTool {
  * Loads tools from the backend via session.tools() if not already cached.
  */
 export async function getTools(session: Session): Promise<ClaudeTool[]> {
-  const tools = await session.tools();
+  const tools = await getSessionTools(session);
   return tools.map(toClaudeTool);
 }
 
