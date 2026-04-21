@@ -1,0 +1,73 @@
+name: Publish Python SDK
+
+# Two triggers:
+# 1. Manual dispatch — lets us cut a release without tagging, for rapid
+#    iteration during alpha.
+# 2. GitHub Release — wire in when we're out of 0.x; the release tag
+#    becomes the authoritative version bump.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build only, don't upload to PyPI"
+        required: false
+        type: boolean
+        default: false
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/python
+    permissions:
+      # Trusted publishing (OIDC) — no long-lived PyPI token stored in
+      # GitHub secrets. Configured at https://pypi.org/manage/account/publishing/
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Install package + test extras
+        run: pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check src/ tests/
+
+      - name: Type check (mypy)
+        run: mypy src/codespar
+
+      - name: Run tests (pytest)
+        run: pytest -q
+
+      - name: Build sdist + wheel
+        run: python -m build
+
+      - name: Check artifacts
+        run: twine check dist/*
+
+      - name: Publish to PyPI
+        if: ${{ github.event_name == 'release' || !inputs.dry_run }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/python/dist/
+          skip-existing: true
+
+      - name: Upload artifacts (dry run)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: codespar-python-dist
+          path: packages/python/dist/
