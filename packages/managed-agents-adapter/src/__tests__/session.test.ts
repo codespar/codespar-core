@@ -198,8 +198,8 @@ describe("mutex — concurrent operation guard", () => {
     });
 
     const session = await openSession(runtime);
-    const gen = session.sendStream("hello");
-    await expect(gen.next()).rejects.toThrow("stream failed");
+    const iter = session.sendStream("hello")[Symbol.asyncIterator]();
+    await expect(iter.next()).rejects.toThrow("stream failed");
     await expect(session.send("hello")).resolves.toBeDefined();
   });
 });
@@ -299,7 +299,8 @@ describe("sendStream()", () => {
     for await (const ev of session.sendStream("hi")) {
       events.push(ev);
     }
-    expect(events.every((e) => e.type !== "unknown_internal_event")).toBe(true);
+    // only the "done" event should be present; the unknown type was dropped
+    expect(events.map((e) => e.type)).toEqual(["done"]);
   });
 });
 
