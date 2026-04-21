@@ -7,6 +7,7 @@ Commerce infrastructure for AI agents. Payments, invoicing, shipping, notificati
 | Package | Description |
 |---------|-------------|
 | [`@codespar/sdk`](packages/core) | Sessions, managed auth, tool execution, Complete Loop orchestration |
+| [`codespar` (PyPI)](packages/python) | Python SDK — same surface as `@codespar/sdk`, sync + async |
 | [`@codespar/types`](packages/types) | Zero-dependency `SessionBase`/`Session` interface hierarchy and conformance test suite |
 | [`@codespar/managed-agents-adapter`](packages/managed-agents-adapter) | Anthropic Managed Agents adapter — runs `SessionBase` tools against Managed Agents sessions |
 | [`@codespar/vercel`](packages/vercel) | Vercel AI SDK adapter |
