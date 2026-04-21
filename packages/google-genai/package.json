@@ -11,7 +11,11 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -19,7 +23,14 @@
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["codespar", "google", "gemini", "genai", "tools", "adapter"],
+  "keywords": [
+    "codespar",
+    "google",
+    "gemini",
+    "genai",
+    "tools",
+    "adapter"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -30,7 +41,7 @@
     "@codespar/sdk": "^0.2.0"
   },
   "devDependencies": {
-    "@codespar/sdk": "0.2.0",
+    "@codespar/sdk": "0.2.2",
     "@types/node": "^25.6.0",
     "typescript": "^5.8.0",
     "vitest": "^3.1.0"
