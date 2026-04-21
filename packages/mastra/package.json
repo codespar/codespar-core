@@ -37,7 +37,7 @@
     "directory": "packages/mastra"
   },
   "peerDependencies": {
-    "@codespar/sdk": "^0.2.0"
+    "@codespar/sdk": "^0.3.0"
   },
   "devDependencies": {
     "@codespar/sdk": "*",
