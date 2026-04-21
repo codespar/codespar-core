@@ -30,15 +30,20 @@ const charge = await session.execute("ZOOP_CREATE_CHARGE", {
   payment_type: "pix",
 });
 
-// Complete Loop
-const loop = await session.loop({
+// Complete Loop — tools, findTools, and loop are free functions
+import { tools, findTools, loop } from "@codespar/sdk";
+
+const available = await tools(session);
+const payments = await findTools(session, "payment");
+
+const result = await loop(session, {
   steps: [
     { server: "mcp-zoop", tool: "ZOOP_CREATE_CHARGE", params: { amount: 150, payment_type: "pix" } },
     { server: "mcp-nuvem-fiscal", tool: "NUVEMFISCAL_EMITIR_NFE", params: (prev) => ({ chargeId: prev[0].data }) },
     { server: "mcp-melhor-envio", tool: "MELHORENVIO_GENERATE_LABEL", params: {} },
     { server: "mcp-z-api", tool: "ZAPI_SEND_MESSAGE", params: { text: "Your order is on the way!" } },
   ],
-  onStepComplete: (step, result) => console.log(`✓ ${step.tool}`),
+  onStepComplete: (step, r) => console.log(`✓ ${step.tool}`),
   retryPolicy: { maxRetries: 3, backoff: "exponential" },
 });
 ```
@@ -63,19 +68,28 @@ const loop = await session.loop({
 | `manageConnections.waitForConnections` | `boolean` | Block until all servers connected |
 | `projectId` | `string` | Optional `prj_<16alphanum>`. Overrides the client-level `projectId`; falls back to the org's default project when both are unset. |
 
-### Session Methods
+### Session methods
 
 | Method | Description |
 |--------|-------------|
-| `session.tools()` | Get all available tools |
-| `session.findTools(intent)` | Search tools by description |
 | `session.execute(tool, params)` | Execute a specific tool |
 | `session.send(message)` | Send natural language message |
-| `session.loop(config)` | Run Complete Loop workflow |
+| `session.sendStream(message)` | Stream events from a natural language message |
 | `session.authorize(serverId)` | Start OAuth flow for a server |
+| `session.proxyExecute(request)` | Proxy a raw HTTP call through the session |
 | `session.connections()` | List connected servers |
-| `session.mcp` | MCP transport URL and headers |
+| `session.mcp` | MCP transport URL and headers (when using managed runtime) |
 | `session.close()` | Close session |
+
+### Free functions
+
+`tools`, `findTools`, and `loop` are free functions that accept any `SessionBase` — they work with the managed runtime, Managed Agents sessions, and custom runtimes alike.
+
+| Function | Description |
+|----------|-------------|
+| `tools(session)` | Get all available tools from the session |
+| `findTools(session, query)` | Search tools by name or description |
+| `loop(session, config)` | Run a Complete Loop workflow |
 
 ## Need more?
 
