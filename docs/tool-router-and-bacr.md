@@ -58,15 +58,19 @@ await session.proxyExecute({
 });
 ```
 
-### Estado atual (Marcos 1 → 3b)
+### Estado atual (Marcos 1 → 3c + F-series)
 
 | Marco | O que ficou | Status |
 |-------|-------------|--------|
-| **1** | SDK-side: types `ProxyRequest`/`ProxyResult`, método `session.proxyExecute`, docs | ✅ publicado (`@codespar/sdk@0.2.1`) |
-| **2** | Backend: rota `POST /v1/sessions/:id/proxy_execute`, migration `0003_proxy_calls`, mocks upstream, schema Zod com guard de path traversal | ✅ em `main` |
-| **3a** | Auth foundation: migrations `0004_connected_accounts` + `0005_server_endpoints`, resolver de credentials, rotas `/v1/connections` (list/get/revoke/delete), feature flag `PROXY_REQUIRE_CONNECTION` | ✅ em `main` |
-| **3b** | HTTP real: executor com fetch real, timeout, auth injection via template, vault stub via env vars, rate limiting per-org-per-server, feature flag `PROXY_MODE=real` | 🚧 em andamento |
-| **3c** | Vault persistente: `SecretsVault` em DB, Connect Links reais (OAuth flow server-side), rotação de credentials | pendente |
+| **1** | SDK-side: types `ProxyRequest`/`ProxyResult`, método `session.proxyExecute`, docs | ✅ publicado (`@codespar/sdk@0.3.x`, Python `codespar@0.1.1`) |
+| **2** | Backend: rota `POST /v1/sessions/:id/proxy_execute`, migration `0003_proxy_calls`, mocks upstream, Zod com guard de path traversal | ✅ em `main` |
+| **3a** | Auth foundation: migrations `0004_connected_accounts` + `0005_server_endpoints`, resolver de credentials, rotas `/v1/connections`, flag `PROXY_REQUIRE_CONNECTION` | ✅ em `main` |
+| **3b** | HTTP real: executor com fetch real, timeout, auth injection via template, vault stub via env, rate limiting per-org-per-server, flag `PROXY_MODE=real` | ✅ em `main` |
+| **3c** | Vault Postgres-backed (migration `0006`), Connect Links reais (migrations `0007` + `0008`), OAuth server-side (`POST /v1/connect/start` + callback) | ✅ em `main` |
+| **F.1** | `projects` table + `/v1/projects` CRUD + 1-default-per-org invariant | ✅ em `main` |
+| **F.2** | `project_id` em 10 tabelas scoped, fix de 2 cross-project leaks (fanOutToTriggers + retryFailedDeliveries) | ✅ em `main` |
+| **F.3** | Dashboard routing project-scoped (`/dashboard/projects/[projectId]/...`), Project Switcher, cards grid, Bridge routes | ✅ em `main` |
+| **F.5** | Migration `0015` — `project_id NOT NULL` flip + drop legacy indexes | ✅ em `main` |
 
 ### Arquitetura resumida
 
@@ -164,17 +168,39 @@ Sequência correta:
 - `content/docs/concepts/tool-router.mdx` — doc pública do conceito
 - `content/docs/concepts/sessions.mdx`, `tools.mdx`, `authentication.mdx` — contexto relacionado
 
-### `codespar-opensource` (público, MIT) — produto legado multi-agent
+### `codespar-opensource` (público, MIT) — runtime self-hostable
 
-Repo do produto **pré-pivot** (autonomous agents for every project — WhatsApp/Slack/Discord/Telegram). Mantido no ar por:
+Repo do runtime MIT post-pivot. Channel-agnostic: Postgres + Redis +
+Fastify, com adapters pra WhatsApp / Slack / Telegram / Discord / CLI /
+Web chat. É o sibling do managed tier — mesmo contract de sessão,
+mesmo 2-level tenancy (Org → Project), mesmo formato de project id
+(`prj_<16>`).
 
-- **OSS presence** — nossa marca pública de open source vem daqui (licença MIT).
-- **Community** — contribuições externas, issues, stars.
-- **Compat** — algumas ferramentas internas ainda apontam pra ele.
+Se um cliente quer hospedar o runtime no próprio infra (em vez de usar
+a managed tier no `api.codespar.dev`), esse é o repo. Não tem a
+governance layer (policy engine + wallet + CFO audit) — essa fica no
+`codespar-enterprise` privado, registrada contra os plugin hooks do
+opensource via `PolicyHook` / `ObservabilityHook` / `SecretsHook` /
+`IntegrationHook`.
 
-**Não tem Tool Router nem código de commerce.** É uma stack completamente diferente: 8 agent types (Project, Task, Review, Deploy, Incident, Coordinator, Planning, Lens), channel adapters, RBAC, audit trail com hash chain, vector memory (TF-IDF).
+**Tenancy port status** (Layers 1-4 shipped, ver `docs/projects-roadmap.md`):
+- L1: schema migration (`projects` table, `channel_links`, FKs nullable)
+- L2: storage APIs + `/api/projects-env` CRUD
+- L3: header resolution + channel_links routing + writers stampando
+- L4: CLI `--project=` flag + multi-tenant guide
+- Deferred: NOT NULL flip — 4 design questions abertas (system-level
+  `setMemory`, agent lifecycle, channel_configs scope, autonomy route
+  agentId→project lookup).
 
-Quando este doc fala "CodeSpar", está falando do produto commerce (core + enterprise + web). O `codespar-opensource` existe em paralelo e **não é onde a gente está investindo energia agora**. Daniel provavelmente não precisa tocar nele — mencionado aqui só pra não causar confusão quando ele clonar o GitHub org e encontrar o repo.
+O repo **ainda carrega código pre-pivot** — 8 agent types (ProjectAgent,
+TaskAgent, ReviewAgent, DeployAgent, IncidentAgent, CoordinatorAgent,
+PlanningAgent, LensAgent), CI-failure investigation, GitHub webhook
+auto-config, Vercel/Railway/Sentry observability integrations. Não
+rewrite proativamente; CLAUDE.md autoriza simplificar quando já está
+mexendo num arquivo por outra razão.
+
+Daniel provavelmente só toca se precisar mexer no runtime self-hostable
+ou no port 2-level tenancy.
 
 ---
 
