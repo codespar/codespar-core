@@ -19,8 +19,9 @@ import {
 import { tailLogsCommand } from "./commands/logs.js";
 import { initCommand } from "./commands/init.js";
 import { c } from "./output.js";
+import { printBanner } from "./banner.js";
 
-const VERSION = "0.2.2";
+const VERSION = "0.2.3";
 
 const program = new Command();
 program
@@ -236,6 +237,18 @@ program
 
 // ============ global error handling ============
 async function main() {
+  // Print the ASCII banner on bare `codespar` (no subcommand) — the help
+  // output follows via Commander's auto-help. Subcommands, --version, and
+  // --json are unaffected so scripts stay clean.
+  const argv = process.argv.slice(2);
+  const bareRun = argv.length === 0;
+  const explicitHelp =
+    argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h");
+  const hasJsonFlag = argv.includes("--json");
+  if ((bareRun || explicitHelp) && !hasJsonFlag) {
+    printBanner(VERSION);
+  }
+
   try {
     await program.parseAsync(process.argv);
   } catch (err) {
