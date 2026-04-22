@@ -2,6 +2,8 @@
 
 Commerce infrastructure for AI agents. Payments, invoicing, shipping, notifications, and ERP across Latin America — one SDK.
 
+LATAM-first by design: Pix + NF-e + WhatsApp + PSP routing are first-class, with MCP servers for the rails (Zoop, Nuvem Fiscal, Melhor Envio, Z-API, Omie, and more) curated in [`codespar/mcp-dev-latam`](https://github.com/codespar/mcp-dev-latam). Any framework, any agent — channel-agnostic by design.
+
 ## Packages
 
 | Package | Description |
@@ -27,7 +29,11 @@ import { CodeSpar } from "@codespar/sdk";
 
 const cs = new CodeSpar({ apiKey: "ak_..." });
 
-// Create a session with Brazilian commerce servers
+// Create a session with the Brazilian commerce preset.
+// `preset: "brazilian"` resolves to a curated set of MCP servers
+// covering Pix charges (Zoop), NF-e issuance (Nuvem Fiscal), shipping
+// labels (Melhor Envio), WhatsApp (Z-API), and ERP (Omie). Swap the
+// preset or pass `servers: [...]` explicitly to customize.
 const session = await cs.create("user_123", {
   preset: "brazilian",
   manageConnections: { waitForConnections: true },
