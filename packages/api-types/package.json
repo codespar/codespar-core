@@ -34,7 +34,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/codespar/codespar-core",
+    "url": "git+https://github.com/codespar/codespar-core.git",
     "directory": "packages/api-types"
   },
   "homepage": "https://codespar.dev",
