@@ -1,0 +1,18 @@
+{
+  "name": "@codespar/example-latam-commerce-smoke",
+  "version": "0.0.0",
+  "private": true,
+  "description": "4-provider smoke test: Asaas + Z-API + NFe.io + Melhor Envio, end-to-end against prod.",
+  "type": "module",
+  "scripts": {
+    "smoke": "tsx smoke-test.ts"
+  },
+  "dependencies": {
+    "@codespar/sdk": "^0.3.0",
+    "@codespar/types": "^0.1.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.0"
+  }
+}
