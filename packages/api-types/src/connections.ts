@@ -28,10 +28,13 @@ export type CreateConnectionRequest = z.infer<
   typeof CreateConnectionRequestSchema
 >;
 
+// org_id and project_id are intentionally omitted from the wire response —
+// the backend's serializeConnection() strips them. Callers already know
+// their own org/project from the auth context, and leaking either across
+// a poorly-scoped proxy would be a cross-tenant signal we'd rather not
+// emit by default.
 export const ConnectionRowSchema = z.object({
   id: z.string(),
-  org_id: z.string(),
-  project_id: z.string().nullable(),
   user_id: z.string(),
   server_id: z.string(),
   auth_type: AuthTypeSchema,
