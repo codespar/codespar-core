@@ -1,0 +1,55 @@
+{
+  "name": "@codespar/api-types",
+  "version": "0.1.0",
+  "description": "Shared REST wire contract for the CodeSpar managed-tier API (api.codespar.dev) — Zod schemas + inferred TypeScript types",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "codespar",
+    "api",
+    "rest",
+    "zod",
+    "types",
+    "contract"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codespar/codespar-core",
+    "directory": "packages/api-types"
+  },
+  "homepage": "https://codespar.dev",
+  "bugs": {
+    "url": "https://github.com/codespar/codespar-core/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  }
+}
