@@ -116,12 +116,10 @@ describe("projects", () => {
 });
 
 describe("connections", () => {
-  it("accepts a connected ConnectionRow", () => {
+  it("accepts a connected ConnectionRow (no org_id / project_id — the backend strips them)", () => {
     expect(
       ConnectionRowSchema.parse({
         id: "ca_abc",
-        org_id: "org_123",
-        project_id: "prj_abcdef0123456789",
         user_id: "dashboard",
         server_id: "asaas",
         auth_type: "api_key",
@@ -139,8 +137,6 @@ describe("connections", () => {
   it("rejects ConnectionRow with unknown status", () => {
     const res = ConnectionRowSchema.safeParse({
       id: "ca_abc",
-      org_id: "org_123",
-      project_id: null,
       user_id: "x",
       server_id: "asaas",
       auth_type: "api_key",
