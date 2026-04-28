@@ -148,6 +148,10 @@ This package mirrors [`@codespar/sdk`](https://www.npmjs.com/package/@codespar/s
 method-for-method. Same backend, same payloads, same preset names — pick
 the language that fits your stack without giving anything up.
 
+## Need more?
+
+Need governance, budget limits, and audit trails for agent payments? **[CodeSpar Enterprise](https://codespar.dev/enterprise)** adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## Links
 
 - [Documentation](https://docs.codespar.dev)

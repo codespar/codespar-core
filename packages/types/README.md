@@ -103,6 +103,10 @@ The suite opens a session via `POST /v1/sessions` with `Authorization: Bearer <a
 
 See [docs/custom-session-runtime.md](../../docs/custom-session-runtime.md) for a full implementation guide.
 
+## Need more?
+
+Need governance, budget limits, and audit trails for agent payments? **[CodeSpar Enterprise](https://codespar.dev/enterprise)** adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT — [codespar.dev](https://codespar.dev)
