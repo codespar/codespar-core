@@ -6,17 +6,33 @@ LATAM-first by design: Pix + NF-e + WhatsApp + PSP routing are first-class, with
 
 ## Packages
 
+**Core**
+
 | Package | Description |
 |---------|-------------|
 | [`@codespar/sdk`](packages/core) | Sessions, managed auth, tool execution, Complete Loop orchestration |
 | [`codespar` (PyPI)](packages/python) | Python SDK — same surface as `@codespar/sdk`, sync + async |
 | [`@codespar/types`](packages/types) | Zero-dependency `SessionBase`/`Session` interface hierarchy and conformance test suite |
+| [`@codespar/api-types`](packages/api-types) | Shared REST wire contract — Zod schemas + inferred TypeScript types for `api.codespar.dev` |
 | [`@codespar/managed-agents-adapter`](packages/managed-agents-adapter) | Anthropic Managed Agents adapter — runs `SessionBase` tools against Managed Agents sessions |
-| [`@codespar/vercel`](packages/vercel) | Vercel AI SDK adapter |
-| [`@codespar/claude`](packages/claude) | Claude Agent SDK adapter |
-| [`@codespar/openai`](packages/openai) | OpenAI Agents SDK adapter |
-| [`@codespar/mcp`](packages/mcp) | MCP transport for Claude Desktop, Cursor, VS Code |
 | [`@codespar/cli`](packages/cli) | Command-line interface — auth, execute, sessions, scaffolding |
+| [`@codespar/mcp`](packages/mcp) | MCP transport for Claude Desktop, Cursor, VS Code |
+
+**Framework adapters** — convert session tools to your framework's tool format
+
+| Package | Framework |
+|---------|-----------|
+| [`@codespar/vercel`](packages/vercel) | Vercel AI SDK |
+| [`@codespar/claude`](packages/claude) | Claude Agent SDK |
+| [`@codespar/openai`](packages/openai) | OpenAI Agents SDK |
+| [`@codespar/langchain`](packages/langchain) | LangChain.js |
+| [`@codespar/llama-index`](packages/llama-index) | LlamaIndex.TS |
+| [`@codespar/google-genai`](packages/google-genai) | Google Gemini / GenAI |
+| [`@codespar/mastra`](packages/mastra) | Mastra |
+| [`@codespar/crewai`](packages/crewai) | CrewAI |
+| [`@codespar/autogen`](packages/autogen) | Microsoft AutoGen |
+| [`@codespar/camel`](packages/camel) | CAMEL-AI |
+| [`@codespar/letta`](packages/letta) | Letta (MemGPT) |
 
 ## Quick Start
 
@@ -68,18 +84,24 @@ const result = await loop(session, {
 
 ## Framework Adapters
 
+Each adapter exposes `getTools(session)` returning tools shaped for that framework. Same session, any framework — pick one or compose several.
+
 ```typescript
 // Vercel AI SDK
 import { getTools } from "@codespar/vercel";
 const tools = getTools(session);
 const result = await generateText({ model: openai("gpt-4o"), tools, prompt: "..." });
 
-// Claude
+// Claude Agent SDK
 import { getTools } from "@codespar/claude";
 const tools = getTools(session);
 
-// OpenAI
+// OpenAI Agents SDK
 import { getTools, handleToolCall } from "@codespar/openai";
+const tools = getTools(session);
+
+// LangChain.js / LlamaIndex.TS / Mastra / CrewAI / AutoGen / CAMEL / Letta / Gemini
+import { getTools } from "@codespar/langchain";  // or @codespar/llama-index, @codespar/mastra, etc.
 const tools = getTools(session);
 
 // MCP (Claude Desktop, Cursor, VS Code)
