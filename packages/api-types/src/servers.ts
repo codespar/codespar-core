@@ -12,6 +12,17 @@ export const ServerRowSchema = z.object({
   tools_count: z.number().int().nonnegative(),
   description: z.string().nullable(),
   status: z.string(),
+  /* Provider metadata sourced from each mcp-brasil package's server.json.
+   * Optional + nullable — packages predating the 0030 migration return
+   * undefined; rows where the seed never ran return null. UI falls back
+   * to a Google-favicon URL constructed from `pkg` when both are absent.
+   * Migration: 0030_servers_provider_metadata. */
+  provider_homepage: z.string().nullable().optional(),
+  provider_logo_url: z.string().nullable().optional(),
+  provider_logo_fallback_url: z.string().nullable().optional(),
+  provider_docs_url: z.string().nullable().optional(),
+  sandbox_available: z.boolean().optional(),
+  sandbox_url: z.string().nullable().optional(),
 });
 export type ServerRow = z.infer<typeof ServerRowSchema>;
 
