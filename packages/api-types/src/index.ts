@@ -4,3 +4,4 @@ export * from "./projects.js";
 export * from "./connections.js";
 export * from "./servers.js";
 export * from "./sessions.js";
+export * from "./consumers.js";
