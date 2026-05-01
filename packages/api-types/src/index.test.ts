@@ -3,6 +3,7 @@ import {
   ApiKeyRowSchema,
   ConnectionRowSchema,
   CreateApiKeyRequestSchema,
+  CreateConnectionRequestSchema,
   CreatedApiKeySchema,
   ListApiKeysResponseSchema,
   ListProjectsResponseSchema,
@@ -132,6 +133,58 @@ describe("connections", () => {
         expires_at: null,
       }),
     ).toBeTruthy();
+  });
+
+  it("accepts ConnectionRow with the optional 0.3.0 connection_metadata field", () => {
+    const parsed = ConnectionRowSchema.parse({
+      id: "ca_abc",
+      user_id: "dashboard",
+      server_id: "nfe-io",
+      auth_type: "api_key",
+      status: "connected",
+      display_name: null,
+      metadata: {},
+      connection_metadata: { company_id: "co_xyz" },
+      created_at: "2026-04-24T12:00:00.000Z",
+      connected_at: "2026-04-24T12:00:00.000Z",
+      revoked_at: null,
+      expires_at: null,
+    });
+    expect(parsed.connection_metadata).toEqual({ company_id: "co_xyz" });
+  });
+
+  it("accepts CreateConnectionRequest with the optional 0.3.0 connection_metadata", () => {
+    const parsed = CreateConnectionRequestSchema.parse({
+      server_id: "nfe-io",
+      secret: "sk_test_abc",
+      connection_metadata: { company_id: "co_xyz" },
+    });
+    expect(parsed.connection_metadata).toEqual({ company_id: "co_xyz" });
+  });
+
+  it("accepts CreateConnectionRequest without connection_metadata (back-compat)", () => {
+    const parsed = CreateConnectionRequestSchema.parse({
+      server_id: "asaas",
+      secret: "sk_test_xyz",
+    });
+    expect(parsed.connection_metadata).toBeUndefined();
+  });
+
+  it("accepts ConnectionRow without connection_metadata (older backend / pre-0.3 row)", () => {
+    const parsed = ConnectionRowSchema.parse({
+      id: "ca_abc",
+      user_id: "dashboard",
+      server_id: "nfe-io",
+      auth_type: "api_key",
+      status: "connected",
+      display_name: null,
+      metadata: {},
+      created_at: "2026-04-24T12:00:00.000Z",
+      connected_at: "2026-04-24T12:00:00.000Z",
+      revoked_at: null,
+      expires_at: null,
+    });
+    expect(parsed.connection_metadata).toBeUndefined();
   });
 
   it("rejects ConnectionRow with unknown status", () => {
