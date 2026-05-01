@@ -15,6 +15,15 @@ export type ConnectionStatus = z.infer<typeof ConnectionStatusSchema>;
 
 // POST /v1/connections accepts either a single secret string (api_key auth)
 // or an object for multi-field secrets (path_secret, oauth client creds).
+//
+// `connection_metadata` (added in 0.3.0) carries operator-controlled
+// merchant-scoped config (NFe.io company_id, Asaas split wallet_id,
+// MP marketplace_seller_id) that the agent shouldn't have to know.
+// The backend persists it into `connected_accounts.connection_metadata`
+// (jsonb) and merges it into upstream request bodies before transform-
+// shaped fields land. See codespar-enterprise migration 0057 + Phase
+// 9.9 / 9.10. Open-shape value (`unknown`) — per-server schema lives
+// dashboard-side; this contract only enforces total-size guardrails.
 export const CreateConnectionRequestSchema = z.object({
   server_id: z.string().min(1).max(64),
   secret: z.union([
@@ -23,6 +32,7 @@ export const CreateConnectionRequestSchema = z.object({
   ]),
   display_name: z.string().min(1).max(128).optional(),
   user_id: z.string().min(1).max(128).optional(),
+  connection_metadata: z.record(z.string(), z.unknown()).optional(),
 });
 export type CreateConnectionRequest = z.infer<
   typeof CreateConnectionRequestSchema
@@ -40,7 +50,21 @@ export const ConnectionRowSchema = z.object({
   auth_type: AuthTypeSchema,
   status: ConnectionStatusSchema,
   display_name: z.string().nullable(),
+  /**
+   * OAuth-derived provider data (account_id, scope, …) — written by
+   * the OAuth callback, not by operators. Distinct from
+   * `connection_metadata` below which is operator-controlled merchant
+   * config.
+   */
   metadata: z.unknown(),
+  /**
+   * Operator-controlled merchant config (NFe.io company_id, Asaas
+   * wallet_id, MP marketplace_seller_id). Added in 0.3.0. The backend
+   * defaults it to `{}` when no value was set at connect time, so
+   * older clients that drop the field on read see no behavioral
+   * change — only newer clients can render the values.
+   */
+  connection_metadata: z.record(z.string(), z.unknown()).optional(),
   created_at: TimestampSchema,
   connected_at: TimestampSchema.nullable(),
   revoked_at: TimestampSchema.nullable(),

@@ -1,6 +1,6 @@
 {
   "name": "@codespar/api-types",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shared REST wire contract for the CodeSpar managed-tier API (api.codespar.dev) — Zod schemas + inferred TypeScript types",
   "type": "module",
   "main": "./dist/index.js",
