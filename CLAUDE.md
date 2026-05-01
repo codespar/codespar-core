@@ -122,8 +122,8 @@ schema in `packages/core/src/types.ts` validates on create.
 
 ## Internal docs
 
-- `docs/codebase-state-and-roadmap.md` — state + roadmap for SDK
-  surfaces. Daniel-focused onboarding reference.
+- `docs/tool-router.md` — Tool Router concept (public).
+- `docs/custom-session-runtime.md` — `SessionBase` implementation guide (public).
 - `docs/daniel-onboarding.md` (if present) — co-dev onboarding.
 - `docs/repo-map.md` — cross-repo architecture.
 
