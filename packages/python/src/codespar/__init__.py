@@ -44,12 +44,6 @@ from .types import (
     ChargeBuyer,
     ChargeMethod,
     ChargeResult,
-    ShipAction,
-    ShipAddress,
-    ShipArgs,
-    ShipItem,
-    ShipResult,
-    ShipServiceLevel,
     ConnectionDifficulty,
     ConnectionStatus,
     ConnectionStatusRow,
@@ -77,6 +71,12 @@ from .types import (
     SessionConfig,
     SessionInfo,
     SessionStatus,
+    ShipAction,
+    ShipAddress,
+    ShipArgs,
+    ShipItem,
+    ShipResult,
+    ShipServiceLevel,
     StreamEvent,
     Tool,
     ToolCallRecord,
@@ -105,13 +105,6 @@ __all__ = [
     "ChargeBuyer",
     "ChargeMethod",
     "ChargeResult",
-    # Shipping (codespar_ship)
-    "ShipAction",
-    "ShipAddress",
-    "ShipArgs",
-    "ShipItem",
-    "ShipResult",
-    "ShipServiceLevel",
     # Clients
     "CodeSpar",
     # Errors
@@ -152,6 +145,13 @@ __all__ = [
     # Session output
     "SessionInfo",
     "SessionStatus",
+    # Shipping (codespar_ship)
+    "ShipAction",
+    "ShipAddress",
+    "ShipArgs",
+    "ShipItem",
+    "ShipResult",
+    "ShipServiceLevel",
     "StreamError",
     # Streaming events
     "StreamEvent",
