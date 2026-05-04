@@ -76,6 +76,9 @@ function useSession(session: SessionBase) {
 | `ProxyResult` | Return value of `proxyExecute()` — `status`, `data`, `headers`, `duration`, `proxy_call_id` |
 | `AuthConfig` | Input to `authorize()` — `redirectUri`, `scopes?` |
 | `AuthResult` | Return value of `authorize()` — `linkToken`, `authorizeUrl`, `expiresAt` |
+| `DiscoverOptions` / `DiscoverResult` / `DiscoverToolMatch` / `DiscoverPlanStep` | Wire shapes for `session.discover(...)` (F3.M2 `codespar_discover`) |
+| `ConnectionWizardOptions` / `ConnectionWizardResult` / `ConnectionStatusRow` | Wire shapes for `session.connectionWizard(...)` (F3.M2 `codespar_manage_connections`) |
+| `PaymentStatus` / `PaymentStatusResult` / `PaymentStatusEvent` | Wire shapes for `session.paymentStatus(toolCallId)` — async webhook correlation |
 
 ## Conformance testing
 

@@ -25,6 +25,15 @@ from .errors import ConfigError
 from .types import (
     AuthConfig,
     AuthResult,
+    ChargeArgs,
+    ChargeResult,
+    ShipArgs,
+    ShipResult,
+    ConnectionWizardOptions,
+    ConnectionWizardResult,
+    DiscoverOptions,
+    DiscoverResult,
+    PaymentStatusResult,
     ProxyRequest,
     ProxyResult,
     SendResult,
@@ -34,6 +43,7 @@ from .types import (
     StreamEvent,
     Tool,
     ToolResult,
+    VerificationStatusResult,
 )
 
 T = TypeVar("T")
@@ -100,6 +110,68 @@ class Session:
 
     def execute(self, tool_name: str, params: dict[str, Any]) -> ToolResult:
         return self._runner.run(self._async.execute(tool_name, params))
+
+    def discover(
+        self,
+        use_case: str,
+        options: DiscoverOptions | None = None,
+    ) -> DiscoverResult:
+        """Sync wrapper around ``AsyncSession.discover``. See that for docs."""
+        return self._runner.run(self._async.discover(use_case, options))
+
+    def connection_wizard(
+        self,
+        options: ConnectionWizardOptions,
+    ) -> ConnectionWizardResult:
+        """Sync wrapper around ``AsyncSession.connection_wizard``. See that for docs."""
+        return self._runner.run(self._async.connection_wizard(options))
+
+    def payment_status(self, tool_call_id: str) -> PaymentStatusResult:
+        """Sync wrapper around ``AsyncSession.payment_status``. See that for docs."""
+        return self._runner.run(self._async.payment_status(tool_call_id))
+
+    def verification_status(self, tool_call_id: str) -> VerificationStatusResult:
+        """Sync wrapper around ``AsyncSession.verification_status``. See that for docs."""
+        return self._runner.run(self._async.verification_status(tool_call_id))
+
+    def payment_status_stream(
+        self,
+        tool_call_id: str,
+        *,
+        on_update: Any | None = None,
+    ) -> PaymentStatusResult:
+        """
+        Sync wrapper around ``AsyncSession.payment_status_stream``.
+        ``on_update`` is invoked synchronously on the SDK's background
+        loop for each state change; treat it as a hot path and avoid
+        blocking work inside it (offload to a queue if you need sync
+        IO). The call blocks until the backend closes the stream
+        (terminal state + 5s grace).
+        """
+        return self._runner.run(
+            self._async.payment_status_stream(tool_call_id, on_update=on_update),
+        )
+
+    def verification_status_stream(
+        self,
+        tool_call_id: str,
+        *,
+        on_update: Any | None = None,
+    ) -> VerificationStatusResult:
+        """Sync wrapper around ``AsyncSession.verification_status_stream``."""
+        return self._runner.run(
+            self._async.verification_status_stream(
+                tool_call_id, on_update=on_update,
+            ),
+        )
+
+    def charge(self, args: ChargeArgs) -> ChargeResult:
+        """Sync wrapper around ``AsyncSession.charge``. See that for docs."""
+        return self._runner.run(self._async.charge(args))
+
+    def ship(self, args: ShipArgs) -> ShipResult:
+        """Sync wrapper around ``AsyncSession.ship``. See that for docs."""
+        return self._runner.run(self._async.ship(args))
 
     def proxy_execute(self, request: ProxyRequest) -> ProxyResult:
         return self._runner.run(self._async.proxy_execute(request))

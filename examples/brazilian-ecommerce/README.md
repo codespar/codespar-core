@@ -14,12 +14,28 @@ Everything between those two endpoints — credential resolution, the asynchrono
 | Step | Provider | Tool |
 |---|---|---|
 | Create buyer record | Asaas | `asaas/create_customer` |
-| Create Pix charge | Asaas | `asaas/create_payment` |
-| Fetch QR code (async) | Asaas | `asaas/get_pix_qrcode` |
-| Send QR on WhatsApp | Z-API | `z-api/send_text` |
-| Issue NF-e (product) | NFe.io | `nfe-io/create_nfe` |
-| Generate shipping label | Melhor Envio | `melhor-envio/generate_label` |
-| Confirm tracking | Z-API | `z-api/send_text` |
+| Create Pix charge (with failover) | Asaas → MP → iugu → Stone | `codespar_charge` |
+| Send QR on WhatsApp | Z-API | `codespar_notify` |
+| Issue NF-e (product) | NFe.io | `codespar_invoice` (`rail: "nfe"`) |
+| Generate shipping label | Melhor Envio | `codespar_ship` (`action: "label"`) |
+| Confirm tracking | Z-API | `codespar_notify` |
+
+The flow is now **fully meta-tool driven** — every step routes through a
+`codespar_*` rail with failover, idempotency, and provider-neutral
+shapes. No direct `provider/tool` calls remain in `/pix-paid`.
+
+The Pix-charge step uses the `codespar_charge` meta-tool — the router
+picks the highest-scored connected PSP and falls over to the next when
+one is down. Asaas is the default for the demo; with MP / iugu / Stone
+also connected, an Asaas outage no longer breaks the order.
+
+The NF-e step uses `codespar_invoice` with `rail: "nfe"` to opt into
+the product-invoice rail (the meta-tool defaults to NFS-e — services).
+Operators MUST have the full NFe.io fiscal setup in place (A1 cert +
+state tax registration + per-item ICMS classification) — without it
+NFe.io 404s with "company doesn't have state tax" and the call
+surfaces the same error to the caller. NFS-e tenants drop the
+`rail: "nfe"` field and let the meta-tool default land on NFS-e.
 
 ## Prerequisites
 
@@ -72,6 +88,39 @@ curl -X POST http://localhost:3000/pix-paid \
 ```
 
 Expected: NF-e emitted, shipping label generated, tracking code delivered to WhatsApp.
+
+## Why `codespar_charge` for Pix and `codespar_invoice` for NF-e
+
+CodeSpar ships **meta-tools** (`codespar_charge`, `codespar_pay`,
+`codespar_invoice`, `codespar_notify`) that route to the best provider
+per call with failover + idempotency. This example uses:
+
+1. **`codespar_charge`** for the `/whatsapp` flow. NEW meta-tool name
+   (2026-05-01): inbound charges (the buyer pays the merchant). The
+   router fails over Asaas → Mercado Pago → iugu → Stone within the
+   same Pix BRL rail, so an outage on any single PSP doesn't break the
+   order. The agent passes a neutral `{amount, currency, method, buyer}`
+   shape and gets back a uniform `{id, pix_copy_paste}` payload.
+   Distinct from `codespar_pay`, which routes to OUTBOUND transfers
+   (Asaas `create_transfer`).
+2. **`codespar_invoice` with `rail: "nfe"`** for the `/pix-paid` flow.
+   The meta-tool defaults to **NFS-e** (services); product-selling
+   agents pass `rail: "nfe"` to land on NFe.io's NF-e endpoint. The
+   tenant must have the full NFe.io fiscal setup (A1 cert + state tax
+   registration + per-item ICMS classification) — missing setup
+   surfaces NFe.io's 404 directly. Services-first agents drop the
+   rail field and the meta-tool defaults to NFS-e.
+
+The `z-api/send_text` → `codespar_notify` swap is safe today and
+collapses to:
+
+```ts
+{ tool: "codespar_notify", params: { recipient: phone, message: "..." } }
+```
+
+Pick whichever shape fits your flow — both work; the SDK's
+`session.execute()` accepts canonical and meta-tool names through
+the same surface.
 
 ## What this example is NOT
 

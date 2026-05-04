@@ -28,7 +28,7 @@ def build_headers(
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
-        "User-Agent": "codespar-python/0.1.1",
+        "User-Agent": "codespar-python/0.9.0",
     }
     if project_id:
         headers["x-codespar-project"] = project_id
@@ -138,3 +138,57 @@ async def stream_sse(
                         raise StreamError(f"malformed SSE payload: {payload[:120]}") from exc
     except httpx.HTTPError as exc:
         raise StreamError(f"POST {path} (stream) transport error: {exc}") from exc
+
+
+async def stream_sse_get(
+    client: httpx.AsyncClient,
+    path: str,
+    *,
+    api_key: str,
+    project_id: str | None,
+) -> AsyncIterator[tuple[str, dict[str, Any]]]:
+    """
+    GET an SSE endpoint and yield ``(event_name, data)`` pairs as
+    they arrive. Used by the status-stream wrappers
+    (``payment_status_stream`` / ``verification_status_stream``)
+    where the route is GET-based and emits named events
+    (``snapshot`` / ``update`` / ``done``) rather than the
+    chat-loop's anonymous JSON frames. Heartbeat comment frames
+    (``: heartbeat 12345``) are filtered.
+    """
+    headers = build_headers(api_key, project_id, accept_sse=True)
+    try:
+        async with client.stream("GET", path, headers=headers) as response:
+            if not response.is_success:
+                raw = await response.aread()
+                text = raw.decode("utf-8", errors="replace")
+                raise ApiError(
+                    f"GET {path} (stream) failed: {response.status_code} — {text[:200]}",
+                    status=response.status_code,
+                    body=text,
+                )
+
+            buffer = ""
+            async for chunk in response.aiter_text():
+                buffer += chunk
+                while "\n\n" in buffer:
+                    frame, buffer = buffer.split("\n\n", 1)
+                    if frame.startswith(":"):
+                        continue
+                    event_name = "message"
+                    payload: str | None = None
+                    for line in frame.split("\n"):
+                        if line.startswith("event:"):
+                            event_name = line[len("event:") :].strip()
+                        elif line.startswith("data:"):
+                            payload = (payload or "") + line[len("data:") :].strip()
+                    if not payload:
+                        continue
+                    try:
+                        yield event_name, json.loads(payload)
+                    except json.JSONDecodeError as exc:
+                        raise StreamError(
+                            f"malformed SSE payload: {payload[:120]}"
+                        ) from exc
+    except httpx.HTTPError as exc:
+        raise StreamError(f"GET {path} (stream) transport error: {exc}") from exc

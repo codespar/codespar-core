@@ -92,6 +92,10 @@ schema in `packages/core/src/types.ts` validates on create.
   `.github/workflows/publish-python.yml` runs lint + mypy + pytest +
   build + twine check + upload via trusted publishing. No long-lived
   API tokens in repo secrets.
+- **Helper**: `bash scripts/publish.sh` walks the 3-stage ceremony
+  (types → sdk → python) with 2FA prompts and propagation gates. See
+  [`docs/PUBLISHING.md`](docs/PUBLISHING.md) for the full runbook +
+  recovery flow. Run `--dry-run` first to preview.
 
 ## Coding Conventions
 

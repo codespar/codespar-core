@@ -14,6 +14,18 @@ import type {
   StreamEvent,
   ProxyRequest,
   ProxyResult,
+  DiscoverOptions,
+  DiscoverResult,
+  ConnectionWizardOptions,
+  ConnectionWizardResult,
+  PaymentStatusResult,
+  PaymentStatusStreamOptions,
+  VerificationStatusResult,
+  VerificationStatusStreamOptions,
+  ChargeArgs,
+  ChargeResult,
+  ShipArgs,
+  ShipResult,
 } from "@codespar/types";
 
 interface SessionDeps {
@@ -171,6 +183,174 @@ export async function createSession(
         throw new Error(`sendStream failed: ${r.status} ${body}`);
       }
       yield* parseSseStream(r.body);
+    },
+
+    /**
+     * codespar_discover wrapper. Same wire as
+     * `execute("codespar_discover", {...})` but returns a typed
+     * DiscoverResult so the caller doesn't have to cast.
+     */
+    async discover(
+      useCase: string,
+      options?: DiscoverOptions,
+    ): Promise<DiscoverResult> {
+      const result = await session.execute("codespar_discover", {
+        use_case: useCase,
+        ...(options ?? {}),
+      });
+      if (!result.success) {
+        throw new Error(`discover failed: ${result.error ?? "unknown"}`);
+      }
+      return result.data as DiscoverResult;
+    },
+
+    /**
+     * codespar_manage_connections wrapper. Same wire as
+     * `execute("codespar_manage_connections", {...})` but returns a
+     * typed ConnectionWizardResult — a UI component receives it
+     * verbatim and renders the wizard. Defaults `action` to "list"
+     * when no server_id is given, "status" otherwise (matching the
+     * backend default).
+     */
+    async connectionWizard(
+      options: ConnectionWizardOptions,
+    ): Promise<ConnectionWizardResult> {
+      const result = await session.execute(
+        "codespar_manage_connections",
+        options as Record<string, unknown>,
+      );
+      if (!result.success) {
+        throw new Error(`connectionWizard failed: ${result.error ?? "unknown"}`);
+      }
+      return result.data as ConnectionWizardResult;
+    },
+
+    /**
+     * codespar_charge wrapper. Inbound charge — buyer pays merchant.
+     * Same wire as `execute("codespar_charge", {...})` but returns a
+     * typed ChargeResult so the caller doesn't have to cast through
+     * ToolResult.data. Distinct from the legacy `codespar_pay` rail
+     * (which routes to outbound transfers/payouts).
+     */
+    async charge(args: ChargeArgs): Promise<ChargeResult> {
+      const result = await session.execute(
+        "codespar_charge",
+        args as unknown as Record<string, unknown>,
+      );
+      if (!result.success) {
+        throw new Error(`charge failed: ${result.error ?? "unknown"}`);
+      }
+      return result.data as ChargeResult;
+    },
+
+    /**
+     * codespar_ship wrapper. Generate a label, fetch tracking, or
+     * calculate carrier rates via a unified shape. Same wire as
+     * `execute("codespar_ship", {...})` but returns a typed
+     * ShipResult so the caller doesn't have to cast through
+     * ToolResult.data.
+     */
+    async ship(args: ShipArgs): Promise<ShipResult> {
+      const result = await session.execute(
+        "codespar_ship",
+        args as unknown as Record<string, unknown>,
+      );
+      if (!result.success) {
+        throw new Error(`ship failed: ${result.error ?? "unknown"}`);
+      }
+      return result.data as ShipResult;
+    },
+
+    async paymentStatus(toolCallId: string): Promise<PaymentStatusResult> {
+      const r = await fetch(
+        `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/payment-status`,
+        { headers },
+      );
+      if (!r.ok) {
+        const body = await r.text();
+        throw new Error(`paymentStatus failed: ${r.status} ${body}`);
+      }
+      return (await r.json()) as PaymentStatusResult;
+    },
+
+    async verificationStatus(
+      toolCallId: string,
+    ): Promise<VerificationStatusResult> {
+      const r = await fetch(
+        `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/verification-status`,
+        { headers },
+      );
+      if (!r.ok) {
+        const body = await r.text();
+        throw new Error(`verificationStatus failed: ${r.status} ${body}`);
+      }
+      return (await r.json()) as VerificationStatusResult;
+    },
+
+    async paymentStatusStream(
+      toolCallId: string,
+      options: PaymentStatusStreamOptions = {},
+    ): Promise<PaymentStatusResult> {
+      const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
+        toolCallId,
+      )}/payment-status/stream`;
+      const r = await fetch(url, {
+        headers: { ...headers, Accept: "text/event-stream" },
+        signal: options.signal,
+      });
+      if (!r.ok || !r.body) {
+        const body = await r.text();
+        throw new Error(
+          `paymentStatusStream failed: ${r.status} ${body}`,
+        );
+      }
+      let last: PaymentStatusResult | null = null;
+      for await (const frame of parseStatusSseStream(r.body)) {
+        if (frame.event === "snapshot" || frame.event === "update") {
+          last = frame.data as PaymentStatusResult;
+          options.onUpdate?.(last);
+        } else if (frame.event === "done") {
+          break;
+        }
+      }
+      if (!last) {
+        throw new Error("paymentStatusStream: stream closed before snapshot");
+      }
+      return last;
+    },
+
+    async verificationStatusStream(
+      toolCallId: string,
+      options: VerificationStatusStreamOptions = {},
+    ): Promise<VerificationStatusResult> {
+      const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
+        toolCallId,
+      )}/verification-status/stream`;
+      const r = await fetch(url, {
+        headers: { ...headers, Accept: "text/event-stream" },
+        signal: options.signal,
+      });
+      if (!r.ok || !r.body) {
+        const body = await r.text();
+        throw new Error(
+          `verificationStatusStream failed: ${r.status} ${body}`,
+        );
+      }
+      let last: VerificationStatusResult | null = null;
+      for await (const frame of parseStatusSseStream(r.body)) {
+        if (frame.event === "snapshot" || frame.event === "update") {
+          last = frame.data as VerificationStatusResult;
+          options.onUpdate?.(last);
+        } else if (frame.event === "done") {
+          break;
+        }
+      }
+      if (!last) {
+        throw new Error(
+          "verificationStatusStream: stream closed before snapshot",
+        );
+      }
+      return last;
     },
 
     async authorize(serverId: string, config: AuthConfig): Promise<AuthResult> {
@@ -336,6 +516,49 @@ const PRESET_SERVERS: Record<NonNullable<SessionConfig["preset"]>, string[]> = {
     "wompi",
   ],
 };
+
+/**
+ * Generic SSE parser for the status streams. Distinct from
+ * `parseSseStream` above because the chat-loop variant maps frames
+ * onto a discriminated `StreamEvent` union, while the status streams
+ * just need raw `{event, data}` pairs the caller's typed wrapper
+ * casts via the route-level envelope shape.
+ */
+async function* parseStatusSseStream(
+  body: ReadableStream<Uint8Array>,
+): AsyncIterable<{ event: string; data: unknown }> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let sep: number;
+      while ((sep = buffer.indexOf("\n\n")) !== -1) {
+        const chunk = buffer.slice(0, sep);
+        buffer = buffer.slice(sep + 2);
+        // Comment frames (heartbeats) start with ":" and carry no data.
+        if (chunk.startsWith(":")) continue;
+        let eventName = "message";
+        let dataLine = "";
+        for (const line of chunk.split("\n")) {
+          if (line.startsWith("event:")) eventName = line.slice(6).trim();
+          else if (line.startsWith("data:")) dataLine += line.slice(5).trim();
+        }
+        if (!dataLine) continue;
+        try {
+          yield { event: eventName, data: JSON.parse(dataLine) };
+        } catch {
+          continue;
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
 
 function presetToServers(preset: SessionConfig["preset"]): string[] {
   if (!preset) return ["zoop", "nuvem-fiscal"]; // sensible default for sandbox

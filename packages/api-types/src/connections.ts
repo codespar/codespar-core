@@ -65,6 +65,16 @@ export const ConnectionRowSchema = z.object({
    * change — only newer clients can render the values.
    */
   connection_metadata: z.record(z.string(), z.unknown()).optional(),
+  /**
+   * Parsed X.509 metadata for cert-auth connections — issuer CN,
+   * subject CN, validity window (ISO-8601), SHA-256 fingerprint
+   * (lowercase hex). Stamped at connect time from the uploaded PEM
+   * and never mutated thereafter (cert rotation = new connection =
+   * fresh row). Empty `{}` for non-cert auth types. The dashboard
+   * uses `not_after` to render "expires in N days" badges. Added in
+   * the post-0.3.0 release that ships migration 0064.
+   */
+  cert_metadata: z.record(z.string(), z.unknown()).optional(),
   created_at: TimestampSchema,
   connected_at: TimestampSchema.nullable(),
   revoked_at: TimestampSchema.nullable(),

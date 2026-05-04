@@ -47,6 +47,48 @@ with CodeSpar(api_key="csk_live_...") as cs:
     print(session.send("Quero pagar R$125 via Pix").message)
 ```
 
+## Tool discovery + connection wizard
+
+Beyond `session.execute(tool, params)`, the SDK exposes typed wrappers
+for the F3.M2 meta-tools `codespar_discover` and
+`codespar_manage_connections`:
+
+```python
+from codespar import CodeSpar, ConnectionWizardOptions, DiscoverOptions
+
+with CodeSpar(api_key="csk_live_...") as cs:
+    session = cs.create("user_123", preset="brazilian")
+
+    # Find the right tool for a free-form use case.
+    found = session.discover(
+        "send a pix payment",
+        DiscoverOptions(country="BR", limit=3),
+    )
+    if found.recommended:
+        print(found.recommended.server_id, found.recommended.tool_name)
+        print(f"  status: {found.recommended.connection_status}")
+
+    # Surface the connection wizard if the recommended server isn't
+    # connected. NEVER pass credentials through this method —
+    # credentials only travel via the dashboard's connect modal or
+    # the OAuth callback. The wizard returns a deep-link the agent
+    # surfaces so the user finishes setup in their browser.
+    if found.recommended and found.recommended.connection_status == "disconnected":
+        wiz = session.connection_wizard(
+            ConnectionWizardOptions(
+                action="initiate",
+                server_id=found.recommended.server_id,
+            ),
+        )
+        if wiz.initiate:
+            print("Connect:", wiz.initiate.connect_url)
+            for line in wiz.initiate.instructions:
+                print(" ·", line)
+```
+
+Async users have the same surface on `AsyncSession`
+(`await session.discover(...)`, `await session.connection_wizard(...)`).
+
 ## Streaming
 
 ```python

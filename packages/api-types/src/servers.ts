@@ -37,6 +37,12 @@ export const AuthSchemaFieldKindSchema = z.enum([
   "api_key",
   "path_secret",
   "header",
+  // mTLS cert component (cert / key / ca PEM blob). The dashboard
+  // renders a file input (accepts .pem / .crt / .key) per field; the
+  // backend stores the uploaded text under the catalog-declared vault
+  // ref. Used by BR open-banking + corporate APIs (BB, Itaú, Santander,
+  // Bradesco, Caixa).
+  "cert",
 ]);
 export type AuthSchemaFieldKind = z.infer<typeof AuthSchemaFieldKindSchema>;
 

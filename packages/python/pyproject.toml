@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "codespar"
-version = "0.3.0"
+version = "0.9.0"
 description = "Python SDK for CodeSpar — commerce infrastructure for AI agents in Latin America."
 readme = "README.md"
 requires-python = ">=3.10"

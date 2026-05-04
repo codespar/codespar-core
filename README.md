@@ -62,25 +62,62 @@ const result = await session.send(
 );
 
 // Or execute tools directly
-const charge = await session.execute("ZOOP_CREATE_CHARGE", {
-  amount: 150.0,
-  payment_type: "pix",
+const charge = await session.execute("asaas/create_payment", {
+  customer: "cus_xxx",
+  billingType: "PIX",
+  value: 150,
 });
+
+// Don't know which tool to call? Discover by use case (F3.M2 Tool Router).
+// Returns recommended + related, plus connection status so the agent knows
+// whether to set anything up first.
+const found = await session.discover("send a pix payment");
+console.log(found.recommended);
+//   { server_id, tool_name, connection_status, known_pitfalls, ... }
+
+// Surface the connect wizard when a needed server is disconnected.
+// Returns a deep-link the UI renders into a Connect button — the agent
+// never receives credentials directly.
+const wizard = await session.connectionWizard({
+  action: "initiate",
+  server_id: found.recommended!.server_id,
+});
+console.log(wizard.initiate?.connect_url);
 
 // Complete Loop — full commerce workflow
 import { loop } from "@codespar/sdk";
 
 const result = await loop(session, {
   steps: [
-    { tool: "ZOOP_CREATE_CHARGE", params: { amount: 150, payment_type: "pix" } },
-    { tool: "NUVEMFISCAL_EMITIR_NFE", params: (prev) => ({ chargeId: prev[0].data }) },
-    { tool: "MELHORENVIO_GENERATE_LABEL", params: { /* ... */ } },
-    { tool: "ZAPI_SEND_MESSAGE", params: { text: "Your order is on the way!" } },
-    { tool: "OMIE_CREATE_ORDER", params: { /* ... */ } },
+    { tool: "asaas/create_customer", params: { name, cpfCnpj: cpf } },
+    { tool: "asaas/create_payment", params: (prev) => ({ customer: prev[0].data.id, billingType: "PIX", value: 150 }) },
+    { tool: "nfe-io/create_nfe", params: (prev) => ({ company_id, payment_id: prev[1].data.id, /* ... */ }) },
+    { tool: "z-api/send_text", params: { phone, message: "Order received." } },
   ],
   onStepComplete: (step, r) => console.log(`✓ ${step.tool}: ${r.duration}ms`),
 });
 ```
+
+### Meta-tools (F3.M2 router)
+
+Beyond direct canonical-tool calls, the SDK exposes commerce-grade
+**meta-tools** that route to the best provider per request, with
+failover, idempotency, and per-tenant connection config:
+
+| Meta-tool | What it does |
+|---|---|
+| `codespar_pay` | Pix / card / outbound transfer. Routes to Asaas, Mercado Pago, Stripe ACP, etc. |
+| `codespar_invoice` | NFS-e (services) by default, NF-e (products) for tenants with full fiscal setup. |
+| `codespar_notify` | WhatsApp / SMS / email. Z-API today; expanding. |
+| `codespar_discover` | Find a tool for a free-form use case (`session.discover("...")`). |
+| `codespar_manage_connections` | Surface the connection wizard (`session.connectionWizard({...})`). |
+
+Use `session.execute("codespar_pay", { amount, currency, recipient })`
+or the typed wrappers (`session.discover`, `session.connectionWizard`).
+The router picks the best provider per call based on the tenant's
+connections + cost/latency telemetry. See
+[`codespar-enterprise/docs/operations/meta-tool-runbook.md`](../codespar-enterprise/docs/operations/meta-tool-runbook.md)
+for the full operator guide.
 
 ## Framework Adapters
 

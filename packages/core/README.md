@@ -2,6 +2,38 @@
 
 Commerce SDK for AI agents — sessions, managed auth, Complete Loop orchestration for Latin American commercial APIs.
 
+## What's new in 0.5.0
+
+Typed wrappers for the F3.M2 meta-tool router:
+
+- `session.discover(query, options?)` — find the right tool for a free-form use case (`codespar_discover`).
+- `session.connectionWizard(options)` — surface the connect deep-link when a needed server is disconnected (`codespar_manage_connections`). Credentials never travel through this method.
+- `session.paymentStatus(toolCallId)` — correlate webhook settlement back to the originating `codespar_pay` call via the response idempotency key.
+
+All three call into the same managed runtime as `session.execute(...)`; the wrappers just give you the typed payload shape without hand-rolling the meta-tool envelope.
+
+### Crypto + KYC meta-tools (raw `execute()` only)
+
+Two newer meta-tools — `codespar_crypto_pay` (USDC/USDT/BTC across mainnet + L2s) and `codespar_kyc` (Persona / Sift / etc identity + risk verification) — are callable today via raw `session.execute(...)`. Typed SDK wrappers will land in a future release once at least 2 transforms per meta-tool are live in prod.
+
+```typescript
+// Crypto: receive a USDC payment via Coinbase Commerce hosted checkout
+const charge = await session.execute("codespar_crypto_pay", {
+  amount: 29.9,
+  currency: "USDC",
+  direction: "receive",
+  description: "Order #42",
+});
+// charge.output.hosted_url → redirect buyer here
+
+// KYC: kick off a Persona identity verification
+const inquiry = await session.execute("codespar_kyc", {
+  buyer: { email: "alice@example.com", first_name: "Alice", last_name: "Smith" },
+  check_type: "identity",
+});
+// inquiry.output.verification_id → poll for completion
+```
+
 ## Install
 
 ```bash
@@ -78,6 +110,9 @@ const result = await loop(session, {
 | `session.authorize(serverId)` | Start OAuth flow for a server |
 | `session.proxyExecute(request)` | Proxy a raw HTTP call through the session |
 | `session.connections()` | List connected servers |
+| `session.discover(query, options?)` | Tool search via `codespar_discover` (typed) |
+| `session.connectionWizard(options)` | Connect deep-link via `codespar_manage_connections` (typed) |
+| `session.paymentStatus(toolCallId)` | Async settlement status for a `codespar_pay` call |
 | `session.mcp` | MCP transport URL and headers (when using managed runtime) |
 | `session.close()` | Close session |
 
