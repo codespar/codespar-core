@@ -56,7 +56,14 @@ export type AuthSchemaField = z.infer<typeof AuthSchemaFieldSchema>;
 
 export const ServerAuthSchemaResponseSchema = z.object({
   server_id: z.string(),
-  auth_type: z.enum(["api_key", "path_secret", "oauth", "cert", "none"]),
+  auth_type: z.enum([
+    "api_key",
+    "path_secret",
+    "oauth",
+    "cert",
+    "hmac_signed",
+    "none",
+  ]),
   environment: EnvironmentSchema,
   base_url: z.string(),
   oauth_authorize_url: z.string().nullable(),
