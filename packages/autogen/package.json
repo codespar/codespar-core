@@ -1,6 +1,6 @@
 {
   "name": "@codespar/autogen",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Microsoft AutoGen adapter for CodeSpar — convert session tools to AutoGen function tool format",
   "type": "module",
   "main": "./dist/index.js",
@@ -38,7 +38,7 @@
     "directory": "packages/autogen"
   },
   "peerDependencies": {
-    "@codespar/sdk": "^0.3.0"
+    "@codespar/sdk": "^0.9.0"
   },
   "devDependencies": {
     "@codespar/sdk": "*",
