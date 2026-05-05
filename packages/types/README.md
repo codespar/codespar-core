@@ -41,6 +41,29 @@ import type { Session } from "@codespar/types";
 interface Session extends SessionBase {
   proxyExecute(request: ProxyRequest): Promise<ProxyResult>;
   authorize(serverId: string, config: AuthConfig): Promise<AuthResult>;
+
+  // Tool discovery + connection wizard (codespar_discover / codespar_manage_connections)
+  discover(useCase: string, options?: DiscoverOptions): Promise<DiscoverResult>;
+  connectionWizard(options: ConnectionWizardOptions): Promise<ConnectionWizardResult>;
+
+  // Meta-tool wrappers — typed payloads, same wire as session.execute(...)
+  charge(args: ChargeArgs): Promise<ChargeResult>;
+  ship(args: ShipArgs): Promise<ShipResult>;
+
+  // Async settlement (codespar_charge / codespar_pay)
+  paymentStatus(toolCallId: string): Promise<PaymentStatusResult>;
+  paymentStatusStream(
+    toolCallId: string,
+    options: PaymentStatusStreamOptions,
+  ): Promise<PaymentStatusResult>;
+
+  // Async verification (codespar_kyc)
+  verificationStatus(toolCallId: string): Promise<VerificationStatusResult>;
+  verificationStatusStream(
+    toolCallId: string,
+    options: VerificationStatusStreamOptions,
+  ): Promise<VerificationStatusResult>;
+
   mcp?: {
     url: string;
     headers: Record<string, string>;
@@ -78,7 +101,12 @@ function useSession(session: SessionBase) {
 | `AuthResult` | Return value of `authorize()` — `linkToken`, `authorizeUrl`, `expiresAt` |
 | `DiscoverOptions` / `DiscoverResult` / `DiscoverToolMatch` / `DiscoverPlanStep` | Wire shapes for `session.discover(...)` (F3.M2 `codespar_discover`) |
 | `ConnectionWizardOptions` / `ConnectionWizardResult` / `ConnectionStatusRow` | Wire shapes for `session.connectionWizard(...)` (F3.M2 `codespar_manage_connections`) |
+| `ChargeArgs` / `ChargeBuyer` / `ChargeResult` | Wire shapes for `session.charge(...)` (F3.M2 `codespar_charge`, inbound) |
+| `ShipArgs` / `ShipAddress` / `ShipItem` / `ShipResult` | Wire shapes for `session.ship(...)` (F3.M2 `codespar_ship`) |
 | `PaymentStatus` / `PaymentStatusResult` / `PaymentStatusEvent` | Wire shapes for `session.paymentStatus(toolCallId)` — async webhook correlation |
+| `PaymentStatusStreamOptions` | Options for `session.paymentStatusStream(...)` — `onUpdate?`, `signal?` |
+| `VerificationStatus` / `VerificationStatusResult` / `VerificationStatusEvent` | Wire shapes for `session.verificationStatus(toolCallId)` — async KYC poll |
+| `VerificationStatusStreamOptions` | Options for `session.verificationStatusStream(...)` — `onUpdate?`, `signal?` |
 
 ## Conformance testing
 

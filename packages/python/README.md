@@ -89,6 +89,72 @@ with CodeSpar(api_key="csk_live_...") as cs:
 Async users have the same surface on `AsyncSession`
 (`await session.discover(...)`, `await session.connection_wizard(...)`).
 
+## Meta-tool wrappers + async settlement
+
+In addition to `discover` / `connection_wizard`, `Session` (sync) and
+`AsyncSession` exposes typed wrappers for charges, shipping, and
+async settlement / verification polling:
+
+```python
+from codespar import CodeSpar
+
+with CodeSpar(api_key="csk_live_...") as cs:
+    session = cs.create("user_123", preset="brazilian")
+
+    # Inbound charge — buyer pays merchant. Pix BRL routes via
+    # Asaas / MP / iugu / Stone with failover.
+    charge = session.charge(
+        amount=150,
+        currency="BRL",
+        method="pix",
+        buyer={"name": "Cliente Demo", "document": "11144477735"},
+    )
+
+    # Shipping label via Melhor Envio (action="label"|"quote"|"track")
+    label = session.ship(
+        action="label",
+        origin={...},
+        destination={...},
+        items=[...],
+    )
+
+    # Async settlement — codespar_charge returns synchronously, but real
+    # settlement lands via webhook. Poll, or stream over SSE.
+    settled = session.payment_status(charge.tool_call_id)
+
+    def on_payment(env):
+        print("payment status →", env.status)
+
+    session.payment_status_stream(
+        charge.tool_call_id,
+        on_update=on_payment,  # sync or async callable
+    )
+
+    # Async KYC — codespar_kyc returns the inquiry id; the buyer
+    # finishes the hosted flow off-platform.
+    inquiry = session.execute(
+        "codespar_kyc",
+        {"buyer": {"email": "alice@example.com"}, "check_type": "identity"},
+    )
+    v = session.verification_status(inquiry.tool_call_id)
+    #   approved | rejected | review | expired | pending
+
+    session.verification_status_stream(
+        inquiry.tool_call_id,
+        on_update=lambda env: print("kyc status →", env.status),
+    )
+```
+
+Both streaming methods return the last envelope when the backend
+closes (typically 5s after a terminal state). Cancel from the caller
+side by wrapping in an `asyncio.Task` and calling `.cancel()` on
+`AsyncSession`; for the sync `Session` the stream returns when the
+backend tears down (terminal + 5s) or you raise from `on_update`.
+
+Every method listed above exists on **both** `Session` (sync) and
+`AsyncSession` (await the async variants). Snake-case throughout —
+TS `paymentStatusStream` ⇆ Python `payment_status_stream`.
+
 ## Streaming
 
 ```python
@@ -188,7 +254,11 @@ except ApiError as exc:
 
 This package mirrors [`@codespar/sdk`](https://www.npmjs.com/package/@codespar/sdk)
 method-for-method. Same backend, same payloads, same preset names — pick
-the language that fits your stack without giving anything up.
+the language that fits your stack without giving anything up. Every
+0.9.0 / 0.7.0 method on the JS `Session` (`charge`, `ship`,
+`payment_status`, `payment_status_stream`, `verification_status`,
+`verification_status_stream`, `discover`, `connection_wizard`) exists
+on the Python `Session` and `AsyncSession` with snake_case naming.
 
 ## Need more?
 
