@@ -1,6 +1,6 @@
 {
   "name": "@codespar/vercel",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Vercel AI SDK adapter for CodeSpar — convert MCP tools to Vercel AI tool format",
   "type": "module",
   "main": "./dist/index.js",
@@ -36,7 +36,7 @@
     "directory": "packages/vercel"
   },
   "peerDependencies": {
-    "@codespar/sdk": "^0.3.0",
+    "@codespar/sdk": "^0.9.0",
     "ai": ">=3.0.0"
   },
   "devDependencies": {
