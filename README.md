@@ -37,7 +37,7 @@ LATAM-first by design: Pix + NF-e + WhatsApp + PSP routing are first-class, with
 ## Quick Start
 
 ```bash
-npm install @codespar/sdk
+npm install @codespar/sdk   # currently 0.9.0
 ```
 
 ```typescript
@@ -84,15 +84,44 @@ const wizard = await session.connectionWizard({
 });
 console.log(wizard.initiate?.connect_url);
 
-// Complete Loop — full commerce workflow
+// Typed meta-tool wrappers — same wire as session.execute("codespar_charge", ...)
+// but you get a typed payload back instead of the generic ToolResult envelope.
+const charge = await session.charge({
+  amount: 150,
+  currency: "BRL",
+  method: "pix",
+  buyer: { name: "Cliente Demo", document: "11144477735" },
+});
+const label = await session.ship({
+  action: "label",
+  origin: { /* ... */ },
+  destination: { /* ... */ },
+  items: [/* ... */],
+});
+
+// Async settlement — codespar_charge / codespar_pay return synchronously,
+// but real settlement lands via webhook. Poll, or stream over SSE.
+const settled = await session.paymentStatus(charge.tool_call_id);
+await session.paymentStatusStream(charge.tool_call_id, {
+  onUpdate: (env) => console.log(env.status), // pending → succeeded / failed / refunded
+});
+
+// Async KYC — codespar_kyc returns the inquiry id; the buyer finishes
+// the hosted flow off-platform. Poll or stream the disposition.
+const v = await session.verificationStatus(inquiryToolCallId);
+await session.verificationStatusStream(inquiryToolCallId, {
+  onUpdate: (env) => console.log(env.status), // pending → approved / rejected / review / expired
+});
+
+// Complete Loop — full commerce workflow (meta-tool driven)
 import { loop } from "@codespar/sdk";
 
 const result = await loop(session, {
   steps: [
-    { tool: "asaas/create_customer", params: { name, cpfCnpj: cpf } },
-    { tool: "asaas/create_payment", params: (prev) => ({ customer: prev[0].data.id, billingType: "PIX", value: 150 }) },
-    { tool: "nfe-io/create_nfe", params: (prev) => ({ company_id, payment_id: prev[1].data.id, /* ... */ }) },
-    { tool: "z-api/send_text", params: { phone, message: "Order received." } },
+    { tool: "codespar_charge", params: { amount: 150, currency: "BRL", method: "pix", buyer: { name, document: cpf } } },
+    { tool: "codespar_invoice", params: (prev) => ({ rail: "nfe", company_id, payment_id: prev[0].data.id, /* ... */ }) },
+    { tool: "codespar_ship", params: { action: "label", origin, destination, items } },
+    { tool: "codespar_notify", params: { recipient: phone, message: "Order received." } },
   ],
   onStepComplete: (step, r) => console.log(`✓ ${step.tool}: ${r.duration}ms`),
 });
@@ -106,9 +135,13 @@ failover, idempotency, and per-tenant connection config:
 
 | Meta-tool | What it does |
 |---|---|
-| `codespar_pay` | Pix / card / outbound transfer. Routes to Asaas, Mercado Pago, Stripe ACP, etc. |
-| `codespar_invoice` | NFS-e (services) by default, NF-e (products) for tenants with full fiscal setup. |
-| `codespar_notify` | WhatsApp / SMS / email. Z-API today; expanding. |
+| `codespar_pay` | Outbound transfers / payouts (Asaas, Mercado Pago). |
+| `codespar_charge` | INBOUND charges — buyer pays merchant. Pix BRL via Asaas / MP / iugu / Stone; card USD via Stripe. |
+| `codespar_invoice` | Fiscal invoices. Defaults to NFS-e (services); pass `rail: "nfe"` for product NF-e via NFe.io. Also `nfci` (CFDI MX, Facturapi) and Factura AR (AFIP). |
+| `codespar_notify` | Messaging — WhatsApp via Z-API / Twilio, SMS via Twilio, email via SendGrid. |
+| `codespar_ship` | Melhor Envio with 3 rails (`action: "label" \| "quote" \| "track"`). |
+| `codespar_crypto_pay` | Crypto payments via Coinbase Commerce + Bitso. |
+| `codespar_kyc` | Identity / risk verification — Persona, Sift, Konduto, Truora. |
 | `codespar_discover` | Find a tool for a free-form use case (`session.discover("...")`). |
 | `codespar_manage_connections` | Surface the connection wizard (`session.connectionWizard({...})`). |
 

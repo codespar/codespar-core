@@ -37,6 +37,35 @@ Every module exports both the schema (`FooSchema`) and the inferred type (`Foo`)
 - `servers` — list / row / auth-schema
 - `sessions` — create / list / row / detail / tool-calls / execute
 
+### `auth_type` enum
+
+A connection's `auth_type` determines how credentials are stored and
+forwarded to the upstream provider. As of 0.4.0 the enum has six
+values:
+
+| Value | Used by |
+|---|---|
+| `api_key` | Most providers — Asaas, Mercado Pago, NFe.io, Stripe, etc. |
+| `path_secret` | Z-API-style providers that embed credentials in the URL path with a companion header. |
+| `oauth` | Providers requiring an OAuth flow (e.g. user-authorized integrations). |
+| `cert` | mTLS — BR open-banking pilots (BB live; Itaú / Santander / Bradesco / Caixa next). |
+| `hmac_signed` | Foxbit + LATAM crypto exchanges that sign each request with a derived HMAC. |
+| `none` | Public APIs / no credentials. |
+
+### What's new in 0.4.0
+
+Adds the `cert` and `hmac_signed` `auth_type` values to the connection
+schemas — the contract now covers BR open-banking mTLS pilots and
+HMAC-signed crypto exchange APIs alongside the original four.
+
+> **Known limitation.** `AuthSchemaFieldKindSchema` (the `kind` enum
+> for individual fields inside an auth schema) does NOT yet include
+> `hmac` — only the connection-level `auth_type` enum does. The
+> dashboard's `ProviderConnectModal` works around this by tagging
+> HMAC-signed fields as `path_secret` kind. Consumers reading auth
+> schemas directly should expect this mismatch until a future minor
+> bump tightens the field-kind enum.
+
 ## Versioning
 
 - This package mirrors the `/v1/*` REST surface of `api.codespar.dev`.

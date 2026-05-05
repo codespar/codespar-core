@@ -2,19 +2,35 @@
 
 Commerce SDK for AI agents — sessions, managed auth, Complete Loop orchestration for Latin American commercial APIs.
 
-## What's new in 0.5.0
+## What's new in 0.9.0
 
-Typed wrappers for the F3.M2 meta-tool router:
+Eight new typed methods on `Session`, grouped by capability:
 
-- `session.discover(query, options?)` — find the right tool for a free-form use case (`codespar_discover`).
-- `session.connectionWizard(options)` — surface the connect deep-link when a needed server is disconnected (`codespar_manage_connections`). Credentials never travel through this method.
-- `session.paymentStatus(toolCallId)` — correlate webhook settlement back to the originating `codespar_pay` call via the response idempotency key.
+**Meta-tool wrappers** — neutral input shape, typed payload back, same wire as `session.execute(...)`:
 
-All three call into the same managed runtime as `session.execute(...)`; the wrappers just give you the typed payload shape without hand-rolling the meta-tool envelope.
+- `session.charge(args)` — INBOUND charges (`codespar_charge`). Buyer pays merchant. Pix BRL via Asaas / MP / iugu / Stone; card USD via Stripe. Distinct from `codespar_pay` (outbound transfers).
+- `session.ship(args)` — shipping (`codespar_ship`). One typed entry into Melhor Envio's 3 rails (`action: "label" | "quote" | "track"`).
 
-### Crypto + KYC meta-tools (raw `execute()` only)
+**Async settlement** — `codespar_charge` / `codespar_pay` return synchronously, but real settlement lands via webhook:
 
-Two newer meta-tools — `codespar_crypto_pay` (USDC/USDT/BTC across mainnet + L2s) and `codespar_kyc` (Persona / Sift / etc identity + risk verification) — are callable today via raw `session.execute(...)`. Typed SDK wrappers will land in a future release once at least 2 transforms per meta-tool are live in prod.
+- `session.paymentStatus(toolCallId)` — poll the latest known status (pending → succeeded / failed / refunded). Correlates via the response idempotency_key ↔ provider external_reference.
+- `session.paymentStatusStream(toolCallId, { onUpdate?, signal? })` — SSE variant. Snapshot on open, an envelope per state change, heartbeat every 15s, auto-closes 5s after a terminal state. `signal` aborts from the caller side.
+
+**Async verification** — `codespar_kyc` returns the inquiry id; the buyer finishes the hosted flow off-platform:
+
+- `session.verificationStatus(toolCallId)` — poll the disposition (pending → approved / rejected / review / expired).
+- `session.verificationStatusStream(toolCallId, { onUpdate?, signal? })` — SSE variant. Same lifecycle as `paymentStatusStream`.
+
+**Tool discovery + connection wizard** (already in 0.4.0, restated for completeness):
+
+- `session.discover(query, options?)` — semantic + lexical tool search across the catalog (`codespar_discover`, pgvector + pg_trgm).
+- `session.connectionWizard(options)` — connect deep-link backend (`codespar_manage_connections`). Credentials never travel through this method.
+
+All wrappers call into the same managed runtime as `session.execute(...)`; you get typed payloads instead of hand-rolling the meta-tool envelope.
+
+### Crypto + KYC meta-tools
+
+`codespar_crypto_pay` (Coinbase Commerce + Bitso) and `codespar_kyc` (Persona, Sift, Konduto, Truora) are routable today. The verification half now has a typed wrapper (`session.verificationStatus` / `verificationStatusStream`); a `session.cryptoPay(...)` typed wrapper is not in 0.9.0 — call via raw `session.execute("codespar_crypto_pay", {...})` for now.
 
 ```typescript
 // Crypto: receive a USDC payment via Coinbase Commerce hosted checkout
@@ -26,12 +42,13 @@ const charge = await session.execute("codespar_crypto_pay", {
 });
 // charge.output.hosted_url → redirect buyer here
 
-// KYC: kick off a Persona identity verification
+// KYC: kick off a Persona identity verification, then poll typed
 const inquiry = await session.execute("codespar_kyc", {
   buyer: { email: "alice@example.com", first_name: "Alice", last_name: "Smith" },
   check_type: "identity",
 });
-// inquiry.output.verification_id → poll for completion
+const v = await session.verificationStatus(inquiry.tool_call_id);
+//        ^^ approved | rejected | review | expired | pending
 ```
 
 ## Install
@@ -57,9 +74,10 @@ const session = await cs.create("user_123", {
 const result = await session.send("Charge R$150 via Pix and issue the NF-e");
 
 // Direct tool execution
-const charge = await session.execute("ZOOP_CREATE_CHARGE", {
-  amount: 150.0,
-  payment_type: "pix",
+const charge = await session.execute("asaas/create_payment", {
+  customer: "cus_xxx",
+  billingType: "PIX",
+  value: 150,
 });
 
 // Complete Loop — tools, findTools, and loop are free functions
@@ -70,10 +88,10 @@ const payments = await findTools(session, "payment");
 
 const result = await loop(session, {
   steps: [
-    { tool: "ZOOP_CREATE_CHARGE", params: { amount: 150, payment_type: "pix" } },
-    { tool: "NUVEMFISCAL_EMITIR_NFE", params: (prev) => ({ chargeId: prev[0].data }) },
-    { tool: "MELHORENVIO_GENERATE_LABEL", params: {} },
-    { tool: "ZAPI_SEND_MESSAGE", params: { text: "Your order is on the way!" } },
+    { tool: "codespar_charge", params: { amount: 150, currency: "BRL", method: "pix", buyer: { name, document: cpf } } },
+    { tool: "codespar_invoice", params: (prev) => ({ rail: "nfe", company_id, payment_id: prev[0].data.id }) },
+    { tool: "codespar_ship", params: { action: "label", origin, destination, items } },
+    { tool: "codespar_notify", params: { recipient: phone, message: "Your order is on the way!" } },
   ],
   onStepComplete: (step, r) => console.log(`✓ ${step.tool}`),
   retryPolicy: { maxRetries: 3, backoff: "exponential" },
@@ -112,7 +130,12 @@ const result = await loop(session, {
 | `session.connections()` | List connected servers |
 | `session.discover(query, options?)` | Tool search via `codespar_discover` (typed) |
 | `session.connectionWizard(options)` | Connect deep-link via `codespar_manage_connections` (typed) |
-| `session.paymentStatus(toolCallId)` | Async settlement status for a `codespar_pay` call |
+| `session.charge(args)` | Inbound charge via `codespar_charge` (typed) — buyer pays merchant |
+| `session.ship(args)` | Shipping via `codespar_ship` (typed) — `action: "label" \| "quote" \| "track"` |
+| `session.paymentStatus(toolCallId)` | Async settlement status for a `codespar_charge` / `codespar_pay` call |
+| `session.paymentStatusStream(toolCallId, opts)` | SSE variant of `paymentStatus`; resolves on terminal |
+| `session.verificationStatus(toolCallId)` | Async KYC disposition for a `codespar_kyc` call |
+| `session.verificationStatusStream(toolCallId, opts)` | SSE variant of `verificationStatus`; resolves on terminal |
 | `session.mcp` | MCP transport URL and headers (when using managed runtime) |
 | `session.close()` | Close session |
 

@@ -30,6 +30,10 @@ Adapter packages (`@codespar/managed-agents-adapter`, `@codespar/vercel`,
 `@codespar/claude`, `@codespar/openai`, `@codespar/mcp`, `@codespar/cli`) pin
 `@codespar/sdk` semver-major. Since 0.x → 0.x is still a 0.x range, adapters
 stay on `^0.3.0` and **don't** need bumping unless they consume new methods.
+(Adapters currently pin `^0.3.0`; if a 1.0 cut happens, peerDeps need to
+evolve so consumers can reach the 0.9.0+ session methods — `charge`,
+`ship`, `paymentStatus(Stream)`, `verificationStatus(Stream)`,
+`discover`, `connectionWizard`.)
 
 ## Recovery from partial failure
 

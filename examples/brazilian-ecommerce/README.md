@@ -11,6 +11,13 @@ Everything between those two endpoints — credential resolution, the asynchrono
 
 ## Providers orchestrated
 
+The `/pix-paid` flow is **fully meta-tool driven**. The `/whatsapp`
+flow is meta-tool driven *except* for the buyer-record step — Asaas
+requires a pre-created customer reference, and the typed `charge()`
+wrapper does not yet surface the `metadata` field needed to attach
+the buyer record back, so the canonical `asaas/create_customer` call
+stays in place for now.
+
 | Step | Provider | Tool |
 |---|---|---|
 | Create buyer record | Asaas | `asaas/create_customer` |
@@ -111,16 +118,16 @@ per call with failover + idempotency. This example uses:
    surfaces NFe.io's 404 directly. Services-first agents drop the
    rail field and the meta-tool defaults to NFS-e.
 
-The `z-api/send_text` → `codespar_notify` swap is safe today and
-collapses to:
+The `z-api/send_text` → `codespar_notify` swap shipped 2026-05-01;
+`server.ts` uses the meta-tool variant directly:
 
 ```ts
 { tool: "codespar_notify", params: { recipient: phone, message: "..." } }
 ```
 
-Pick whichever shape fits your flow — both work; the SDK's
-`session.execute()` accepts canonical and meta-tool names through
-the same surface.
+Both shapes work — the SDK's `session.execute()` accepts canonical and
+meta-tool names through the same surface — but the example commits to
+the meta-tool form so failover and idempotency are on by default.
 
 ## What this example is NOT
 
