@@ -37,6 +37,14 @@ function fakeSession(tools: Tool[]): Session {
     async *sendStream() {},
     async authorize() { return { linkToken: "tok_test", authorizeUrl: "https://provider.example.com/authorize", expiresAt: new Date(Date.now() + 600_000).toISOString() }; },
     async connections() { return []; },
+    async discover() { return { tools: [] } as any; },
+    async connectionWizard() { return {} as any; },
+    async charge() { return {} as any; },
+    async ship() { return {} as any; },
+    async paymentStatus() { return { status: 'pending' } as any; },
+    async paymentStatusStream() { return {} as any; },
+    async verificationStatus() { return { status: 'pending' } as any; },
+    async verificationStatusStream() { return {} as any; },
     async close() {},
   };
   return session;
