@@ -18,10 +18,16 @@ import {
 } from "./commands/connect.js";
 import { tailLogsCommand } from "./commands/logs.js";
 import { initCommand } from "./commands/init.js";
+import { discoverCommand } from "./commands/discover.js";
+import { chargeCommand } from "./commands/charge.js";
+import { shipCommand } from "./commands/ship.js";
+import { paymentStatusCommand } from "./commands/payment-status.js";
+import { verificationStatusCommand } from "./commands/verification-status.js";
+import { wizardCommand } from "./commands/wizard.js";
 import { c } from "./output.js";
 import { printBanner } from "./banner.js";
 
-const VERSION = "0.2.3";
+const VERSION = "0.4.0";
 
 const program = new Command();
 program
@@ -206,6 +212,154 @@ connect
     const client = await authedClient();
     await revokeConnectCommand(client, connectionOrServer, opts);
   });
+
+// ============ meta-tool sugar (SDK 0.9.0) ============
+program
+  .command("discover <query>")
+  .description("Search the catalog for tools matching a use case (codespar_discover)")
+  .option("--limit <n>", "Max results to display (default 10, server clamps 1..20)")
+  .option("--category <name>", "Filter by category")
+  .option("--country <code>", "Filter by country code (BR, MX, ...)")
+  .option("-u, --user <id>", "User id for the session (default: cli-user)")
+  .action(
+    async (
+      query: string,
+      opts: { limit?: string; category?: string; country?: string; user?: string },
+    ) => {
+      const config = await loadConfig();
+      const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
+      const apiKey = root.apiKey ?? requireApiKey(config);
+      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      await discoverCommand(query, {
+        ...opts,
+        apiKey,
+        baseUrl,
+        json: rootJsonFlag(),
+      });
+    },
+  );
+
+program
+  .command("charge")
+  .description("Issue an inbound charge via codespar_charge (router picks the rail)")
+  .option("-i, --input <json>", "Charge args as JSON string")
+  .option("-f, --input-file <path>", "Charge args from JSON file")
+  .option("-u, --user <id>", "User id for the session (default: cli-user)")
+  .action(
+    async (opts: { input?: string; inputFile?: string; user?: string }) => {
+      const config = await loadConfig();
+      const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
+      const apiKey = root.apiKey ?? requireApiKey(config);
+      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      await chargeCommand({
+        ...opts,
+        apiKey,
+        baseUrl,
+        json: rootJsonFlag(),
+      });
+    },
+  );
+
+program
+  .command("ship")
+  .description("Generate label / quote rates / track shipment via codespar_ship")
+  .option("-i, --input <json>", "Ship args as JSON string")
+  .option("-f, --input-file <path>", "Ship args from JSON file")
+  .option("-u, --user <id>", "User id for the session (default: cli-user)")
+  .action(
+    async (opts: { input?: string; inputFile?: string; user?: string }) => {
+      const config = await loadConfig();
+      const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
+      const apiKey = root.apiKey ?? requireApiKey(config);
+      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      await shipCommand({
+        ...opts,
+        apiKey,
+        baseUrl,
+        json: rootJsonFlag(),
+      });
+    },
+  );
+
+program
+  .command("payment-status <tool-call-id>")
+  .description("Get the async settlement status for a tool call (poll once or --stream)")
+  .option("--stream", "Open an SSE stream and print updates until terminal frame")
+  .option("--timeout <ms>", "Max wait for the stream in ms (default 600000)")
+  .option("-u, --user <id>", "User id for the session (default: cli-user)")
+  .action(
+    async (
+      toolCallId: string,
+      opts: { stream?: boolean; timeout?: string; user?: string },
+    ) => {
+      const config = await loadConfig();
+      const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
+      const apiKey = root.apiKey ?? requireApiKey(config);
+      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      await paymentStatusCommand(toolCallId, {
+        ...opts,
+        apiKey,
+        baseUrl,
+        json: rootJsonFlag(),
+      });
+    },
+  );
+
+program
+  .command("verification-status <tool-call-id>")
+  .description("Get the async KYC verification status for a tool call (poll once or --stream)")
+  .option("--stream", "Open an SSE stream and print updates until terminal frame")
+  .option("--timeout <ms>", "Max wait for the stream in ms (default 600000)")
+  .option("-u, --user <id>", "User id for the session (default: cli-user)")
+  .action(
+    async (
+      toolCallId: string,
+      opts: { stream?: boolean; timeout?: string; user?: string },
+    ) => {
+      const config = await loadConfig();
+      const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
+      const apiKey = root.apiKey ?? requireApiKey(config);
+      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      await verificationStatusCommand(toolCallId, {
+        ...opts,
+        apiKey,
+        baseUrl,
+        json: rootJsonFlag(),
+      });
+    },
+  );
+
+program
+  .command("wizard [server-id]")
+  .description("Connection wizard for a server — required secrets, connect URL, next steps")
+  .option("--action <name>", "list | status | initiate (default: status if server-id given, else list)")
+  .option("--country <code>", "Filter list action by country code")
+  .option("--environment <env>", "live | test (initiate only)")
+  .option("--return-to <path>", "Dashboard return path after initiate (validated /dashboard/*)")
+  .option("-u, --user <id>", "User id for the session (default: cli-user)")
+  .action(
+    async (
+      serverId: string | undefined,
+      opts: {
+        action?: string;
+        country?: string;
+        environment?: string;
+        returnTo?: string;
+        user?: string;
+      },
+    ) => {
+      const config = await loadConfig();
+      const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
+      const apiKey = root.apiKey ?? requireApiKey(config);
+      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      await wizardCommand(serverId, {
+        ...opts,
+        apiKey,
+        baseUrl,
+        json: rootJsonFlag(),
+      });
+    },
+  );
 
 // ============ logs ============
 const logs = program.command("logs").description("Inspect tool-call execution logs");
