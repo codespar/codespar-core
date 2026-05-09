@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { fakeSession } from "../testing/index.js";
+import type { Session } from "@codespar/types";
 
 describe("fakeSession — strict mode (default)", () => {
   it("throws verbatim 'fakeSession: no response registered for tool <name>' on miss", async () => {
@@ -100,5 +101,28 @@ describe("fakeSession — lenient mode", () => {
     const result = await session.execute("asaas/create_payment", { value: 100 });
     expect(result.success).toBe(false);
     expect(result.error).toBe("boom");
+  });
+});
+
+describe("fakeSession — Session interface conformance", () => {
+  it("returns a value assignable to Session without casts", () => {
+    // Compile-time check: the literal annotation forces structural conformance.
+    // If this file compiles, the conformance check has passed.
+    const session: Session = fakeSession();
+    expect(typeof session.execute).toBe("function");
+    expect(typeof session.send).toBe("function");
+    expect(typeof session.sendStream).toBe("function");
+    expect(typeof session.proxyExecute).toBe("function");
+    expect(typeof session.authorize).toBe("function");
+    expect(typeof session.connections).toBe("function");
+    expect(typeof session.close).toBe("function");
+    expect(typeof session.discover).toBe("function");
+    expect(typeof session.connectionWizard).toBe("function");
+    expect(typeof session.charge).toBe("function");
+    expect(typeof session.ship).toBe("function");
+    expect(typeof session.paymentStatus).toBe("function");
+    expect(typeof session.paymentStatusStream).toBe("function");
+    expect(typeof session.verificationStatus).toBe("function");
+    expect(typeof session.verificationStatusStream).toBe("function");
   });
 });

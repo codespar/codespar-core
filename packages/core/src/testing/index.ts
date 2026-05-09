@@ -21,6 +21,8 @@ export function fakeSession(
   const session: Session = {
     id: "ses_fake",
     status: "active",
+    mcp: { url: "https://example.invalid/mcp", headers: {} },
+
     async execute(toolName, params): Promise<ToolResult> {
       void params;
       const entry = responses[toolName];
@@ -30,25 +32,68 @@ export function fakeSession(
         }
         throw new Error(`fakeSession: no response registered for tool ${toolName}`);
       }
-      const result = typeof entry === "function" ? await entry(params) : entry;
-      return result;
+      return typeof entry === "function" ? await entry(params) : entry;
     },
-    // The remaining Session methods land in Task 5 — leave temporary `as any`-free
-    // throws so the file still compiles. Replace these in Task 5 before that task's commit.
-    async send() { throw new Error("fakeSession.send not implemented"); },
-    async *sendStream() { throw new Error("fakeSession.sendStream not implemented"); },
-    async proxyExecute() { throw new Error("fakeSession.proxyExecute not implemented"); },
-    async authorize() { throw new Error("fakeSession.authorize not implemented"); },
-    async connections() { return []; },
-    async close() {},
-    async discover() { throw new Error("fakeSession.discover not implemented"); },
-    async connectionWizard() { throw new Error("fakeSession.connectionWizard not implemented"); },
-    async charge() { throw new Error("fakeSession.charge not implemented"); },
-    async ship() { throw new Error("fakeSession.ship not implemented"); },
-    async paymentStatus() { throw new Error("fakeSession.paymentStatus not implemented"); },
-    async paymentStatusStream() { throw new Error("fakeSession.paymentStatusStream not implemented"); },
-    async verificationStatus() { throw new Error("fakeSession.verificationStatus not implemented"); },
-    async verificationStatusStream() { throw new Error("fakeSession.verificationStatusStream not implemented"); },
+
+    async send() {
+      return { message: "", tool_calls: [], iterations: 0 };
+    },
+
+    async *sendStream() {
+      // intentionally empty — fakeSession v1 does not synthesize stream events
+    },
+
+    async proxyExecute() {
+      return { status: 200, data: null, headers: {}, duration: 0 };
+    },
+
+    async authorize() {
+      return {
+        linkToken: "tok_test",
+        authorizeUrl: "https://provider.example.com/authorize",
+        expiresAt: new Date(Date.now() + 600_000).toISOString(),
+      };
+    },
+
+    async connections() {
+      return [];
+    },
+
+    async close() {
+      // noop
+    },
+
+    async discover(useCase) {
+      return { use_case: useCase, search_strategy: "empty", recommended: null, related: [], next_steps: [] };
+    },
+
+    async connectionWizard(opts) {
+      return { action: opts.action ?? "list", connections: [], status: null, initiate: null };
+    },
+
+    async charge(args) {
+      return { id: "chg_fake", status: "pending", amount: args.amount, currency: args.currency, method: args.method };
+    },
+
+    async ship(args) {
+      return { id: "shp_fake", status: args.action === "track" ? "in_transit" : "created" };
+    },
+
+    async paymentStatus(toolCallId) {
+      return { tool_call_id: toolCallId, payment_status: "pending", idempotency_key: null, original_status: "success", events: [] };
+    },
+
+    async paymentStatusStream(toolCallId) {
+      return { tool_call_id: toolCallId, payment_status: "pending", idempotency_key: null, original_status: "success", events: [] };
+    },
+
+    async verificationStatus(toolCallId) {
+      return { tool_call_id: toolCallId, verification_status: "pending", idempotency_key: null, original_status: "success", hosted_url: null, events: [] };
+    },
+
+    async verificationStatusStream(toolCallId) {
+      return { tool_call_id: toolCallId, verification_status: "pending", idempotency_key: null, original_status: "success", hosted_url: null, events: [] };
+    },
   };
   return session;
 }
