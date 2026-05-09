@@ -72,3 +72,33 @@ describe("fakeSession — per-tool function variant", () => {
     expect(result.data).toEqual({ async_echoed: { name: "Joana" } });
   });
 });
+
+describe("fakeSession — lenient mode", () => {
+  it("returns {success:true, data:{}} for unregistered tools when lenient: true", async () => {
+    const session = fakeSession({}, { lenient: true });
+    const result = await session.execute("asaas/create_payment", { value: 100 });
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({});
+    expect(result.error).toBeNull();
+    expect(result.tool).toBe("asaas/create_payment");
+  });
+
+  it("does not override a registered failure response in lenient mode", async () => {
+    const session = fakeSession(
+      {
+        "asaas/create_payment": {
+          success: false,
+          data: null,
+          error: "boom",
+          duration: 0,
+          server: "asaas",
+          tool: "asaas/create_payment",
+        },
+      },
+      { lenient: true },
+    );
+    const result = await session.execute("asaas/create_payment", { value: 100 });
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("boom");
+  });
+});
