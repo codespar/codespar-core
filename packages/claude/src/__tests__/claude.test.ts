@@ -3,7 +3,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import type { Tool, ToolResult } from "@codespar/sdk";
+import { fakeSession } from "@codespar/sdk/testing";
 import { toClaudeTool, toToolResultBlock, getTools, handleToolUse } from "../index.js";
 
 function makeTool(overrides: Partial<Tool> = {}): Tool {
@@ -16,53 +17,30 @@ function makeTool(overrides: Partial<Tool> = {}): Tool {
   };
 }
 
-function fakeSession(tools: Tool[]): Session {
-  const session = {
-    id: "ses_fake",
-    userId: "user_1",
-    servers: [],
-    createdAt: new Date(),
-    status: "active" as const,
-    mcp: { url: "https://api.example.com/v1/sessions/ses_fake/mcp", headers: {} },
+function fakeSessionFromTools(tools: Tool[]) {
+  const responses: Record<
+    string,
+    (input: Record<string, unknown>) => ToolResult
+  > = {};
+  for (const t of tools) {
+    responses[t.name] = () => ({
+      success: true,
+      data: { ok: true },
+      error: null,
+      duration: 10,
+      server: "codespar",
+      tool: t.name,
+    });
+  }
+  const session = fakeSession(responses);
+  // The adapter calls session.tools(); the published Session interface does
+  // not declare tools(), so we attach it here at the call site (the SDK's
+  // `tools()` free function uses duck typing — see packages/core/src/tools.ts).
+  return Object.assign(session, {
     async tools() {
       return tools;
     },
-    async execute(toolName: string): Promise<ToolResult> {
-      return {
-        success: true,
-        data: { ok: true },
-        error: null,
-        duration: 10,
-        server: "codespar",
-        tool: toolName,
-      };
-    },
-    async proxyExecute() {
-      return { status: 200, data: null, headers: {}, duration: 0 };
-    },
-    async send() {
-      return { message: "", tool_calls: [], iterations: 0 };
-    },
-    async *sendStream() {
-      // empty
-    },
-    async authorize() { return { linkToken: "tok_test", authorizeUrl: "https://provider.example.com/authorize", expiresAt: new Date(Date.now() + 600_000).toISOString() }; },
-    async connections() {
-      return [];
-    },
-    async discover() { return { tools: [] } as any; },
-    async connectionWizard() { return {} as any; },
-    async charge() { return {} as any; },
-    async ship() { return {} as any; },
-    async paymentStatus() { return { status: 'pending' } as any; },
-    async paymentStatusStream() { return {} as any; },
-    async verificationStatus() { return { status: 'pending' } as any; },
-    async verificationStatusStream() { return {} as any; },
-    async close() {
-      // noop
-    },
-  };
-  return session;
+  });
 }
 
 describe("@codespar/claude", () => {
@@ -75,7 +53,7 @@ describe("@codespar/claude", () => {
   });
 
   it("getTools awaits session.tools()", async () => {
-    const session = fakeSession([makeTool(), makeTool({ name: "codespar_invoice" })]);
+    const session = fakeSessionFromTools([makeTool(), makeTool({ name: "codespar_invoice" })]);
     const tools = await getTools(session);
     expect(tools).toHaveLength(2);
     expect(tools[0]!.name).toBe("codespar_pay");
@@ -83,7 +61,7 @@ describe("@codespar/claude", () => {
   });
 
   it("handleToolUse routes through session.execute", async () => {
-    const session = fakeSession([makeTool()]);
+    const session = fakeSessionFromTools([makeTool()]);
     const result = await handleToolUse(session, { name: "codespar_pay", input: { amount: 50 } });
     expect(result.success).toBe(true);
     expect(result.tool).toBe("codespar_pay");
