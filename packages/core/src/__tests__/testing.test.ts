@@ -1,6 +1,24 @@
 import { describe, it, expect } from "vitest";
-import { fakeSession } from "../testing/index.js";
+import { fakeSession, type ToolResult } from "../testing/index.js";
 import type { Session } from "@codespar/types";
+
+describe("@codespar/sdk/testing — exported surface", () => {
+  it("exports fakeSession and the ToolResult type from a single import", () => {
+    expect(typeof fakeSession).toBe("function");
+    // ToolResult is a type-only re-export; the assertion below proves it
+    // is usable in a value position via a typed identity function.
+    const passthrough = (r: ToolResult): ToolResult => r;
+    const sample: ToolResult = {
+      success: true,
+      data: {},
+      error: null,
+      duration: 0,
+      server: "",
+      tool: "x",
+    };
+    expect(passthrough(sample)).toBe(sample);
+  });
+});
 
 describe("fakeSession — strict mode (default)", () => {
   it("throws verbatim 'fakeSession: no response registered for tool <name>' on miss", async () => {
