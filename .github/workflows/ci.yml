@@ -18,6 +18,14 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Lock file drift check
+        run: |
+          if grep -qE '"packages/[^"]+/node_modules/@codespar/' package-lock.json; then
+            echo "::error::package-lock.json contains nested @codespar/* installs; workspace cross-deps must resolve via symlinks, not tarballs. Run 'rm package-lock.json && npm install' locally, then commit the regenerated lock."
+            grep -nE '"packages/[^"]+/node_modules/@codespar/' package-lock.json
+            exit 1
+          fi
+
       - name: Install dependencies
         run: npm ci
 
