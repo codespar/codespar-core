@@ -18,6 +18,18 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Lock file drift check
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit
+          if ! git diff --exit-code --quiet -- package-lock.json; then
+            echo "::error::package-lock.json is out of sync with package.json files."
+            echo "::error::Run 'npm install' locally and commit the regenerated package-lock.json."
+            echo "::group::diff"
+            git --no-pager diff -- package-lock.json
+            echo "::endgroup::"
+            exit 1
+          fi
+
       - name: Install dependencies
         run: npm ci
 
