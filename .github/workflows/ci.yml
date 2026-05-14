@@ -21,20 +21,17 @@ jobs:
       - name: Lock file drift check
         run: |
           if grep -qE '"packages/[^"]+/node_modules/@codespar/' package-lock.json; then
-            echo "::error::package-lock.json contains nested @codespar/* installs; workspace cross-deps must resolve via symlinks, not tarballs."
+            echo "::error::package-lock.json contains nested @codespar/* installs; workspace cross-deps must resolve via symlinks, not tarballs. Run 'rm package-lock.json && npm install' locally, then commit the regenerated lock."
             grep -nE '"packages/[^"]+/node_modules/@codespar/' package-lock.json
-            echo "::error::Fix: 'rm package-lock.json && npm install' locally, then commit the regenerated lock."
             exit 1
           fi
           cp package-lock.json /tmp/committed-lock.json
           npm install --package-lock-only --ignore-scripts --no-audit
           if ! diff -q /tmp/committed-lock.json package-lock.json >/dev/null; then
-            echo "::error::package-lock.json is not in sync with package.json files."
-            echo "::error::Fix: 'npm install' locally and commit the regenerated package-lock.json."
+            echo "::error::package-lock.json is not in sync with package.json files. Run 'npm install' locally and commit the regenerated package-lock.json."
             echo "::group::diff (first 100 lines)"
             diff /tmp/committed-lock.json package-lock.json | head -100
             echo "::endgroup::"
-            cp /tmp/committed-lock.json package-lock.json
             exit 1
           fi
 
