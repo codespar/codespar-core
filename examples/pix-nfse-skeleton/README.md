@@ -31,26 +31,32 @@ npm install
 npm run validate
 ```
 
-`validate.sh` picks one of two runtime sources, first match wins:
+`validate.sh` picks one of three runtime sources, first match wins:
 
 1. **`CODESPAR_BASE_URL` is set** — uses the already-running runtime at that URL. No lifecycle management; you start/stop the runtime yourself.
 2. **`CODESPAR_RUNTIME_DIR` is set** — boots `node server/start.mjs` from that directory on port 3000, polls `/health` for up to 20s, runs `vitest`, then kills the runtime on exit.
+3. **`docker` is on PATH** — pulls and runs `ghcr.io/codespar/codespar:latest` with the example dir mounted at `/example` (so the bridge reads `./mcp-servers.json` from there and resolves the spawned MCP server paths against the example's installed `node_modules`). This is the default path; no env vars required.
 
-If neither is set, the script prints setup instructions and exits non-zero. There's no implicit sibling-directory fallback — examples must work from any layout, not only this monorepo.
+If none of the above is available, the script prints setup instructions and exits non-zero. There's no implicit sibling-directory fallback — examples must work from any layout.
 
 ```bash
-# Option A — point at a running runtime (you manage its lifecycle)
+# Option A (recommended) — install Docker, then just run:
+npm run validate
+
+# Option B — point at a running runtime (you manage its lifecycle)
 export CODESPAR_BASE_URL=http://localhost:3000
 npm run validate
 
-# Option B — point at a local clone of codespar/codespar (the script manages it)
+# Option C — point at a local clone of codespar/codespar (the script manages it)
 git clone https://github.com/codespar/codespar.git /tmp/codespar
 (cd /tmp/codespar && npm install && npx turbo run build)
 export CODESPAR_RUNTIME_DIR=/tmp/codespar
 npm run validate
-```
 
-A future iteration will add a Docker option (`docker run` of a published `ghcr.io/codespar/codespar:latest` image) so neither a clone nor a build step is needed.
+# Pin a specific runtime image instead of :latest:
+export CODESPAR_RUNTIME_IMAGE=ghcr.io/codespar/codespar:v0.1.0
+npm run validate
+```
 
 ### Managed (api.codespar.dev)
 
