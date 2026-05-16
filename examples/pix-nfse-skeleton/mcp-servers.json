@@ -1,0 +1,18 @@
+{
+  "asaas": {
+    "command": [
+      "node",
+      "./node_modules/@codespar/mcp-asaas/dist/index.js",
+      "--demo"
+    ],
+    "transport": "stdio"
+  },
+  "nuvem-fiscal": {
+    "command": [
+      "node",
+      "./node_modules/@codespar/mcp-nuvem-fiscal/dist/index.js",
+      "--demo"
+    ],
+    "transport": "stdio"
+  }
+}
