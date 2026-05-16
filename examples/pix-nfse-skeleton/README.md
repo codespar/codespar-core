@@ -32,25 +32,26 @@ npm install
 npm run validate
 ```
 
-`validate.sh` resolves the runtime checkout via `CODESPAR_RUNTIME_DIR`
-(falling back to the standard workspace sibling at `../../../codespar`),
-starts it on port 3000, polls `/health` for up to 20 seconds, runs
-`vitest`, then terminates the runtime via `trap`.
+`validate.sh` picks one of two runtime sources, first match wins:
 
-Manual two-terminal mode if you're iterating:
+1. **`CODESPAR_BASE_URL` is set** — uses the already-running runtime at that URL. No lifecycle management; you start/stop the runtime yourself.
+2. **`CODESPAR_RUNTIME_DIR` is set** — boots `node server/start.mjs` from that directory on port 3000, polls `/health` for up to 20s, runs `vitest`, then kills the runtime on exit.
+
+If neither is set, the script prints setup instructions and exits non-zero. There's no implicit sibling-directory fallback — examples must work from any layout, not only this monorepo.
 
 ```bash
-# terminal 1 — runtime (started from this directory so it reads
-# ./mcp-servers.json from cwd)
-cd examples/pix-nfse-skeleton
-MCP_DEMO=true PORT=3000 \
-  node --experimental-strip-types \
-  ../../../codespar/packages/core/src/server/index.ts
+# Option A — point at a running runtime (you manage its lifecycle)
+export CODESPAR_BASE_URL=http://localhost:3000
+npm run validate
 
-# terminal 2 — test
-cd examples/pix-nfse-skeleton
-MCP_DEMO=true CODESPAR_BASE_URL=http://localhost:3000 npm test
+# Option B — point at a local clone of codespar/codespar (the script manages it)
+git clone https://github.com/codespar/codespar.git /tmp/codespar
+(cd /tmp/codespar && npm install && npx turbo run build)
+export CODESPAR_RUNTIME_DIR=/tmp/codespar
+npm run validate
 ```
+
+A future iteration will add a Docker option (`docker run` of a published `ghcr.io/codespar/codespar:latest` image) so neither a clone nor a build step is needed.
 
 ### Managed (api.codespar.dev)
 

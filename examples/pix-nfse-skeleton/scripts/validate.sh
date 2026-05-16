@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 #
-# P3 walking skeleton — boots the OSS codespar runtime in the
-# background, polls /health, runs vitest, and kills the runtime on
-# exit. Mirrors the Validation block of codespar-web#326.
+# P3 walking skeleton — verifies a runtime is reachable, then runs the
+# vitest spec against it. Mirrors the Validation block of codespar-web#326.
+#
+# Runtime resolution (first match wins):
+#   1. CODESPAR_BASE_URL is set       → use it, do NOT manage lifecycle
+#   2. CODESPAR_RUNTIME_DIR is set    → boot `node server/start.mjs` from there
+#   3. neither set                    → print instructions and exit non-zero
 #
 # Source of truth for demo mode: --demo in mcp-servers.json. The
 # MCP_DEMO=true env below is informational parity only.
@@ -12,37 +16,58 @@ set -euo pipefail
 SKELETON_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$SKELETON_DIR"
 
-# Resolve the OSS runtime checkout. CODESPAR_RUNTIME_DIR wins; otherwise
-# fall back to the standard workspace layout sibling.
-RUNTIME_DIR="${CODESPAR_RUNTIME_DIR:-$SKELETON_DIR/../../../codespar}"
-if [ ! -d "$RUNTIME_DIR" ]; then
-  echo "validate.sh: codespar runtime not found at $RUNTIME_DIR" >&2
-  echo "  Set CODESPAR_RUNTIME_DIR or clone codespar/codespar as a sibling." >&2
+RUNTIME_PORT="${CODESPAR_RUNTIME_PORT:-3000}"
+
+# Mode 1: a runtime is already reachable. Just run the test.
+if [ -n "${CODESPAR_BASE_URL:-}" ]; then
+  echo "validate.sh: using running runtime at $CODESPAR_BASE_URL (lifecycle not managed)"
+  MCP_DEMO=true npx vitest run
+  echo "validate.sh: ok"
+  exit 0
+fi
+
+# Mode 2: explicit clone path. Boot it from this directory so the
+# bridge reads mcp-servers.json from cwd.
+if [ -z "${CODESPAR_RUNTIME_DIR:-}" ]; then
+  cat >&2 <<EOF
+validate.sh: no runtime configured. Pick one:
+
+  Option A — point at an already-running runtime (no boot, no kill):
+    export CODESPAR_BASE_URL=http://localhost:3000
+    npm run validate
+
+  Option B — point at a local clone of codespar/codespar (this script
+  boots and kills it for you):
+    git clone https://github.com/codespar/codespar.git /tmp/codespar
+    export CODESPAR_RUNTIME_DIR=/tmp/codespar
+    npm run validate
+
+  A future iteration will add a Docker option (\`docker run\` of a
+  published \`ghcr.io/codespar/codespar:latest\` image); track that
+  follow-up in codespar-web's roadmap.
+EOF
   exit 2
 fi
 
-RUNTIME_PORT="${CODESPAR_RUNTIME_PORT:-3000}"
-HEALTH_URL="http://localhost:${RUNTIME_PORT}/health"
-
-# The example consumes @codespar/sdk via `file:../../packages/core`,
-# which resolves to a copy of the package without its dist/ output. Run
-# the SDK build once so the file: link points at a usable bundle.
-if [ ! -f "$SKELETON_DIR/../../packages/core/dist/index.js" ]; then
-  echo "validate.sh: building @codespar/sdk (first run only)…"
-  (cd "$SKELETON_DIR/../.." && npm install --no-audit --no-fund && npm run build)
+RUNTIME_DIR="$CODESPAR_RUNTIME_DIR"
+if [ ! -d "$RUNTIME_DIR" ]; then
+  echo "validate.sh: CODESPAR_RUNTIME_DIR=$RUNTIME_DIR does not exist" >&2
+  exit 2
+fi
+if [ ! -f "$RUNTIME_DIR/server/start.mjs" ]; then
+  echo "validate.sh: $RUNTIME_DIR does not look like a codespar/codespar checkout (no server/start.mjs)" >&2
+  exit 2
 fi
 
-# Boot the runtime in the background. The runtime reads
-# ./mcp-servers.json from cwd, so start it from $SKELETON_DIR. The
-# bridge then spawns each MCP child with --demo via the spec.command
-# array (see mcp-servers.json).
+HEALTH_URL="http://localhost:${RUNTIME_PORT}/health"
 RUNTIME_LOG="$SKELETON_DIR/.runtime.log"
+
 echo "validate.sh: starting runtime from $RUNTIME_DIR (port $RUNTIME_PORT)…"
 (
   cd "$SKELETON_DIR"
   MCP_DEMO=true \
   PORT="$RUNTIME_PORT" \
-  node --experimental-strip-types "$RUNTIME_DIR/packages/core/src/server/index.ts" \
+  node "$RUNTIME_DIR/server/start.mjs" \
     > "$RUNTIME_LOG" 2>&1 &
   echo $! > "$SKELETON_DIR/.runtime.pid"
 ) || true

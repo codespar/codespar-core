@@ -10,7 +10,7 @@
     "validate": "./scripts/validate.sh"
   },
   "dependencies": {
-    "@codespar/sdk": "file:../../packages/core"
+    "@codespar/sdk": "^0.9.0"
   },
   "devDependencies": {
     "@codespar/mcp-asaas": "0.1.3",
