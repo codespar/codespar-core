@@ -35,3 +35,26 @@ jobs:
       - name: Security audit
         run: npm audit --omit=dev
 
+  validate-example-skeleton:
+    runs-on: ubuntu-latest
+    # GitHub-hosted runners ship with Docker. This job runs the
+    # examples/pix-nfse-skeleton/ end-to-end via the published runtime
+    # image at ghcr.io/codespar/codespar:latest, so a regression in
+    # the SDK <-> bridge wire contract fails this job loudly.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: examples/pix-nfse-skeleton/package-lock.json
+
+      - name: Install example dependencies
+        working-directory: examples/pix-nfse-skeleton
+        run: npm ci
+
+      - name: Run the walking skeleton end-to-end
+        working-directory: examples/pix-nfse-skeleton
+        run: npm run validate
+
