@@ -1,2 +1,6 @@
 node_modules/
 dist/
+# runtime + bridge artifacts created by validate.sh
+.runtime.log
+.runtime.pid
+.codespar/

@@ -1,6 +1,6 @@
 /**
- * P3 walking skeleton — 4-step Pix + NFS-e loop against the OSS MCP
- * bridge using --demo fixtures from @codespar/mcp-asaas and
+ * Pix + NFS-e walking skeleton — a 4-step `loop()` chain against the OSS
+ * MCP bridge using --demo fixtures from @codespar/mcp-asaas and
  * @codespar/mcp-nuvem-fiscal.
  *
  * Source of truth for fixture payloads: those two MCP packages with
@@ -22,14 +22,14 @@ const CODESPAR_BASE_URL =
 
 let session: Session | undefined;
 
-describe("P3 walking skeleton", () => {
+describe("Pix + NFS-e walking skeleton", () => {
   it("runs the 4-step loop end-to-end against the demo bridge", async () => {
     const cs = new CodeSpar({
       apiKey: CODESPAR_API_KEY,
       baseUrl: CODESPAR_BASE_URL,
     });
 
-    session = await cs.create(`p3-skeleton-${Date.now()}`, {
+    session = await cs.create(`pix-nfse-skeleton-${Date.now()}`, {
       servers: ["asaas", "nuvem-fiscal"],
     });
 
@@ -42,7 +42,7 @@ describe("P3 walking skeleton", () => {
         {
           tool: "asaas/create_customer",
           params: {
-            name: "Cliente Demo P3",
+            name: "Cliente Demo",
             cpfCnpj: "11144477735",
             email: "cliente@example.com",
             mobilePhone: "21995302656",
@@ -55,7 +55,7 @@ describe("P3 walking skeleton", () => {
             billingType: "PIX",
             value: 150.0,
             dueDate,
-            description: "P3 walking skeleton",
+            description: "Pix + NFS-e walking skeleton",
           }),
         },
         {
@@ -67,7 +67,7 @@ describe("P3 walking skeleton", () => {
         {
           tool: "nuvem-fiscal/create_nfse",
           params: {
-            servico: { descricao: "Serviço de teste P3 walking skeleton" },
+            servico: { descricao: "Serviço de teste — Pix + NFS-e walking skeleton" },
             valor: 150.0,
           },
         },

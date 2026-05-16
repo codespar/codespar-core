@@ -1,4 +1,4 @@
-# P3 Walking Skeleton — Pix + NFS-e
+# Pix + NFS-e walking skeleton
 
 A 4-step end-to-end validation of the OSS MCP bridge: `asaas/create_customer
 → asaas/create_payment → asaas/get_pix_qrcode → nuvem-fiscal/create_nfse`.
@@ -6,10 +6,9 @@ The whole loop runs against the published `@codespar/mcp-*` packages with
 their `--demo` flag, so no real Asaas account or Nuvem Fiscal credential
 is required.
 
-This example is **infrastructure validation** for codespar-core's wire
-to the OSS bridge. It is not an agent-thesis demo — no LLM, no commerce
-governance, no commercial memory. The roadmap context for this skeleton
-lives in `codespar-web/docs/visions/ROADMAP-demo-series.md` (P3 row).
+This example is **infrastructure validation** for the SDK's wire to the
+OSS bridge. It is not an agent-thesis demo — no LLM, no commerce
+governance, no commercial memory.
 
 ## What ships here
 
@@ -100,8 +99,6 @@ The vitest spec asserts six invariants pulled from the demo fixtures in
 5. `result.results[2].data.payload.length > 0`
 6. `result.results[3].data.id` matches `/^nfse_/` AND
    `result.results[3].data.status === "autorizada"`
-
-Cross-reference: [codespar-web#326](https://github.com/codespar/codespar-web/issues/326).
 
 ## Known platform gaps
 

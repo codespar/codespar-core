@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# P3 walking skeleton — verifies a runtime is reachable, then runs the
-# vitest spec against it. Mirrors the Validation block of codespar-web#326.
+# Pix + NFS-e walking skeleton — verifies a runtime is reachable, then
+# runs the vitest spec against it.
 #
 # Runtime resolution (first match wins):
 #   1. CODESPAR_BASE_URL is set       → use it, do NOT manage lifecycle
@@ -43,8 +43,8 @@ validate.sh: no runtime configured. Pick one:
     npm run validate
 
   A future iteration will add a Docker option (\`docker run\` of a
-  published \`ghcr.io/codespar/codespar:latest\` image); track that
-  follow-up in codespar-web's roadmap.
+  published \`ghcr.io/codespar/codespar:latest\` image) so neither a
+  clone nor a local build is needed.
 EOF
   exit 2
 fi
