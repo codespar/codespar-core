@@ -58,3 +58,51 @@ jobs:
         working-directory: examples/pix-nfse-skeleton
         run: npm run validate
 
+  validate-example-d1-nfse-from-nl:
+    runs-on: ubuntu-latest
+    # Exercises the natural-language NFS-e example end-to-end. Boots
+    # @copilotkit/aimock on port 4010 (stand-in Anthropic API) and the
+    # codespar runtime from a peer checkout with
+    # ANTHROPIC_BASE_URL pointed at aimock — so a regression in the
+    # runtime's LLM tool-use loop surfaces here.
+    #
+    # We check out codespar/codespar at HEAD and use CODESPAR_RUNTIME_DIR
+    # (not the published image) because this example depends on the
+    # chat-loop wiring that lives at HEAD but isn't always rolled into
+    # ghcr.io/codespar/codespar:latest. Once the runtime publishes a
+    # tagged release that includes session.send()'s tool-use loop, this
+    # job can switch to Docker mode (drop the peer checkout, drop the
+    # CODESPAR_RUNTIME_DIR env, mirror validate-example-skeleton).
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout codespar runtime
+        uses: actions/checkout@v4
+        with:
+          repository: codespar/codespar
+          path: runtime
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: examples/d1-nfse-from-nl/package-lock.json
+
+      - name: Install runtime dependencies
+        working-directory: runtime
+        run: npm ci
+
+      - name: Build runtime
+        working-directory: runtime
+        run: npx turbo run build
+
+      - name: Install example dependencies
+        working-directory: examples/d1-nfse-from-nl
+        run: npm ci
+
+      - name: Run the natural-language NFS-e example end-to-end
+        working-directory: examples/d1-nfse-from-nl
+        env:
+          CODESPAR_RUNTIME_DIR: ${{ github.workspace }}/runtime
+        run: npm run validate
