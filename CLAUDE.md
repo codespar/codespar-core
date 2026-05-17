@@ -121,7 +121,25 @@ schema in `packages/core/src/types.ts` validates on create.
 4. **Verify** — `npm test` in affected package + `pytest` for Python.
    TS typecheck must pass (`npx tsc --noEmit`); Python mypy strict
    must pass.
-5. **Ship** — npm `publish` for TS packages; tag `python-v<version>`
+5. **Live LLM smoke** (REQUIRED before pushing changes that touch the
+   chat loop, tool catalog, system prompt, `session.send()`, or
+   anything an `examples/*` directory consumes from those surfaces).
+   The aimock-driven default tests cannot catch tool-name regex
+   violations, invalid model ids, or system-prompt issues that only
+   surface against real `api.anthropic.com`. Run BOTH examples:
+
+   ```bash
+   ANTHROPIC_API_KEY=sk-ant-... \
+     (cd examples/pix-nfse-skeleton && npm run validate:live) && \
+     (cd examples/nfse-from-natural-language && npm run validate:live)
+   ```
+
+   Costs a few cents per run. Not wired into CI — too expensive and
+   too probabilistic for every PR — but mandatory before pushing
+   chat-loop-adjacent changes. The live smoke is what caught the
+   tool-name `/` separator bug and the `claude-3-5-sonnet-latest`
+   model id bug that all aimock tests passed through unchallenged.
+6. **Ship** — npm `publish` for TS packages; tag `python-v<version>`
    for PyPI.
 
 ## Internal docs

@@ -7,7 +7,8 @@
   "scripts": {
     "test": "vitest run",
     "skeleton": "vitest run --reporter=verbose",
-    "validate": "./scripts/validate.sh"
+    "validate": "./scripts/validate.sh",
+    "validate:live": "./scripts/validate-live.sh"
   },
   "dependencies": {
     "@codespar/sdk": "^0.9.0"

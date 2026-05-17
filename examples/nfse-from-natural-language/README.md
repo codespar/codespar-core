@@ -190,6 +190,18 @@ fixtures:
    confirming a multi-turn tool-use exchange and not a single-shot
    response.
 
+## Live LLM smoke (`npm run validate:live`)
+
+`validate.sh` is fully mocked — aimock stands in for Anthropic, MCP servers stay in `--demo` mode. That gets the example green deterministically and cheaply, but it cannot catch regressions that only surface against real `api.anthropic.com`: tool-name regex violations, invalid model ids, system-prompt issues that change Claude's behaviour. To verify those too, run:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-... npm run validate:live
+```
+
+That boots a runtime with your `ANTHROPIC_API_KEY` (no aimock), runs `live.test.ts`, and tears down. The MCP servers stay in `--demo` so no Nuvem-Fiscal / Z-API credentials are needed. The live test carries a much richer prompt than the aimock test — it includes prestador/tomador hints, LC 116 codes, environment, and an explicit "don't ask for clarifying details" instruction — because real Claude is appropriately cautious on under-specified fiscal prompts and will ask for missing fields rather than issuing documents blindly. The aimock fixture gets away with a terser prompt because it's scripted, not reasoned. The assertions stay coarse (at-least-one NFS-e issuance dispatched, every dispatched call succeeds) because real Claude is probabilistic.
+
+This is **not in CI** — it costs real Anthropic spend (a few cents per run) and is probabilistic enough that flakes would be noise. Run it locally before pushing changes that touch the OSS chat loop, the tool catalog, the SDK's `session.send()`, the LATAM-commerce system prompt, or this example's MCP fixtures. The aimock-mode tests can't catch tool-name regex violations or invalid model ids; only this can.
+
 ## Known platform gaps
 
 Flagged here so they survive as latent debt rather than getting lost
