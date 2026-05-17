@@ -62,11 +62,34 @@
           {
             "name": "nuvem-fiscal__create_nfe",
             "arguments": {
-              "servico": {
-                "codigo": "produto",
-                "descricao": "Sofa 3 lugares"
+              "ambiente": 2,
+              "natureza_operacao": "Venda de mercadoria",
+              "emitente": {
+                "cnpj": "12345678000190",
+                "razao_social": "Mobiliario Demo LTDA",
+                "ie": "111111111111"
               },
-              "valor": 4800
+              "destinatario": {
+                "cpf": "12345678901",
+                "nome": "Cliente Demo"
+              },
+              "itens": [
+                {
+                  "codigo": "SOFA-3L-001",
+                  "descricao": "Sofa 3 lugares",
+                  "ncm": "94013000",
+                  "cfop": "5102",
+                  "unidade": "UN",
+                  "quantidade": 1,
+                  "valor_unitario": 4800,
+                  "valor_total": 4800
+                }
+              ],
+              "pagamento": {
+                "forma_pagamento": "03",
+                "valor": 4800,
+                "parcelas": 6
+              }
             }
           },
           {
@@ -86,7 +109,7 @@
         "hasToolResult": true
       },
       "response": {
-        "content": "Pedido fechado em 6x de R$800,00. NF-e emitida e enviada via WhatsApp. Bem-vindo a casa nova! 🛋️",
+        "content": "Pedido fechado em 6x de R$800,00. NF-e emitida e enviada via WhatsApp. Bem-vindo a casa nova!",
         "finishReason": "stop"
       }
     }
