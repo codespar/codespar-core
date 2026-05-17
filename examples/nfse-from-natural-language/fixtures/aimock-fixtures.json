@@ -9,7 +9,7 @@
       "response": {
         "toolCalls": [
           {
-            "name": "nuvem-fiscal/create_nfse",
+            "name": "nuvem-fiscal__create_nfse",
             "arguments": {
               "servico": {
                 "codigo": "1.05",
@@ -19,7 +19,7 @@
             }
           },
           {
-            "name": "nuvem-fiscal/create_nfse",
+            "name": "nuvem-fiscal__create_nfse",
             "arguments": {
               "servico": {
                 "codigo": "17.01",
@@ -40,7 +40,7 @@
       "response": {
         "toolCalls": [
           {
-            "name": "z-api/send_text",
+            "name": "z-api__send_text",
             "arguments": {
               "phone": "+5511987654321",
               "message": "Suas notas estao prontas: https://api.nuvemfiscal.com.br/demo/nfse_demo_001.pdf  https://api.nuvemfiscal.com.br/demo/nfse_demo_002.pdf"

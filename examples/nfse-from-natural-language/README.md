@@ -56,10 +56,10 @@ end-to-end.
 
 | File | Purpose |
 |---|---|
-| `skeleton.test.ts` | Vitest spec — calls `session.send(naturalLanguagePrompt)`, asserts two `nuvem-fiscal/create_nfse` calls plus at least one `z-api/send_text` call whose message body carries both PDF URLs |
+| `skeleton.test.ts` | Vitest spec — calls `session.send(naturalLanguagePrompt)`, asserts two `nuvem-fiscal__create_nfse` calls plus at least one `z-api__send_text` call whose message body carries both PDF URLs |
 | `package.json` | Pins `@codespar/mcp-nuvem-fiscal@^0.3.0`, `@codespar/mcp-z-api@^0.2.1`, and `@copilotkit/aimock@^1.24.1` |
 | `mcp-servers.json` | Server registry consumed by the bridge — same shape as the walking skeleton, two stdio servers, both spawned with `--demo` |
-| `fixtures/aimock-fixtures.json` | Three-turn aimock fixture: turn 0 emits two `nuvem-fiscal/create_nfse` tool_use blocks; turn 1 emits one `z-api/send_text` tool_use; turn 2 emits the final text summary |
+| `fixtures/aimock-fixtures.json` | Three-turn aimock fixture: turn 0 emits two `nuvem-fiscal__create_nfse` tool_use blocks; turn 1 emits one `z-api__send_text` tool_use; turn 2 emits the final text summary |
 | `scripts/validate.sh` | Boots aimock first, then resolves a runtime (Docker / local clone / already-running), polls `/health`, runs vitest, kills both on exit |
 | `tsconfig.json` | Minimal TS config (NodeNext, strict, vitest globals) |
 | `vitest.config.ts` | 60s test timeout (LLM-driven loops are slower than the deterministic skeleton) |
@@ -176,13 +176,13 @@ fixtures:
 1. The runtime's `session.send()` returns a `SendResult` with a
    string `message` field.
 2. `result.tool_calls` contains exactly two records with
-   `tool_name === "nuvem-fiscal/create_nfse"`, both with
+   `tool_name === "nuvem-fiscal__create_nfse"`, both with
    `status === "success"`, both whose `output.id` matches `/^nfse_/`
    and whose `output.status === "autorizada"`.
 3. Each NFS-e tool call returns a non-empty `pdf_url` string in its
    output.
 4. `result.tool_calls` contains at least one record with
-   `tool_name === "z-api/send_text"`, and that record's
+   `tool_name === "z-api__send_text"`, and that record's
    `input.message` field contains both `nfse_demo_001` and
    `nfse_demo_002` literally — proving the WhatsApp outbound carries
    both PDF references.

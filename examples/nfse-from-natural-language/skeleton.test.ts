@@ -45,7 +45,7 @@ describe("Service invoice from natural language", () => {
     // Two NFS-e issued, both successful, both shaped like the
     // stateful demo handler in @codespar/mcp-nuvem-fiscal returns.
     const nfseCalls = result.tool_calls.filter(
-      (tc) => tc.tool_name === "nuvem-fiscal/create_nfse",
+      (tc) => tc.tool_name === "nuvem-fiscal__create_nfse",
     );
     expect(nfseCalls).toHaveLength(2);
     nfseCalls.forEach((tc) => {
@@ -62,7 +62,7 @@ describe("Service invoice from natural language", () => {
 
     // WhatsApp outbound carrying both PDF URLs.
     const sendCalls = result.tool_calls.filter(
-      (tc) => tc.tool_name === "z-api/send_text",
+      (tc) => tc.tool_name === "z-api__send_text",
     );
     expect(sendCalls.length).toBeGreaterThanOrEqual(1);
     const message = (sendCalls[0]!.input as { message: string }).message;
