@@ -1,0 +1,25 @@
+{
+  "name": "@codespar/example-whatsapp-installment-negotiation",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Multi-turn WhatsApp installment negotiation — buyer asks for a non-enumerated payment term, agent calls the Asaas installment MCP in real time, closes the sale and issues the NF-e.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "skeleton": "vitest run --reporter=verbose",
+    "validate": "./scripts/validate.sh",
+    "validate:live": "./scripts/validate-live.sh"
+  },
+  "dependencies": {
+    "@codespar/sdk": "^0.9.0"
+  },
+  "devDependencies": {
+    "@codespar/mcp-asaas": "0.2.0",
+    "@codespar/mcp-nuvem-fiscal": "0.3.0",
+    "@codespar/mcp-z-api": "0.2.1",
+    "@copilotkit/aimock": "^1.24.1",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

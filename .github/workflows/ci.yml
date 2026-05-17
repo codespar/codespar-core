@@ -81,3 +81,28 @@ jobs:
       - name: Run the natural-language NFS-e example end-to-end
         working-directory: examples/nfse-from-natural-language
         run: npm run validate
+
+  validate-example-whatsapp-installment-negotiation:
+    runs-on: ubuntu-latest
+    # Exercises the multi-turn installment-negotiation example end-to-end
+    # via the published runtime image at ghcr.io/codespar/codespar:latest.
+    # Three buyer messages drive three session.send() calls; the Asaas
+    # MCP is exercised twice (preview + create) and the Nuvem Fiscal +
+    # Z-API MCPs once each — so a regression in session.send() state
+    # management across turns fails this job loudly.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: examples/whatsapp-installment-negotiation/package-lock.json
+
+      - name: Install example dependencies
+        working-directory: examples/whatsapp-installment-negotiation
+        run: npm ci
+
+      - name: Run the installment-negotiation example end-to-end
+        working-directory: examples/whatsapp-installment-negotiation
+        run: npm run validate

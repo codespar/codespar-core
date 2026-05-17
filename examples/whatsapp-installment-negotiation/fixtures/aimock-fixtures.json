@@ -1,0 +1,94 @@
+{
+  "fixtures": [
+    {
+      "match": {
+        "userMessage": "sof",
+        "turnIndex": 0,
+        "hasToolResult": false
+      },
+      "response": {
+        "content": "Oba! O sofa de R$4.800 sai super bem em duas opcoes: (a) Pix com 8% de desconto, fechando em R$4.416,00 a vista; ou (b) 12x no cartao de credito em parcelas iguais de R$400,00, sem entrada. Qual prefere?",
+        "finishReason": "stop"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "6x",
+        "turnIndex": 1,
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "asaas__get_installments",
+            "arguments": {
+              "value": 4800,
+              "installments": 6
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "turnIndex": 2,
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "Em 6x no cartao fica R$800,00 por mes, sem entrada e sem juros. Posso fechar nessa condicao?",
+        "finishReason": "stop"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "confirm",
+        "turnIndex": 3,
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "asaas__create_payment",
+            "arguments": {
+              "customer": "cus_demo_buyer_d2",
+              "billingType": "CREDIT_CARD",
+              "value": 4800,
+              "dueDate": "2026-07-01",
+              "installments": 6,
+              "description": "Sofa 3 lugares — 6x no cartao"
+            }
+          },
+          {
+            "name": "nuvem-fiscal__create_nfe",
+            "arguments": {
+              "servico": {
+                "codigo": "produto",
+                "descricao": "Sofa 3 lugares"
+              },
+              "valor": 4800
+            }
+          },
+          {
+            "name": "z-api__send_text",
+            "arguments": {
+              "phone": "+5511987654321",
+              "message": "Pedido confirmado em 6x de R$800,00. NF-e emitida e enviada em anexo. Obrigado!"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "turnIndex": 4,
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "Pedido fechado em 6x de R$800,00. NF-e emitida e enviada via WhatsApp. Bem-vindo a casa nova! 🛋️",
+        "finishReason": "stop"
+      }
+    }
+  ]
+}
