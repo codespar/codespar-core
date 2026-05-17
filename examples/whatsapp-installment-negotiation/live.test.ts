@@ -87,7 +87,7 @@ describe.skipIf(!RUN_LIVE_SMOKE)("WhatsApp installment negotiation against real 
       [
         "The buyer replied: 'Confirma, pode fechar.' Create the actual",
         "installment payment via asaas__create_payment (customer:",
-        "cus_demo_buyer_d2, billingType: CREDIT_CARD, value: 4800,",
+        "cus_demo_buyer_001, billingType: CREDIT_CARD, value: 4800,",
         "dueDate: 2026-07-01, installments: 6, description: 'Sofa 3",
         "lugares — 6x no cartao'), issue an NF-e for the same total via",
         "nuvem-fiscal__create_nfe (use codigo 'produto' and descricao",

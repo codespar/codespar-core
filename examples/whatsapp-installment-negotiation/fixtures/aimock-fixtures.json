@@ -51,7 +51,7 @@
           {
             "name": "asaas__create_payment",
             "arguments": {
-              "customer": "cus_demo_buyer_d2",
+              "customer": "cus_demo_buyer_001",
               "billingType": "CREDIT_CARD",
               "value": 4800,
               "dueDate": "2026-07-01",
