@@ -59,7 +59,7 @@ end-to-end.
 | `skeleton.test.ts` | Vitest spec — calls `session.send(naturalLanguagePrompt)`, asserts two `nuvem-fiscal/create_nfse` calls plus at least one `z-api/send_text` call whose message body carries both PDF URLs |
 | `package.json` | Pins `@codespar/mcp-nuvem-fiscal@^0.3.0`, `@codespar/mcp-z-api@^0.2.1`, and `@copilotkit/aimock@^1.24.1` |
 | `mcp-servers.json` | Server registry consumed by the bridge — same shape as the walking skeleton, two stdio servers, both spawned with `--demo` |
-| `fixtures/aimock-d1.json` | Three-turn aimock fixture: turn 0 emits two `nuvem-fiscal/create_nfse` tool_use blocks; turn 1 emits one `z-api/send_text` tool_use; turn 2 emits the final text summary |
+| `fixtures/aimock-fixtures.json` | Three-turn aimock fixture: turn 0 emits two `nuvem-fiscal/create_nfse` tool_use blocks; turn 1 emits one `z-api/send_text` tool_use; turn 2 emits the final text summary |
 | `scripts/validate.sh` | Boots aimock first, then resolves a runtime (Docker / local clone / already-running), polls `/health`, runs vitest, kills both on exit |
 | `tsconfig.json` | Minimal TS config (NodeNext, strict, vitest globals) |
 | `vitest.config.ts` | 60s test timeout (LLM-driven loops are slower than the deterministic skeleton) |
@@ -68,7 +68,7 @@ end-to-end.
 ## Three run paths
 
 ```bash
-cd examples/d1-nfse-from-nl
+cd examples/nfse-from-natural-language
 npm install
 npm run validate
 ```
@@ -144,7 +144,7 @@ client credentials) plus a `Z_API_*` instance + token.
 Messages API shape. The runtime's Anthropic SDK honours
 `ANTHROPIC_BASE_URL`, so pointing it at aimock means every
 `session.send()` call lands on a pre-scripted fixture instead of a
-real model. The fixture file at `fixtures/aimock-d1.json` encodes the
+real model. The fixture file at `fixtures/aimock-fixtures.json` encodes the
 three-turn dance: tool_use × 2 → tool_use × 1 → final text. To swap to
 live: unset `ANTHROPIC_BASE_URL` and set a real `ANTHROPIC_API_KEY`.
 

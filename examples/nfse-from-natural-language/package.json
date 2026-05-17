@@ -1,5 +1,5 @@
 {
-  "name": "@codespar/example-d1-nfse-from-nl",
+  "name": "@codespar/example-nfse-from-natural-language",
   "version": "0.0.0",
   "private": true,
   "description": "Service invoice from a natural-language message — driven by session.send() + aimock against the OSS MCP bridge with --demo fixtures.",

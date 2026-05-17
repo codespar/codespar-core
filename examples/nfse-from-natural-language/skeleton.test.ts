@@ -9,7 +9,7 @@
  *
  * Source of truth for the fixture payloads: the two MCP packages with
  * `--demo` on their spawn line in `mcp-servers.json`, plus the aimock
- * fixture file at `./fixtures/aimock-d1.json`. The runtime is started
+ * fixture file at `./fixtures/aimock-fixtures.json`. The runtime is started
  * separately (see scripts/validate.sh) so its cwd matches this
  * directory and the bridge reads `./mcp-servers.json`.
  */

@@ -33,7 +33,7 @@ RUNTIME_PORT="${CODESPAR_RUNTIME_PORT:-3000}"
 HEALTH_URL="http://localhost:${RUNTIME_PORT}/health"
 RUNTIME_IMAGE="${CODESPAR_RUNTIME_IMAGE:-ghcr.io/codespar/codespar:latest}"
 AIMOCK_PORT="${AIMOCK_PORT:-4010}"
-AIMOCK_FIXTURE="$SKELETON_DIR/fixtures/aimock-d1.json"
+AIMOCK_FIXTURE="$SKELETON_DIR/fixtures/aimock-fixtures.json"
 AIMOCK_LOG="$SKELETON_DIR/.aimock.log"
 AIMOCK_PID_FILE="$SKELETON_DIR/.aimock.pid"
 
@@ -49,8 +49,12 @@ start_aimock() {
     exit 2
   fi
   echo "validate.sh: starting aimock on port $AIMOCK_PORT…"
+  # Bind to 0.0.0.0 so the runtime container (Mode 3) can reach aimock
+  # via host.docker.internal. aimock defaults to 127.0.0.1, which works
+  # for Modes 1 and 2 but is unreachable from inside a container even
+  # with --add-host=host.docker.internal:host-gateway.
   npx -p @copilotkit/aimock llmock --validate-on-load \
-      -p "$AIMOCK_PORT" -f "$AIMOCK_FIXTURE" \
+      -p "$AIMOCK_PORT" -h 0.0.0.0 -f "$AIMOCK_FIXTURE" \
       > "$AIMOCK_LOG" 2>&1 &
   echo $! > "$AIMOCK_PID_FILE"
 
@@ -171,7 +175,7 @@ fi
 if command -v docker >/dev/null 2>&1; then
   start_aimock
 
-  CONTAINER_NAME="codespar-d1-nfse-$$"
+  CONTAINER_NAME="codespar-example-nfse-$$"
   RUNTIME_LOG="$SKELETON_DIR/.runtime.log"
 
   echo "validate.sh: starting runtime from $RUNTIME_IMAGE (port $RUNTIME_PORT)…"
