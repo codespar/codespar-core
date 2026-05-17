@@ -21,8 +21,9 @@ Three buyer turns later, the agent has:
    [`@codespar/mcp-z-api`](https://www.npmjs.com/package/@codespar/mcp-z-api).
 
 This example exercises **multi-turn `session.send()`** with inline MCP
-calls — three buyer messages, four LLM completion turns, three
-distinct MCP servers. The walking skeleton at
+calls — three buyer messages, five LLM completion turns (each round of
+tool execution yields one extra completion request), three distinct
+MCP servers. The walking skeleton at
 [`../pix-nfse-skeleton/`](../pix-nfse-skeleton/) wires the OSS bridge
 with a deterministic `loop()`; the natural-language demo at
 [`../nfse-from-natural-language/`](../nfse-from-natural-language/)
@@ -173,6 +174,34 @@ against real fiscal-authority endpoints, real WhatsApp delivery, real
 PSP charges, and a real Claude model. The test code does not change.
 The fixture file becomes dead weight, which is the point: fixtures
 are the on-ramp, not the destination.
+
+### How to extend the fixture for your own multi-turn flow
+
+The five-entry fixture maps onto three buyer messages because each
+round of tool execution generates one extra LLM completion request:
+
+| Aimock entry | Triggered by | Match key | Response |
+|---|---|---|---|
+| 0 | buyer message 1 | `turnIndex: 0, hasToolResult: false, userMessage~"sof"` | text only |
+| 1 | buyer message 2 | `turnIndex: 1, hasToolResult: false, userMessage~"6x"` | tool_use |
+| 2 | tool result returns | `turnIndex: 2, hasToolResult: true` | text only |
+| 3 | buyer message 3 | `turnIndex: 3, hasToolResult: false, userMessage~"confirm"` | three parallel tool_uses |
+| 4 | tool results return | `turnIndex: 4, hasToolResult: true` | text only |
+
+To copy the pattern to your own demo: count one fixture entry per
+LLM completion the runtime will make, not per buyer message.
+`turnIndex` increments on every completion request — including the
+"after tool result" continuations — so `turnIndex` + `hasToolResult`
+together uniquely identify each entry. `userMessage~"keyword"` is
+optional but useful for asserting which buyer message a given LLM
+turn corresponds to (avoids accidental ordering swaps).
+
+**Demo arithmetic is flat (no juros).** The Asaas `--demo` handler
+computes `installmentValue = value / installments` with no interest,
+to keep the demo deterministic and the fixture coupling simple. Real
+Brazilian credit-card installments usually carry interest after 3x or
+6x; modelling that would shift the NF-e taxable amount in ways that
+deserve their own demo (tracked as a known gap in the section below).
 
 ## WhatsApp inbound: where this fits in production
 
