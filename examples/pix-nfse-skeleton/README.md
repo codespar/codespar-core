@@ -106,6 +106,18 @@ The vitest spec asserts six invariants pulled from the demo fixtures in
 6. `result.results[3].data.id` matches `/^nfse_/` AND
    `result.results[3].data.status === "autorizada"`
 
+## Live LLM smoke (`npm run validate:live`)
+
+`validate.sh` exercises the deterministic `loop()` against demo MCP servers — there is no real Anthropic call. To also verify the agentic path through the OSS chat loop (real `api.anthropic.com`, real tool-name regex, real model id), run:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-... npm run validate:live
+```
+
+That boots a runtime with your `ANTHROPIC_API_KEY` (no aimock), runs `live.test.ts`, and tears down. The MCP servers stay in `--demo` mode so no Asaas / Nuvem-Fiscal credentials are needed. The live test sends a natural-language prompt that asks Claude to orchestrate the four-step flow itself (create Asaas customer → Pix charge → fetch QR → issue NFS-e); the assertions stay coarse (at-least-one Asaas dispatch, at-least-one Nuvem-Fiscal dispatch, every dispatched call succeeds) because real Claude is probabilistic.
+
+This is **not in CI** — it costs real Anthropic spend (a few cents per run) and is probabilistic enough that flakes would be noise. Run it locally before pushing changes that touch the OSS chat loop, the tool catalog, the SDK's `session.send()`, the LATAM-commerce system prompt, or this example's MCP fixtures. The aimock-mode tests can't catch tool-name regex violations or invalid model ids; only this can.
+
 ## Known platform gaps
 
 Flagged here so they survive as latent debt rather than getting lost in

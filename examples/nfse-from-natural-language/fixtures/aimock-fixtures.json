@@ -1,0 +1,64 @@
+{
+  "fixtures": [
+    {
+      "match": {
+        "userMessage": "platform access fee",
+        "turnIndex": 0,
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "nuvem-fiscal__create_nfse",
+            "arguments": {
+              "servico": {
+                "codigo": "1.05",
+                "descricao": "Plataforma SaaS - acesso mensal"
+              },
+              "valor": 2800.0
+            }
+          },
+          {
+            "name": "nuvem-fiscal__create_nfse",
+            "arguments": {
+              "servico": {
+                "codigo": "17.01",
+                "descricao": "Consultoria de onboarding"
+              },
+              "valor": 1200.0
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "turnIndex": 1,
+        "hasToolResult": true
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "z-api__send_text",
+            "arguments": {
+              "phone": "+5511987654321",
+              "message": "Suas notas estao prontas: https://api.nuvemfiscal.com.br/demo/nfse_demo_001.pdf  https://api.nuvemfiscal.com.br/demo/nfse_demo_002.pdf"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "turnIndex": 2,
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "Duas NFS-e emitidas: nfse_demo_001 (LC 116 1.05, plataforma SaaS) e nfse_demo_002 (LC 116 17.01, consultoria de onboarding). PDF entregue via WhatsApp.",
+        "finishReason": "stop"
+      }
+    }
+  ]
+}

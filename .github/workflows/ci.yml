@@ -58,3 +58,26 @@ jobs:
         working-directory: examples/pix-nfse-skeleton
         run: npm run validate
 
+  validate-example-nfse-from-natural-language:
+    runs-on: ubuntu-latest
+    # Exercises the natural-language NFS-e example end-to-end via the
+    # published runtime image at ghcr.io/codespar/codespar:latest. Boots
+    # @copilotkit/aimock on port 4010 as the stand-in Anthropic API and
+    # points the runtime's ANTHROPIC_BASE_URL at it — so a regression in
+    # the runtime's LLM tool-use loop fails this job loudly.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: examples/nfse-from-natural-language/package-lock.json
+
+      - name: Install example dependencies
+        working-directory: examples/nfse-from-natural-language
+        run: npm ci
+
+      - name: Run the natural-language NFS-e example end-to-end
+        working-directory: examples/nfse-from-natural-language
+        run: npm run validate
