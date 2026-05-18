@@ -390,3 +390,54 @@ describe("close()", () => {
     expect(session.status).toBe("closed");
   });
 });
+
+describe("per-call CallOptions (signal/timeout)", () => {
+  function neverTerminatingRuntime(): AgentRuntime {
+    return makeRuntime({
+      streamEvents: vi.fn().mockImplementation(async function* (): AsyncGenerator<AgentEvent> {
+        // Healthy chatter, but never a tool_result/done — drains forever.
+        for (;;) {
+          yield { type: "assistant_text", content: "...", iteration: 0 };
+          await new Promise((r) => setTimeout(r, 10));
+        }
+      }),
+    });
+  }
+
+  it("execute() throws the caller's abort reason immediately when the signal is already aborted", async () => {
+    const session = await openSession(runtimeWithToolResult());
+    const reason = new DOMException("already cancelled", "AbortError");
+    const ac = new AbortController();
+    ac.abort(reason);
+    await expect(session.execute("t", {}, { signal: ac.signal })).rejects.toBe(reason);
+  });
+
+  it("execute() rejects with the caller's abort reason when the signal aborts mid-drain", async () => {
+    const session = await openSession(neverTerminatingRuntime());
+    const ac = new AbortController();
+    const reason = new DOMException("user cancelled", "AbortError");
+    const p = session.execute("t", {}, { signal: ac.signal });
+    setTimeout(() => ac.abort(reason), 30);
+    await expect(p).rejects.toBe(reason);
+  }, 5000);
+
+  it("sendStream() stops with the caller's abort reason when the signal aborts mid-stream", async () => {
+    const session = await openSession(
+      makeRuntime({
+        streamEvents: vi.fn().mockImplementation(async function* (): AsyncGenerator<AgentEvent> {
+          for (;;) {
+            yield { type: "assistant_text", content: "x", iteration: 0 };
+            await new Promise((r) => setTimeout(r, 10));
+          }
+        }),
+      }),
+    );
+    const ac = new AbortController();
+    const reason = new DOMException("user cancelled", "AbortError");
+    const drain = (async () => {
+      for await (const _ of session.sendStream("hi", { signal: ac.signal })) { /* drain */ }
+    })();
+    setTimeout(() => ac.abort(reason), 30);
+    await expect(drain).rejects.toBe(reason);
+  }, 5000);
+});

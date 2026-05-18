@@ -19,6 +19,7 @@ import type {
   SendResult,
   StreamEvent,
   BaseConnection,
+  CallOptions,
 } from "@codespar/types";
 
 import {
@@ -32,6 +33,11 @@ import {
 
 const TOOL_NAME_RE = /^[a-zA-Z0-9_-]+$/;
 const DEFAULT_DRAIN_TIMEOUT_MS = 30_000;
+
+/** Throw the caller's abort reason verbatim if the signal is aborted. */
+function throwIfAborted(opts?: CallOptions): void {
+  if (opts?.signal?.aborted) throw opts.signal.reason;
+}
 
 export interface PolicyHook {
   evaluate(agentId: string, toolName: string): Promise<PolicyDecision>;
@@ -93,7 +99,12 @@ class ManagedAgentsSession implements SessionBase {
    * tool call may have already executed — retrying risks a duplicate
    * transaction (Pix transfer, NF-e issuance, etc.).
    */
-  async execute(toolName: string, params: Record<string, unknown>): Promise<ToolResult> {
+  async execute(
+    toolName: string,
+    params: Record<string, unknown>,
+    opts?: CallOptions,
+  ): Promise<ToolResult> {
+    throwIfAborted(opts);
     if (this._activeMutex) throw new ConcurrentOperationError();
 
     // Tool name validation runs before any message is constructed so a
@@ -119,15 +130,18 @@ class ManagedAgentsSession implements SessionBase {
     try {
       const message = JSON.stringify({ tool: toolName, input: resolvedParams });
       await this._runtime.sendMessage(this._sessionId, message);
-      const deadline = Date.now() + this._drainTimeoutMs;
-      return await this._drainForToolResult(deadline, toolName);
+      // Per-call timeout overrides the configured drain timeout.
+      const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+      const deadline = Date.now() + drainMs;
+      return await this._drainForToolResult(deadline, toolName, drainMs, opts);
     } finally {
       resolveMutex();
       this._activeMutex = null;
     }
   }
 
-  async send(message: string): Promise<SendResult> {
+  async send(message: string, opts?: CallOptions): Promise<SendResult> {
+    throwIfAborted(opts);
     if (this._activeMutex) throw new ConcurrentOperationError();
 
     let resolveMutex!: () => void;
@@ -136,14 +150,18 @@ class ManagedAgentsSession implements SessionBase {
     });
     try {
       await this._runtime.sendMessage(this._sessionId, message);
-      return await this._drainForSendResult();
+      return await this._drainForSendResult(opts);
     } finally {
       resolveMutex();
       this._activeMutex = null;
     }
   }
 
-  async *sendStream(message: string): AsyncIterable<StreamEvent> {
+  async *sendStream(
+    message: string,
+    opts?: CallOptions,
+  ): AsyncIterable<StreamEvent> {
+    throwIfAborted(opts);
     if (this._activeMutex) throw new ConcurrentOperationError();
 
     let resolveMutex!: () => void;
@@ -153,6 +171,7 @@ class ManagedAgentsSession implements SessionBase {
     try {
       await this._runtime.sendMessage(this._sessionId, message);
       for await (const raw of this._runtime.streamEvents(this._sessionId)) {
+        throwIfAborted(opts);
         if (typeof raw.type !== "string") continue;
         const event = mapAgentEvent(raw);
         if (event) yield event;
@@ -164,19 +183,41 @@ class ManagedAgentsSession implements SessionBase {
     }
   }
 
-  async connections(): Promise<BaseConnection[]> {
+  async connections(opts?: CallOptions): Promise<BaseConnection[]> {
+    throwIfAborted(opts);
     const status = await this._runtime.getStatus(this._sessionId);
     return [{ id: this._sessionId, connected: status.state === "active" }];
   }
 
-  async close(): Promise<void> {
+  async close(opts?: CallOptions): Promise<void> {
+    // close() is terminal cleanup — it does not throw on an aborted
+    // signal. It still honours `signal` to bound the drain wait so a
+    // caller cancelling close() is not blocked on an in-flight op.
     this._status = "closed";
-    if (this._activeMutex) await this._activeMutex;
+    if (this._activeMutex) {
+      if (opts?.signal) {
+        await Promise.race([
+          this._activeMutex,
+          new Promise<void>((resolve) => {
+            if (opts.signal!.aborted) return resolve();
+            opts.signal!.addEventListener("abort", () => resolve(), { once: true });
+          }),
+        ]);
+      } else {
+        await this._activeMutex;
+      }
+    }
   }
 
-  private async _drainForToolResult(deadline: number, toolName: string): Promise<ToolResult> {
+  private async _drainForToolResult(
+    deadline: number,
+    toolName: string,
+    drainMs: number,
+    opts?: CallOptions,
+  ): Promise<ToolResult> {
     for await (const raw of this._runtime.streamEvents(this._sessionId)) {
-      if (Date.now() > deadline) throw new DrainTimeoutError(this._drainTimeoutMs);
+      throwIfAborted(opts);
+      if (Date.now() > deadline) throw new DrainTimeoutError(drainMs);
       if (typeof raw.type !== "string") continue;
       if (raw.type === "tool_result") {
         return {
@@ -195,11 +236,12 @@ class ManagedAgentsSession implements SessionBase {
     throw new Error(`Stream ended without producing a tool result for "${toolName}"`);
   }
 
-  private async _drainForSendResult(): Promise<SendResult> {
+  private async _drainForSendResult(opts?: CallOptions): Promise<SendResult> {
     const toolCalls: SendResult["tool_calls"] = [];
     let finalResult: SendResult | null = null;
 
     for await (const raw of this._runtime.streamEvents(this._sessionId)) {
+      throwIfAborted(opts);
       if (typeof raw.type !== "string") continue;
       if (raw.type === "tool_result") {
         const tc = raw.toolCall as SendResult["tool_calls"][number] | undefined;
