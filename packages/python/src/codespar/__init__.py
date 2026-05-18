@@ -35,6 +35,7 @@ from .errors import (
     ConfigError,
     NotConnectedError,
     StreamError,
+    TimeoutError,
 )
 from .types import (
     AssistantTextEvent,
@@ -155,6 +156,7 @@ __all__ = [
     "StreamError",
     # Streaming events
     "StreamEvent",
+    "TimeoutError",
     "Tool",
     "ToolCallRecord",
     "ToolResult",
