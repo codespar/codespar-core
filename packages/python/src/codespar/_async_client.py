@@ -11,6 +11,7 @@ having to write ``async def``.
 from __future__ import annotations
 
 import os
+import re
 from types import TracebackType
 
 import httpx
@@ -24,6 +25,11 @@ from ._http import DEFAULT_BASE_URL, request_json
 from ._presets import preset_to_servers
 from .errors import ApiError, ConfigError
 from .types import SessionConfig
+
+# Wire format for a project scope. Kept in sync with the TS SDK
+# (`PROJECT_ID_REGEX` in packages/core/src/types.ts) so both clients
+# reject the same project_id inputs.
+_PROJECT_ID_RE = re.compile(r"^prj_[A-Za-z0-9]{16}$")
 
 
 def _resolve_base_url(explicit: str | None) -> str:
@@ -66,6 +72,10 @@ class AsyncCodeSpar:
             raise ConfigError(
                 "api_key is required and must start with 'csk_'. "
                 "Get one from https://dashboard.codespar.dev."
+            )
+        if project_id is not None and not _PROJECT_ID_RE.match(project_id):
+            raise ConfigError(
+                "project_id must match ^prj_[A-Za-z0-9]{16}$ (e.g. 'prj_...')."
             )
         self._api_key = api_key
         self._base_url = _resolve_base_url(base_url).rstrip("/")

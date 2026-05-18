@@ -111,6 +111,10 @@ const MockValueSchema = z.union([
   z.array(z.record(z.unknown())),
 ]);
 
+/** Wire format for a project scope. Shared by the Zod session schema
+ *  and the client constructor so both validation paths stay in sync. */
+export const PROJECT_ID_REGEX = /^prj_[A-Za-z0-9]{16}$/;
+
 export const SessionConfigSchema = z.object({
   servers: z.array(z.string()).optional(),
   preset: z.enum(["brazilian", "mexican", "argentinian", "colombian", "all"]).optional(),
@@ -121,6 +125,6 @@ export const SessionConfigSchema = z.object({
     })
     .optional(),
   metadata: z.record(z.string()).optional(),
-  projectId: z.string().regex(/^prj_[A-Za-z0-9]{16}$/).optional(),
+  projectId: z.string().regex(PROJECT_ID_REGEX).optional(),
   mocks: z.record(MockValueSchema).optional(),
 });
