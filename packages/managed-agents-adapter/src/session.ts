@@ -39,6 +39,61 @@ function throwIfAborted(opts?: CallOptions): void {
   if (opts?.signal?.aborted) throw opts.signal.reason;
 }
 
+/**
+ * Drain an async iterable while enforcing a deadline and caller abort
+ * on EVERY read — including a read that never resolves because the
+ * runtime stalled before yielding the next event. Each next() is raced
+ * against a timeout/abort guard, so a hung stream cannot pin the call
+ * (and the session mutex) past its budget. The underlying iterator is
+ * always closed via return() on early exit.
+ */
+async function* withDeadline<T>(
+  source: AsyncIterable<T>,
+  drainMs: number,
+  opts: CallOptions | undefined,
+): AsyncGenerator<T> {
+  const it = source[Symbol.asyncIterator]();
+  const deadline = Date.now() + drainMs;
+  try {
+    for (;;) {
+      if (opts?.signal?.aborted) throw opts.signal.reason;
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) throw new DrainTimeoutError(drainMs);
+
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      let onAbort: (() => void) | undefined;
+      const guard = new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new DrainTimeoutError(drainMs)), remaining);
+        if (opts?.signal) {
+          onAbort = () => reject(opts.signal!.reason);
+          opts.signal.addEventListener("abort", onAbort, { once: true });
+        }
+      });
+      // If next() wins the race, the guard stays pending and would
+      // reject later — swallow that so it never surfaces as an
+      // unhandled rejection.
+      guard.catch(() => {});
+
+      let res: IteratorResult<T>;
+      try {
+        res = await Promise.race([it.next(), guard]);
+      } finally {
+        if (timer) clearTimeout(timer);
+        if (onAbort && opts?.signal) {
+          opts.signal.removeEventListener("abort", onAbort);
+        }
+      }
+      if (res.done) return;
+      yield res.value;
+    }
+  } finally {
+    // Best-effort cancellation. NOT awaited: a runtime generator
+    // wedged on a non-settling await never resolves return(), so
+    // awaiting it here would re-introduce the very hang we prevent.
+    void Promise.resolve(it.return?.()).catch(() => {});
+  }
+}
+
 export interface PolicyHook {
   evaluate(agentId: string, toolName: string): Promise<PolicyDecision>;
 }
@@ -132,8 +187,10 @@ class ManagedAgentsSession implements SessionBase {
       await this._runtime.sendMessage(this._sessionId, message);
       // Per-call timeout overrides the configured drain timeout.
       const drainMs = opts?.timeout ?? this._drainTimeoutMs;
-      const deadline = Date.now() + drainMs;
-      return await this._drainForToolResult(deadline, toolName, drainMs, opts);
+      return await this._drainForToolResult(
+        withDeadline(this._runtime.streamEvents(this._sessionId), drainMs, opts),
+        toolName,
+      );
     } finally {
       resolveMutex();
       this._activeMutex = null;
@@ -150,7 +207,10 @@ class ManagedAgentsSession implements SessionBase {
     });
     try {
       await this._runtime.sendMessage(this._sessionId, message);
-      return await this._drainForSendResult(opts);
+      const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+      return await this._drainForSendResult(
+        withDeadline(this._runtime.streamEvents(this._sessionId), drainMs, opts),
+      );
     } finally {
       resolveMutex();
       this._activeMutex = null;
@@ -170,8 +230,12 @@ class ManagedAgentsSession implements SessionBase {
     });
     try {
       await this._runtime.sendMessage(this._sessionId, message);
-      for await (const raw of this._runtime.streamEvents(this._sessionId)) {
-        throwIfAborted(opts);
+      const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+      for await (const raw of withDeadline(
+        this._runtime.streamEvents(this._sessionId),
+        drainMs,
+        opts,
+      )) {
         if (typeof raw.type !== "string") continue;
         const event = mapAgentEvent(raw);
         if (event) yield event;
@@ -210,14 +274,11 @@ class ManagedAgentsSession implements SessionBase {
   }
 
   private async _drainForToolResult(
-    deadline: number,
+    source: AsyncIterable<AgentEvent>,
     toolName: string,
-    drainMs: number,
-    opts?: CallOptions,
   ): Promise<ToolResult> {
-    for await (const raw of this._runtime.streamEvents(this._sessionId)) {
-      throwIfAborted(opts);
-      if (Date.now() > deadline) throw new DrainTimeoutError(drainMs);
+    // Deadline + caller abort are enforced by withDeadline(source).
+    for await (const raw of source) {
       if (typeof raw.type !== "string") continue;
       if (raw.type === "tool_result") {
         return {
@@ -236,12 +297,14 @@ class ManagedAgentsSession implements SessionBase {
     throw new Error(`Stream ended without producing a tool result for "${toolName}"`);
   }
 
-  private async _drainForSendResult(opts?: CallOptions): Promise<SendResult> {
+  private async _drainForSendResult(
+    source: AsyncIterable<AgentEvent>,
+  ): Promise<SendResult> {
     const toolCalls: SendResult["tool_calls"] = [];
     let finalResult: SendResult | null = null;
 
-    for await (const raw of this._runtime.streamEvents(this._sessionId)) {
-      throwIfAborted(opts);
+    // Deadline + caller abort are enforced by withDeadline(source).
+    for await (const raw of source) {
       if (typeof raw.type !== "string") continue;
       if (raw.type === "tool_result") {
         const tc = raw.toolCall as SendResult["tool_calls"][number] | undefined;

@@ -440,4 +440,54 @@ describe("per-call CallOptions (signal/timeout)", () => {
     setTimeout(() => ac.abort(reason), 30);
     await expect(drain).rejects.toBe(reason);
   }, 5000);
+
+  it("send() enforces a per-call timeout on a non-terminal stream", async () => {
+    // Stream keeps producing events but never emits `done`.
+    const session = await openSession(neverTerminatingRuntime());
+    await expect(session.send("hi", { timeout: 60 })).rejects.toBeInstanceOf(
+      DrainTimeoutError,
+    );
+  }, 5000);
+
+  it("sendStream() enforces a per-call timeout on a non-terminal stream", async () => {
+    const session = await openSession(neverTerminatingRuntime());
+    await expect(async () => {
+      for await (const _ of session.sendStream("hi", { timeout: 60 })) { /* drain */ }
+    }).rejects.toBeInstanceOf(DrainTimeoutError);
+  }, 5000);
+
+  it("execute() abort releases even when the runtime stalls before yielding", async () => {
+    // Runtime accepts the message but its stream never yields anything.
+    const session = await openSession(
+      makeRuntime({
+        streamEvents: vi.fn().mockImplementation(
+          // eslint-disable-next-line require-yield
+          async function* (): AsyncGenerator<AgentEvent> {
+            await new Promise(() => {}); // hangs forever, never yields
+          },
+        ),
+      }),
+    );
+    const ac = new AbortController();
+    const reason = new DOMException("user cancelled", "AbortError");
+    const p = session.execute("t", {}, { signal: ac.signal });
+    setTimeout(() => ac.abort(reason), 30);
+    await expect(p).rejects.toBe(reason);
+  }, 5000);
+
+  it("execute() timeout releases even when the runtime stalls before yielding", async () => {
+    const session = await openSession(
+      makeRuntime({
+        streamEvents: vi.fn().mockImplementation(
+          // eslint-disable-next-line require-yield
+          async function* (): AsyncGenerator<AgentEvent> {
+            await new Promise(() => {});
+          },
+        ),
+      }),
+    );
+    await expect(session.execute("t", {}, { timeout: 60 })).rejects.toBeInstanceOf(
+      DrainTimeoutError,
+    );
+  }, 5000);
 });
