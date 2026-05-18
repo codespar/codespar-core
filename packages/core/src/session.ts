@@ -193,6 +193,10 @@ export async function createSession(
         timer = setTimeout(() => idleAc.abort(), ms);
       };
       try {
+        // Arm the timeout before the fetch so the connect/headers phase
+        // is covered too — not just post-body idle. Otherwise a backend
+        // that accepts the socket but never sends headers hangs forever.
+        resetIdle();
         const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/send`, {
           method: "POST",
           headers: { ...headers, Accept: "text/event-stream" },
@@ -337,6 +341,8 @@ export async function createSession(
         timer = setTimeout(() => idleAc.abort(), ms);
       };
       try {
+        // Arm the timeout before the fetch so connect/headers are covered.
+        resetIdle();
         const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
           toolCallId,
         )}/payment-status/stream`;
@@ -386,6 +392,8 @@ export async function createSession(
         timer = setTimeout(() => idleAc.abort(), ms);
       };
       try {
+        // Arm the timeout before the fetch so connect/headers are covered.
+        resetIdle();
         const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
           toolCallId,
         )}/verification-status/stream`;
@@ -462,11 +470,11 @@ export async function createSession(
       return payload.servers;
     },
 
-    async close(): Promise<void> {
-      await fetch(`${baseUrl}/v1/sessions/${data.id}`, {
+    async close(opts?: CallOptions): Promise<void> {
+      await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}`, {
         method: "DELETE",
         headers,
-      });
+      }, callOpts(opts));
     },
   };
 
@@ -521,7 +529,6 @@ async function* parseSseStream(
     while (true) {
       const { done, value } = await Promise.race([reader.read(), abortPromise]);
       if (done) break;
-      resetIdle();
       buffer += decoder.decode(value, { stream: true });
 
       let sep: number;
@@ -529,7 +536,12 @@ async function* parseSseStream(
         const chunk = buffer.slice(0, sep);
         buffer = buffer.slice(sep + 2);
         const event = parseSseChunk(chunk);
-        if (event) yield event;
+        if (event) {
+          // Reset idle per PARSED event, not per raw read — a byte
+          // trickle that never completes a frame must still time out.
+          resetIdle();
+          yield event;
+        }
       }
     }
     if (buffer.trim()) {
@@ -645,7 +657,6 @@ async function* parseStatusSseStream(
     while (true) {
       const { done, value } = await Promise.race([reader.read(), abortPromise]);
       if (done) break;
-      resetIdle();
       buffer += decoder.decode(value, { stream: true });
       let sep: number;
       while ((sep = buffer.indexOf("\n\n")) !== -1) {
@@ -661,7 +672,10 @@ async function* parseStatusSseStream(
         }
         if (!dataLine) continue;
         try {
-          yield { event: eventName, data: JSON.parse(dataLine) };
+          const parsed = JSON.parse(dataLine);
+          // Reset idle per PARSED event, not per raw read.
+          resetIdle();
+          yield { event: eventName, data: parsed };
         } catch {
           continue;
         }
