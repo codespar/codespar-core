@@ -154,9 +154,9 @@ __all__ = [
     "ShipResult",
     "ShipServiceLevel",
     "StreamError",
+    "TimeoutError",
     # Streaming events
     "StreamEvent",
-    "TimeoutError",
     "Tool",
     "ToolCallRecord",
     "ToolResult",
