@@ -54,6 +54,47 @@ describe("stream idle timeout", () => {
     }).rejects.toBeInstanceOf(TimeoutError);
   }, 5000);
 
+  it("sendStream times out when the initial fetch never returns headers/body", async () => {
+    // Backend accepts the connection but never sends SSE headers/body.
+    // Mirrors native fetch: hangs until the signal aborts, then rejects
+    // with the signal reason.
+    globalThis.fetch = ((url: string, init?: RequestInit) => {
+      if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());
+      return new Promise((_res, rej) => {
+        init?.signal?.addEventListener(
+          "abort",
+          () => rej((init.signal as AbortSignal).reason),
+          { once: true },
+        );
+      });
+    }) as unknown as typeof fetch;
+
+    const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x", timeout: 50 });
+    const session = await cs.create("u");
+    await expect(async () => {
+      for await (const _ of session.sendStream("hi")) { /* never reached */ }
+    }).rejects.toBeInstanceOf(TimeoutError);
+  }, 5000);
+
+  it("paymentStatusStream times out when the initial fetch never returns headers/body", async () => {
+    globalThis.fetch = ((url: string, init?: RequestInit) => {
+      if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());
+      return new Promise((_res, rej) => {
+        init?.signal?.addEventListener(
+          "abort",
+          () => rej((init.signal as AbortSignal).reason),
+          { once: true },
+        );
+      });
+    }) as unknown as typeof fetch;
+
+    const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x", timeout: 10_000 });
+    const session = await cs.create("u");
+    await expect(
+      session.paymentStatusStream("tc1", { timeout: 50, onUpdate() {} }),
+    ).rejects.toBeInstanceOf(TimeoutError);
+  }, 5000);
+
   it("cancels the response body when the idle timeout fires", async () => {
     const { stream, state } = trackedSse(['event: assistant_text\ndata: {"content":"hi","iteration":1}\n\n'], 0);
     globalThis.fetch = ((url: string) => {
@@ -79,9 +120,8 @@ describe("stream idle timeout", () => {
     const ac = new AbortController();
     const reason = new DOMException("user cancelled", "AbortError");
     const iterate = (async () => {
-      // Cast through unknown: Session type has 1-arg sendStream; impl accepts CallOptions.
-      const s = session as unknown as { sendStream(m: string, o: { signal: AbortSignal }): AsyncIterable<unknown> };
-      for await (const _ of s.sendStream("hi", { signal: ac.signal })) { /* drain */ }
+      // CallOptions is part of the public Session contract — no cast needed.
+      for await (const _ of session.sendStream("hi", { signal: ac.signal })) { /* drain */ }
     })();
     queueMicrotask(() => ac.abort(reason));
     await expect(iterate).rejects.toBe(reason);
@@ -131,5 +171,34 @@ describe("stream idle timeout", () => {
       if (ev.type === "assistant_text") count++;
     }
     expect(count).toBe(12);
+  }, 5000);
+
+  it("times out on a byte trickle that never completes an SSE frame", async () => {
+    // Server dribbles bytes faster than the idle window but never emits
+    // a complete "\n\n" frame. The idle timer must reset per PARSED
+    // event, not per raw read — otherwise the trickle resets it forever
+    // and the hang is never detected.
+    const enc = new TextEncoder();
+    const partial = "event: assistant_text\n"; // no blank line → no frame
+    let stopped = false;
+    const trickle = new ReadableStream<Uint8Array>({
+      pull(ctrl) {
+        return new Promise<void>((r) => setTimeout(() => {
+          if (stopped) return r();
+          ctrl.enqueue(enc.encode(partial));
+          r();
+        }, 20));
+      },
+      cancel() { stopped = true; },
+    });
+    globalThis.fetch = ((url: string) => {
+      if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());
+      return Promise.resolve({ ok: true, body: trickle } as unknown as Response);
+    }) as unknown as typeof fetch;
+    const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x", timeout: 120 });
+    const session = await cs.create("u");
+    await expect(async () => {
+      for await (const _ of session.sendStream("hi")) { /* never a full frame */ }
+    }).rejects.toBeInstanceOf(TimeoutError);
   }, 5000);
 });
