@@ -11,19 +11,27 @@ import { TimeoutError } from "../errors.js";
 export type { CallOptions } from "../types.js";
 
 /**
- * fetch() with a total timeout. The timeout fires a TimeoutError; the
- * caller's own signal aborting re-throws that signal's reason verbatim
- * (a standard AbortError), so the two causes stay distinguishable.
+ * fetch() with a TOTAL timeout that covers body consumption too.
+ *
+ * The `consume` callback reads the body (`res.json()`/`res.text()`)
+ * while the timeout signal is still armed — a backend that returns
+ * headers and then stalls the body still hits the timeout instead of
+ * hanging forever. The timeout fires a TimeoutError; the caller's own
+ * signal aborting re-throws that signal's reason verbatim (a standard
+ * AbortError), so the two causes stay distinguishable.
  */
-export async function fetchWithTimeout(
+export async function fetchWithTimeout<T>(
   url: string,
   init: Omit<RequestInit, "signal">,
   opts: { timeout: number; signal?: AbortSignal },
-): Promise<Response> {
+  consume: (res: Response) => Promise<T>,
+): Promise<T> {
   const t = timeoutSignal(opts.timeout);
   const merged = mergeSignals([t.signal, opts.signal]);
   try {
-    return await fetch(url, { ...init, signal: merged.signal });
+    const res = await fetch(url, { ...init, signal: merged.signal });
+    // Body read stays inside the timeout/abort budget.
+    return await consume(res);
   } catch (err) {
     // Caller cancellation takes priority and propagates verbatim.
     if (opts.signal?.aborted) throw opts.signal.reason;
