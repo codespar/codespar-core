@@ -46,4 +46,12 @@ describe("fetchWithTimeout", () => {
     ac.abort(reason);
     await expect(p).rejects.toBe(reason);
   });
+
+  it("rethrows an unrelated fetch error unchanged when no signal aborted", async () => {
+    const netErr = new TypeError("Failed to fetch");
+    globalThis.fetch = (() => Promise.reject(netErr)) as unknown as typeof fetch;
+    await expect(
+      fetchWithTimeout("https://x/y", {}, { timeout: 9999 }),
+    ).rejects.toBe(netErr);
+  });
 });
