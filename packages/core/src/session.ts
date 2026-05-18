@@ -2,8 +2,9 @@
  * Session implementation for the CodeSpar managed runtime.
  */
 
-import { networkErrorToApiError, throwFromResponse } from "./errors.js";
-import type { SessionConfig, Tool } from "./types.js";
+import { networkErrorToApiError, throwFromResponse, TimeoutError } from "./errors.js";
+import type { SessionConfig, Tool, CallOptions } from "./types.js";
+import { fetchWithTimeout } from "./internal/fetch.js";
 import type {
   Session,
   CreateSessionRequest,
@@ -50,10 +51,25 @@ async function safeFetch(
   input: RequestInfo | URL,
   init: RequestInit | undefined,
   what: string,
+  timeoutOpts?: { timeout: number; signal?: AbortSignal },
 ): Promise<Response> {
   try {
+    // Unary callers pass timeoutOpts → total timeout + cancellation;
+    // streaming callers omit it and use plain fetch (SSE idle-timeout
+    // is handled at the stream layer, not here).
+    if (timeoutOpts) {
+      return await fetchWithTimeout(
+        input as string,
+        init as Omit<RequestInit, "signal">,
+        timeoutOpts,
+      );
+    }
     return await fetch(input, init);
   } catch (cause) {
+    // Typed timeout + caller aborts propagate verbatim; only genuine
+    // transport rejections collapse to CodesparApiError(status: 0).
+    if (cause instanceof TimeoutError) throw cause;
+    if (timeoutOpts?.signal?.aborted) throw cause;
     throw networkErrorToApiError(cause, what);
   }
 }
@@ -114,6 +130,7 @@ export async function createSession(
       body: JSON.stringify(wireBody),
     },
     "createSession",
+    { timeout: deps.timeout },
   );
   if (!res.ok) {
     await throwFromResponse(res, "createSession");
@@ -155,7 +172,7 @@ export async function createSession(
       );
     },
 
-    async execute(toolName: string, params: Record<string, unknown>): Promise<ToolResult> {
+    async execute(toolName: string, params: Record<string, unknown>, opts?: CallOptions): Promise<ToolResult> {
       const start = Date.now();
       const r = await safeFetch(
         `${baseUrl}/v1/sessions/${data.id}/execute`,
@@ -165,6 +182,7 @@ export async function createSession(
           body: JSON.stringify({ tool: toolName, input: params }),
         },
         "execute",
+        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
       );
       if (!r.ok) {
         const body = await r.text();
@@ -181,7 +199,7 @@ export async function createSession(
       return result;
     },
 
-    async proxyExecute(request: ProxyRequest): Promise<ProxyResult> {
+    async proxyExecute(request: ProxyRequest, opts?: CallOptions): Promise<ProxyResult> {
       const r = await safeFetch(
         `${baseUrl}/v1/sessions/${data.id}/proxy_execute`,
         {
@@ -197,6 +215,7 @@ export async function createSession(
           }),
         },
         "proxyExecute",
+        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
       );
       if (!r.ok) {
         await throwFromResponse(r, "proxyExecute");
@@ -204,7 +223,7 @@ export async function createSession(
       return (await r.json()) as ProxyResult;
     },
 
-    async send(message: string): Promise<SendResult> {
+    async send(message: string, opts?: CallOptions): Promise<SendResult> {
       const r = await safeFetch(
         `${baseUrl}/v1/sessions/${data.id}/send`,
         {
@@ -213,6 +232,7 @@ export async function createSession(
           body: JSON.stringify({ message }),
         },
         "send",
+        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
       );
       if (!r.ok) {
         await throwFromResponse(r, "send");
@@ -245,11 +265,12 @@ export async function createSession(
     async discover(
       useCase: string,
       options?: DiscoverOptions,
+      opts?: CallOptions,
     ): Promise<DiscoverResult> {
       const result = await session.execute("codespar_discover", {
         use_case: useCase,
         ...(options ?? {}),
-      });
+      }, opts);
       if (!result.success) {
         throw new Error(`discover failed: ${result.error ?? "unknown"}`);
       }
@@ -266,10 +287,12 @@ export async function createSession(
      */
     async connectionWizard(
       options: ConnectionWizardOptions,
+      opts?: CallOptions,
     ): Promise<ConnectionWizardResult> {
       const result = await session.execute(
         "codespar_manage_connections",
         options as Record<string, unknown>,
+        opts,
       );
       if (!result.success) {
         throw new Error(`connectionWizard failed: ${result.error ?? "unknown"}`);
@@ -284,10 +307,11 @@ export async function createSession(
      * ToolResult.data. Distinct from the legacy `codespar_pay` rail
      * (which routes to outbound transfers/payouts).
      */
-    async charge(args: ChargeArgs): Promise<ChargeResult> {
+    async charge(args: ChargeArgs, opts?: CallOptions): Promise<ChargeResult> {
       const result = await session.execute(
         "codespar_charge",
         args as unknown as Record<string, unknown>,
+        opts,
       );
       if (!result.success) {
         throw new Error(`charge failed: ${result.error ?? "unknown"}`);
@@ -302,10 +326,11 @@ export async function createSession(
      * ShipResult so the caller doesn't have to cast through
      * ToolResult.data.
      */
-    async ship(args: ShipArgs): Promise<ShipResult> {
+    async ship(args: ShipArgs, opts?: CallOptions): Promise<ShipResult> {
       const result = await session.execute(
         "codespar_ship",
         args as unknown as Record<string, unknown>,
+        opts,
       );
       if (!result.success) {
         throw new Error(`ship failed: ${result.error ?? "unknown"}`);
@@ -321,10 +346,11 @@ export async function createSession(
      * LedgerResult so the caller doesn't have to cast through
      * ToolResult.data.
      */
-    async ledger(args: LedgerArgs): Promise<LedgerResult> {
+    async ledger(args: LedgerArgs, opts?: CallOptions): Promise<LedgerResult> {
       const result = await session.execute(
         "codespar_ledger",
         args as unknown as Record<string, unknown>,
+        opts,
       );
       if (!result.success) {
         throw new Error(`ledger failed: ${result.error ?? "unknown"}`);
@@ -338,10 +364,11 @@ export async function createSession(
      * Pomelo card-issuing program. Same wire as
      * `execute("codespar_issue", {...})` but returns a typed IssueResult.
      */
-    async issue(args: IssueArgs): Promise<IssueResult> {
+    async issue(args: IssueArgs, opts?: CallOptions): Promise<IssueResult> {
       const result = await session.execute(
         "codespar_issue",
         args as unknown as Record<string, unknown>,
+        opts,
       );
       if (!result.success) {
         throw new Error(`issue failed: ${result.error ?? "unknown"}`);
@@ -362,10 +389,11 @@ export async function createSession(
      * (a registered implementation behind the contract); a self-hosted
      * OSS runtime with none returns "Tool not registered".
      */
-    async shop(args: ShopArgs): Promise<ShopResult> {
+    async shop(args: ShopArgs, opts?: CallOptions): Promise<ShopResult> {
       const result = await session.execute(
         "codespar_shop",
         args as unknown as Record<string, unknown>,
+        opts,
       );
       if (!result.success) {
         throw new Error(`shop failed: ${result.error ?? "unknown"}`);
@@ -373,11 +401,12 @@ export async function createSession(
       return result.data as ShopResult;
     },
 
-    async paymentStatus(toolCallId: string): Promise<PaymentStatusResult> {
+    async paymentStatus(toolCallId: string, opts?: CallOptions): Promise<PaymentStatusResult> {
       const r = await safeFetch(
         `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/payment-status`,
         { headers },
         "paymentStatus",
+        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
       );
       if (!r.ok) {
         await throwFromResponse(r, "paymentStatus");
@@ -387,11 +416,13 @@ export async function createSession(
 
     async verificationStatus(
       toolCallId: string,
+      opts?: CallOptions,
     ): Promise<VerificationStatusResult> {
       const r = await safeFetch(
         `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/verification-status`,
         { headers },
         "verificationStatus",
+        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
       );
       if (!r.ok) {
         await throwFromResponse(r, "verificationStatus");
@@ -471,7 +502,7 @@ export async function createSession(
       return last;
     },
 
-    async authorize(serverId: string, config: AuthConfig): Promise<AuthResult> {
+    async authorize(serverId: string, config: AuthConfig, opts?: CallOptions): Promise<AuthResult> {
       const r = await safeFetch(
         `${baseUrl}/v1/connect/start`,
         {
@@ -485,6 +516,7 @@ export async function createSession(
           }),
         },
         "authorize",
+        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
       );
       if (!r.ok) {
         await throwFromResponse(r, "authorize");
@@ -501,7 +533,7 @@ export async function createSession(
       };
     },
 
-    async connections(): Promise<ServerConnection[]> {
+    async connections(opts?: CallOptions): Promise<ServerConnection[]> {
       // Best-effort — both transport failures (CodesparApiError from
       // safeFetch) and non-2xx responses fall back to the cached
       // payload so a transient blip doesn't crater the session.
@@ -510,6 +542,7 @@ export async function createSession(
           `${baseUrl}/v1/sessions/${data.id}/connections`,
           { headers },
           "connections",
+          { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
         );
         if (!r.ok) return cachedConnections ?? [];
         const payload = (await r.json()) as BackendConnectionsResponse;

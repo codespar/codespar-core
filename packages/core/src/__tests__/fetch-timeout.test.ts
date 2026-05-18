@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { fetchWithTimeout } from "../internal/fetch.js";
 import { TimeoutError } from "../errors.js";
+import { CodeSpar } from "../index.js";
 
 const realFetch = globalThis.fetch;
 afterEach(() => {
@@ -53,5 +54,27 @@ describe("fetchWithTimeout", () => {
     await expect(
       fetchWithTimeout("https://x/y", {}, { timeout: 9999 }),
     ).rejects.toBe(netErr);
+  });
+
+  it("execute() rejects with TimeoutError when the backend hangs", async () => {
+    globalThis.fetch = ((url: string, init: RequestInit) => {
+      if (String(url).endsWith("/v1/sessions")) {
+        return Promise.resolve({
+          ok: true, status: 201, text: async () => "",
+          json: async () => ({
+            id: "ses_h", org_id: "o", user_id: "u", servers: [],
+            status: "active", created_at: new Date().toISOString(), closed_at: null,
+          }),
+        } as Response);
+      }
+      // /execute hangs until aborted
+      return new Promise((_r, reject) =>
+        init.signal!.addEventListener("abort", () => reject(init.signal!.reason)),
+      );
+    }) as unknown as typeof fetch;
+
+    const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x", timeout: 10 });
+    const session = await cs.create("u");
+    await expect(session.execute("t", {})).rejects.toBeInstanceOf(TimeoutError);
   });
 });
