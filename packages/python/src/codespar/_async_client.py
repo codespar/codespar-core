@@ -58,6 +58,12 @@ class AsyncCodeSpar:
             result = await session.send("charge R$500 via Pix")
             print(result.message)
 
+    Timeout UNIT: every ``timeout`` here is in **seconds** (httpx
+    convention) — e.g. ``timeout=30`` is 30 seconds. The TypeScript SDK
+    (``@codespar/sdk``) uses **milliseconds** for the equivalent option.
+    Do not copy a numeric timeout between the two SDKs without
+    converting (30s in Python == ``timeout: 30000`` in TS).
+
     Cancellation: there is no AbortSignal in Python. Cancel an in-flight
     call by cancelling the awaiting asyncio task (e.g. asyncio.timeout()
     or task.cancel()); httpx tears the connection down. Note this only

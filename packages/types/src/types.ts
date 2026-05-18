@@ -5,9 +5,14 @@
  * SDK turns these into an AbortSignal/timeout around the transport.
  * `timeout` overrides the client default; `signal` lets the caller
  * cancel an in-flight call.
+ *
+ * UNIT: this TypeScript SDK uses **milliseconds** everywhere. The
+ * Python client (`codespar`) follows the httpx convention and takes
+ * **seconds** (e.g. `timeout=30` is 30s in Python, 30ms in TS). Do not
+ * copy a numeric timeout between the two SDKs without converting.
  */
 export interface CallOptions {
-  /** Per-call timeout in ms; overrides the client default. */
+  /** Per-call timeout in MILLISECONDS; overrides the client default. */
   timeout?: number;
   /** Caller AbortSignal. */
   signal?: AbortSignal;
