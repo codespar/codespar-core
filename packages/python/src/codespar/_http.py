@@ -16,7 +16,7 @@ from typing import Any
 
 import httpx
 
-from .errors import ApiError, StreamError
+from .errors import ApiError, StreamError, TimeoutError
 
 DEFAULT_BASE_URL = "https://api.codespar.dev"
 
@@ -47,6 +47,7 @@ async def request_json(
     api_key: str,
     project_id: str | None,
     body: Any = None,
+    timeout: float | None = None,
 ) -> Any:
     """Do an authenticated JSON request, return parsed body or raise ApiError."""
     headers = build_headers(api_key, project_id)
@@ -56,7 +57,10 @@ async def request_json(
             path,
             headers=headers,
             json=body if body is not None else None,
+            timeout=timeout,
         )
+    except httpx.TimeoutException as exc:
+        raise TimeoutError(str(exc), cause=exc) from exc
     except httpx.HTTPError as exc:  # network, timeout, connect failure
         raise ApiError(f"{method} {path} failed: {exc}", status=0) from exc
 
@@ -94,6 +98,7 @@ async def stream_sse(
     api_key: str,
     project_id: str | None,
     body: Any,
+    timeout: float | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
     """
     POST a JSON body and yield parsed SSE data frames from the response.
@@ -110,6 +115,7 @@ async def stream_sse(
             path,
             headers=headers,
             json=body,
+            timeout=timeout,
         ) as response:
             if not response.is_success:
                 raw = await response.aread()
@@ -136,6 +142,8 @@ async def stream_sse(
                         yield json.loads(payload)
                     except json.JSONDecodeError as exc:
                         raise StreamError(f"malformed SSE payload: {payload[:120]}") from exc
+    except httpx.TimeoutException as exc:
+        raise TimeoutError(str(exc), cause=exc) from exc
     except httpx.HTTPError as exc:
         raise StreamError(f"POST {path} (stream) transport error: {exc}") from exc
 
@@ -146,6 +154,7 @@ async def stream_sse_get(
     *,
     api_key: str,
     project_id: str | None,
+    timeout: float | None = None,
 ) -> AsyncIterator[tuple[str, dict[str, Any]]]:
     """
     GET an SSE endpoint and yield ``(event_name, data)`` pairs as
@@ -158,7 +167,7 @@ async def stream_sse_get(
     """
     headers = build_headers(api_key, project_id, accept_sse=True)
     try:
-        async with client.stream("GET", path, headers=headers) as response:
+        async with client.stream("GET", path, headers=headers, timeout=timeout) as response:
             if not response.is_success:
                 raw = await response.aread()
                 text = raw.decode("utf-8", errors="replace")
@@ -190,5 +199,7 @@ async def stream_sse_get(
                         raise StreamError(
                             f"malformed SSE payload: {payload[:120]}"
                         ) from exc
+    except httpx.TimeoutException as exc:
+        raise TimeoutError(str(exc), cause=exc) from exc
     except httpx.HTTPError as exc:
         raise StreamError(f"GET {path} (stream) transport error: {exc}") from exc
