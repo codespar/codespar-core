@@ -73,11 +73,18 @@ export async function createSession(
     projectId: config.projectId ?? deps.projectId,
   };
 
+  // Resolve per-call timeout/abort against the client default. Kept local
+  // so every method funnels through one place if CallOptions grows.
+  const callOpts = (o?: CallOptions) => ({
+    timeout: o?.timeout ?? deps.timeout,
+    signal: o?.signal,
+  });
+
   const res = await fetchWithTimeout(`${baseUrl}/v1/sessions`, {
     method: "POST",
     headers,
     body: JSON.stringify({ servers: req.servers, user_id: userId }),
-  }, { timeout: deps.timeout });
+  }, callOpts());
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`createSession failed: ${res.status} ${body}`);
@@ -125,7 +132,7 @@ export async function createSession(
         method: "POST",
         headers,
         body: JSON.stringify({ tool: toolName, input: params }),
-      }, { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal });
+      }, callOpts(opts));
       if (!r.ok) {
         const body = await r.text();
         return {
@@ -153,7 +160,7 @@ export async function createSession(
           params: request.params,
           headers: request.headers,
         }),
-      }, { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal });
+      }, callOpts(opts));
       if (!r.ok) {
         const body = await r.text();
         throw new Error(`proxyExecute failed: ${r.status} ${body}`);
@@ -166,7 +173,7 @@ export async function createSession(
         method: "POST",
         headers: { ...headers, Accept: "application/json" },
         body: JSON.stringify({ message }),
-      }, { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal });
+      }, callOpts(opts));
       if (!r.ok) {
         const body = await r.text();
         throw new Error(`send failed: ${r.status} ${body}`);
@@ -272,7 +279,7 @@ export async function createSession(
       const r = await fetchWithTimeout(
         `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/payment-status`,
         { headers },
-        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
+        callOpts(opts),
       );
       if (!r.ok) {
         const body = await r.text();
@@ -288,7 +295,7 @@ export async function createSession(
       const r = await fetchWithTimeout(
         `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/verification-status`,
         { headers },
-        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
+        callOpts(opts),
       );
       if (!r.ok) {
         const body = await r.text();
@@ -373,7 +380,7 @@ export async function createSession(
           redirect_uri: config.redirectUri,
           scopes: config.scopes,
         }),
-      }, { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal });
+      }, callOpts(opts));
       if (!r.ok) {
         const body = await r.text();
         throw new Error(`authorize failed: ${r.status} ${body}`);
@@ -393,7 +400,7 @@ export async function createSession(
     async connections(opts?: CallOptions): Promise<ServerConnection[]> {
       const r = await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}/connections`, {
         headers,
-      }, { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal });
+      }, callOpts(opts));
       if (!r.ok) return cachedConnections ?? [];
       const payload = (await r.json()) as BackendConnectionsResponse;
       cachedConnections = payload.servers;
