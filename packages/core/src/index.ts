@@ -41,7 +41,7 @@ export { loop } from "./loop.js";
 export { tools, findTools } from "./tools.js";
 export { TimeoutError } from "./errors.js";
 
-import type { CodeSparConfig, SessionConfig } from "./types.js";
+import type { CodeSparConfig, SessionConfig, CallOptions } from "./types.js";
 import type { Session } from "@codespar/types";
 import { SessionConfigSchema } from "./types.js";
 import { createSession } from "./session.js";
@@ -72,8 +72,15 @@ export class CodeSpar {
    *
    * @param userId - Unique user identifier
    * @param config - Session configuration (servers, preset, metadata)
+   * @param opts   - Per-call timeout/abort for the POST /v1/sessions
+   *                 request itself; overrides the client default
+   *                 (parity with the Python client's create(timeout=)).
    */
-  async create(userId: string, config: SessionConfig = {}): Promise<Session> {
+  async create(
+    userId: string,
+    config: SessionConfig = {},
+    opts?: CallOptions,
+  ): Promise<Session> {
     SessionConfigSchema.parse(config);
     const projectId = config.projectId ?? this.config.projectId ?? undefined;
     return createSession(userId, config, {
@@ -81,7 +88,7 @@ export class CodeSpar {
       apiKey: this.config.apiKey,
       projectId: projectId || undefined,
       timeout: this.config.timeout,
-    });
+    }, opts);
   }
 }
 
