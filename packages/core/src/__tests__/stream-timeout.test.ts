@@ -40,6 +40,31 @@ function trackedSse(chunks: string[], gapMs: number) {
 }
 
 describe("stream idle timeout", () => {
+  it("delivers TimeoutError even when reader.cancel() never resolves", async () => {
+    // Pathological/degraded stream: cancel() returns a promise that
+    // never settles. Parser cleanup must not block delivery of the
+    // timeout to the caller.
+    const enc = new TextEncoder();
+    let sent = false;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(ctrl) {
+        if (sent) return new Promise(() => {}); // idle forever after 1 event
+        sent = true;
+        ctrl.enqueue(enc.encode('event: assistant_text\ndata: {"content":"hi","iteration":1}\n\n'));
+      },
+      cancel() { return new Promise<void>(() => {}); }, // never resolves
+    });
+    globalThis.fetch = ((url: string) => {
+      if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());
+      return Promise.resolve({ ok: true, body: stream } as unknown as Response);
+    }) as unknown as typeof fetch;
+    const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x", timeout: 50 });
+    const session = await cs.create("u");
+    await expect(async () => {
+      for await (const _ of session.sendStream("hi")) { /* drain */ }
+    }).rejects.toBeInstanceOf(TimeoutError);
+  }, 5000);
+
   it("sendStream throws TimeoutError when the stream goes idle past the window", async () => {
     globalThis.fetch = ((url: string) => {
       if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());

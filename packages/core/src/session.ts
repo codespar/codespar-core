@@ -736,11 +736,10 @@ async function* parseSseStream(
   } finally {
     idle.pause();
     signal.removeEventListener("abort", onAbort);
-    try {
-      await reader.cancel();
-    } catch {
-      // reader already errored/closed — cancel is best-effort
-    }
+    // Best-effort, NON-blocking: a degraded ReadableStream may return a
+    // cancel() promise that never settles; awaiting it here would delay
+    // delivery of the very TimeoutError/abort the caller is waiting for.
+    void Promise.resolve(reader.cancel()).catch(() => {});
     reader.releaseLock();
   }
 }
@@ -880,11 +879,10 @@ async function* parseStatusSseStream(
   } finally {
     idle.pause();
     signal.removeEventListener("abort", onAbort);
-    try {
-      await reader.cancel();
-    } catch {
-      // reader already errored/closed — cancel is best-effort
-    }
+    // Best-effort, NON-blocking: a degraded ReadableStream may return a
+    // cancel() promise that never settles; awaiting it here would delay
+    // delivery of the very TimeoutError/abort the caller is waiting for.
+    void Promise.resolve(reader.cancel()).catch(() => {});
     reader.releaseLock();
   }
 }
