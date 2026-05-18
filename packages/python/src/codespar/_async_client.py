@@ -87,6 +87,12 @@ class AsyncCodeSpar:
             await cs.create("user_123", preset="brazilian")
             await cs.create("user_123", SessionConfig(preset="brazilian"))
         """
+        # Extract before _resolve_config so it doesn't reach the allowed-kwarg check.
+        raw_timeout = kwargs.pop("timeout", None)
+        timeout: float | None = (
+            float(raw_timeout) if isinstance(raw_timeout, (int, float)) else None
+        )
+
         resolved = self._resolve_config(config, kwargs)
         servers = resolved.servers or preset_to_servers(resolved.preset)
         project_id = resolved.project_id or self._project_id
@@ -102,6 +108,7 @@ class AsyncCodeSpar:
             api_key=self._api_key,
             project_id=project_id,
             body=body,
+            timeout=timeout,
         )
         if not isinstance(data, dict):
             raise ApiError("create: malformed response", status=0, body=data)
