@@ -34,6 +34,16 @@ def test_async_client_stores_project_id() -> None:
     assert cs.project_id == "prj_0123456789abcdef"
 
 
+def test_async_client_rejects_bad_project_id_format() -> None:
+    with pytest.raises(ConfigError):
+        AsyncCodeSpar(api_key="csk_live_abc", project_id="not-a-project-id")
+
+
+def test_sync_client_rejects_bad_project_id_format() -> None:
+    with pytest.raises(ConfigError):
+        CodeSpar(api_key="csk_live_abc", project_id="prj_tooshort")
+
+
 def test_sync_client_requires_api_key() -> None:
     with pytest.raises(ConfigError):
         CodeSpar(api_key="")

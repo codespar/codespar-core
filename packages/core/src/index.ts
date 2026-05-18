@@ -41,7 +41,7 @@ export { tools, findTools } from "./tools.js";
 
 import type { CodeSparConfig, SessionConfig } from "./types.js";
 import type { Session } from "@codespar/types";
-import { SessionConfigSchema } from "./types.js";
+import { SessionConfigSchema, PROJECT_ID_REGEX } from "./types.js";
 import { createSession } from "./session.js";
 
 const DEFAULT_BASE_URL = "https://api.codespar.dev";
@@ -60,6 +60,15 @@ export class CodeSpar {
       throw new Error(
         "CodeSpar API key is required. Pass { apiKey: '...' } or set CODESPAR_API_KEY env var.\n" +
           "Get your key at https://codespar.dev/dashboard/settings?tab=api-keys",
+      );
+    }
+
+    // Validate the client-level projectId with the same wire format the
+    // per-session Zod schema enforces, so both scoping paths reject the
+    // same inputs (kept in sync with the Python client).
+    if (this.config.projectId && !PROJECT_ID_REGEX.test(this.config.projectId)) {
+      throw new Error(
+        `CodeSpar projectId must match ${PROJECT_ID_REGEX.source} (e.g. 'prj_...').`,
       );
     }
   }
