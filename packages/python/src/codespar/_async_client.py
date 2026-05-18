@@ -36,6 +36,12 @@ class AsyncCodeSpar:
             session = await cs.create("user_123", preset="brazilian")
             result = await session.send("charge R$500 via Pix")
             print(result.message)
+
+    Cancellation: there is no AbortSignal in Python. Cancel an in-flight
+    call by cancelling the awaiting asyncio task (e.g. asyncio.timeout()
+    or task.cancel()); httpx tears the connection down. Note this only
+    closes the connection — it does not undo an upstream side effect the
+    backend already dispatched.
     """
 
     def __init__(
