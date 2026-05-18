@@ -29,6 +29,22 @@ describe("mergeSignals", () => {
     a.abort(new Error("late"));
     expect(signal.aborted).toBe(false);
   });
+
+  it("forwards the reason when an input is already aborted", () => {
+    const a = new AbortController();
+    const pre = new Error("pre-reason");
+    a.abort(pre);
+    const { signal } = mergeSignals([a.signal]);
+    expect(signal.aborted).toBe(true);
+    expect(signal.reason).toBe(pre);
+  });
+
+  it("returns a never-aborting signal for an empty or all-undefined input", () => {
+    const { signal: s1 } = mergeSignals([]);
+    const { signal: s2 } = mergeSignals([undefined]);
+    expect(s1.aborted).toBe(false);
+    expect(s2.aborted).toBe(false);
+  });
 });
 
 describe("timeoutSignal", () => {
