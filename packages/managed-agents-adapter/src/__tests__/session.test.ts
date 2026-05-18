@@ -520,4 +520,53 @@ describe("per-call CallOptions (signal/timeout)", () => {
       DrainTimeoutError,
     );
   }, 5000);
+
+  it("execute() timeout releases when the policy hook never resolves", async () => {
+    const session = await openSession(runtimeWithToolResult(), {
+      policyHook: { evaluate: () => new Promise(() => {}) },
+    });
+    await expect(session.execute("t", {}, { timeout: 60 })).rejects.toBeInstanceOf(
+      DrainTimeoutError,
+    );
+  }, 5000);
+
+  it("execute() abort releases when the policy hook never resolves", async () => {
+    const session = await openSession(runtimeWithToolResult(), {
+      policyHook: { evaluate: () => new Promise(() => {}) },
+    });
+    const ac = new AbortController();
+    const reason = new DOMException("user cancelled", "AbortError");
+    const p = session.execute("t", {}, { signal: ac.signal });
+    setTimeout(() => ac.abort(reason), 30);
+    await expect(p).rejects.toBe(reason);
+  }, 5000);
+
+  it("connections() timeout releases when getStatus never resolves", async () => {
+    const session = await openSession(
+      makeRuntime({ getStatus: vi.fn().mockImplementation(() => new Promise(() => {})) }),
+    );
+    await expect(session.connections({ timeout: 60 })).rejects.toBeInstanceOf(
+      DrainTimeoutError,
+    );
+  }, 5000);
+
+  it("close({ timeout }) returns even when the in-flight op never resolves (no signal)", async () => {
+    const session = await openSession(
+      makeRuntime({
+        streamEvents: vi.fn().mockImplementation(async function* (): AsyncGenerator<AgentEvent> {
+          for (;;) {
+            yield { type: "assistant_text", content: "x", iteration: 0 };
+            await new Promise((r) => setTimeout(r, 10));
+          }
+        }),
+      }),
+    );
+    // Start a long-running op (no per-call timeout) so _activeMutex is held.
+    const running = session.send("hi").catch(() => {});
+    await new Promise((r) => setTimeout(r, 20));
+    // close() with only a timeout (no signal) must not hang on the mutex.
+    await session.close({ timeout: 50 });
+    expect(session.status).toBe("closed");
+    void running;
+  }, 5000);
 });

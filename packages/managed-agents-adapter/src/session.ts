@@ -177,9 +177,21 @@ class ManagedAgentsSession implements SessionBase {
     // JSON payload sent to the Managed Agents API.
     if (!TOOL_NAME_RE.test(toolName)) throw new InvalidToolNameError(toolName);
 
+    // One budget spans the WHOLE call — policy eval, sendMessage, and
+    // the drain — so a stall in any phase cannot escape timeout/abort
+    // or pin the session mutex. Per-call timeout overrides the
+    // configured drain timeout.
+    const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+    const deadline = Date.now() + drainMs;
+
     // PolicyHook evaluates original params — must precede sanitizeParams.
     if (this._policyHook) {
-      const decision = await this._policyHook.evaluate(this._agentId, toolName);
+      const decision = await guarded(
+        this._policyHook.evaluate(this._agentId, toolName),
+        deadline,
+        drainMs,
+        opts,
+      );
       if (!decision.allowed) throw new PolicyViolationError(decision);
       if (decision.requiresApproval) throw new ApprovalRequiredError(decision);
     }
@@ -193,11 +205,6 @@ class ManagedAgentsSession implements SessionBase {
       resolveMutex = r;
     });
     try {
-      // Per-call timeout overrides the configured drain timeout. One
-      // budget spans sendMessage AND the drain so a stall in either
-      // phase cannot pin the call or the session mutex.
-      const drainMs = opts?.timeout ?? this._drainTimeoutMs;
-      const deadline = Date.now() + drainMs;
       const message = JSON.stringify({ tool: toolName, input: resolvedParams });
       await guarded(
         this._runtime.sendMessage(this._sessionId, message),
@@ -279,29 +286,41 @@ class ManagedAgentsSession implements SessionBase {
   }
 
   async connections(opts?: CallOptions): Promise<BaseConnection[]> {
-    throwIfAborted(opts);
-    const status = await this._runtime.getStatus(this._sessionId);
+    const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+    const status = await guarded(
+      this._runtime.getStatus(this._sessionId),
+      Date.now() + drainMs,
+      drainMs,
+      opts,
+    );
     return [{ id: this._sessionId, connected: status.state === "active" }];
   }
 
   async close(opts?: CallOptions): Promise<void> {
-    // close() is terminal cleanup — it does not throw on an aborted
-    // signal. It still honours `signal` to bound the drain wait so a
-    // caller cancelling close() is not blocked on an in-flight op.
+    // close() is terminal cleanup — it never throws on timeout/abort.
+    // It bounds the in-flight drain wait by BOTH signal and timeout so
+    // a caller closing a session is never pinned behind a wedged op.
     this._status = "closed";
-    if (this._activeMutex) {
+    if (!this._activeMutex) return;
+    const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+    await new Promise<void>((resolve) => {
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (onAbort && opts?.signal) opts.signal.removeEventListener("abort", onAbort);
+        resolve();
+      };
+      const timer = setTimeout(done, drainMs);
+      let onAbort: (() => void) | undefined;
       if (opts?.signal) {
-        await Promise.race([
-          this._activeMutex,
-          new Promise<void>((resolve) => {
-            if (opts.signal!.aborted) return resolve();
-            opts.signal!.addEventListener("abort", () => resolve(), { once: true });
-          }),
-        ]);
-      } else {
-        await this._activeMutex;
+        if (opts.signal.aborted) return done();
+        onAbort = done;
+        opts.signal.addEventListener("abort", onAbort, { once: true });
       }
-    }
+      void this._activeMutex?.then(done, done);
+    });
   }
 
   private async _drainForToolResult(
