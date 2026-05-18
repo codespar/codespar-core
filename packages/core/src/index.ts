@@ -38,6 +38,7 @@ export type {
 export { SessionConfigSchema } from "./types.js";
 export { loop } from "./loop.js";
 export { tools, findTools } from "./tools.js";
+export { TimeoutError } from "./errors.js";
 
 import type { CodeSparConfig, SessionConfig } from "./types.js";
 import type { Session } from "@codespar/types";

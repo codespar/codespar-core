@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { mergeSignals, timeoutSignal } from "../internal/abort.js";
+import { TimeoutError } from "../errors.js";
 
 afterEach(() => vi.useRealTimers());
 
@@ -63,5 +64,15 @@ describe("timeoutSignal", () => {
     clear();
     vi.advanceTimersByTime(5000);
     expect(signal.aborted).toBe(false);
+  });
+});
+
+describe("TimeoutError", () => {
+  it("is an Error subclass with name TimeoutError and a timeoutMs field", () => {
+    const e = new TimeoutError(1234);
+    expect(e).toBeInstanceOf(Error);
+    expect(e.name).toBe("TimeoutError");
+    expect(e.timeoutMs).toBe(1234);
+    expect(e.message).toMatch(/1234/);
   });
 });
