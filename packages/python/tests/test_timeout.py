@@ -163,3 +163,19 @@ async def test_discover_wrapper_forwards_timeout(httpx_mock, monkeypatch) -> Non
         await session.discover("send pix", timeout=3.5)
 
     assert seen.get("timeout") == 3.5
+
+
+async def test_create_rejects_non_numeric_timeout() -> None:
+    from codespar import ConfigError
+
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        with pytest.raises(ConfigError):
+            await cs.create("u", preset="brazilian", timeout="30")  # type: ignore[arg-type]
+
+
+async def test_create_rejects_bool_timeout() -> None:
+    from codespar import ConfigError
+
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        with pytest.raises(ConfigError):
+            await cs.create("u", preset="brazilian", timeout=True)  # type: ignore[arg-type]
