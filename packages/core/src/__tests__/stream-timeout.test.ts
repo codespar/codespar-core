@@ -210,6 +210,45 @@ describe("stream idle timeout", () => {
     expect(count).toBe(12);
   }, 5000);
 
+  it("does not time out when the consumer is slow between events", async () => {
+    // Network delivers two frames promptly; the consumer spends longer
+    // than the idle window processing the first one. The idle timer is
+    // a TRANSPORT idle timeout — consumer processing time must not count
+    // against it, otherwise healthy streams with heavy per-event work
+    // false-timeout.
+    const enc = new TextEncoder();
+    const frames = [
+      'event: assistant_text\ndata: {"content":"a","iteration":0}\n\n',
+      'event: assistant_text\ndata: {"content":"b","iteration":1}\n\n',
+    ];
+    let fi = 0;
+    // highWaterMark 0 → pull only fires on an actual read(), so the
+    // post-sleep read genuinely waits on the network instead of
+    // replaying a pre-buffered frame (which would mask the bug).
+    const closing = new ReadableStream<Uint8Array>({
+      pull(ctrl) {
+        if (fi >= frames.length) { ctrl.close(); return; }
+        const c = frames[fi++]!;
+        return new Promise((r) => setTimeout(() => { ctrl.enqueue(enc.encode(c)); r(); }, 10));
+      },
+    }, { highWaterMark: 0 });
+    globalThis.fetch = ((url: string) => {
+      if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());
+      return Promise.resolve({ ok: true, body: closing } as unknown as Response);
+    }) as unknown as typeof fetch;
+    const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x", timeout: 80 });
+    const session = await cs.create("u");
+    let count = 0;
+    for await (const ev of session.sendStream("hi")) {
+      if (ev.type === "assistant_text") {
+        count++;
+        // Heavy per-event work, longer than the 80ms idle window.
+        await new Promise((r) => setTimeout(r, 160));
+      }
+    }
+    expect(count).toBe(2);
+  }, 5000);
+
   it("times out on a byte trickle that never completes an SSE frame", async () => {
     // Server dribbles bytes faster than the idle window but never emits
     // a complete "\n\n" frame. The idle timer must reset per PARSED
