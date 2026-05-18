@@ -114,8 +114,14 @@ class Session:
     def find_tools(self, intent: str) -> list[Tool]:
         return self._runner.run(self._async.find_tools(intent))
 
-    def execute(self, tool_name: str, params: dict[str, Any]) -> ToolResult:
-        return self._runner.run(self._async.execute(tool_name, params))
+    def execute(
+        self,
+        tool_name: str,
+        params: dict[str, Any],
+        *,
+        timeout: float | None = None,
+    ) -> ToolResult:
+        return self._runner.run(self._async.execute(tool_name, params, timeout=timeout))
 
     def discover(
         self,
@@ -132,19 +138,32 @@ class Session:
         """Sync wrapper around ``AsyncSession.connection_wizard``. See that for docs."""
         return self._runner.run(self._async.connection_wizard(options))
 
-    def payment_status(self, tool_call_id: str) -> PaymentStatusResult:
+    def payment_status(
+        self,
+        tool_call_id: str,
+        *,
+        timeout: float | None = None,
+    ) -> PaymentStatusResult:
         """Sync wrapper around ``AsyncSession.payment_status``. See that for docs."""
-        return self._runner.run(self._async.payment_status(tool_call_id))
+        return self._runner.run(self._async.payment_status(tool_call_id, timeout=timeout))
 
-    def verification_status(self, tool_call_id: str) -> VerificationStatusResult:
+    def verification_status(
+        self,
+        tool_call_id: str,
+        *,
+        timeout: float | None = None,
+    ) -> VerificationStatusResult:
         """Sync wrapper around ``AsyncSession.verification_status``. See that for docs."""
-        return self._runner.run(self._async.verification_status(tool_call_id))
+        return self._runner.run(
+            self._async.verification_status(tool_call_id, timeout=timeout)
+        )
 
     def payment_status_stream(
         self,
         tool_call_id: str,
         *,
         on_update: Any | None = None,
+        timeout: float | None = None,
     ) -> PaymentStatusResult:
         """
         Sync wrapper around ``AsyncSession.payment_status_stream``.
@@ -155,7 +174,9 @@ class Session:
         (terminal state + 5s grace).
         """
         return self._runner.run(
-            self._async.payment_status_stream(tool_call_id, on_update=on_update),
+            self._async.payment_status_stream(
+                tool_call_id, on_update=on_update, timeout=timeout
+            ),
         )
 
     def verification_status_stream(
@@ -163,11 +184,12 @@ class Session:
         tool_call_id: str,
         *,
         on_update: Any | None = None,
+        timeout: float | None = None,
     ) -> VerificationStatusResult:
         """Sync wrapper around ``AsyncSession.verification_status_stream``."""
         return self._runner.run(
             self._async.verification_status_stream(
-                tool_call_id, on_update=on_update,
+                tool_call_id, on_update=on_update, timeout=timeout
             ),
         )
 
@@ -191,13 +213,28 @@ class Session:
         """Sync wrapper around ``AsyncSession.shop``. See that for docs."""
         return self._runner.run(self._async.shop(args))
 
-    def proxy_execute(self, request: ProxyRequest) -> ProxyResult:
-        return self._runner.run(self._async.proxy_execute(request))
+    def proxy_execute(
+        self,
+        request: ProxyRequest,
+        *,
+        timeout: float | None = None,
+    ) -> ProxyResult:
+        return self._runner.run(self._async.proxy_execute(request, timeout=timeout))
 
-    def send(self, message: str) -> SendResult:
-        return self._runner.run(self._async.send(message))
+    def send(
+        self,
+        message: str,
+        *,
+        timeout: float | None = None,
+    ) -> SendResult:
+        return self._runner.run(self._async.send(message, timeout=timeout))
 
-    def send_stream(self, message: str) -> Iterator[StreamEvent]:
+    def send_stream(
+        self,
+        message: str,
+        *,
+        timeout: float | None = None,
+    ) -> Iterator[StreamEvent]:
         """
         Sync generator that yields stream events as they arrive on the
         background event loop. Bridges the async iterator via a queue
@@ -210,7 +247,7 @@ class Session:
 
         async def pump() -> None:
             try:
-                async for event in self._async.send_stream(message):
+                async for event in self._async.send_stream(message, timeout=timeout):
                     q.put(event)
             except Exception as exc:
                 q.put(exc)
@@ -230,14 +267,28 @@ class Session:
             # Make sure pump() finishes before the caller moves on.
             future.result(timeout=1)
 
-    def authorize(self, server_id: str, config: AuthConfig) -> AuthResult:
-        return self._runner.run(self._async.authorize(server_id, config))
+    def authorize(
+        self,
+        server_id: str,
+        config: AuthConfig,
+        *,
+        timeout: float | None = None,
+    ) -> AuthResult:
+        return self._runner.run(self._async.authorize(server_id, config, timeout=timeout))
 
-    def connections(self) -> list[ServerConnection]:
-        return self._runner.run(self._async.connections())
+    def connections(
+        self,
+        *,
+        timeout: float | None = None,
+    ) -> list[ServerConnection]:
+        return self._runner.run(self._async.connections(timeout=timeout))
 
-    def close(self) -> None:
-        self._runner.run(self._async.close())
+    def close(
+        self,
+        *,
+        timeout: float | None = None,
+    ) -> None:
+        self._runner.run(self._async.close(timeout=timeout))
 
 
 class CodeSpar:
