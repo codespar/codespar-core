@@ -451,6 +451,8 @@ class AsyncSession:
         self,
         use_case: str,
         options: DiscoverOptions | None = None,
+        *,
+        timeout: float | None = None,
     ) -> DiscoverResult:
         """
         Search the catalog for a tool that matches a free-form use case.
@@ -466,7 +468,7 @@ class AsyncSession:
                 params["country"] = options.country
             if options.limit is not None:
                 params["limit"] = options.limit
-        result = await self.execute("codespar_discover", params)
+        result = await self.execute("codespar_discover", params, timeout=timeout)
         if not result.success:
             raise ApiError(
                 f"discover failed: {result.error or 'unknown'}",
@@ -480,6 +482,8 @@ class AsyncSession:
     async def connection_wizard(
         self,
         options: ConnectionWizardOptions,
+        *,
+        timeout: float | None = None,
     ) -> ConnectionWizardResult:
         """
         Surface the connection wizard for a server (or list every
@@ -504,7 +508,7 @@ class AsyncSession:
             params["environment"] = options.environment
         if options.return_to is not None:
             params["return_to"] = options.return_to
-        result = await self.execute("codespar_manage_connections", params)
+        result = await self.execute("codespar_manage_connections", params, timeout=timeout)
         if not result.success:
             raise ApiError(
                 f"connection_wizard failed: {result.error or 'unknown'}",
@@ -519,7 +523,7 @@ class AsyncSession:
             )
         return _parse_wizard_result(result.data)
 
-    async def charge(self, args: ChargeArgs) -> ChargeResult:
+    async def charge(self, args: ChargeArgs, *, timeout: float | None = None) -> ChargeResult:
         """
         Create an INBOUND charge — the buyer pays the merchant. Typed
         wrapper around ``execute("codespar_charge", {...})``. Distinct
@@ -545,7 +549,7 @@ class AsyncSession:
         }
         if args.due_date is not None:
             params["due_date"] = args.due_date
-        result = await self.execute("codespar_charge", params)
+        result = await self.execute("codespar_charge", params, timeout=timeout)
         if not result.success:
             raise ApiError(
                 f"charge failed: {result.error or 'unknown'}",
@@ -556,7 +560,7 @@ class AsyncSession:
             raise ApiError("charge: malformed response", status=0, body=result.data)
         return _parse_charge_result(result.data)
 
-    async def ship(self, args: ShipArgs) -> ShipResult:
+    async def ship(self, args: ShipArgs, *, timeout: float | None = None) -> ShipResult:
         """
         Generate a shipping label OR fetch tracking status. Typed
         wrapper around ``execute("codespar_ship", {...})``. Routes to
@@ -613,7 +617,7 @@ class AsyncSession:
             params["tracking_code"] = args.tracking_code
         if args.metadata is not None:
             params["metadata"] = args.metadata
-        result = await self.execute("codespar_ship", params)
+        result = await self.execute("codespar_ship", params, timeout=timeout)
         if not result.success:
             raise ApiError(
                 f"ship failed: {result.error or 'unknown'}",

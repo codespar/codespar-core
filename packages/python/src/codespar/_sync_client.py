@@ -127,16 +127,20 @@ class Session:
         self,
         use_case: str,
         options: DiscoverOptions | None = None,
+        *,
+        timeout: float | None = None,
     ) -> DiscoverResult:
         """Sync wrapper around ``AsyncSession.discover``. See that for docs."""
-        return self._runner.run(self._async.discover(use_case, options))
+        return self._runner.run(self._async.discover(use_case, options, timeout=timeout))
 
     def connection_wizard(
         self,
         options: ConnectionWizardOptions,
+        *,
+        timeout: float | None = None,
     ) -> ConnectionWizardResult:
         """Sync wrapper around ``AsyncSession.connection_wizard``. See that for docs."""
-        return self._runner.run(self._async.connection_wizard(options))
+        return self._runner.run(self._async.connection_wizard(options, timeout=timeout))
 
     def payment_status(
         self,
@@ -193,13 +197,13 @@ class Session:
             ),
         )
 
-    def charge(self, args: ChargeArgs) -> ChargeResult:
+    def charge(self, args: ChargeArgs, *, timeout: float | None = None) -> ChargeResult:
         """Sync wrapper around ``AsyncSession.charge``. See that for docs."""
-        return self._runner.run(self._async.charge(args))
+        return self._runner.run(self._async.charge(args, timeout=timeout))
 
-    def ship(self, args: ShipArgs) -> ShipResult:
+    def ship(self, args: ShipArgs, *, timeout: float | None = None) -> ShipResult:
         """Sync wrapper around ``AsyncSession.ship``. See that for docs."""
-        return self._runner.run(self._async.ship(args))
+        return self._runner.run(self._async.ship(args, timeout=timeout))
 
     def ledger(self, args: LedgerArgs) -> LedgerResult:
         """Sync wrapper around ``AsyncSession.ledger``. See that for docs."""
