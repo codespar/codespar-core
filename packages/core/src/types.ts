@@ -1,6 +1,11 @@
 import { z } from "zod";
 import type { ToolResult } from "@codespar/types";
 
+// CallOptions is the shared client-side option bag. Single source of
+// truth lives in @codespar/types so the public Session contract and
+// the core runtime can never drift.
+export type { CallOptions } from "@codespar/types";
+
 /* ── Configuration ─────────────────────────────────────────────── */
 
 export interface CodeSparConfig {
@@ -88,14 +93,6 @@ export interface LoopResult {
 }
 
 /* ── Validation schemas ───────────────────────────────────────── */
-
-/** Per-call request options. */
-export interface CallOptions {
-  /** Per-call timeout in ms; overrides the client default. */
-  timeout?: number;
-  /** Caller AbortSignal. */
-  signal?: AbortSignal;
-}
 
 export const SessionConfigSchema = z.object({
   servers: z.array(z.string()).optional(),
