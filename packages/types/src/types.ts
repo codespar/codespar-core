@@ -1,27 +1,54 @@
+/* ── Per-call request options ──────────────────────────────────── */
+
+/**
+ * Per-call request options. Client-side only — NOT a wire shape; the
+ * SDK turns these into an AbortSignal/timeout around the transport.
+ * `timeout` overrides the client default; `signal` lets the caller
+ * cancel an in-flight call.
+ */
+export interface CallOptions {
+  /** Per-call timeout in ms; overrides the client default. */
+  timeout?: number;
+  /** Caller AbortSignal. */
+  signal?: AbortSignal;
+}
+
 /* ── Runtime-agnostic session base ─────────────────────────────── */
 
 export interface SessionBase {
   readonly id: string;
   readonly status: "active" | "closed" | "error";
-  execute(toolName: string, params: Record<string, unknown>): Promise<ToolResult>;
-  send(message: string): Promise<SendResult>;
-  sendStream(message: string): AsyncIterable<StreamEvent>;
-  connections(): Promise<BaseConnection[]>;
-  close(): Promise<void>;
+  execute(
+    toolName: string,
+    params: Record<string, unknown>,
+    opts?: CallOptions,
+  ): Promise<ToolResult>;
+  send(message: string, opts?: CallOptions): Promise<SendResult>;
+  sendStream(message: string, opts?: CallOptions): AsyncIterable<StreamEvent>;
+  connections(opts?: CallOptions): Promise<BaseConnection[]>;
+  close(opts?: CallOptions): Promise<void>;
 }
 
 /* ── Codespar-specific session (extends base) ──────────────────── */
 
 export interface Session extends SessionBase {
-  proxyExecute(request: ProxyRequest): Promise<ProxyResult>;
-  authorize(serverId: string, config: AuthConfig): Promise<AuthResult>;
+  proxyExecute(request: ProxyRequest, opts?: CallOptions): Promise<ProxyResult>;
+  authorize(
+    serverId: string,
+    config: AuthConfig,
+    opts?: CallOptions,
+  ): Promise<AuthResult>;
   /**
    * Search the catalog for a tool that matches a free-form use case.
    * Typed wrapper around `execute("codespar_discover", {...})` — same
    * wire shape, returns `DiscoverResult` instead of generic ToolResult
    * so the agent doesn't have to cast.
    */
-  discover(useCase: string, options?: DiscoverOptions): Promise<DiscoverResult>;
+  discover(
+    useCase: string,
+    options?: DiscoverOptions,
+    opts?: CallOptions,
+  ): Promise<DiscoverResult>;
   /**
    * Surface the connection wizard for a server (or list every server's
    * status). Typed wrapper around
@@ -31,6 +58,7 @@ export interface Session extends SessionBase {
    */
   connectionWizard(
     options: ConnectionWizardOptions,
+    opts?: CallOptions,
   ): Promise<ConnectionWizardResult>;
   /**
    * Create an INBOUND charge — the buyer pays the merchant. Typed
@@ -44,7 +72,7 @@ export interface Session extends SessionBase {
    * decimal major units; Stripe takes minor units — the backend
    * transform converts).
    */
-  charge(args: ChargeArgs): Promise<ChargeResult>;
+  charge(args: ChargeArgs, opts?: CallOptions): Promise<ChargeResult>;
   /**
    * Async settlement check. After a meta-tool payment call returns,
    * the upstream provider eventually fires a webhook that lands in
@@ -55,7 +83,10 @@ export interface Session extends SessionBase {
    * payload. Returns `unknown` when the tool_call has no
    * idempotency_key (legacy / non-meta-tool calls).
    */
-  paymentStatus(toolCallId: string): Promise<PaymentStatusResult>;
+  paymentStatus(
+    toolCallId: string,
+    opts?: CallOptions,
+  ): Promise<PaymentStatusResult>;
   /**
    * SSE-streamed sibling of `paymentStatus`. Opens a long-lived
    * connection and invokes `onUpdate` whenever the backend pushes a
@@ -82,7 +113,10 @@ export interface Session extends SessionBase {
    * `unknown` when the tool_call has no idempotency_key (legacy /
    * non-meta-tool calls).
    */
-  verificationStatus(toolCallId: string): Promise<VerificationStatusResult>;
+  verificationStatus(
+    toolCallId: string,
+    opts?: CallOptions,
+  ): Promise<VerificationStatusResult>;
   /**
    * SSE-streamed sibling of `verificationStatus`. Same lifecycle as
    * `paymentStatusStream`: snapshot on open, an update per state
@@ -102,7 +136,7 @@ export interface Session extends SessionBase {
    * as additional rails come online. The agent passes a neutral shape and
    * the router picks the cheapest carrier per request.
    */
-  ship(args: ShipArgs): Promise<ShipResult>;
+  ship(args: ShipArgs, opts?: CallOptions): Promise<ShipResult>;
   /**
    * Record money movement in a double-entry ledger, read account
    * balances, or create accounts. Typed wrapper around
@@ -111,7 +145,7 @@ export interface Session extends SessionBase {
    * immutable + auditable). Distinct from pay/charge (those move real
    * money via PSPs) — this is the system of record / books.
    */
-  ledger(args: LedgerArgs): Promise<LedgerResult>;
+  ledger(args: LedgerArgs, opts?: CallOptions): Promise<LedgerResult>;
   /**
    * Issue and control payment cards (codespar_issue). Typed wrapper
    * around `execute("codespar_issue", {...})`. Routes to Pomelo
@@ -119,7 +153,7 @@ export interface Session extends SessionBase {
    * (freeze/unfreeze/cancel) / card-get. The agent-spend-card
    * primitive; distinct from pay/charge which move money.
    */
-  issue(args: IssueArgs): Promise<IssueResult>;
+  issue(args: IssueArgs, opts?: CallOptions): Promise<IssueResult>;
   /**
    * Buy-side shopping: catalog search → async checkout → Pix mint.
    * Typed wrapper around `execute("codespar_shop", {...})`. The
@@ -139,7 +173,7 @@ export interface Session extends SessionBase {
    * a self-hosted OSS runtime with no registered implementation returns
    * "Tool not registered".
    */
-  shop(args: ShopArgs): Promise<ShopResult>;
+  shop(args: ShopArgs, opts?: CallOptions): Promise<ShopResult>;
   mcp?: { url: string; headers: Record<string, string> };
 }
 

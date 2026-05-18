@@ -1,6 +1,11 @@
 import { z } from "zod";
 import type { MockValue, ToolResult } from "@codespar/types";
 
+// CallOptions is the shared client-side option bag. Single source of
+// truth lives in @codespar/types so the public Session contract and
+// the core runtime can never drift.
+export type { CallOptions } from "@codespar/types";
+
 /* ── Configuration ─────────────────────────────────────────────── */
 
 export interface CodeSparConfig {
@@ -116,14 +121,6 @@ const MockValueSchema = z.union([
 /** Wire format for a project scope. Shared by the Zod session schema
  *  and the client constructor so both validation paths stay in sync. */
 export const PROJECT_ID_REGEX = /^prj_[A-Za-z0-9]{16}$/;
-
-/** Per-call request options. */
-export interface CallOptions {
-  /** Per-call timeout in ms; overrides the client default. */
-  timeout?: number;
-  /** Caller AbortSignal. */
-  signal?: AbortSignal;
-}
 
 export const SessionConfigSchema = z.object({
   servers: z.array(z.string()).optional(),
