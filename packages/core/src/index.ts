@@ -33,6 +33,7 @@ export type {
   LoopConfig,
   LoopStep,
   LoopResult,
+  CallOptions,
 } from "./types.js";
 
 export { SessionConfigSchema } from "./types.js";
@@ -55,6 +56,7 @@ export class CodeSpar {
       apiKey: config.apiKey || process.env.CODESPAR_API_KEY || "",
       baseUrl: config.baseUrl || process.env.CODESPAR_BASE_URL || DEFAULT_BASE_URL,
       projectId: config.projectId || "",
+      timeout: config.timeout ?? 60000,
     };
 
     if (!this.config.apiKey) {
@@ -78,6 +80,7 @@ export class CodeSpar {
       baseUrl: this.config.baseUrl,
       apiKey: this.config.apiKey,
       projectId: projectId || undefined,
+      timeout: this.config.timeout,
     });
   }
 }

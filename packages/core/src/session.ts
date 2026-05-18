@@ -32,6 +32,7 @@ interface SessionDeps {
   baseUrl: string;
   apiKey: string;
   projectId?: string;
+  timeout: number;
 }
 
 interface BackendSessionResponse {

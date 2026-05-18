@@ -46,6 +46,15 @@ describe("CodeSpar constructor", () => {
       delete process.env.CODESPAR_BASE_URL;
     }
   });
+
+  it("defaults timeout to 60000 and accepts an override", () => {
+    const a = new CodeSpar({ apiKey: "csk_live_t" });
+    // @ts-expect-error private config read for the test only
+    expect(a.config.timeout).toBe(60000);
+    const b = new CodeSpar({ apiKey: "csk_live_t", timeout: 5000 });
+    // @ts-expect-error private config read for the test only
+    expect(b.config.timeout).toBe(5000);
+  });
 });
 
 describe("SessionConfigSchema", () => {

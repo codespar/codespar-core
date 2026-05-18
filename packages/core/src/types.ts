@@ -10,6 +10,8 @@ export interface CodeSparConfig {
   baseUrl?: string;
   /** Optional project scope. Defaults to the org's default project when omitted. */
   projectId?: string;
+  /** Default per-request timeout in ms. Default 60000. */
+  timeout?: number;
 }
 
 /* ── Session config (SDK-level, not the wire contract) ──────────── */
@@ -86,6 +88,14 @@ export interface LoopResult {
 }
 
 /* ── Validation schemas ───────────────────────────────────────── */
+
+/** Per-call request options. */
+export interface CallOptions {
+  /** Per-call timeout in ms; overrides the client default. */
+  timeout?: number;
+  /** Caller AbortSignal. */
+  signal?: AbortSignal;
+}
 
 export const SessionConfigSchema = z.object({
   servers: z.array(z.string()).optional(),

@@ -1,12 +1,7 @@
 import { mergeSignals, timeoutSignal } from "./abort.js";
 import { TimeoutError } from "../errors.js";
 
-export interface CallOptions {
-  /** Per-call timeout in ms. Overrides the client default for this call. */
-  timeout?: number;
-  /** Caller AbortSignal. Aborting rejects with the caller's reason. */
-  signal?: AbortSignal;
-}
+export type { CallOptions } from "../types.js";
 
 /**
  * fetch() with a total timeout. The timeout fires a TimeoutError; the
