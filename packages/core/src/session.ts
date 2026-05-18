@@ -39,6 +39,7 @@ interface SessionDeps {
   baseUrl: string;
   apiKey: string;
   projectId?: string;
+  timeout: number;
 }
 
 // Wraps `fetch` so network rejections become CodesparApiError
