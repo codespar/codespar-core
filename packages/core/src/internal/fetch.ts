@@ -1,3 +1,10 @@
+// LIMITATION: aborting/timing out only closes the client connection.
+// It does NOT undo an upstream side effect the backend already
+// dispatched (e.g. a Pix transfer / NF-e issuance). HTTP has no
+// out-of-band cancel; the server only learns the socket closed. True
+// cancellation of a side-effecting call needs a backend cancel
+// endpoint or idempotency key. Tracked separately (not in R3).
+
 import { mergeSignals, timeoutSignal } from "./abort.js";
 import { TimeoutError } from "../errors.js";
 
