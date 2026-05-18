@@ -62,6 +62,16 @@ export class CodeSpar {
           "Get your key at https://codespar.dev/dashboard/settings?tab=api-keys",
       );
     }
+
+    // Wire-contract parity with the Python SDK
+    // (`_async_client.py`: `api_key.startswith("csk_")`). Both staging
+    // (`csk_`) and prod (`csk_live_`) keys share the `csk_` prefix.
+    if (!this.config.apiKey.startsWith("csk_")) {
+      throw new Error(
+        "CodeSpar API key must start with 'csk_'.\n" +
+          "Get your key at https://codespar.dev/dashboard/settings?tab=api-keys",
+      );
+    }
   }
 
   /**
