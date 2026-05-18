@@ -35,6 +35,7 @@ from .errors import (
     ConfigError,
     NotConnectedError,
     StreamError,
+    TimeoutError,
 )
 from .tool_result_codes import (
     APPROVAL_REQUIRED,
@@ -232,6 +233,7 @@ __all__ = [
     "StreamError",
     # Streaming events
     "StreamEvent",
+    "TimeoutError",
     "Tool",
     "ToolCallRecord",
     "ToolNotMockedOutput",
