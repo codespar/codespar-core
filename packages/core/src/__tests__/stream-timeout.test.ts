@@ -249,6 +249,40 @@ describe("stream idle timeout", () => {
     expect(count).toBe(2);
   }, 5000);
 
+  it("handles a final unterminated frame with a slow consumer without firing the idle timer", async () => {
+    // Last frame has no trailing "\n\n"; the stream then closes, so the
+    // event is emitted from the buffer.trim() branch. A slow consumer
+    // there must not trip the idle timer (no unhandled rejection / no
+    // false timeout) — the trailing yield pauses idle too.
+    const enc = new TextEncoder();
+    const chunks = [
+      'event: assistant_text\ndata: {"content":"a","iteration":0}\n\n',
+      'event: assistant_text\ndata: {"content":"b","iteration":1}', // no \n\n
+    ];
+    let ci = 0;
+    const closing = new ReadableStream<Uint8Array>({
+      pull(ctrl) {
+        if (ci >= chunks.length) { ctrl.close(); return; }
+        const c = chunks[ci++]!;
+        return new Promise((r) => setTimeout(() => { ctrl.enqueue(enc.encode(c)); r(); }, 10));
+      },
+    }, { highWaterMark: 0 });
+    globalThis.fetch = ((url: string) => {
+      if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());
+      return Promise.resolve({ ok: true, body: closing } as unknown as Response);
+    }) as unknown as typeof fetch;
+    const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x", timeout: 60 });
+    const session = await cs.create("u");
+    let count = 0;
+    for await (const ev of session.sendStream("hi")) {
+      if (ev.type === "assistant_text") {
+        count++;
+        await new Promise((r) => setTimeout(r, 120)); // > idle window
+      }
+    }
+    expect(count).toBe(2);
+  }, 5000);
+
   it("times out on a byte trickle that never completes an SSE frame", async () => {
     // Server dribbles bytes faster than the idle window but never emits
     // a complete "\n\n" frame. The idle timer must reset per PARSED

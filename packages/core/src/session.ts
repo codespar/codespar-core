@@ -725,9 +725,16 @@ async function* parseSseStream(
     }
     if (buffer.trim()) {
       const event = parseSseChunk(buffer);
-      if (event) yield event;
+      if (event) {
+        // Same invariant as the inner loop: pause the idle timer
+        // while the consumer holds control. The stream has ended, so
+        // there is no read to re-arm for afterwards.
+        idle.pause();
+        yield event;
+      }
     }
   } finally {
+    idle.pause();
     signal.removeEventListener("abort", onAbort);
     try {
       await reader.cancel();
@@ -871,6 +878,7 @@ async function* parseStatusSseStream(
       }
     }
   } finally {
+    idle.pause();
     signal.removeEventListener("abort", onAbort);
     try {
       await reader.cancel();
