@@ -2,7 +2,8 @@
  * Session implementation for the CodeSpar managed runtime.
  */
 
-import type { SessionConfig, Tool } from "./types.js";
+import type { SessionConfig, Tool, CallOptions } from "./types.js";
+import { fetchWithTimeout } from "./internal/fetch.js";
 import type {
   Session,
   CreateSessionRequest,
@@ -72,11 +73,11 @@ export async function createSession(
     projectId: config.projectId ?? deps.projectId,
   };
 
-  const res = await fetch(`${baseUrl}/v1/sessions`, {
+  const res = await fetchWithTimeout(`${baseUrl}/v1/sessions`, {
     method: "POST",
     headers,
     body: JSON.stringify({ servers: req.servers, user_id: userId }),
-  });
+  }, { timeout: deps.timeout });
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`createSession failed: ${res.status} ${body}`);
@@ -118,13 +119,13 @@ export async function createSession(
       );
     },
 
-    async execute(toolName: string, params: Record<string, unknown>): Promise<ToolResult> {
+    async execute(toolName: string, params: Record<string, unknown>, opts?: CallOptions): Promise<ToolResult> {
       const start = Date.now();
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/execute`, {
+      const r = await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}/execute`, {
         method: "POST",
         headers,
         body: JSON.stringify({ tool: toolName, input: params }),
-      });
+      }, { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal });
       if (!r.ok) {
         const body = await r.text();
         return {
@@ -140,8 +141,8 @@ export async function createSession(
       return result;
     },
 
-    async proxyExecute(request: ProxyRequest): Promise<ProxyResult> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/proxy_execute`, {
+    async proxyExecute(request: ProxyRequest, opts?: CallOptions): Promise<ProxyResult> {
+      const r = await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}/proxy_execute`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -152,7 +153,7 @@ export async function createSession(
           params: request.params,
           headers: request.headers,
         }),
-      });
+      }, { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal });
       if (!r.ok) {
         const body = await r.text();
         throw new Error(`proxyExecute failed: ${r.status} ${body}`);
@@ -160,12 +161,12 @@ export async function createSession(
       return (await r.json()) as ProxyResult;
     },
 
-    async send(message: string): Promise<SendResult> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/send`, {
+    async send(message: string, opts?: CallOptions): Promise<SendResult> {
+      const r = await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}/send`, {
         method: "POST",
         headers: { ...headers, Accept: "application/json" },
         body: JSON.stringify({ message }),
-      });
+      }, { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal });
       if (!r.ok) {
         const body = await r.text();
         throw new Error(`send failed: ${r.status} ${body}`);
@@ -194,11 +195,12 @@ export async function createSession(
     async discover(
       useCase: string,
       options?: DiscoverOptions,
+      opts?: CallOptions,
     ): Promise<DiscoverResult> {
       const result = await session.execute("codespar_discover", {
         use_case: useCase,
         ...(options ?? {}),
-      });
+      }, opts);
       if (!result.success) {
         throw new Error(`discover failed: ${result.error ?? "unknown"}`);
       }
@@ -215,10 +217,12 @@ export async function createSession(
      */
     async connectionWizard(
       options: ConnectionWizardOptions,
+      opts?: CallOptions,
     ): Promise<ConnectionWizardResult> {
       const result = await session.execute(
         "codespar_manage_connections",
         options as Record<string, unknown>,
+        opts,
       );
       if (!result.success) {
         throw new Error(`connectionWizard failed: ${result.error ?? "unknown"}`);
@@ -233,10 +237,11 @@ export async function createSession(
      * ToolResult.data. Distinct from the legacy `codespar_pay` rail
      * (which routes to outbound transfers/payouts).
      */
-    async charge(args: ChargeArgs): Promise<ChargeResult> {
+    async charge(args: ChargeArgs, opts?: CallOptions): Promise<ChargeResult> {
       const result = await session.execute(
         "codespar_charge",
         args as unknown as Record<string, unknown>,
+        opts,
       );
       if (!result.success) {
         throw new Error(`charge failed: ${result.error ?? "unknown"}`);
@@ -251,10 +256,11 @@ export async function createSession(
      * ShipResult so the caller doesn't have to cast through
      * ToolResult.data.
      */
-    async ship(args: ShipArgs): Promise<ShipResult> {
+    async ship(args: ShipArgs, opts?: CallOptions): Promise<ShipResult> {
       const result = await session.execute(
         "codespar_ship",
         args as unknown as Record<string, unknown>,
+        opts,
       );
       if (!result.success) {
         throw new Error(`ship failed: ${result.error ?? "unknown"}`);
@@ -262,10 +268,11 @@ export async function createSession(
       return result.data as ShipResult;
     },
 
-    async paymentStatus(toolCallId: string): Promise<PaymentStatusResult> {
-      const r = await fetch(
+    async paymentStatus(toolCallId: string, opts?: CallOptions): Promise<PaymentStatusResult> {
+      const r = await fetchWithTimeout(
         `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/payment-status`,
         { headers },
+        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
       );
       if (!r.ok) {
         const body = await r.text();
@@ -276,10 +283,12 @@ export async function createSession(
 
     async verificationStatus(
       toolCallId: string,
+      opts?: CallOptions,
     ): Promise<VerificationStatusResult> {
-      const r = await fetch(
+      const r = await fetchWithTimeout(
         `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/verification-status`,
         { headers },
+        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
       );
       if (!r.ok) {
         const body = await r.text();
@@ -354,8 +363,8 @@ export async function createSession(
       return last;
     },
 
-    async authorize(serverId: string, config: AuthConfig): Promise<AuthResult> {
-      const r = await fetch(`${baseUrl}/v1/connect/start`, {
+    async authorize(serverId: string, config: AuthConfig, opts?: CallOptions): Promise<AuthResult> {
+      const r = await fetchWithTimeout(`${baseUrl}/v1/connect/start`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -364,7 +373,7 @@ export async function createSession(
           redirect_uri: config.redirectUri,
           scopes: config.scopes,
         }),
-      });
+      }, { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal });
       if (!r.ok) {
         const body = await r.text();
         throw new Error(`authorize failed: ${r.status} ${body}`);
@@ -381,10 +390,10 @@ export async function createSession(
       };
     },
 
-    async connections(): Promise<ServerConnection[]> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/connections`, {
+    async connections(opts?: CallOptions): Promise<ServerConnection[]> {
+      const r = await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}/connections`, {
         headers,
-      });
+      }, { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal });
       if (!r.ok) return cachedConnections ?? [];
       const payload = (await r.json()) as BackendConnectionsResponse;
       cachedConnections = payload.servers;
