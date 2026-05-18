@@ -328,7 +328,7 @@ export async function createSession(
       toolCallId: string,
       options: PaymentStatusStreamOptions = {},
     ): Promise<PaymentStatusResult> {
-      const ms = deps.timeout;
+      const ms = options.timeout ?? deps.timeout;
       const idleAc = new AbortController();
       const merged = mergeSignals([idleAc.signal, options.signal]);
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -377,7 +377,7 @@ export async function createSession(
       toolCallId: string,
       options: VerificationStatusStreamOptions = {},
     ): Promise<VerificationStatusResult> {
-      const ms = deps.timeout;
+      const ms = options.timeout ?? deps.timeout;
       const idleAc = new AbortController();
       const merged = mergeSignals([idleAc.signal, options.signal]);
       let timer: ReturnType<typeof setTimeout> | undefined;

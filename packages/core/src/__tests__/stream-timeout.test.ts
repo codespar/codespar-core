@@ -88,6 +88,24 @@ describe("stream idle timeout", () => {
     expect(state.cancelled).toBe(true);
   }, 5000);
 
+  it("paymentStatusStream: per-call timeout overrides the client default", async () => {
+    // Stream emits one snapshot frame then idles forever.
+    const snapshotFrame =
+      'event: snapshot\ndata: {"tool_call_id":"tc1","payment_status":"pending","idempotency_key":null,"original_status":"success","hosted_url":null,"events":[]}\n\n';
+    globalThis.fetch = ((url: string) => {
+      if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());
+      // Any payment-status/stream URL: emit one frame then idle forever.
+      return Promise.resolve({ ok: true, body: sse([snapshotFrame], 0) } as unknown as Response);
+    }) as unknown as typeof fetch;
+
+    // Client default is intentionally large; per-call override is 50 ms.
+    const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x", timeout: 10_000 });
+    const session = await cs.create("u");
+    await expect(
+      session.paymentStatusStream("tc1", { timeout: 50, onUpdate() {} }),
+    ).rejects.toBeInstanceOf(TimeoutError);
+  }, 5000);
+
   it("drains a steady multi-frame stream without timing out", async () => {
     const frames = Array.from({ length: 12 }, (_, n) =>
       `event: assistant_text\ndata: {"content":"c${n}","iteration":${n}}\n\n`);

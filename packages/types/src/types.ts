@@ -255,6 +255,8 @@ export interface PaymentStatusResult {
 export interface PaymentStatusStreamOptions {
   onUpdate?: (envelope: PaymentStatusResult) => void;
   signal?: AbortSignal;
+  /** Per-call idle timeout in ms; overrides the client default. */
+  timeout?: number;
 }
 
 /* ── /v1/tool-calls/:id/verification-status wire shape ─────────── */
@@ -310,6 +312,8 @@ export interface VerificationStatusResult {
 export interface VerificationStatusStreamOptions {
   onUpdate?: (envelope: VerificationStatusResult) => void;
   signal?: AbortSignal;
+  /** Per-call idle timeout in ms; overrides the client default. */
+  timeout?: number;
 }
 
 /* ── codespar_discover wire shape ───────────────────────────────── */
