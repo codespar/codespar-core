@@ -691,10 +691,16 @@ async function* parseSseStream(
       while ((sep = buffer.indexOf("\n\n")) !== -1) {
         const chunk = buffer.slice(0, sep);
         buffer = buffer.slice(sep + 2);
+        // A complete SSE comment frame (":..." heartbeat) carries no
+        // data but IS protocol liveness — reset idle. Only an
+        // incomplete byte trickle (no "\n\n" yet) must still time out.
+        if (chunk.startsWith(":")) {
+          resetIdle();
+          continue;
+        }
         const event = parseSseChunk(chunk);
         if (event) {
-          // Reset idle per PARSED event, not per raw read — a byte
-          // trickle that never completes a frame must still time out.
+          // Reset idle per parsed frame, not per raw read.
           resetIdle();
           yield event;
         }
@@ -818,8 +824,16 @@ async function* parseStatusSseStream(
       while ((sep = buffer.indexOf("\n\n")) !== -1) {
         const chunk = buffer.slice(0, sep);
         buffer = buffer.slice(sep + 2);
-        // Comment frames (heartbeats) start with ":" and carry no data.
-        if (chunk.startsWith(":")) continue;
+        // Comment frames (heartbeats) start with ":" and carry no
+        // data, but a complete heartbeat frame IS protocol liveness —
+        // reset idle so healthy long-pending streams don't time out
+        // (parity with Python httpx, whose read timeout any byte
+        // resets). An incomplete byte trickle still times out because
+        // it never forms a "\n\n" frame.
+        if (chunk.startsWith(":")) {
+          resetIdle();
+          continue;
+        }
         let eventName = "message";
         let dataLine = "";
         for (const line of chunk.split("\n")) {

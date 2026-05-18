@@ -95,6 +95,43 @@ describe("stream idle timeout", () => {
     ).rejects.toBeInstanceOf(TimeoutError);
   }, 5000);
 
+  it("paymentStatusStream stays alive while only heartbeat frames arrive", async () => {
+    // Healthy long-pending flow: snapshot, then several SSE comment
+    // heartbeats spaced below the idle window across more than one
+    // window, then a terminal done. Heartbeats are complete frames —
+    // they must keep the stream alive (parity with Python httpx, whose
+    // read timeout is reset by any incoming bytes).
+    const snapshot =
+      'event: snapshot\ndata: {"tool_call_id":"tc1","payment_status":"pending","idempotency_key":null,"original_status":"success","hosted_url":null,"events":[]}\n\n';
+    const done = 'event: done\ndata: {}\n\n';
+    const enc = new TextEncoder();
+    let stopped = false;
+    let step = 0;
+    // timeout 80ms; heartbeat every 40ms × 5 = 200ms (> 2 windows).
+    const stream = new ReadableStream<Uint8Array>({
+      pull(ctrl) {
+        return new Promise<void>((r) => setTimeout(() => {
+          if (stopped) return r();
+          if (step === 0) ctrl.enqueue(enc.encode(snapshot));
+          else if (step <= 5) ctrl.enqueue(enc.encode(":heartbeat\n\n"));
+          else { ctrl.enqueue(enc.encode(done)); ctrl.close(); }
+          step++;
+          r();
+        }, step === 0 ? 0 : 40));
+      },
+      cancel() { stopped = true; },
+    });
+    globalThis.fetch = ((url: string) => {
+      if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());
+      return Promise.resolve({ ok: true, body: stream } as unknown as Response);
+    }) as unknown as typeof fetch;
+
+    const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x", timeout: 10_000 });
+    const session = await cs.create("u");
+    const result = await session.paymentStatusStream("tc1", { timeout: 80, onUpdate() {} });
+    expect(result.payment_status).toBe("pending");
+  }, 5000);
+
   it("cancels the response body when the idle timeout fires", async () => {
     const { stream, state } = trackedSse(['event: assistant_text\ndata: {"content":"hi","iteration":1}\n\n'], 0);
     globalThis.fetch = ((url: string) => {
