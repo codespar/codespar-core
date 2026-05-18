@@ -4,6 +4,8 @@
 
 import type { SessionConfig, Tool, CallOptions } from "./types.js";
 import { fetchWithTimeout } from "./internal/fetch.js";
+import { mergeSignals } from "./internal/abort.js";
+import { TimeoutError } from "./errors.js";
 import type {
   Session,
   CreateSessionRequest,
@@ -181,17 +183,35 @@ export async function createSession(
       return (await r.json()) as SendResult;
     },
 
-    async *sendStream(message: string): AsyncIterable<StreamEvent> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/send`, {
-        method: "POST",
-        headers: { ...headers, Accept: "text/event-stream" },
-        body: JSON.stringify({ message }),
-      });
-      if (!r.ok || !r.body) {
-        const body = await r.text();
-        throw new Error(`sendStream failed: ${r.status} ${body}`);
+    async *sendStream(message: string, opts?: CallOptions): AsyncIterable<StreamEvent> {
+      const ms = opts?.timeout ?? deps.timeout;
+      const idleAc = new AbortController();
+      const merged = mergeSignals([idleAc.signal, opts?.signal]);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const resetIdle = () => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => idleAc.abort(), ms);
+      };
+      try {
+        const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/send`, {
+          method: "POST",
+          headers: { ...headers, Accept: "text/event-stream" },
+          body: JSON.stringify({ message }),
+          signal: merged.signal,
+        });
+        if (!r.ok || !r.body) {
+          const body = await r.text();
+          throw new Error(`sendStream failed: ${r.status} ${body}`);
+        }
+        yield* parseSseStream(r.body, resetIdle, merged.signal);
+      } catch (err) {
+        if (opts?.signal?.aborted) throw opts.signal.reason;
+        if (idleAc.signal.aborted) throw new TimeoutError(ms);
+        throw err;
+      } finally {
+        if (timer) clearTimeout(timer);
+        merged.cleanup();
       }
-      yield* parseSseStream(r.body);
     },
 
     /**
@@ -308,66 +328,100 @@ export async function createSession(
       toolCallId: string,
       options: PaymentStatusStreamOptions = {},
     ): Promise<PaymentStatusResult> {
-      const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
-        toolCallId,
-      )}/payment-status/stream`;
-      const r = await fetch(url, {
-        headers: { ...headers, Accept: "text/event-stream" },
-        signal: options.signal,
-      });
-      if (!r.ok || !r.body) {
-        const body = await r.text();
-        throw new Error(
-          `paymentStatusStream failed: ${r.status} ${body}`,
-        );
-      }
-      let last: PaymentStatusResult | null = null;
-      for await (const frame of parseStatusSseStream(r.body)) {
-        if (frame.event === "snapshot" || frame.event === "update") {
-          last = frame.data as PaymentStatusResult;
-          options.onUpdate?.(last);
-        } else if (frame.event === "done") {
-          break;
+      const ms = deps.timeout;
+      const idleAc = new AbortController();
+      const merged = mergeSignals([idleAc.signal, options.signal]);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const resetIdle = () => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => idleAc.abort(), ms);
+      };
+      try {
+        const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
+          toolCallId,
+        )}/payment-status/stream`;
+        const r = await fetch(url, {
+          headers: { ...headers, Accept: "text/event-stream" },
+          signal: merged.signal,
+        });
+        if (!r.ok || !r.body) {
+          const body = await r.text();
+          throw new Error(
+            `paymentStatusStream failed: ${r.status} ${body}`,
+          );
         }
+        let last: PaymentStatusResult | null = null;
+        for await (const frame of parseStatusSseStream(r.body, resetIdle, merged.signal)) {
+          if (frame.event === "snapshot" || frame.event === "update") {
+            last = frame.data as PaymentStatusResult;
+            options.onUpdate?.(last);
+          } else if (frame.event === "done") {
+            break;
+          }
+        }
+        if (!last) {
+          throw new Error("paymentStatusStream: stream closed before snapshot");
+        }
+        return last;
+      } catch (err) {
+        if (options.signal?.aborted) throw options.signal.reason;
+        if (idleAc.signal.aborted) throw new TimeoutError(ms);
+        throw err;
+      } finally {
+        if (timer) clearTimeout(timer);
+        merged.cleanup();
       }
-      if (!last) {
-        throw new Error("paymentStatusStream: stream closed before snapshot");
-      }
-      return last;
     },
 
     async verificationStatusStream(
       toolCallId: string,
       options: VerificationStatusStreamOptions = {},
     ): Promise<VerificationStatusResult> {
-      const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
-        toolCallId,
-      )}/verification-status/stream`;
-      const r = await fetch(url, {
-        headers: { ...headers, Accept: "text/event-stream" },
-        signal: options.signal,
-      });
-      if (!r.ok || !r.body) {
-        const body = await r.text();
-        throw new Error(
-          `verificationStatusStream failed: ${r.status} ${body}`,
-        );
-      }
-      let last: VerificationStatusResult | null = null;
-      for await (const frame of parseStatusSseStream(r.body)) {
-        if (frame.event === "snapshot" || frame.event === "update") {
-          last = frame.data as VerificationStatusResult;
-          options.onUpdate?.(last);
-        } else if (frame.event === "done") {
-          break;
+      const ms = deps.timeout;
+      const idleAc = new AbortController();
+      const merged = mergeSignals([idleAc.signal, options.signal]);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const resetIdle = () => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => idleAc.abort(), ms);
+      };
+      try {
+        const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
+          toolCallId,
+        )}/verification-status/stream`;
+        const r = await fetch(url, {
+          headers: { ...headers, Accept: "text/event-stream" },
+          signal: merged.signal,
+        });
+        if (!r.ok || !r.body) {
+          const body = await r.text();
+          throw new Error(
+            `verificationStatusStream failed: ${r.status} ${body}`,
+          );
         }
+        let last: VerificationStatusResult | null = null;
+        for await (const frame of parseStatusSseStream(r.body, resetIdle, merged.signal)) {
+          if (frame.event === "snapshot" || frame.event === "update") {
+            last = frame.data as VerificationStatusResult;
+            options.onUpdate?.(last);
+          } else if (frame.event === "done") {
+            break;
+          }
+        }
+        if (!last) {
+          throw new Error(
+            "verificationStatusStream: stream closed before snapshot",
+          );
+        }
+        return last;
+      } catch (err) {
+        if (options.signal?.aborted) throw options.signal.reason;
+        if (idleAc.signal.aborted) throw new TimeoutError(ms);
+        throw err;
+      } finally {
+        if (timer) clearTimeout(timer);
+        merged.cleanup();
       }
-      if (!last) {
-        throw new Error(
-          "verificationStatusStream: stream closed before snapshot",
-        );
-      }
-      return last;
     },
 
     async authorize(serverId: string, config: AuthConfig, opts?: CallOptions): Promise<AuthResult> {
@@ -442,15 +496,27 @@ export async function createSession(
  */
 async function* parseSseStream(
   body: ReadableStream<Uint8Array>,
+  resetIdle: () => void,
+  signal: AbortSignal,
 ): AsyncIterable<StreamEvent> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
 
+  // Race reader.read() against the abort signal so an idle timeout (or
+  // caller cancel) actually interrupts a hanging ReadableStream pull.
+  const abortPromise = (): Promise<never> =>
+    new Promise((_, reject) => {
+      if (signal.aborted) { reject(signal.reason); return; }
+      signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+    });
+
   try {
+    resetIdle();
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await Promise.race([reader.read(), abortPromise()]);
       if (done) break;
+      resetIdle();
       buffer += decoder.decode(value, { stream: true });
 
       let sep: number;
@@ -543,14 +609,27 @@ const PRESET_SERVERS: Record<NonNullable<SessionConfig["preset"]>, string[]> = {
  */
 async function* parseStatusSseStream(
   body: ReadableStream<Uint8Array>,
+  resetIdle: () => void,
+  signal: AbortSignal,
 ): AsyncIterable<{ event: string; data: unknown }> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+
+  // Race reader.read() against the abort signal so an idle timeout (or
+  // caller cancel) actually interrupts a hanging ReadableStream pull.
+  const abortPromise = (): Promise<never> =>
+    new Promise((_, reject) => {
+      if (signal.aborted) { reject(signal.reason); return; }
+      signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+    });
+
   try {
+    resetIdle();
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await Promise.race([reader.read(), abortPromise()]);
       if (done) break;
+      resetIdle();
       buffer += decoder.decode(value, { stream: true });
       let sep: number;
       while ((sep = buffer.indexOf("\n\n")) !== -1) {
