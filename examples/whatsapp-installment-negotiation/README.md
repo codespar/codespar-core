@@ -178,23 +178,31 @@ are the on-ramp, not the destination.
 ### How to extend the fixture for your own multi-turn flow
 
 The five-entry fixture maps onto three buyer messages because each
-round of tool execution generates one extra LLM completion request:
+round of tool execution generates one extra LLM completion request.
+`turnIndex` counts assistant messages within a single `session.send()`
+call — it resets to 0 on every new send, since each send starts a
+fresh chat loop with just the new user message in the request:
 
 | Aimock entry | Triggered by | Match key | Response |
 |---|---|---|---|
-| 0 | buyer message 1 | `turnIndex: 0, hasToolResult: false, userMessage~"sof"` | text only |
-| 1 | buyer message 2 | `turnIndex: 1, hasToolResult: false, userMessage~"6x"` | tool_use |
-| 2 | tool result returns | `turnIndex: 2, hasToolResult: true` | text only |
-| 3 | buyer message 3 | `turnIndex: 3, hasToolResult: false, userMessage~"confirm"` | three parallel tool_uses |
-| 4 | tool results return | `turnIndex: 4, hasToolResult: true` | text only |
+| 0 | buyer message 1 (`session.send`) | `turnIndex: 0, hasToolResult: false, userMessage~"sof"` | text only |
+| 1 | buyer message 2 (`session.send`) | `turnIndex: 0, hasToolResult: false, userMessage~"6x"` | tool_use |
+| 2 | tool result returns (same send as #1) | `turnIndex: 1, hasToolResult: true, userMessage~"6x"` | text only |
+| 3 | buyer message 3 (`session.send`) | `turnIndex: 0, hasToolResult: false, userMessage~"Confirma"` | three parallel tool_uses |
+| 4 | tool results return (same send as #3) | `turnIndex: 1, hasToolResult: true, userMessage~"Confirma"` | text only |
 
 To copy the pattern to your own demo: count one fixture entry per
-LLM completion the runtime will make, not per buyer message.
-`turnIndex` increments on every completion request — including the
-"after tool result" continuations — so `turnIndex` + `hasToolResult`
-together uniquely identify each entry. `userMessage~"keyword"` is
-optional but useful for asserting which buyer message a given LLM
-turn corresponds to (avoids accidental ordering swaps).
+LLM completion the runtime will make, not per buyer message. Within
+a single `session.send()`, `turnIndex` increments on every completion
+request — including the "after tool result" continuations — so
+`turnIndex` + `hasToolResult` together uniquely identify each entry
+within that send. Across sends, `turnIndex` restarts at 0, so use
+`userMessage~"keyword"` as the discriminator that anchors which
+buyer message a given LLM turn corresponds to (it's also what keeps
+the `hasToolResult: true` continuations from colliding across sends).
+Note that `userMessage` matching is a case-sensitive substring check,
+so use the exact casing the buyer types (e.g. `"Confirma"`, not
+`"confirm"`).
 
 **Demo arithmetic is flat (no juros).** The Asaas `--demo` handler
 computes `installmentValue = value / installments` with no interest,
@@ -215,12 +223,18 @@ arrives via direct API call, webhook, or any other channel. This
 example exercises the loop from the test runner across three turns;
 swap the entry point and the rest is unchanged.
 
-The session retains conversation history across the three calls — the
-agent's reply on turn 3 ("computes 6x via Asaas") depends on the
-buyer's turn 2 message ("what about 6x?"), which itself depends on
-the agent's turn 1 reply listing Pix + 12x as the menu. That history
-management lives inside `session.send()`; the test does not stitch
-messages manually.
+In the current OSS runtime, each `session.send()` call is a fresh
+chat loop scoped to that single message — the runtime does not yet
+carry conversation history across sends, so each turn's LLM call
+sees only the new buyer message plus the tool-result continuation
+within the same send. The aimock fixture mirrors that: `turnIndex`
+restarts at 0 on every send, and `userMessage~"keyword"` anchors
+which buyer message a fixture belongs to. The narrative continuity
+you see in the demo lives in the fixture authoring (turn-2 text
+references "6x", turn-3 tool-calls reference the previously
+discussed payment), not in shared message state inside the runtime.
+Cross-send history is on the roadmap; demos that depend on it can
+plug in once it lands without changing this test's shape.
 
 ## Acceptance criteria
 

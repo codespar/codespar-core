@@ -14,7 +14,7 @@
     {
       "match": {
         "userMessage": "6x",
-        "turnIndex": 1,
+        "turnIndex": 0,
         "hasToolResult": false
       },
       "response": {
@@ -32,7 +32,8 @@
     },
     {
       "match": {
-        "turnIndex": 2,
+        "userMessage": "6x",
+        "turnIndex": 1,
         "hasToolResult": true
       },
       "response": {
@@ -42,8 +43,8 @@
     },
     {
       "match": {
-        "userMessage": "confirm",
-        "turnIndex": 3,
+        "userMessage": "Confirma",
+        "turnIndex": 0,
         "hasToolResult": false
       },
       "response": {
@@ -105,7 +106,8 @@
     },
     {
       "match": {
-        "turnIndex": 4,
+        "userMessage": "Confirma",
+        "turnIndex": 1,
         "hasToolResult": true
       },
       "response": {
