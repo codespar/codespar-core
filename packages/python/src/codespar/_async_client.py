@@ -114,9 +114,15 @@ class AsyncCodeSpar:
         """
         # Extract before _resolve_config so it doesn't reach the allowed-kwarg check.
         raw_timeout = kwargs.pop("timeout", None)
-        timeout: float | None = (
-            float(raw_timeout) if isinstance(raw_timeout, (int, float)) else None
-        )
+        timeout: float | None
+        if raw_timeout is None:
+            timeout = None
+        elif isinstance(raw_timeout, bool) or not isinstance(raw_timeout, (int, float)):
+            raise ConfigError(
+                f"create(): 'timeout' must be a number of seconds, got {type(raw_timeout).__name__}"
+            )
+        else:
+            timeout = float(raw_timeout)
 
         resolved = self._resolve_config(config, kwargs)
         servers = resolved.servers or preset_to_servers(resolved.preset)
