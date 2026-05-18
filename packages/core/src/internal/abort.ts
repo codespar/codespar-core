@@ -16,13 +16,16 @@ export function mergeSignals(
   }
 
   const onAbort = (ev: Event) => {
-    const target = ev.target as AbortSignal;
-    controller.abort(target.reason);
+    const source = ev.currentTarget as AbortSignal;
+    controller.abort(source.reason);
     cleanup();
   };
   for (const s of present) s.addEventListener("abort", onAbort);
 
+  let cleaned = false;
   function cleanup() {
+    if (cleaned) return;
+    cleaned = true;
     for (const s of present) s.removeEventListener("abort", onAbort);
   }
   return { signal: controller.signal, cleanup };
