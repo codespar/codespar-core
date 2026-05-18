@@ -38,7 +38,7 @@ export type {
 export { SessionConfigSchema } from "./types.js";
 export { loop } from "./loop.js";
 export { tools, findTools } from "./tools.js";
-export { CodesparApiError } from "./errors.js";
+export { CodesparApiError, TimeoutError } from "./errors.js";
 export type { CodesparApiErrorOptions } from "./errors.js";
 export {
   TOOL_RESULT_CODES,
