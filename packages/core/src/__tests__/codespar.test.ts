@@ -24,6 +24,25 @@ describe("CodeSpar constructor", () => {
     expect(cs).toBeDefined();
   });
 
+  it("rejects a client-level projectId with an invalid format", () => {
+    expect(
+      () => new CodeSpar({ apiKey: "csk_live_t", projectId: "not-a-project-id" }),
+    ).toThrow(/projectId/);
+  });
+
+  it("accepts a valid client-level projectId", () => {
+    const cs = new CodeSpar({
+      apiKey: "csk_live_t",
+      projectId: "prj_abc123DEF456ghi7",
+    });
+    expect(cs).toBeDefined();
+  });
+
+  it("accepts a client with no projectId", () => {
+    const cs = new CodeSpar({ apiKey: "csk_live_t" });
+    expect(cs).toBeDefined();
+  });
+
   it("accepts apiKey via env var", () => {
     process.env.CODESPAR_API_KEY = "csk_live_envtest";
     try {
