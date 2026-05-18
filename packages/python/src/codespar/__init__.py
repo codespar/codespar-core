@@ -231,9 +231,9 @@ __all__ = [
     "ShopStatusResult",
     "ShopVariant",
     "StreamError",
+    "TimeoutError",
     # Streaming events
     "StreamEvent",
-    "TimeoutError",
     "Tool",
     "ToolCallRecord",
     "ToolNotMockedOutput",
