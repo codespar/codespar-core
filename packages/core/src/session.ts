@@ -111,6 +111,13 @@ export async function createSession(
     projectId: config.projectId ?? deps.projectId,
   };
 
+  // Resolve per-call timeout/abort against the client default. Kept local
+  // so every method funnels through one place if CallOptions grows.
+  const callOpts = (o?: CallOptions) => ({
+    timeout: o?.timeout ?? deps.timeout,
+    signal: o?.signal,
+  });
+
   // Conditional spread keeps the wire body byte-identical to the
   // pre-PRD shape when the caller omits mocks (R18 wire-neutrality).
   // The field is forwarded verbatim — no canonical-name rewriting on
@@ -130,7 +137,7 @@ export async function createSession(
       body: JSON.stringify(wireBody),
     },
     "createSession",
-    { timeout: deps.timeout },
+    callOpts(),
   );
   if (!res.ok) {
     await throwFromResponse(res, "createSession");
@@ -182,7 +189,7 @@ export async function createSession(
           body: JSON.stringify({ tool: toolName, input: params }),
         },
         "execute",
-        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
+        callOpts(opts),
       );
       if (!r.ok) {
         const body = await r.text();
@@ -215,7 +222,7 @@ export async function createSession(
           }),
         },
         "proxyExecute",
-        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
+        callOpts(opts),
       );
       if (!r.ok) {
         await throwFromResponse(r, "proxyExecute");
@@ -232,7 +239,7 @@ export async function createSession(
           body: JSON.stringify({ message }),
         },
         "send",
-        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
+        callOpts(opts),
       );
       if (!r.ok) {
         await throwFromResponse(r, "send");
@@ -406,7 +413,7 @@ export async function createSession(
         `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/payment-status`,
         { headers },
         "paymentStatus",
-        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
+        callOpts(opts),
       );
       if (!r.ok) {
         await throwFromResponse(r, "paymentStatus");
@@ -422,7 +429,7 @@ export async function createSession(
         `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/verification-status`,
         { headers },
         "verificationStatus",
-        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
+        callOpts(opts),
       );
       if (!r.ok) {
         await throwFromResponse(r, "verificationStatus");
@@ -516,7 +523,7 @@ export async function createSession(
           }),
         },
         "authorize",
-        { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
+        callOpts(opts),
       );
       if (!r.ok) {
         await throwFromResponse(r, "authorize");
@@ -542,7 +549,7 @@ export async function createSession(
           `${baseUrl}/v1/sessions/${data.id}/connections`,
           { headers },
           "connections",
-          { timeout: opts?.timeout ?? deps.timeout, signal: opts?.signal },
+          callOpts(opts),
         );
         if (!r.ok) return cachedConnections ?? [];
         const payload = (await r.json()) as BackendConnectionsResponse;
