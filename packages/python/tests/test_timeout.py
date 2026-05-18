@@ -179,3 +179,38 @@ async def test_create_rejects_bool_timeout() -> None:
     async with AsyncCodeSpar(api_key="csk_test_x") as cs:
         with pytest.raises(ConfigError):
             await cs.create("u", preset="brazilian", timeout=True)  # type: ignore[arg-type]
+
+
+async def _open_session(httpx_mock, cs):
+    httpx_mock.add_response(
+        url="https://api.codespar.dev/v1/sessions",
+        method="POST",
+        json={
+            "id": "s1",
+            "org_id": "o",
+            "user_id": "u",
+            "servers": [],
+            "status": "active",
+            "created_at": "2026-01-01T00:00:00Z",
+            "closed_at": None,
+        },
+    )
+    return await cs.create("u", preset="brazilian")
+
+
+async def test_close_swallows_backend_timeout(httpx_mock) -> None:
+    """close() is best-effort: a backend timeout must not crash the caller."""
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        session = await _open_session(httpx_mock, cs)
+        httpx_mock.add_exception(httpx.ReadTimeout("slow"))  # the DELETE
+        await session.close()  # must NOT raise
+
+
+@pytest.mark.parametrize("bad", [True, "30", 0, -5, float("nan")])
+async def test_session_method_rejects_invalid_timeout(httpx_mock, bad) -> None:
+    from codespar import ConfigError
+
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        session = await _open_session(httpx_mock, cs)
+        with pytest.raises(ConfigError):
+            await session.send("hi", timeout=bad)  # type: ignore[arg-type]

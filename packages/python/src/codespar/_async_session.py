@@ -18,7 +18,7 @@ from typing import Any
 import httpx
 
 from ._http import request_json, stream_sse, stream_sse_get
-from .errors import ApiError, ConfigError
+from .errors import ApiError, ConfigError, TimeoutError
 from .types import (
     AssistantTextEvent,
     AuthConfig,
@@ -1223,9 +1223,10 @@ class AsyncSession:
         timeout: float | None = None,
     ) -> None:
         """Close the session on the backend. Safe to call multiple times.
-        Best-effort — a 4xx/5xx here shouldn't crash the caller. The
-        backend cleans up stale sessions on a timer anyway."""
-        with contextlib.suppress(ApiError):
+        Best-effort — a 4xx/5xx OR a backend timeout here shouldn't
+        crash the caller. The backend cleans up stale sessions on a
+        timer anyway."""
+        with contextlib.suppress(ApiError, TimeoutError):
             await request_json(
                 self._client,
                 "DELETE",
