@@ -11,14 +11,37 @@ this file changes.
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
 
-from .errors import ApiError, StreamError, TimeoutError
+from .errors import ApiError, ConfigError, StreamError, TimeoutError
 
 DEFAULT_BASE_URL = "https://api.codespar.dev"
+
+
+def normalize_timeout(timeout: float | None) -> float | None:
+    """Fail-fast validation for every per-call timeout (seconds).
+
+    Centralized here so EVERY request path — create() and every session
+    method, unary or streaming — rejects the same bad inputs before a
+    request starts, rather than letting httpx misinterpret them or fail
+    late with a non-CodeSpar error around a commerce side effect.
+    ``None`` means "use the client default".
+    """
+    if timeout is None:
+        return None
+    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
+        raise ConfigError(
+            f"timeout must be a number of seconds, got {type(timeout).__name__}"
+        )
+    if math.isnan(timeout) or math.isinf(timeout) or timeout <= 0:
+        raise ConfigError(
+            f"timeout must be a positive, finite number of seconds, got {timeout!r}"
+        )
+    return float(timeout)
 
 
 def build_headers(
@@ -50,6 +73,7 @@ async def request_json(
     timeout: float | None = None,
 ) -> Any:
     """Do an authenticated JSON request, return parsed body or raise ApiError."""
+    timeout = normalize_timeout(timeout)
     headers = build_headers(api_key, project_id)
     try:
         response = await client.request(
@@ -108,6 +132,7 @@ async def stream_sse(
     is the JSON payload from a single SSE frame. Callers interpret
     the ``type`` field themselves.
     """
+    timeout = normalize_timeout(timeout)
     headers = build_headers(api_key, project_id, accept_sse=True)
     try:
         async with client.stream(
@@ -165,6 +190,7 @@ async def stream_sse_get(
     chat-loop's anonymous JSON frames. Heartbeat comment frames
     (``: heartbeat 12345``) are filtered.
     """
+    timeout = normalize_timeout(timeout)
     headers = build_headers(api_key, project_id, accept_sse=True)
     try:
         async with client.stream("GET", path, headers=headers, timeout=timeout) as response:
