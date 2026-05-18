@@ -404,7 +404,10 @@ export async function createSession(
     const start = Date.now();
     while (Date.now() - start < timeout) {
       const conns = await session.connections();
-      if (conns.every((c) => c.connected)) break;
+      // `connections()` returns [] on a failed/empty response; an empty
+      // list must NOT count as "all connected" — [].every() is vacuously
+      // true and would resolve the gate with zero servers connected.
+      if (conns.length > 0 && conns.every((c) => c.connected)) break;
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
