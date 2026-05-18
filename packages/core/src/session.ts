@@ -657,18 +657,23 @@ async function* parseSseStream(
   const decoder = new TextDecoder();
   let buffer = "";
 
-  // Race reader.read() against the abort signal so an idle timeout (or
-  // caller cancel) actually interrupts a hanging ReadableStream pull.
-  const abortPromise = (): Promise<never> =>
-    new Promise((_, reject) => {
-      if (signal.aborted) { reject(signal.reason); return; }
-      signal.addEventListener("abort", () => reject(signal.reason), { once: true });
-    });
+  // Single abort promise + single listener per parser call — avoids
+  // per-iteration listener accumulation and MaxListeners warnings.
+  let abortReject!: (e: unknown) => void;
+  const abortPromise = new Promise<never>((_resolve, reject) => {
+    abortReject = reject;
+  });
+  const onAbort = () => abortReject(signal.reason);
+  if (signal.aborted) {
+    queueMicrotask(() => abortReject(signal.reason));
+  } else {
+    signal.addEventListener("abort", onAbort, { once: true });
+  }
 
   try {
     resetIdle();
     while (true) {
-      const { done, value } = await Promise.race([reader.read(), abortPromise()]);
+      const { done, value } = await Promise.race([reader.read(), abortPromise]);
       if (done) break;
       resetIdle();
       buffer += decoder.decode(value, { stream: true });
@@ -686,6 +691,12 @@ async function* parseSseStream(
       if (event) yield event;
     }
   } finally {
+    signal.removeEventListener("abort", onAbort);
+    try {
+      await reader.cancel();
+    } catch {
+      // reader already errored/closed — cancel is best-effort
+    }
     reader.releaseLock();
   }
 }
@@ -770,18 +781,23 @@ async function* parseStatusSseStream(
   const decoder = new TextDecoder();
   let buffer = "";
 
-  // Race reader.read() against the abort signal so an idle timeout (or
-  // caller cancel) actually interrupts a hanging ReadableStream pull.
-  const abortPromise = (): Promise<never> =>
-    new Promise((_, reject) => {
-      if (signal.aborted) { reject(signal.reason); return; }
-      signal.addEventListener("abort", () => reject(signal.reason), { once: true });
-    });
+  // Single abort promise + single listener per parser call — avoids
+  // per-iteration listener accumulation and MaxListeners warnings.
+  let abortReject!: (e: unknown) => void;
+  const abortPromise = new Promise<never>((_resolve, reject) => {
+    abortReject = reject;
+  });
+  const onAbort = () => abortReject(signal.reason);
+  if (signal.aborted) {
+    queueMicrotask(() => abortReject(signal.reason));
+  } else {
+    signal.addEventListener("abort", onAbort, { once: true });
+  }
 
   try {
     resetIdle();
     while (true) {
-      const { done, value } = await Promise.race([reader.read(), abortPromise()]);
+      const { done, value } = await Promise.race([reader.read(), abortPromise]);
       if (done) break;
       resetIdle();
       buffer += decoder.decode(value, { stream: true });
@@ -806,6 +822,12 @@ async function* parseStatusSseStream(
       }
     }
   } finally {
+    signal.removeEventListener("abort", onAbort);
+    try {
+      await reader.cancel();
+    } catch {
+      // reader already errored/closed — cancel is best-effort
+    }
     reader.releaseLock();
   }
 }
