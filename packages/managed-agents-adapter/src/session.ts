@@ -40,56 +40,66 @@ function throwIfAborted(opts?: CallOptions): void {
 }
 
 /**
- * Drain an async iterable while enforcing a deadline and caller abort
- * on EVERY read — including a read that never resolves because the
- * runtime stalled before yielding the next event. Each next() is raced
- * against a timeout/abort guard, so a hung stream cannot pin the call
- * (and the session mutex) past its budget. The underlying iterator is
- * always closed via return() on early exit.
+ * Race a promise against an absolute deadline and caller abort. Used
+ * for EVERY potentially-unbounded await on the per-call budget path
+ * (sendMessage and each stream read) so a stalled runtime can never
+ * pin the call — or the session mutex — past its timeout/abort.
+ */
+async function guarded<T>(
+  p: Promise<T>,
+  deadline: number,
+  drainMs: number,
+  opts: CallOptions | undefined,
+): Promise<T> {
+  if (opts?.signal?.aborted) throw opts.signal.reason;
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) throw new DrainTimeoutError(drainMs);
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let onAbort: (() => void) | undefined;
+  const guard = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new DrainTimeoutError(drainMs)), remaining);
+    if (opts?.signal) {
+      onAbort = () => reject(opts.signal!.reason);
+      opts.signal.addEventListener("abort", onAbort, { once: true });
+    }
+  });
+  // If p wins the race the guard stays pending and would reject
+  // later — swallow that so it never surfaces as an unhandled rejection.
+  guard.catch(() => {});
+
+  try {
+    return await Promise.race([p, guard]);
+  } finally {
+    if (timer) clearTimeout(timer);
+    if (onAbort && opts?.signal) {
+      opts.signal.removeEventListener("abort", onAbort);
+    }
+  }
+}
+
+/**
+ * Drain an async iterable while enforcing a SHARED absolute deadline
+ * (covering sendMessage + every read) and caller abort on EVERY read —
+ * including a read that never resolves because the runtime stalled
+ * before yielding. The underlying iterator is always closed via
+ * return() on early exit (fire-and-forget — a wedged generator must
+ * not re-introduce the hang).
  */
 async function* withDeadline<T>(
   source: AsyncIterable<T>,
+  deadline: number,
   drainMs: number,
   opts: CallOptions | undefined,
 ): AsyncGenerator<T> {
   const it = source[Symbol.asyncIterator]();
-  const deadline = Date.now() + drainMs;
   try {
     for (;;) {
-      if (opts?.signal?.aborted) throw opts.signal.reason;
-      const remaining = deadline - Date.now();
-      if (remaining <= 0) throw new DrainTimeoutError(drainMs);
-
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      let onAbort: (() => void) | undefined;
-      const guard = new Promise<never>((_resolve, reject) => {
-        timer = setTimeout(() => reject(new DrainTimeoutError(drainMs)), remaining);
-        if (opts?.signal) {
-          onAbort = () => reject(opts.signal!.reason);
-          opts.signal.addEventListener("abort", onAbort, { once: true });
-        }
-      });
-      // If next() wins the race, the guard stays pending and would
-      // reject later — swallow that so it never surfaces as an
-      // unhandled rejection.
-      guard.catch(() => {});
-
-      let res: IteratorResult<T>;
-      try {
-        res = await Promise.race([it.next(), guard]);
-      } finally {
-        if (timer) clearTimeout(timer);
-        if (onAbort && opts?.signal) {
-          opts.signal.removeEventListener("abort", onAbort);
-        }
-      }
+      const res = await guarded(it.next(), deadline, drainMs, opts);
       if (res.done) return;
       yield res.value;
     }
   } finally {
-    // Best-effort cancellation. NOT awaited: a runtime generator
-    // wedged on a non-settling await never resolves return(), so
-    // awaiting it here would re-introduce the very hang we prevent.
     void Promise.resolve(it.return?.()).catch(() => {});
   }
 }
@@ -183,12 +193,20 @@ class ManagedAgentsSession implements SessionBase {
       resolveMutex = r;
     });
     try {
-      const message = JSON.stringify({ tool: toolName, input: resolvedParams });
-      await this._runtime.sendMessage(this._sessionId, message);
-      // Per-call timeout overrides the configured drain timeout.
+      // Per-call timeout overrides the configured drain timeout. One
+      // budget spans sendMessage AND the drain so a stall in either
+      // phase cannot pin the call or the session mutex.
       const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+      const deadline = Date.now() + drainMs;
+      const message = JSON.stringify({ tool: toolName, input: resolvedParams });
+      await guarded(
+        this._runtime.sendMessage(this._sessionId, message),
+        deadline,
+        drainMs,
+        opts,
+      );
       return await this._drainForToolResult(
-        withDeadline(this._runtime.streamEvents(this._sessionId), drainMs, opts),
+        withDeadline(this._runtime.streamEvents(this._sessionId), deadline, drainMs, opts),
         toolName,
       );
     } finally {
@@ -206,10 +224,16 @@ class ManagedAgentsSession implements SessionBase {
       resolveMutex = r;
     });
     try {
-      await this._runtime.sendMessage(this._sessionId, message);
       const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+      const deadline = Date.now() + drainMs;
+      await guarded(
+        this._runtime.sendMessage(this._sessionId, message),
+        deadline,
+        drainMs,
+        opts,
+      );
       return await this._drainForSendResult(
-        withDeadline(this._runtime.streamEvents(this._sessionId), drainMs, opts),
+        withDeadline(this._runtime.streamEvents(this._sessionId), deadline, drainMs, opts),
       );
     } finally {
       resolveMutex();
@@ -229,10 +253,17 @@ class ManagedAgentsSession implements SessionBase {
       resolveMutex = r;
     });
     try {
-      await this._runtime.sendMessage(this._sessionId, message);
       const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+      const deadline = Date.now() + drainMs;
+      await guarded(
+        this._runtime.sendMessage(this._sessionId, message),
+        deadline,
+        drainMs,
+        opts,
+      );
       for await (const raw of withDeadline(
         this._runtime.streamEvents(this._sessionId),
+        deadline,
         drainMs,
         opts,
       )) {

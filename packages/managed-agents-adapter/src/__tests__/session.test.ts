@@ -490,4 +490,34 @@ describe("per-call CallOptions (signal/timeout)", () => {
       DrainTimeoutError,
     );
   }, 5000);
+
+  function stalledSendMessageRuntime(): AgentRuntime {
+    return makeRuntime({
+      // Accepts the message but the promise never resolves.
+      sendMessage: vi.fn().mockImplementation(() => new Promise<void>(() => {})),
+    });
+  }
+
+  it("execute() timeout releases when sendMessage never resolves", async () => {
+    const session = await openSession(stalledSendMessageRuntime());
+    await expect(session.execute("t", {}, { timeout: 60 })).rejects.toBeInstanceOf(
+      DrainTimeoutError,
+    );
+  }, 5000);
+
+  it("execute() abort releases when sendMessage never resolves", async () => {
+    const session = await openSession(stalledSendMessageRuntime());
+    const ac = new AbortController();
+    const reason = new DOMException("user cancelled", "AbortError");
+    const p = session.execute("t", {}, { signal: ac.signal });
+    setTimeout(() => ac.abort(reason), 30);
+    await expect(p).rejects.toBe(reason);
+  }, 5000);
+
+  it("send() timeout releases when sendMessage never resolves", async () => {
+    const session = await openSession(stalledSendMessageRuntime());
+    await expect(session.send("hi", { timeout: 60 })).rejects.toBeInstanceOf(
+      DrainTimeoutError,
+    );
+  }, 5000);
 });
