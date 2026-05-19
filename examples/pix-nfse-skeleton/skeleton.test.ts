@@ -78,15 +78,56 @@ describe("Pix + NFS-e walking skeleton", () => {
 
     expect(result.success).toBe(true);
     expect(result.completedSteps).toBe(4);
+
+    // Step 1 — asaas/create_customer → cus_demo_*
     expect(result.results[0]!.success).toBe(true);
-    expect((result.results[1]!.data as { id: string }).id).toMatch(/^pay_/);
-    expect(
-      (result.results[2]!.data as { payload: string }).payload.length,
-    ).toBeGreaterThan(0);
-    expect((result.results[3]!.data as { id: string }).id).toMatch(/^nfse_/);
-    expect((result.results[3]!.data as { status: string }).status).toBe(
-      "autorizada",
-    );
+    const customer = result.results[0]!.data as { id: string };
+    expect(customer.id).toMatch(/^cus_demo_/);
+
+    // Step 2 — asaas/create_payment → pay_demo_*, billingType=PIX, value=150
+    expect(result.results[1]!.success).toBe(true);
+    const payment = result.results[1]!.data as {
+      id: string;
+      billingType: string;
+      value: number;
+      customer: string;
+    };
+    expect(payment.id).toMatch(/^pay_demo_/);
+    expect(payment.billingType).toBe("PIX");
+    expect(payment.value).toBe(150.0);
+    expect(typeof payment.customer).toBe("string");
+
+    // Step 3 — asaas/get_pix_qrcode → real BR-Code payload prefix
+    // (`00020126…` is the BR-Code static-EMV envelope; the demo
+    // fixture emits a payload starting with that header).
+    expect(result.results[2]!.success).toBe(true);
+    const qr = result.results[2]!.data as {
+      payload: string;
+      encodedImage: string;
+    };
+    expect(qr.payload).toMatch(/^00020126/);
+    expect(typeof qr.encodedImage).toBe("string");
+    expect(qr.encodedImage.length).toBeGreaterThan(0);
+
+    // Step 4 — nuvem-fiscal/create_nfse → nfse_demo_*, status=autorizada,
+    // numeric numero, numeric valorServico
+    expect(result.results[3]!.success).toBe(true);
+    const nfse = result.results[3]!.data as {
+      id: string;
+      status: string;
+      numero: number;
+      valorServico: number;
+    };
+    expect(nfse.id).toMatch(/^nfse_demo_/);
+    expect(nfse.status).toBe("autorizada");
+    expect(typeof nfse.numero).toBe("number");
+    expect(typeof nfse.valorServico).toBe("number");
+
+    // No step's dispatch reported failure (the bridge round-trips were
+    // clean end-to-end, not just on the final aggregate flag).
+    for (const r of result.results) {
+      expect(r.success).toBe(true);
+    }
   }, 30_000);
 
   afterAll(async () => {
