@@ -63,7 +63,7 @@ describe("session.sendStream — SSE parsing", () => {
 
   it("POSTs to /send with SSE Accept header and serialized message body", async () => {
     const { session, m } = await streamSession(
-      okStream(sseStream(frame("done", { message: "ok", tool_calls: [], iterations: 1 }))),
+      okStream(sseStream(frame("assistant_text", { content: "ok", iteration: 1 }))),
     );
     for await (const _ of session.sendStream("hello")) void _;
 
@@ -144,92 +144,11 @@ describe("session.sendStream — SSE parsing", () => {
     ).rejects.toThrow(/sendStream failed: 503/);
   });
 
-  // ─── DRIFT TRIPWIRES ────────────────────────────────────────────────
-  // Normal passing tests that PIN today's TS-buggy behavior NARROWLY:
-  // ordinary assertions first prove the stream reached the point (so
-  // unrelated breakage fails normally and is NOT masked), then ONE precise
-  // assertion of the current drifted value. When the parser is aligned
-  // (#51 / #53) that precise value changes and the test FAILS LOUDLY,
-  // forcing the fixer to delete the tripwire and close the issue. These
-  // assert the *current defect*, never bless it as desired spec — the
-  // names/comments and the linked issues make the intent explicit.
-
-  it("DRIFT TRIPWIRE #51 — malformed (non-JSON) SSE frame is silently dropped, no throw (must change only via #51)", async () => {
-    const { session } = await streamSession(
-      okStream(
-        sseStream(
-          "event: broken\ndata: this-is-not-json\n\n",
-          frame("assistant_text", { content: "still here", iteration: 1 }),
-        ),
-      ),
-    );
-    let threw: unknown;
-    const events: StreamEvent[] = [];
-    try {
-      for await (const e of session.sendStream("hi")) events.push(e);
-    } catch (e) {
-      threw = e;
-    }
-    if (threw !== undefined) {
-      throw new Error(
-        `#51 appears FIXED — sendStream now throws on malformed SSE (${String(
-          threw,
-        )}). Replace this tripwire with a parity assertion vs Python StreamError ` +
-          `(/malformed SSE payload/) and close codespar/codespar-core#51.`,
-      );
-    }
-    // Current TS defect: broken frame dropped, stream continues to the next.
-    expect(events).toEqual([
-      { type: "assistant_text", content: "still here", iteration: 1 },
-    ]);
-  });
-
-  it("DRIFT TRIPWIRE #53 — tool_result is not unwrapped: toolCall holds the whole envelope (must change only via #53)", async () => {
-    const record = {
-      id: "tc_1",
-      tool_name: "codespar_pay",
-      server_id: "asaas",
-      status: "success",
-      duration_ms: 412,
-      input: { amount: 500 },
-      output: { pix_id: "pix_1" },
-      error_code: null,
-    };
-    // Canonical Python/backend wire shape: { type, toolCall: { …record… } }.
-    const { session } = await streamSession(
-      okStream(sseStream(frame("tool_result", { type: "tool_result", toolCall: record }))),
-    );
-    const events = await collect(session);
-    expect(events).toHaveLength(1);
-    const tr = events[0] as Extract<StreamEvent, { type: "tool_result" }>;
-    expect(tr.type).toBe("tool_result");
-    if ((tr.toolCall as { tool_name?: string }).tool_name === "codespar_pay") {
-      throw new Error(
-        "#53 appears FIXED — tool_result now unwraps data.toolCall. Replace this " +
-          "tripwire with the canonical ToolCallRecord assertion and close codespar/codespar-core#53.",
-      );
-    }
-    // Current TS defect: `toolCall: data`, so it is the whole envelope.
-    expect(tr.toolCall as unknown).toEqual({ type: "tool_result", toolCall: record });
-  });
-
-  it("DRIFT TRIPWIRE #53 — done is not unwrapped: result holds the whole envelope (must change only via #53)", async () => {
-    const sendResult = { message: "Done.", tool_calls: [], iterations: 1 };
-    // Canonical Python/backend wire shape: { type, result: { …SendResult… } }.
-    const { session } = await streamSession(
-      okStream(sseStream(frame("done", { type: "done", result: sendResult }))),
-    );
-    const events = await collect(session);
-    expect(events).toHaveLength(1);
-    const dn = events[0] as Extract<StreamEvent, { type: "done" }>;
-    expect(dn.type).toBe("done");
-    if ((dn.result as { message?: string }).message === "Done.") {
-      throw new Error(
-        "#53 appears FIXED — done now unwraps data.result. Replace this tripwire " +
-          "with the canonical SendResult assertion and close codespar/codespar-core#53.",
-      );
-    }
-    // Current TS defect: `result: data`, so it is the whole envelope.
-    expect(dn.result as unknown).toEqual({ type: "done", result: sendResult });
-  });
+  // NOTE: `tool_result` and `done` (envelope events) and malformed-SSE
+  // handling are intentionally NOT covered here. Porting the Python
+  // streaming tests surfaced a systemic TS↔Python `parseSseChunk` drift
+  // (no envelope unwrap; malformed frames silently dropped) — escalated as
+  // codespar/codespar-core#51 and #53. The parser fix plus real Python-parity
+  // assertions for those paths land together in the parser-alignment PR,
+  // not as bug-pinning tests here.
 });
