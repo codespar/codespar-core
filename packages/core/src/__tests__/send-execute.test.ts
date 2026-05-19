@@ -19,8 +19,10 @@ async function makeSession(resp: unknown) {
   const m = vi.fn().mockResolvedValueOnce(SESSION_CREATE).mockResolvedValueOnce(resp);
   globalThis.fetch = m as unknown as typeof fetch;
   const cs = new CodeSpar({ apiKey: "csk_test_x", baseUrl: "https://api.example.com" });
-  return cs.create("u1", { servers: ["zoop"] });
+  const session = await cs.create("u1", { servers: ["zoop"] });
+  return { session, m };
 }
+type Init = { method: string; headers: Record<string, string>; body: string };
 
 describe("session.execute", () => {
   const originalFetch = globalThis.fetch;
@@ -28,8 +30,8 @@ describe("session.execute", () => {
     globalThis.fetch = originalFetch;
   });
 
-  it("returns the backend ToolResult on success", async () => {
-    const session = await makeSession({
+  it("POSTs to /execute with auth header and {tool,input} body, returns ToolResult", async () => {
+    const { session, m } = await makeSession({
       ok: true,
       status: 200,
       text: async () => "",
@@ -43,13 +45,20 @@ describe("session.execute", () => {
       }),
     });
     const r = await session.execute("asaas/create_payment", { value: 500 });
+
+    const [url, init] = m.mock.calls[1] as [string, Init];
+    expect(url).toBe("https://api.example.com/v1/sessions/ses_se1/execute");
+    expect(init.method).toBe("POST");
+    expect(init.headers.Authorization).toBe("Bearer csk_test_x");
+    expect(init.headers["Content-Type"]).toBe("application/json");
+    expect(JSON.parse(init.body)).toEqual({ tool: "asaas/create_payment", input: { value: 500 } });
     expect(r.success).toBe(true);
     expect(r.data).toEqual({ pix_id: "pix_1" });
     expect(r.server).toBe("asaas");
   });
 
   it("soft-fails with status-prefixed error on non-ok", async () => {
-    const session = await makeSession({
+    const { session } = await makeSession({
       ok: false,
       status: 502,
       text: async () => "upstream down",
@@ -69,8 +78,44 @@ describe("session.send", () => {
     globalThis.fetch = originalFetch;
   });
 
+  it("POSTs to /send with JSON Accept header and {message} body, returns SendResult", async () => {
+    const { session, m } = await makeSession({
+      ok: true,
+      status: 200,
+      text: async () => "",
+      json: async () => ({
+        message: "Charged R$500.",
+        tool_calls: [
+          {
+            id: "tc_1",
+            tool_name: "codespar_pay",
+            server_id: "asaas",
+            status: "success",
+            duration_ms: 412,
+            input: { amount: 500 },
+            output: { pix_id: "pix_1" },
+            error_code: null,
+          },
+        ],
+        iterations: 1,
+      }),
+    });
+    const r = await session.send("charge R$500 via Pix");
+
+    const [url, init] = m.mock.calls[1] as [string, Init];
+    expect(url).toBe("https://api.example.com/v1/sessions/ses_se1/send");
+    expect(init.method).toBe("POST");
+    expect(init.headers.Authorization).toBe("Bearer csk_test_x");
+    expect(init.headers.Accept).toBe("application/json");
+    expect(JSON.parse(init.body)).toEqual({ message: "charge R$500 via Pix" });
+    expect(r.message).toBe("Charged R$500.");
+    expect(r.tool_calls).toHaveLength(1);
+    expect(r.tool_calls[0]!.tool_name).toBe("codespar_pay");
+    expect(r.iterations).toBe(1);
+  });
+
   it("returns SendResult with tool_calls on success", async () => {
-    const session = await makeSession({
+    const { session } = await makeSession({
       ok: true,
       status: 200,
       text: async () => "",
@@ -99,7 +144,7 @@ describe("session.send", () => {
   });
 
   it("throws 'send failed: <status> <body>' on non-ok", async () => {
-    const session = await makeSession({
+    const { session } = await makeSession({
       ok: false,
       status: 500,
       text: async () => "boom",
