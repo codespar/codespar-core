@@ -215,6 +215,19 @@ async def test_client_constructor_rejects_invalid_timeout(bad) -> None:
 
 
 @pytest.mark.parametrize("bad", [True, "30", 0, -5, float("nan")])
+def test_sync_constructor_rejects_invalid_timeout_without_leaking_thread(bad) -> None:
+    import threading
+
+    from codespar import CodeSpar, ConfigError
+
+    before = threading.active_count()
+    with pytest.raises(ConfigError):
+        CodeSpar(api_key="csk_test_x", timeout=bad)  # type: ignore[arg-type]
+    # No loop-runner daemon thread leaked by the failed construction.
+    assert threading.active_count() == before
+
+
+@pytest.mark.parametrize("bad", [True, "30", 0, -5, float("nan")])
 async def test_session_method_rejects_invalid_timeout(httpx_mock, bad) -> None:
     from codespar import ConfigError
 

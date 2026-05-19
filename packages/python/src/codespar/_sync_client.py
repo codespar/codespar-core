@@ -21,6 +21,7 @@ from typing import Any, TypeVar
 
 from ._async_client import AsyncCodeSpar
 from ._async_session import AsyncSession
+from ._http import normalize_timeout
 from .errors import ConfigError
 from .types import (
     AuthConfig,
@@ -323,6 +324,9 @@ class CodeSpar:
         project_id: str | None = None,
         timeout: float = 60.0,
     ) -> None:
+        # Validate BEFORE starting the loop thread — a misconfigured
+        # timeout must not leak a daemon thread / event loop.
+        timeout = normalize_timeout(timeout) or 60.0
         self._runner = _LoopRunner()
         # Build the async client *on* the runner's loop so its httpx
         # transport binds to the right loop from day one.
