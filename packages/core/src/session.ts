@@ -472,6 +472,12 @@ export async function createSession(
     },
 
     async close(opts?: CallOptions): Promise<void> {
+      // Caller misconfiguration is NOT best-effort — validate the
+      // effective timeout before the swallow, so an invalid value
+      // surfaces (parity with Python's ConfigError) instead of
+      // silently skipping the DELETE.
+      const { timeout } = callOpts(opts);
+      validateTimeout(timeout);
       // Best-effort: the DELETE is bounded by the timeout/abort budget
       // so close() can't hang, but its outcome is swallowed so a slow
       // or failing backend cleanup never throws from a caller's
