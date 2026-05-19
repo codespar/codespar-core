@@ -1,6 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { CodeSpar } from "../index.js";
-import { TimeoutError } from "../errors.js";
 
 const realFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = realFetch; });
@@ -13,9 +12,11 @@ function sessionCreate(): Response {
 }
 
 describe("session.close timeout", () => {
-  it("close() rejects with TimeoutError when the DELETE never responds", async () => {
-    // Backend accepts the DELETE socket but never responds. Mirrors
-    // native fetch: hangs until the signal aborts, then rejects.
+  it("close() is best-effort: a DELETE timeout is swallowed, not thrown", async () => {
+    // Backend accepts the DELETE socket but never responds. close()
+    // must stay bounded (the timeout budget still fires) AND best-effort
+    // (it does not surface the timeout to the caller — parity with the
+    // Python client and the managed-agents adapter).
     globalThis.fetch = ((url: string, init?: RequestInit) => {
       if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());
       return new Promise((_res, rej) => {
@@ -29,10 +30,14 @@ describe("session.close timeout", () => {
 
     const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x", timeout: 50 });
     const session = await cs.create("u");
-    await expect(session.close()).rejects.toBeInstanceOf(TimeoutError);
+    const start = Date.now();
+    await expect(session.close()).resolves.toBeUndefined();
+    // Bounded: it returned because the 50ms budget fired, not because
+    // it hung until the 5s test timeout.
+    expect(Date.now() - start).toBeLessThan(2000);
   }, 5000);
 
-  it("close() honours a per-call timeout override", async () => {
+  it("close() stays best-effort with a per-call timeout override", async () => {
     globalThis.fetch = ((url: string, init?: RequestInit) => {
       if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());
       return new Promise((_res, rej) => {
@@ -46,6 +51,8 @@ describe("session.close timeout", () => {
 
     const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x", timeout: 10_000 });
     const session = await cs.create("u");
-    await expect(session.close({ timeout: 50 })).rejects.toBeInstanceOf(TimeoutError);
+    const start = Date.now();
+    await expect(session.close({ timeout: 50 })).resolves.toBeUndefined();
+    expect(Date.now() - start).toBeLessThan(2000);
   }, 5000);
 });

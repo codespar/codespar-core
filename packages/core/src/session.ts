@@ -469,10 +469,20 @@ export async function createSession(
     },
 
     async close(opts?: CallOptions): Promise<void> {
-      await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}`, {
-        method: "DELETE",
-        headers,
-      }, callOpts(opts), async () => undefined);
+      // Best-effort: the DELETE is bounded by the timeout/abort budget
+      // so close() can't hang, but its outcome is swallowed so a slow
+      // or failing backend cleanup never throws from a caller's
+      // teardown/finally. Parity with the Python client (suppresses
+      // ApiError + TimeoutError) and the managed-agents adapter (close
+      // never throws). The backend reaps stale sessions on a timer.
+      try {
+        await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}`, {
+          method: "DELETE",
+          headers,
+        }, callOpts(opts), async () => undefined);
+      } catch {
+        // intentionally ignored — see above
+      }
     },
   };
 
