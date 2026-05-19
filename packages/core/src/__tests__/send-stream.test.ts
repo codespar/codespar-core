@@ -73,7 +73,20 @@ describe("session.sendStream — SSE parsing", () => {
     expect(JSON.parse(init.body)).toEqual({ message: "hello" });
   });
 
-  it("yields typed events with full toolCall fields", async () => {
+  it("yields typed events; characterizes the tool_result wrapper drift (#53)", async () => {
+    // tool_result frame uses the Python/canonical wrapper shape
+    // { type, toolCall: { …ToolCallRecord… } } — the same shape Python's
+    // _parse_stream_event reads via raw["toolCall"].
+    const toolCallRecord = {
+      id: "tc_1",
+      tool_name: "codespar_pay",
+      server_id: "asaas",
+      status: "success",
+      duration_ms: 412,
+      input: { amount: 500 },
+      output: { pix_id: "pix_1" },
+      error_code: null,
+    };
     const { session } = await streamSession({
       ok: true,
       status: 200,
@@ -81,16 +94,7 @@ describe("session.sendStream — SSE parsing", () => {
       body: sseStream(
         frame("assistant_text", { content: "Processing…", iteration: 1 }),
         frame("tool_use", { id: "tu_1", name: "codespar_pay", input: { amount: 500 } }),
-        frame("tool_result", {
-          id: "tc_1",
-          tool_name: "codespar_pay",
-          server_id: "asaas",
-          status: "success",
-          duration_ms: 412,
-          input: { amount: 500 },
-          output: { pix_id: "pix_1" },
-          error_code: null,
-        }),
+        frame("tool_result", { type: "tool_result", toolCall: toolCallRecord }),
         frame("done", { message: "Done.", tool_calls: [], iterations: 1 }),
       ),
     });
@@ -100,11 +104,17 @@ describe("session.sendStream — SSE parsing", () => {
     expect(events).toHaveLength(4);
     expect(events[0]).toEqual({ type: "assistant_text", content: "Processing…", iteration: 1 });
     expect(events[1]).toMatchObject({ type: "tool_use", name: "codespar_pay", input: { amount: 500 } });
+
     const tr = events[2] as Extract<StreamEvent, { type: "tool_result" }>;
     expect(tr.type).toBe("tool_result");
-    expect(tr.toolCall.tool_name).toBe("codespar_pay");
-    expect(tr.toolCall.status).toBe("success");
-    expect(tr.toolCall.server_id).toBe("asaas");
+    // DRIFT CHARACTERIZATION (#53): TS parseSseChunk does `toolCall: data`,
+    // so it wraps the WHOLE data object — it does NOT unwrap data.toolCall
+    // like Python does. Against the canonical wrapper payload, the record
+    // ends up one level too deep and `tr.toolCall.tool_name` is undefined.
+    // This pins the real (buggy) TS behavior; alignment is tracked in #53.
+    expect((tr.toolCall as { tool_name?: string }).tool_name).toBeUndefined();
+    expect(tr.toolCall as unknown).toEqual({ type: "tool_result", toolCall: toolCallRecord });
+
     expect(events[3]).toEqual({
       type: "done",
       result: { message: "Done.", tool_calls: [], iterations: 1 },
@@ -169,35 +179,33 @@ describe("session.sendStream — SSE parsing", () => {
     ).rejects.toThrow(/sendStream failed: 503/);
   });
 
-  // ⚠️ REGRESSION GUARD for #51 — TRACKED DEFECT, NOT DESIRED SPEC.
-  // The TS parser silently drops a non-JSON `data:` frame (parseSseChunk
-  // returns null) while Python `send_stream` raises StreamError —
-  // a TS↔Python wire-contract drift (codespar/codespar-core#51).
-  // This test PINS the current TS behavior so it cannot change in EITHER
-  // direction unnoticed: if the silent-drop is fixed (to throw/emit error)
-  // OR regresses further, this test fails and forces the change to go
-  // through the #51 decision instead of landing silently. When #51 is
-  // resolved, replace this with an assertion mirroring
-  // packages/python/tests/test_streaming.py::test_send_stream_raises_on_malformed_data.
-  it("REGRESSION GUARD #51: silently drops a malformed (non-JSON) frame, no throw — must change only via #51", async () => {
-    const { session } = await streamSession({
-      ok: true,
-      status: 200,
-      text: async () => "",
-      body: sseStream(
-        "event: broken\ndata: this-is-not-json\n\n",
-        frame("assistant_text", { content: "still here", iteration: 1 }),
-      ),
-    });
-    const events: StreamEvent[] = [];
-    await expect(
-      (async () => {
-        for await (const e of session.sendStream("hi")) events.push(e);
-      })(),
-    ).resolves.toBeUndefined();
-    // Broken frame dropped; the subsequent valid frame still yielded.
-    expect(events).toEqual([
-      { type: "assistant_text", content: "still here", iteration: 1 },
-    ]);
-  });
+  // DESIRED-CONTRACT test, marked `.fails` because the contract is not met
+  // yet (tracked in #51). It asserts the *correct* behavior: a malformed
+  // non-JSON `data:` frame must raise, mirroring Python's
+  // test_streaming.py::test_send_stream_raises_on_malformed_data
+  // (`raise StreamError`). Today TS `parseSseChunk` silently returns null
+  // and drops the frame, so the inner assertion fails and `it.fails` keeps
+  // the suite green while surfacing this as known debt. When #51 is fixed
+  // (TS raises/emits error), the inner assertion passes, `it.fails` then
+  // FAILS — forcing whoever fixes the parser to drop `.fails` and close
+  // #51 deliberately. This never blesses the silent-drop as spec.
+  it.fails(
+    "should raise on malformed (non-JSON) SSE data, mirroring Python StreamError — FIXME(#51)",
+    async () => {
+      const { session } = await streamSession({
+        ok: true,
+        status: 200,
+        text: async () => "",
+        body: sseStream(
+          "event: broken\ndata: this-is-not-json\n\n",
+          frame("assistant_text", { content: "still here", iteration: 1 }),
+        ),
+      });
+      await expect(
+        (async () => {
+          for await (const _ of session.sendStream("hi")) void _;
+        })(),
+      ).rejects.toThrow();
+    },
+  );
 });

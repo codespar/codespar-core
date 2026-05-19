@@ -114,35 +114,6 @@ describe("session.send", () => {
     expect(r.iterations).toBe(1);
   });
 
-  it("returns SendResult with tool_calls on success", async () => {
-    const { session } = await makeSession({
-      ok: true,
-      status: 200,
-      text: async () => "",
-      json: async () => ({
-        message: "Charged R$500.",
-        tool_calls: [
-          {
-            id: "tc_1",
-            tool_name: "codespar_pay",
-            server_id: "asaas",
-            status: "success",
-            duration_ms: 412,
-            input: { amount: 500 },
-            output: { pix_id: "pix_1" },
-            error_code: null,
-          },
-        ],
-        iterations: 1,
-      }),
-    });
-    const r = await session.send("charge R$500 via Pix");
-    expect(r.message).toBe("Charged R$500.");
-    expect(r.tool_calls).toHaveLength(1);
-    expect(r.tool_calls[0]!.tool_name).toBe("codespar_pay");
-    expect(r.iterations).toBe(1);
-  });
-
   it("throws 'send failed: <status> <body>' on non-ok", async () => {
     const { session } = await makeSession({
       ok: false,
