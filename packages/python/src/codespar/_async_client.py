@@ -21,7 +21,7 @@ from ._async_session import (
     build_session_info,
     wait_for_connections,
 )
-from ._http import DEFAULT_BASE_URL, request_json
+from ._http import DEFAULT_BASE_URL, normalize_timeout, request_json
 from ._presets import preset_to_servers
 from .errors import ApiError, ConfigError
 from .types import SessionConfig
@@ -89,6 +89,9 @@ class AsyncCodeSpar:
             raise ConfigError(
                 "project_id must match ^prj_[A-Za-z0-9]{16}$ (e.g. 'prj_...')."
             )
+        # Fail fast on a misconfigured client-default timeout, same
+        # rule the per-call paths use (parity with TS validateTimeout).
+        timeout = normalize_timeout(timeout) or 60.0
         self._api_key = api_key
         self._base_url = _resolve_base_url(base_url).rstrip("/")
         self._project_id = project_id

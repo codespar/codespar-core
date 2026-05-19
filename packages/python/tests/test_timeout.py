@@ -206,6 +206,14 @@ async def test_close_swallows_backend_timeout(httpx_mock) -> None:
         await session.close()  # must NOT raise
 
 
+@pytest.mark.parametrize("bad", [True, "30", 0, -5, float("nan"), float("inf")])
+async def test_client_constructor_rejects_invalid_timeout(bad) -> None:
+    from codespar import ConfigError
+
+    with pytest.raises(ConfigError):
+        AsyncCodeSpar(api_key="csk_test_x", timeout=bad)  # type: ignore[arg-type]
+
+
 @pytest.mark.parametrize("bad", [True, "30", 0, -5, float("nan")])
 async def test_session_method_rejects_invalid_timeout(httpx_mock, bad) -> None:
     from codespar import ConfigError

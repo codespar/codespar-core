@@ -604,6 +604,12 @@ describe("per-call CallOptions (signal/timeout)", () => {
     },
   );
 
+  it("close() rejects an invalid timeout WITHOUT marking the session closed", async () => {
+    const session = await openSession(makeRuntime());
+    await expect(session.close({ timeout: 0 })).rejects.toThrow(/timeout/i);
+    expect(session.status).toBe("active");
+  });
+
   it.each([0, -5, NaN])(
     "send()/connections() reject an invalid timeout (%p) before any runtime call",
     async (bad) => {

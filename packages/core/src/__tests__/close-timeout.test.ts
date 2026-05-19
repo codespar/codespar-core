@@ -37,6 +37,16 @@ describe("session.close timeout", () => {
     expect(Date.now() - start).toBeLessThan(2000);
   }, 5000);
 
+  it("close() still validates the timeout (invalid value is NOT swallowed)", async () => {
+    globalThis.fetch = ((url: string) => {
+      if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());
+      return Promise.resolve({ ok: true, status: 204, text: async () => "" } as Response);
+    }) as unknown as typeof fetch;
+    const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x" });
+    const session = await cs.create("u");
+    await expect(session.close({ timeout: 0 })).rejects.toThrow(/timeout/i);
+  }, 5000);
+
   it("close() stays best-effort with a per-call timeout override", async () => {
     globalThis.fetch = ((url: string, init?: RequestInit) => {
       if (String(url).endsWith("/v1/sessions")) return Promise.resolve(sessionCreate());

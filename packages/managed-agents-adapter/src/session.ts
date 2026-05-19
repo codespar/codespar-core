@@ -337,12 +337,15 @@ class ManagedAgentsSession implements SessionBase {
   }
 
   async close(opts?: CallOptions): Promise<void> {
+    // Validate BEFORE mutating terminal state — caller misconfig must
+    // fail fast without irreversibly marking the session closed
+    // (parity with Python's ConfigError).
+    const drainMs = resolveDrainMs(opts?.timeout, this._drainTimeoutMs);
     // close() is terminal cleanup — it never throws on timeout/abort.
     // It bounds the in-flight drain wait by BOTH signal and timeout so
     // a caller closing a session is never pinned behind a wedged op.
     this._status = "closed";
     if (!this._activeMutex) return;
-    const drainMs = resolveDrainMs(opts?.timeout, this._drainTimeoutMs);
     await new Promise<void>((resolve) => {
       let settled = false;
       const done = () => {
