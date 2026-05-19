@@ -46,6 +46,14 @@ async function streamSession(streamResp: unknown) {
   const session = await cs.create("user_123", { preset: "brazilian" });
   return { session, m };
 }
+function okStream(body: ReadableStream<Uint8Array> | null) {
+  return { ok: true, status: 200, text: async () => "", body };
+}
+async function collect(session: { sendStream(m: string): AsyncIterable<StreamEvent> }) {
+  const events: StreamEvent[] = [];
+  for await (const e of session.sendStream("go")) events.push(e);
+  return events;
+}
 
 describe("session.sendStream — SSE parsing", () => {
   const originalFetch = globalThis.fetch;
@@ -54,12 +62,9 @@ describe("session.sendStream — SSE parsing", () => {
   });
 
   it("POSTs to /send with SSE Accept header and serialized message body", async () => {
-    const { session, m } = await streamSession({
-      ok: true,
-      status: 200,
-      text: async () => "",
-      body: sseStream(frame("done", { message: "ok", tool_calls: [], iterations: 1 })),
-    });
+    const { session, m } = await streamSession(
+      okStream(sseStream(frame("done", { message: "ok", tool_calls: [], iterations: 1 }))),
+    );
     for await (const _ of session.sendStream("hello")) void _;
 
     const [url, init] = m.mock.calls[1] as [
@@ -73,111 +78,56 @@ describe("session.sendStream — SSE parsing", () => {
     expect(JSON.parse(init.body)).toEqual({ message: "hello" });
   });
 
-  it("yields typed events for assistant_text / tool_use / done", async () => {
-    const { session } = await streamSession({
-      ok: true,
-      status: 200,
-      text: async () => "",
-      body: sseStream(
-        frame("assistant_text", { content: "Processing…", iteration: 1 }),
-        frame("tool_use", { id: "tu_1", name: "codespar_pay", input: { amount: 500 } }),
-        frame("done", { message: "Done.", tool_calls: [], iterations: 1 }),
+  // assistant_text and tool_use are flat (no envelope) in BOTH SDKs, so
+  // these are real parity assertions, not drift tripwires.
+  it("yields typed events for assistant_text and tool_use", async () => {
+    const { session } = await streamSession(
+      okStream(
+        sseStream(
+          frame("assistant_text", { content: "Processing…", iteration: 1 }),
+          frame("tool_use", { id: "tu_1", name: "codespar_pay", input: { amount: 500 } }),
+        ),
       ),
-    });
-    const events: StreamEvent[] = [];
-    for await (const e of session.sendStream("charge R$500 via Pix")) events.push(e);
-
-    expect(events).toHaveLength(3);
-    expect(events[0]).toEqual({ type: "assistant_text", content: "Processing…", iteration: 1 });
-    expect(events[1]).toMatchObject({ type: "tool_use", name: "codespar_pay", input: { amount: 500 } });
-    expect(events[2]).toEqual({
-      type: "done",
-      result: { message: "Done.", tool_calls: [], iterations: 1 },
-    });
+    );
+    const events = await collect(session);
+    expect(events).toEqual([
+      { type: "assistant_text", content: "Processing…", iteration: 1 },
+      { type: "tool_use", id: "tu_1", name: "codespar_pay", input: { amount: 500 } },
+    ]);
   });
-
-  // DESIRED-CONTRACT test for the tool_result wrapper drift (#53), marked
-  // `.fails` because the contract is not met yet. The frame uses the
-  // canonical Python-style payload { type, toolCall: { …ToolCallRecord… } }
-  // — the same shape Python's _parse_stream_event reads via raw["toolCall"]
-  // and exposes as the inner record. TS `parseSseChunk` instead does
-  // `toolCall: data` (no unwrap), so `tr.toolCall.tool_name` is undefined
-  // and this assertion fails today — keeping the suite green as known debt
-  // without blessing the broken wrapped shape as spec. When #53 is fixed
-  // (TS unwraps data.toolCall), the assertion passes, `it.fails` then FAILS
-  // and forces dropping `.fails` + closing #53 deliberately.
-  it.fails(
-    "tool_result should expose the inner ToolCallRecord (canonical shape) — FIXME(#53)",
-    async () => {
-      const toolCallRecord = {
-        id: "tc_1",
-        tool_name: "codespar_pay",
-        server_id: "asaas",
-        status: "success",
-        duration_ms: 412,
-        input: { amount: 500 },
-        output: { pix_id: "pix_1" },
-        error_code: null,
-      };
-      const { session } = await streamSession({
-        ok: true,
-        status: 200,
-        text: async () => "",
-        body: sseStream(frame("tool_result", { type: "tool_result", toolCall: toolCallRecord })),
-      });
-      const events: StreamEvent[] = [];
-      for await (const e of session.sendStream("charge R$500 via Pix")) events.push(e);
-
-      const tr = events[0] as Extract<StreamEvent, { type: "tool_result" }>;
-      expect(tr.type).toBe("tool_result");
-      expect(tr.toolCall.tool_name).toBe("codespar_pay");
-      expect(tr.toolCall.status).toBe("success");
-      expect(tr.toolCall.server_id).toBe("asaas");
-    },
-  );
 
   it("reassembles a frame split across chunk boundaries", async () => {
     const full = frame("assistant_text", { content: "split across reads", iteration: 1 });
     const mid = Math.floor(full.length / 2);
-    const { session } = await streamSession({
-      ok: true,
-      status: 200,
-      text: async () => "",
-      body: chunkedStream(full.slice(0, mid), full.slice(mid)),
-    });
-    const events: StreamEvent[] = [];
-    for await (const e of session.sendStream("hi")) events.push(e);
-    expect(events).toEqual([
+    const { session } = await streamSession(
+      okStream(chunkedStream(full.slice(0, mid), full.slice(mid))),
+    );
+    expect(await collect(session)).toEqual([
       { type: "assistant_text", content: "split across reads", iteration: 1 },
     ]);
   });
 
   it("skips unknown event types and still yields known ones", async () => {
-    const { session } = await streamSession({
-      ok: true,
-      status: 200,
-      text: async () => "",
-      body: sseStream(
-        frame("future_event_type_we_do_not_know", { content: "?" }),
-        frame("assistant_text", { content: "ok", iteration: 1 }),
+    const { session } = await streamSession(
+      okStream(
+        sseStream(
+          frame("future_event_type_we_do_not_know", { content: "?" }),
+          frame("assistant_text", { content: "ok", iteration: 1 }),
+        ),
       ),
-    });
-    const events: StreamEvent[] = [];
-    for await (const e of session.sendStream("hi")) events.push(e);
-    expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({ type: "assistant_text", content: "ok" });
+    );
+    expect(await collect(session)).toEqual([
+      { type: "assistant_text", content: "ok", iteration: 1 },
+    ]);
   });
 
   it("yields a typed error event", async () => {
-    const { session } = await streamSession({
-      ok: true,
-      status: 200,
-      text: async () => "",
-      body: sseStream(frame("error", { error: "tool_failed", message: "asaas timed out" })),
-    });
-    const events: StreamEvent[] = [];
-    for await (const e of session.sendStream("hi")) events.push(e);
-    expect(events).toEqual([{ type: "error", error: "tool_failed", message: "asaas timed out" }]);
+    const { session } = await streamSession(
+      okStream(sseStream(frame("error", { error: "tool_failed", message: "asaas timed out" }))),
+    );
+    expect(await collect(session)).toEqual([
+      { type: "error", error: "tool_failed", message: "asaas timed out" },
+    ]);
   });
 
   it("throws 'sendStream failed' on non-ok response", async () => {
@@ -194,36 +144,92 @@ describe("session.sendStream — SSE parsing", () => {
     ).rejects.toThrow(/sendStream failed: 503/);
   });
 
-  // DESIRED-CONTRACT test, marked `.fails` because the contract is not met
-  // yet (tracked in #51). It asserts the *correct* behavior: a malformed
-  // non-JSON `data:` frame must raise, mirroring Python's
-  // test_streaming.py::test_send_stream_raises_on_malformed_data
-  // (`raise StreamError`). Today TS `parseSseChunk` silently returns null
-  // and drops the frame, so the inner assertion fails and `it.fails` keeps
-  // the suite green while surfacing this as known debt. When #51 is fixed
-  // (TS raises/emits error), the inner assertion passes, `it.fails` then
-  // FAILS — forcing whoever fixes the parser to drop `.fails` and close
-  // #51 deliberately. This never blesses the silent-drop as spec.
-  it.fails(
-    "should raise on malformed (non-JSON) SSE data, mirroring Python StreamError — FIXME(#51)",
-    async () => {
-      const { session } = await streamSession({
-        ok: true,
-        status: 200,
-        text: async () => "",
-        body: sseStream(
+  // ─── DRIFT TRIPWIRES ────────────────────────────────────────────────
+  // Normal passing tests that PIN today's TS-buggy behavior NARROWLY:
+  // ordinary assertions first prove the stream reached the point (so
+  // unrelated breakage fails normally and is NOT masked), then ONE precise
+  // assertion of the current drifted value. When the parser is aligned
+  // (#51 / #53) that precise value changes and the test FAILS LOUDLY,
+  // forcing the fixer to delete the tripwire and close the issue. These
+  // assert the *current defect*, never bless it as desired spec — the
+  // names/comments and the linked issues make the intent explicit.
+
+  it("DRIFT TRIPWIRE #51 — malformed (non-JSON) SSE frame is silently dropped, no throw (must change only via #51)", async () => {
+    const { session } = await streamSession(
+      okStream(
+        sseStream(
           "event: broken\ndata: this-is-not-json\n\n",
           frame("assistant_text", { content: "still here", iteration: 1 }),
         ),
-      });
-      // Mirrors Python StreamError("malformed SSE payload: …") in
-      // packages/python/src/codespar/_http.py — the #51 fix must reach
-      // parity, not throw a generic Error, so this pins the message.
-      await expect(
-        (async () => {
-          for await (const _ of session.sendStream("hi")) void _;
-        })(),
-      ).rejects.toThrow(/malformed SSE payload/);
-    },
-  );
+      ),
+    );
+    let threw: unknown;
+    const events: StreamEvent[] = [];
+    try {
+      for await (const e of session.sendStream("hi")) events.push(e);
+    } catch (e) {
+      threw = e;
+    }
+    if (threw !== undefined) {
+      throw new Error(
+        `#51 appears FIXED — sendStream now throws on malformed SSE (${String(
+          threw,
+        )}). Replace this tripwire with a parity assertion vs Python StreamError ` +
+          `(/malformed SSE payload/) and close codespar/codespar-core#51.`,
+      );
+    }
+    // Current TS defect: broken frame dropped, stream continues to the next.
+    expect(events).toEqual([
+      { type: "assistant_text", content: "still here", iteration: 1 },
+    ]);
+  });
+
+  it("DRIFT TRIPWIRE #53 — tool_result is not unwrapped: toolCall holds the whole envelope (must change only via #53)", async () => {
+    const record = {
+      id: "tc_1",
+      tool_name: "codespar_pay",
+      server_id: "asaas",
+      status: "success",
+      duration_ms: 412,
+      input: { amount: 500 },
+      output: { pix_id: "pix_1" },
+      error_code: null,
+    };
+    // Canonical Python/backend wire shape: { type, toolCall: { …record… } }.
+    const { session } = await streamSession(
+      okStream(sseStream(frame("tool_result", { type: "tool_result", toolCall: record }))),
+    );
+    const events = await collect(session);
+    expect(events).toHaveLength(1);
+    const tr = events[0] as Extract<StreamEvent, { type: "tool_result" }>;
+    expect(tr.type).toBe("tool_result");
+    if ((tr.toolCall as { tool_name?: string }).tool_name === "codespar_pay") {
+      throw new Error(
+        "#53 appears FIXED — tool_result now unwraps data.toolCall. Replace this " +
+          "tripwire with the canonical ToolCallRecord assertion and close codespar/codespar-core#53.",
+      );
+    }
+    // Current TS defect: `toolCall: data`, so it is the whole envelope.
+    expect(tr.toolCall as unknown).toEqual({ type: "tool_result", toolCall: record });
+  });
+
+  it("DRIFT TRIPWIRE #53 — done is not unwrapped: result holds the whole envelope (must change only via #53)", async () => {
+    const sendResult = { message: "Done.", tool_calls: [], iterations: 1 };
+    // Canonical Python/backend wire shape: { type, result: { …SendResult… } }.
+    const { session } = await streamSession(
+      okStream(sseStream(frame("done", { type: "done", result: sendResult }))),
+    );
+    const events = await collect(session);
+    expect(events).toHaveLength(1);
+    const dn = events[0] as Extract<StreamEvent, { type: "done" }>;
+    expect(dn.type).toBe("done");
+    if ((dn.result as { message?: string }).message === "Done.") {
+      throw new Error(
+        "#53 appears FIXED — done now unwraps data.result. Replace this tripwire " +
+          "with the canonical SendResult assertion and close codespar/codespar-core#53.",
+      );
+    }
+    // Current TS defect: `result: data`, so it is the whole envelope.
+    expect(dn.result as unknown).toEqual({ type: "done", result: sendResult });
+  });
 });
