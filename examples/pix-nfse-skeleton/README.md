@@ -1,14 +1,37 @@
 # Pix + NFS-e walking skeleton
 
-A 4-step end-to-end validation of the OSS MCP bridge: `asaas/create_customer
-→ asaas/create_payment → asaas/get_pix_qrcode → nuvem-fiscal/create_nfse`.
-The whole loop runs against the published `@codespar/mcp-*` packages with
-their `--demo` flag, so no real Asaas account or Nuvem Fiscal credential
-is required.
+A 4-step end-to-end validation of the OSS MCP bridge:
 
-This example is **infrastructure validation** for the SDK's wire to the
-OSS bridge. It is not an agent-thesis demo — no LLM, no commerce
-governance, no commercial memory.
+1. `asaas/create_customer`
+2. `asaas/create_payment` (Pix, R$150)
+3. `asaas/get_pix_qrcode`
+4. `nuvem-fiscal/create_nfse`
+
+The whole chain runs against the published `@codespar/mcp-*` packages with
+their `--demo` flag — no real Asaas account or Nuvem Fiscal credential is
+required.
+
+## What this is, and what it isn't
+
+**This is infrastructure validation, not an agent-thesis demo.** The SDK's
+deterministic `loop()` orchestrates the four tools in a fixed order; there
+is no LLM in the picture, no judgment on which tool to call next, no
+multi-turn conversation. The point is to prove the wire from
+`@codespar/sdk` → bridge → spawned MCP children → fixture payload comes
+back round-trip clean. Everything that requires a *model* picking tools
+lives in the sibling examples:
+
+- [`nfse-from-natural-language/`](../nfse-from-natural-language/) — adds
+  a single-turn LLM step on top of this wiring (`session.send()` instead
+  of `loop()`).
+- [`whatsapp-installment-negotiation/`](../whatsapp-installment-negotiation/)
+  — adds multi-turn `session.send()` with aimock replacing Anthropic so
+  the test stays deterministic.
+
+The judgment points those demos exercise (which tool to call, what
+arguments to extract from natural language, when to stop) do not exist
+here. This file demonstrates that the runtime can dispatch a fixed
+sequence; the others demonstrate that an agent can drive it.
 
 ## What ships here
 
@@ -95,16 +118,29 @@ children running with `--demo`**. It does not use
 
 ## Acceptance criteria
 
-The vitest spec asserts six invariants pulled from the demo fixtures in
-`@codespar/mcp-asaas` and `@codespar/mcp-nuvem-fiscal`:
+The vitest spec asserts these per-step invariants pulled from the demo
+fixtures in `@codespar/mcp-asaas@0.1.3` and
+`@codespar/mcp-nuvem-fiscal@0.2.1`:
 
-1. `result.success === true`
-2. `result.completedSteps === 4`
-3. `result.results[0].success === true` (`asaas/create_customer`)
-4. `result.results[1].data.id` matches `/^pay_/`
-5. `result.results[2].data.payload.length > 0`
-6. `result.results[3].data.id` matches `/^nfse_/` AND
-   `result.results[3].data.status === "autorizada"`
+1. **Aggregate** — `result.success === true`, `result.completedSteps === 4`,
+   every `result.results[i].success === true`.
+2. **Step 1 — `asaas/create_customer`** — `data.id` matches `/^cus_demo_/`.
+3. **Step 2 — `asaas/create_payment`** — `data.id` matches `/^pay_demo_/`,
+   `data.billingType === "PIX"`, `data.value === 150.0`, `data.customer`
+   is a string (the id returned by step 1 round-tripped through the
+   bridge).
+4. **Step 3 — `asaas/get_pix_qrcode`** — `data.payload` matches
+   `/^00020126/` (the BR-Code static-EMV envelope header that real Pix
+   QR strings always start with) and `data.encodedImage` is a non-empty
+   string.
+5. **Step 4 — `nuvem-fiscal/create_nfse`** — `data.id` matches
+   `/^nfse_demo_/`, `data.status === "autorizada"`, `data.numero` and
+   `data.valorServico` are numbers.
+
+Promoting these from count-and-shape checks to per-call arg + output
+assertions catches the regressions that matter for a wire-contract demo:
+silently swapping the demo fixture for a different shape, the bridge
+mangling field names, or the `loop()` step ordering drifting.
 
 ## Live LLM smoke (`npm run validate:live`)
 
