@@ -73,20 +73,7 @@ describe("session.sendStream — SSE parsing", () => {
     expect(JSON.parse(init.body)).toEqual({ message: "hello" });
   });
 
-  it("yields typed events; characterizes the tool_result wrapper drift (#53)", async () => {
-    // tool_result frame uses the Python/canonical wrapper shape
-    // { type, toolCall: { …ToolCallRecord… } } — the same shape Python's
-    // _parse_stream_event reads via raw["toolCall"].
-    const toolCallRecord = {
-      id: "tc_1",
-      tool_name: "codespar_pay",
-      server_id: "asaas",
-      status: "success",
-      duration_ms: 412,
-      input: { amount: 500 },
-      output: { pix_id: "pix_1" },
-      error_code: null,
-    };
+  it("yields typed events for assistant_text / tool_use / done", async () => {
     const { session } = await streamSession({
       ok: true,
       status: 200,
@@ -94,32 +81,60 @@ describe("session.sendStream — SSE parsing", () => {
       body: sseStream(
         frame("assistant_text", { content: "Processing…", iteration: 1 }),
         frame("tool_use", { id: "tu_1", name: "codespar_pay", input: { amount: 500 } }),
-        frame("tool_result", { type: "tool_result", toolCall: toolCallRecord }),
         frame("done", { message: "Done.", tool_calls: [], iterations: 1 }),
       ),
     });
     const events: StreamEvent[] = [];
     for await (const e of session.sendStream("charge R$500 via Pix")) events.push(e);
 
-    expect(events).toHaveLength(4);
+    expect(events).toHaveLength(3);
     expect(events[0]).toEqual({ type: "assistant_text", content: "Processing…", iteration: 1 });
     expect(events[1]).toMatchObject({ type: "tool_use", name: "codespar_pay", input: { amount: 500 } });
-
-    const tr = events[2] as Extract<StreamEvent, { type: "tool_result" }>;
-    expect(tr.type).toBe("tool_result");
-    // DRIFT CHARACTERIZATION (#53): TS parseSseChunk does `toolCall: data`,
-    // so it wraps the WHOLE data object — it does NOT unwrap data.toolCall
-    // like Python does. Against the canonical wrapper payload, the record
-    // ends up one level too deep and `tr.toolCall.tool_name` is undefined.
-    // This pins the real (buggy) TS behavior; alignment is tracked in #53.
-    expect((tr.toolCall as { tool_name?: string }).tool_name).toBeUndefined();
-    expect(tr.toolCall as unknown).toEqual({ type: "tool_result", toolCall: toolCallRecord });
-
-    expect(events[3]).toEqual({
+    expect(events[2]).toEqual({
       type: "done",
       result: { message: "Done.", tool_calls: [], iterations: 1 },
     });
   });
+
+  // DESIRED-CONTRACT test for the tool_result wrapper drift (#53), marked
+  // `.fails` because the contract is not met yet. The frame uses the
+  // canonical Python-style payload { type, toolCall: { …ToolCallRecord… } }
+  // — the same shape Python's _parse_stream_event reads via raw["toolCall"]
+  // and exposes as the inner record. TS `parseSseChunk` instead does
+  // `toolCall: data` (no unwrap), so `tr.toolCall.tool_name` is undefined
+  // and this assertion fails today — keeping the suite green as known debt
+  // without blessing the broken wrapped shape as spec. When #53 is fixed
+  // (TS unwraps data.toolCall), the assertion passes, `it.fails` then FAILS
+  // and forces dropping `.fails` + closing #53 deliberately.
+  it.fails(
+    "tool_result should expose the inner ToolCallRecord (canonical shape) — FIXME(#53)",
+    async () => {
+      const toolCallRecord = {
+        id: "tc_1",
+        tool_name: "codespar_pay",
+        server_id: "asaas",
+        status: "success",
+        duration_ms: 412,
+        input: { amount: 500 },
+        output: { pix_id: "pix_1" },
+        error_code: null,
+      };
+      const { session } = await streamSession({
+        ok: true,
+        status: 200,
+        text: async () => "",
+        body: sseStream(frame("tool_result", { type: "tool_result", toolCall: toolCallRecord })),
+      });
+      const events: StreamEvent[] = [];
+      for await (const e of session.sendStream("charge R$500 via Pix")) events.push(e);
+
+      const tr = events[0] as Extract<StreamEvent, { type: "tool_result" }>;
+      expect(tr.type).toBe("tool_result");
+      expect(tr.toolCall.tool_name).toBe("codespar_pay");
+      expect(tr.toolCall.status).toBe("success");
+      expect(tr.toolCall.server_id).toBe("asaas");
+    },
+  );
 
   it("reassembles a frame split across chunk boundaries", async () => {
     const full = frame("assistant_text", { content: "split across reads", iteration: 1 });
@@ -201,11 +216,14 @@ describe("session.sendStream — SSE parsing", () => {
           frame("assistant_text", { content: "still here", iteration: 1 }),
         ),
       });
+      // Mirrors Python StreamError("malformed SSE payload: …") in
+      // packages/python/src/codespar/_http.py — the #51 fix must reach
+      // parity, not throw a generic Error, so this pins the message.
       await expect(
         (async () => {
           for await (const _ of session.sendStream("hi")) void _;
         })(),
-      ).rejects.toThrow();
+      ).rejects.toThrow(/malformed SSE payload/);
     },
   );
 });
