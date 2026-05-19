@@ -18,7 +18,7 @@ from typing import Any
 import httpx
 
 from ._http import request_json, stream_sse, stream_sse_get
-from .errors import ApiError, ConfigError
+from .errors import ApiError, ConfigError, TimeoutError
 from .types import (
     AssistantTextEvent,
     AuthConfig,
@@ -301,7 +301,13 @@ class AsyncSession:
 
     # ── execution ───────────────────────────────────────────────────────
 
-    async def execute(self, tool_name: str, params: dict[str, Any]) -> ToolResult:
+    async def execute(
+        self,
+        tool_name: str,
+        params: dict[str, Any],
+        *,
+        timeout: float | None = None,
+    ) -> ToolResult:
         """Call a specific tool by name. Always returns a ToolResult, even on error."""
         start = _now_ms()
         try:
@@ -312,6 +318,7 @@ class AsyncSession:
                 api_key=self._api_key,
                 project_id=self._project_id,
                 body={"tool": tool_name, "input": params},
+                timeout=timeout,
             )
         except ApiError as exc:
             return ToolResult(
@@ -348,6 +355,8 @@ class AsyncSession:
         self,
         use_case: str,
         options: DiscoverOptions | None = None,
+        *,
+        timeout: float | None = None,
     ) -> DiscoverResult:
         """
         Search the catalog for a tool that matches a free-form use case.
@@ -363,7 +372,7 @@ class AsyncSession:
                 params["country"] = options.country
             if options.limit is not None:
                 params["limit"] = options.limit
-        result = await self.execute("codespar_discover", params)
+        result = await self.execute("codespar_discover", params, timeout=timeout)
         if not result.success:
             raise ApiError(
                 f"discover failed: {result.error or 'unknown'}",
@@ -377,6 +386,8 @@ class AsyncSession:
     async def connection_wizard(
         self,
         options: ConnectionWizardOptions,
+        *,
+        timeout: float | None = None,
     ) -> ConnectionWizardResult:
         """
         Surface the connection wizard for a server (or list every
@@ -401,7 +412,7 @@ class AsyncSession:
             params["environment"] = options.environment
         if options.return_to is not None:
             params["return_to"] = options.return_to
-        result = await self.execute("codespar_manage_connections", params)
+        result = await self.execute("codespar_manage_connections", params, timeout=timeout)
         if not result.success:
             raise ApiError(
                 f"connection_wizard failed: {result.error or 'unknown'}",
@@ -416,7 +427,7 @@ class AsyncSession:
             )
         return _parse_wizard_result(result.data)
 
-    async def charge(self, args: ChargeArgs) -> ChargeResult:
+    async def charge(self, args: ChargeArgs, *, timeout: float | None = None) -> ChargeResult:
         """
         Create an INBOUND charge — the buyer pays the merchant. Typed
         wrapper around ``execute("codespar_charge", {...})``. Distinct
@@ -442,7 +453,7 @@ class AsyncSession:
         }
         if args.due_date is not None:
             params["due_date"] = args.due_date
-        result = await self.execute("codespar_charge", params)
+        result = await self.execute("codespar_charge", params, timeout=timeout)
         if not result.success:
             raise ApiError(
                 f"charge failed: {result.error or 'unknown'}",
@@ -453,7 +464,7 @@ class AsyncSession:
             raise ApiError("charge: malformed response", status=0, body=result.data)
         return _parse_charge_result(result.data)
 
-    async def ship(self, args: ShipArgs) -> ShipResult:
+    async def ship(self, args: ShipArgs, *, timeout: float | None = None) -> ShipResult:
         """
         Generate a shipping label OR fetch tracking status. Typed
         wrapper around ``execute("codespar_ship", {...})``. Routes to
@@ -510,7 +521,7 @@ class AsyncSession:
             params["tracking_code"] = args.tracking_code
         if args.metadata is not None:
             params["metadata"] = args.metadata
-        result = await self.execute("codespar_ship", params)
+        result = await self.execute("codespar_ship", params, timeout=timeout)
         if not result.success:
             raise ApiError(
                 f"ship failed: {result.error or 'unknown'}",
@@ -522,7 +533,10 @@ class AsyncSession:
         return _parse_ship_result(result.data)
 
     async def verification_status(
-        self, tool_call_id: str
+        self,
+        tool_call_id: str,
+        *,
+        timeout: float | None = None,
     ) -> VerificationStatusResult:
         """
         Async KYC poll for a meta-tool ``codespar_kyc`` call. Correlates
@@ -549,6 +563,7 @@ class AsyncSession:
             f"/v1/tool-calls/{quote(tool_call_id, safe='')}/verification-status",
             api_key=self._api_key,
             project_id=self._project_id,
+            timeout=timeout,
         )
         if not isinstance(data, dict):
             raise ApiError(
@@ -579,6 +594,7 @@ class AsyncSession:
         *,
         on_update: Callable[[VerificationStatusResult], Awaitable[None] | None]
         | None = None,
+        timeout: float | None = None,
     ) -> VerificationStatusResult:
         """
         SSE-streamed sibling of ``verification_status``. Opens
@@ -604,6 +620,7 @@ class AsyncSession:
             f"/v1/tool-calls/{quote(tool_call_id, safe='')}/verification-status/stream",
             api_key=self._api_key,
             project_id=self._project_id,
+            timeout=timeout,
         ):
             if event_name in ("snapshot", "update"):
                 if not isinstance(raw, dict):
@@ -640,7 +657,12 @@ class AsyncSession:
             )
         return last
 
-    async def payment_status(self, tool_call_id: str) -> PaymentStatusResult:
+    async def payment_status(
+        self,
+        tool_call_id: str,
+        *,
+        timeout: float | None = None,
+    ) -> PaymentStatusResult:
         """
         Async settlement check for a meta-tool payment call. Correlates
         a ``tool_call_id`` (the ``tc_xxx`` returned by ``execute``) back
@@ -659,6 +681,7 @@ class AsyncSession:
             f"/v1/tool-calls/{quote(tool_call_id, safe='')}/payment-status",
             api_key=self._api_key,
             project_id=self._project_id,
+            timeout=timeout,
         )
         if not isinstance(data, dict):
             raise ApiError(
@@ -689,6 +712,7 @@ class AsyncSession:
         *,
         on_update: Callable[[PaymentStatusResult], Awaitable[None] | None]
         | None = None,
+        timeout: float | None = None,
     ) -> PaymentStatusResult:
         """
         SSE-streamed sibling of ``payment_status``. Opens
@@ -710,6 +734,7 @@ class AsyncSession:
             f"/v1/tool-calls/{quote(tool_call_id, safe='')}/payment-status/stream",
             api_key=self._api_key,
             project_id=self._project_id,
+            timeout=timeout,
         ):
             if event_name in ("snapshot", "update"):
                 if not isinstance(raw, dict):
@@ -748,7 +773,12 @@ class AsyncSession:
 
     # ── proxy ───────────────────────────────────────────────────────────
 
-    async def proxy_execute(self, request: ProxyRequest) -> ProxyResult:
+    async def proxy_execute(
+        self,
+        request: ProxyRequest,
+        *,
+        timeout: float | None = None,
+    ) -> ProxyResult:
         """
         Raw HTTP proxy to a connected server's upstream API. Auth is
         injected by the backend — never send provider keys here.
@@ -767,6 +797,7 @@ class AsyncSession:
                 "params": request.params,
                 "headers": request.headers,
             },
+            timeout=timeout,
         )
         if not isinstance(data, dict):
             raise ApiError("proxy_execute: malformed response", status=0, body=data)
@@ -780,7 +811,12 @@ class AsyncSession:
 
     # ── natural-language ────────────────────────────────────────────────
 
-    async def send(self, message: str) -> SendResult:
+    async def send(
+        self,
+        message: str,
+        *,
+        timeout: float | None = None,
+    ) -> SendResult:
         """Send a natural-language message. Blocks until the agent loop finishes."""
         data = await request_json(
             self._client,
@@ -789,12 +825,18 @@ class AsyncSession:
             api_key=self._api_key,
             project_id=self._project_id,
             body={"message": message},
+            timeout=timeout,
         )
         if not isinstance(data, dict):
             raise ApiError("send: malformed response", status=0, body=data)
         return _parse_send_result(data)
 
-    async def send_stream(self, message: str) -> AsyncIterator[StreamEvent]:
+    async def send_stream(
+        self,
+        message: str,
+        *,
+        timeout: float | None = None,
+    ) -> AsyncIterator[StreamEvent]:
         """
         Stream a natural-language turn. Yields events as they arrive.
 
@@ -813,6 +855,7 @@ class AsyncSession:
             api_key=self._api_key,
             project_id=self._project_id,
             body={"message": message},
+            timeout=timeout,
         ):
             event = _parse_stream_event(raw)
             if event is not None:
@@ -820,7 +863,13 @@ class AsyncSession:
 
     # ── Connect Links ───────────────────────────────────────────────────
 
-    async def authorize(self, server_id: str, config: AuthConfig) -> AuthResult:
+    async def authorize(
+        self,
+        server_id: str,
+        config: AuthConfig,
+        *,
+        timeout: float | None = None,
+    ) -> AuthResult:
         """
         Start a Connect Link OAuth flow. Returns the URL your UI should
         open for the end user; CodeSpar's callback stores tokens and
@@ -838,6 +887,7 @@ class AsyncSession:
                 "redirect_uri": config.redirect_uri,
                 "scopes": config.scopes,
             },
+            timeout=timeout,
         )
         if not isinstance(data, dict):
             raise ApiError("authorize: malformed response", status=0, body=data)
@@ -849,7 +899,11 @@ class AsyncSession:
 
     # ── connections ─────────────────────────────────────────────────────
 
-    async def connections(self) -> list[ServerConnection]:
+    async def connections(
+        self,
+        *,
+        timeout: float | None = None,
+    ) -> list[ServerConnection]:
         """List server connections and refresh the internal tools cache."""
         try:
             data = await request_json(
@@ -858,6 +912,7 @@ class AsyncSession:
                 f"/v1/sessions/{self.id}/connections",
                 api_key=self._api_key,
                 project_id=self._project_id,
+                timeout=timeout,
             )
         except ApiError:
             return list(self._cached_connections or [])
@@ -894,17 +949,23 @@ class AsyncSession:
 
     # ── lifecycle ───────────────────────────────────────────────────────
 
-    async def close(self) -> None:
+    async def close(
+        self,
+        *,
+        timeout: float | None = None,
+    ) -> None:
         """Close the session on the backend. Safe to call multiple times.
-        Best-effort — a 4xx/5xx here shouldn't crash the caller. The
-        backend cleans up stale sessions on a timer anyway."""
-        with contextlib.suppress(ApiError):
+        Best-effort — a 4xx/5xx OR a backend timeout here shouldn't
+        crash the caller. The backend cleans up stale sessions on a
+        timer anyway."""
+        with contextlib.suppress(ApiError, TimeoutError):
             await request_json(
                 self._client,
                 "DELETE",
                 f"/v1/sessions/{self.id}",
                 api_key=self._api_key,
                 project_id=self._project_id,
+                timeout=timeout,
             )
 
 

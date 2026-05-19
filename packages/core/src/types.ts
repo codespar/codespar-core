@@ -1,6 +1,11 @@
 import { z } from "zod";
 import type { ToolResult } from "@codespar/types";
 
+// CallOptions is the shared client-side option bag. Single source of
+// truth lives in @codespar/types so the public Session contract and
+// the core runtime can never drift.
+export type { CallOptions } from "@codespar/types";
+
 /* ── Configuration ─────────────────────────────────────────────── */
 
 export interface CodeSparConfig {
@@ -10,6 +15,8 @@ export interface CodeSparConfig {
   baseUrl?: string;
   /** Optional project scope. Defaults to the org's default project when omitted. */
   projectId?: string;
+  /** Default per-request timeout in ms. Default 60000. */
+  timeout?: number;
 }
 
 /* ── Session config (SDK-level, not the wire contract) ──────────── */

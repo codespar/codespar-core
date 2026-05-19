@@ -2,7 +2,10 @@
  * Session implementation for the CodeSpar managed runtime.
  */
 
-import type { SessionConfig, Tool } from "./types.js";
+import type { SessionConfig, Tool, CallOptions } from "./types.js";
+import { fetchWithTimeout, validateTimeout } from "./internal/fetch.js";
+import { mergeSignals } from "./internal/abort.js";
+import { TimeoutError } from "./errors.js";
 import type {
   Session,
   CreateSessionRequest,
@@ -32,6 +35,7 @@ interface SessionDeps {
   baseUrl: string;
   apiKey: string;
   projectId?: string;
+  timeout: number;
 }
 
 interface BackendSessionResponse {
@@ -56,6 +60,7 @@ export async function createSession(
   userId: string,
   config: SessionConfig,
   deps: SessionDeps,
+  createOpts?: CallOptions,
 ): Promise<Session> {
   const { baseUrl, apiKey } = deps;
   const projectId = config.projectId ?? deps.projectId;
@@ -71,16 +76,24 @@ export async function createSession(
     projectId: config.projectId ?? deps.projectId,
   };
 
-  const res = await fetch(`${baseUrl}/v1/sessions`, {
+  // Resolve per-call timeout/abort against the client default. Kept local
+  // so every method funnels through one place if CallOptions grows.
+  const callOpts = (o?: CallOptions) => ({
+    timeout: o?.timeout ?? deps.timeout,
+    signal: o?.signal,
+  });
+
+  const data = await fetchWithTimeout(`${baseUrl}/v1/sessions`, {
     method: "POST",
     headers,
     body: JSON.stringify({ servers: req.servers, user_id: userId }),
+  }, callOpts(createOpts), async (res) => {
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`createSession failed: ${res.status} ${body}`);
+    }
+    return (await res.json()) as BackendSessionResponse;
   });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`createSession failed: ${res.status} ${body}`);
-  }
-  const data = (await res.json()) as BackendSessionResponse;
 
   let cachedTools: Tool[] | null = null;
   let cachedConnections: ServerConnection[] | null = null;
@@ -117,30 +130,30 @@ export async function createSession(
       );
     },
 
-    async execute(toolName: string, params: Record<string, unknown>): Promise<ToolResult> {
+    async execute(toolName: string, params: Record<string, unknown>, opts?: CallOptions): Promise<ToolResult> {
       const start = Date.now();
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/execute`, {
+      return await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}/execute`, {
         method: "POST",
         headers,
         body: JSON.stringify({ tool: toolName, input: params }),
+      }, callOpts(opts), async (r) => {
+        if (!r.ok) {
+          const body = await r.text();
+          return {
+            success: false,
+            data: null,
+            error: `${r.status}: ${body}`,
+            duration: Date.now() - start,
+            server: "",
+            tool: toolName,
+          };
+        }
+        return (await r.json()) as ToolResult;
       });
-      if (!r.ok) {
-        const body = await r.text();
-        return {
-          success: false,
-          data: null,
-          error: `${r.status}: ${body}`,
-          duration: Date.now() - start,
-          server: "",
-          tool: toolName,
-        };
-      }
-      const result = (await r.json()) as ToolResult;
-      return result;
     },
 
-    async proxyExecute(request: ProxyRequest): Promise<ProxyResult> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/proxy_execute`, {
+    async proxyExecute(request: ProxyRequest, opts?: CallOptions): Promise<ProxyResult> {
+      return await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}/proxy_execute`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -151,38 +164,59 @@ export async function createSession(
           params: request.params,
           headers: request.headers,
         }),
+      }, callOpts(opts), async (r) => {
+        if (!r.ok) {
+          const body = await r.text();
+          throw new Error(`proxyExecute failed: ${r.status} ${body}`);
+        }
+        return (await r.json()) as ProxyResult;
       });
-      if (!r.ok) {
-        const body = await r.text();
-        throw new Error(`proxyExecute failed: ${r.status} ${body}`);
-      }
-      return (await r.json()) as ProxyResult;
     },
 
-    async send(message: string): Promise<SendResult> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/send`, {
+    async send(message: string, opts?: CallOptions): Promise<SendResult> {
+      return await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}/send`, {
         method: "POST",
         headers: { ...headers, Accept: "application/json" },
         body: JSON.stringify({ message }),
+      }, callOpts(opts), async (r) => {
+        if (!r.ok) {
+          const body = await r.text();
+          throw new Error(`send failed: ${r.status} ${body}`);
+        }
+        return (await r.json()) as SendResult;
       });
-      if (!r.ok) {
-        const body = await r.text();
-        throw new Error(`send failed: ${r.status} ${body}`);
-      }
-      return (await r.json()) as SendResult;
     },
 
-    async *sendStream(message: string): AsyncIterable<StreamEvent> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/send`, {
-        method: "POST",
-        headers: { ...headers, Accept: "text/event-stream" },
-        body: JSON.stringify({ message }),
-      });
-      if (!r.ok || !r.body) {
-        const body = await r.text();
-        throw new Error(`sendStream failed: ${r.status} ${body}`);
+    async *sendStream(message: string, opts?: CallOptions): AsyncIterable<StreamEvent> {
+      const ms = opts?.timeout ?? deps.timeout;
+      validateTimeout(ms);
+      const idleAc = new AbortController();
+      const merged = mergeSignals([idleAc.signal, opts?.signal]);
+      const idle = makeIdle(idleAc, ms);
+      try {
+        // Arm the timeout before the fetch so the connect/headers phase
+        // is covered too — not just post-body idle. Otherwise a backend
+        // that accepts the socket but never sends headers hangs forever.
+        idle.reset();
+        const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/send`, {
+          method: "POST",
+          headers: { ...headers, Accept: "text/event-stream" },
+          body: JSON.stringify({ message }),
+          signal: merged.signal,
+        });
+        if (!r.ok || !r.body) {
+          const body = await r.text();
+          throw new Error(`sendStream failed: ${r.status} ${body}`);
+        }
+        yield* parseSseStream(r.body, idle, merged.signal);
+      } catch (err) {
+        if (opts?.signal?.aborted) throw opts.signal.reason;
+        if (idleAc.signal.aborted) throw new TimeoutError(ms);
+        throw err;
+      } finally {
+        idle.pause();
+        merged.cleanup();
       }
-      yield* parseSseStream(r.body);
     },
 
     /**
@@ -193,11 +227,12 @@ export async function createSession(
     async discover(
       useCase: string,
       options?: DiscoverOptions,
+      opts?: CallOptions,
     ): Promise<DiscoverResult> {
       const result = await session.execute("codespar_discover", {
         use_case: useCase,
         ...(options ?? {}),
-      });
+      }, opts);
       if (!result.success) {
         throw new Error(`discover failed: ${result.error ?? "unknown"}`);
       }
@@ -214,10 +249,12 @@ export async function createSession(
      */
     async connectionWizard(
       options: ConnectionWizardOptions,
+      opts?: CallOptions,
     ): Promise<ConnectionWizardResult> {
       const result = await session.execute(
         "codespar_manage_connections",
         options as Record<string, unknown>,
+        opts,
       );
       if (!result.success) {
         throw new Error(`connectionWizard failed: ${result.error ?? "unknown"}`);
@@ -232,10 +269,11 @@ export async function createSession(
      * ToolResult.data. Distinct from the legacy `codespar_pay` rail
      * (which routes to outbound transfers/payouts).
      */
-    async charge(args: ChargeArgs): Promise<ChargeResult> {
+    async charge(args: ChargeArgs, opts?: CallOptions): Promise<ChargeResult> {
       const result = await session.execute(
         "codespar_charge",
         args as unknown as Record<string, unknown>,
+        opts,
       );
       if (!result.success) {
         throw new Error(`charge failed: ${result.error ?? "unknown"}`);
@@ -250,10 +288,11 @@ export async function createSession(
      * ShipResult so the caller doesn't have to cast through
      * ToolResult.data.
      */
-    async ship(args: ShipArgs): Promise<ShipResult> {
+    async ship(args: ShipArgs, opts?: CallOptions): Promise<ShipResult> {
       const result = await session.execute(
         "codespar_ship",
         args as unknown as Record<string, unknown>,
+        opts,
       );
       if (!result.success) {
         throw new Error(`ship failed: ${result.error ?? "unknown"}`);
@@ -261,100 +300,139 @@ export async function createSession(
       return result.data as ShipResult;
     },
 
-    async paymentStatus(toolCallId: string): Promise<PaymentStatusResult> {
-      const r = await fetch(
+    async paymentStatus(toolCallId: string, opts?: CallOptions): Promise<PaymentStatusResult> {
+      return await fetchWithTimeout(
         `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/payment-status`,
         { headers },
+        callOpts(opts),
+        async (r) => {
+          if (!r.ok) {
+            const body = await r.text();
+            throw new Error(`paymentStatus failed: ${r.status} ${body}`);
+          }
+          return (await r.json()) as PaymentStatusResult;
+        },
       );
-      if (!r.ok) {
-        const body = await r.text();
-        throw new Error(`paymentStatus failed: ${r.status} ${body}`);
-      }
-      return (await r.json()) as PaymentStatusResult;
     },
 
     async verificationStatus(
       toolCallId: string,
+      opts?: CallOptions,
     ): Promise<VerificationStatusResult> {
-      const r = await fetch(
+      return await fetchWithTimeout(
         `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/verification-status`,
         { headers },
+        callOpts(opts),
+        async (r) => {
+          if (!r.ok) {
+            const body = await r.text();
+            throw new Error(`verificationStatus failed: ${r.status} ${body}`);
+          }
+          return (await r.json()) as VerificationStatusResult;
+        },
       );
-      if (!r.ok) {
-        const body = await r.text();
-        throw new Error(`verificationStatus failed: ${r.status} ${body}`);
-      }
-      return (await r.json()) as VerificationStatusResult;
     },
 
     async paymentStatusStream(
       toolCallId: string,
       options: PaymentStatusStreamOptions = {},
     ): Promise<PaymentStatusResult> {
-      const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
-        toolCallId,
-      )}/payment-status/stream`;
-      const r = await fetch(url, {
-        headers: { ...headers, Accept: "text/event-stream" },
-        signal: options.signal,
-      });
-      if (!r.ok || !r.body) {
-        const body = await r.text();
-        throw new Error(
-          `paymentStatusStream failed: ${r.status} ${body}`,
-        );
-      }
-      let last: PaymentStatusResult | null = null;
-      for await (const frame of parseStatusSseStream(r.body)) {
-        if (frame.event === "snapshot" || frame.event === "update") {
-          last = frame.data as PaymentStatusResult;
-          options.onUpdate?.(last);
-        } else if (frame.event === "done") {
-          break;
+      const ms = options.timeout ?? deps.timeout;
+      validateTimeout(ms);
+      const idleAc = new AbortController();
+      const merged = mergeSignals([idleAc.signal, options.signal]);
+      const idle = makeIdle(idleAc, ms);
+      try {
+        // Arm the timeout before the fetch so connect/headers are covered.
+        idle.reset();
+        const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
+          toolCallId,
+        )}/payment-status/stream`;
+        const r = await fetch(url, {
+          headers: { ...headers, Accept: "text/event-stream" },
+          signal: merged.signal,
+        });
+        if (!r.ok || !r.body) {
+          const body = await r.text();
+          throw new Error(
+            `paymentStatusStream failed: ${r.status} ${body}`,
+          );
         }
+        let last: PaymentStatusResult | null = null;
+        for await (const frame of parseStatusSseStream(r.body, idle, merged.signal)) {
+          if (frame.event === "snapshot" || frame.event === "update") {
+            last = frame.data as PaymentStatusResult;
+            options.onUpdate?.(last);
+          } else if (frame.event === "done") {
+            break;
+          }
+        }
+        if (!last) {
+          throw new Error("paymentStatusStream: stream closed before snapshot");
+        }
+        return last;
+      } catch (err) {
+        if (options.signal?.aborted) throw options.signal.reason;
+        if (idleAc.signal.aborted) throw new TimeoutError(ms);
+        throw err;
+      } finally {
+        idle.pause();
+        merged.cleanup();
       }
-      if (!last) {
-        throw new Error("paymentStatusStream: stream closed before snapshot");
-      }
-      return last;
     },
 
     async verificationStatusStream(
       toolCallId: string,
       options: VerificationStatusStreamOptions = {},
     ): Promise<VerificationStatusResult> {
-      const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
-        toolCallId,
-      )}/verification-status/stream`;
-      const r = await fetch(url, {
-        headers: { ...headers, Accept: "text/event-stream" },
-        signal: options.signal,
-      });
-      if (!r.ok || !r.body) {
-        const body = await r.text();
-        throw new Error(
-          `verificationStatusStream failed: ${r.status} ${body}`,
-        );
-      }
-      let last: VerificationStatusResult | null = null;
-      for await (const frame of parseStatusSseStream(r.body)) {
-        if (frame.event === "snapshot" || frame.event === "update") {
-          last = frame.data as VerificationStatusResult;
-          options.onUpdate?.(last);
-        } else if (frame.event === "done") {
-          break;
+      const ms = options.timeout ?? deps.timeout;
+      validateTimeout(ms);
+      const idleAc = new AbortController();
+      const merged = mergeSignals([idleAc.signal, options.signal]);
+      const idle = makeIdle(idleAc, ms);
+      try {
+        // Arm the timeout before the fetch so connect/headers are covered.
+        idle.reset();
+        const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
+          toolCallId,
+        )}/verification-status/stream`;
+        const r = await fetch(url, {
+          headers: { ...headers, Accept: "text/event-stream" },
+          signal: merged.signal,
+        });
+        if (!r.ok || !r.body) {
+          const body = await r.text();
+          throw new Error(
+            `verificationStatusStream failed: ${r.status} ${body}`,
+          );
         }
+        let last: VerificationStatusResult | null = null;
+        for await (const frame of parseStatusSseStream(r.body, idle, merged.signal)) {
+          if (frame.event === "snapshot" || frame.event === "update") {
+            last = frame.data as VerificationStatusResult;
+            options.onUpdate?.(last);
+          } else if (frame.event === "done") {
+            break;
+          }
+        }
+        if (!last) {
+          throw new Error(
+            "verificationStatusStream: stream closed before snapshot",
+          );
+        }
+        return last;
+      } catch (err) {
+        if (options.signal?.aborted) throw options.signal.reason;
+        if (idleAc.signal.aborted) throw new TimeoutError(ms);
+        throw err;
+      } finally {
+        idle.pause();
+        merged.cleanup();
       }
-      if (!last) {
-        throw new Error(
-          "verificationStatusStream: stream closed before snapshot",
-        );
-      }
-      return last;
     },
 
-    async authorize(serverId: string, config: AuthConfig): Promise<AuthResult> {
-      const r = await fetch(`${baseUrl}/v1/connect/start`, {
+    async authorize(serverId: string, config: AuthConfig, opts?: CallOptions): Promise<AuthResult> {
+      const payload = await fetchWithTimeout(`${baseUrl}/v1/connect/start`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -363,16 +441,17 @@ export async function createSession(
           redirect_uri: config.redirectUri,
           scopes: config.scopes,
         }),
+      }, callOpts(opts), async (r) => {
+        if (!r.ok) {
+          const body = await r.text();
+          throw new Error(`authorize failed: ${r.status} ${body}`);
+        }
+        return (await r.json()) as {
+          link_token: string;
+          authorize_url: string;
+          expires_at: string;
+        };
       });
-      if (!r.ok) {
-        const body = await r.text();
-        throw new Error(`authorize failed: ${r.status} ${body}`);
-      }
-      const payload = (await r.json()) as {
-        link_token: string;
-        authorize_url: string;
-        expires_at: string;
-      };
       return {
         linkToken: payload.link_token,
         authorizeUrl: payload.authorize_url,
@@ -380,22 +459,39 @@ export async function createSession(
       };
     },
 
-    async connections(): Promise<ServerConnection[]> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/connections`, {
+    async connections(opts?: CallOptions): Promise<ServerConnection[]> {
+      return await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}/connections`, {
         headers,
+      }, callOpts(opts), async (r) => {
+        if (!r.ok) return cachedConnections ?? [];
+        const payload = (await r.json()) as BackendConnectionsResponse;
+        cachedConnections = payload.servers;
+        cachedTools = payload.tools;
+        return payload.servers;
       });
-      if (!r.ok) return cachedConnections ?? [];
-      const payload = (await r.json()) as BackendConnectionsResponse;
-      cachedConnections = payload.servers;
-      cachedTools = payload.tools;
-      return payload.servers;
     },
 
-    async close(): Promise<void> {
-      await fetch(`${baseUrl}/v1/sessions/${data.id}`, {
-        method: "DELETE",
-        headers,
-      });
+    async close(opts?: CallOptions): Promise<void> {
+      // Caller misconfiguration is NOT best-effort — validate the
+      // effective timeout before the swallow, so an invalid value
+      // surfaces (parity with Python's ConfigError) instead of
+      // silently skipping the DELETE.
+      const { timeout } = callOpts(opts);
+      validateTimeout(timeout);
+      // Best-effort: the DELETE is bounded by the timeout/abort budget
+      // so close() can't hang, but its outcome is swallowed so a slow
+      // or failing backend cleanup never throws from a caller's
+      // teardown/finally. Parity with the Python client (suppresses
+      // ApiError + TimeoutError) and the managed-agents adapter (close
+      // never throws). The backend reaps stale sessions on a timer.
+      try {
+        await fetchWithTimeout(`${baseUrl}/v1/sessions/${data.id}`, {
+          method: "DELETE",
+          headers,
+        }, callOpts(opts), async () => undefined);
+      } catch {
+        // intentionally ignored — see above
+      }
     },
   };
 
@@ -423,16 +519,59 @@ export async function createSession(
  * exports. We intentionally keep parsing tiny: split on double newlines,
  * pick out `event:` and `data:` lines, JSON-parse the data.
  */
+/**
+ * Idle-timeout controller. `reset()` (re-)arms the idle deadline;
+ * `pause()` disarms it. The parsers pause the timer while control is
+ * yielded to the consumer so slow per-event processing does NOT count
+ * as transport idle, then reset it before awaiting the next read.
+ */
+interface IdleController {
+  reset(): void;
+  pause(): void;
+}
+
+function makeIdle(idleAc: AbortController, ms: number): IdleController {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return {
+    reset() {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => idleAc.abort(), ms);
+    },
+    pause() {
+      if (timer) {
+        clearTimeout(timer);
+        timer = undefined;
+      }
+    },
+  };
+}
+
 async function* parseSseStream(
   body: ReadableStream<Uint8Array>,
+  idle: IdleController,
+  signal: AbortSignal,
 ): AsyncIterable<StreamEvent> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
 
+  // Single abort promise + single listener per parser call — avoids
+  // per-iteration listener accumulation and MaxListeners warnings.
+  let abortReject!: (e: unknown) => void;
+  const abortPromise = new Promise<never>((_resolve, reject) => {
+    abortReject = reject;
+  });
+  const onAbort = () => abortReject(signal.reason);
+  if (signal.aborted) {
+    queueMicrotask(() => abortReject(signal.reason));
+  } else {
+    signal.addEventListener("abort", onAbort, { once: true });
+  }
+
   try {
+    idle.reset();
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await Promise.race([reader.read(), abortPromise]);
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
 
@@ -440,15 +579,41 @@ async function* parseSseStream(
       while ((sep = buffer.indexOf("\n\n")) !== -1) {
         const chunk = buffer.slice(0, sep);
         buffer = buffer.slice(sep + 2);
+        // A complete SSE comment frame (":..." heartbeat) carries no
+        // data but IS protocol liveness — reset idle. Only an
+        // incomplete byte trickle (no "\n\n" yet) must still time out.
+        if (chunk.startsWith(":")) {
+          idle.reset();
+          continue;
+        }
         const event = parseSseChunk(chunk);
-        if (event) yield event;
+        if (event) {
+          // Pause while the consumer processes the event so its
+          // processing time is not counted as transport idle; re-arm
+          // once control returns, before the next read.
+          idle.pause();
+          yield event;
+          idle.reset();
+        }
       }
     }
     if (buffer.trim()) {
       const event = parseSseChunk(buffer);
-      if (event) yield event;
+      if (event) {
+        // Same invariant as the inner loop: pause the idle timer
+        // while the consumer holds control. The stream has ended, so
+        // there is no read to re-arm for afterwards.
+        idle.pause();
+        yield event;
+      }
     }
   } finally {
+    idle.pause();
+    signal.removeEventListener("abort", onAbort);
+    // Best-effort, NON-blocking: a degraded ReadableStream may return a
+    // cancel() promise that never settles; awaiting it here would delay
+    // delivery of the very TimeoutError/abort the caller is waiting for.
+    void Promise.resolve(reader.cancel()).catch(() => {});
     reader.releaseLock();
   }
 }
@@ -526,21 +691,46 @@ const PRESET_SERVERS: Record<NonNullable<SessionConfig["preset"]>, string[]> = {
  */
 async function* parseStatusSseStream(
   body: ReadableStream<Uint8Array>,
+  idle: IdleController,
+  signal: AbortSignal,
 ): AsyncIterable<{ event: string; data: unknown }> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+
+  // Single abort promise + single listener per parser call — avoids
+  // per-iteration listener accumulation and MaxListeners warnings.
+  let abortReject!: (e: unknown) => void;
+  const abortPromise = new Promise<never>((_resolve, reject) => {
+    abortReject = reject;
+  });
+  const onAbort = () => abortReject(signal.reason);
+  if (signal.aborted) {
+    queueMicrotask(() => abortReject(signal.reason));
+  } else {
+    signal.addEventListener("abort", onAbort, { once: true });
+  }
+
   try {
+    idle.reset();
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await Promise.race([reader.read(), abortPromise]);
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
       let sep: number;
       while ((sep = buffer.indexOf("\n\n")) !== -1) {
         const chunk = buffer.slice(0, sep);
         buffer = buffer.slice(sep + 2);
-        // Comment frames (heartbeats) start with ":" and carry no data.
-        if (chunk.startsWith(":")) continue;
+        // Comment frames (heartbeats) start with ":" and carry no
+        // data, but a complete heartbeat frame IS protocol liveness —
+        // reset idle so healthy long-pending streams don't time out
+        // (parity with Python httpx, whose read timeout any byte
+        // resets). An incomplete byte trickle still times out because
+        // it never forms a "\n\n" frame.
+        if (chunk.startsWith(":")) {
+          idle.reset();
+          continue;
+        }
         let eventName = "message";
         let dataLine = "";
         for (const line of chunk.split("\n")) {
@@ -548,14 +738,25 @@ async function* parseStatusSseStream(
           else if (line.startsWith("data:")) dataLine += line.slice(5).trim();
         }
         if (!dataLine) continue;
+        let parsed: unknown;
         try {
-          yield { event: eventName, data: JSON.parse(dataLine) };
+          parsed = JSON.parse(dataLine);
         } catch {
           continue;
         }
+        // Pause while the consumer processes the frame; re-arm after.
+        idle.pause();
+        yield { event: eventName, data: parsed };
+        idle.reset();
       }
     }
   } finally {
+    idle.pause();
+    signal.removeEventListener("abort", onAbort);
+    // Best-effort, NON-blocking: a degraded ReadableStream may return a
+    // cancel() promise that never settles; awaiting it here would delay
+    // delivery of the very TimeoutError/abort the caller is waiting for.
+    void Promise.resolve(reader.cancel()).catch(() => {});
     reader.releaseLock();
   }
 }

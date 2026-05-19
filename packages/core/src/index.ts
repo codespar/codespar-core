@@ -33,16 +33,19 @@ export type {
   LoopConfig,
   LoopStep,
   LoopResult,
+  CallOptions,
 } from "./types.js";
 
 export { SessionConfigSchema } from "./types.js";
 export { loop } from "./loop.js";
 export { tools, findTools } from "./tools.js";
+export { TimeoutError } from "./errors.js";
 
-import type { CodeSparConfig, SessionConfig } from "./types.js";
+import type { CodeSparConfig, SessionConfig, CallOptions } from "./types.js";
 import type { Session } from "@codespar/types";
 import { SessionConfigSchema } from "./types.js";
 import { createSession } from "./session.js";
+import { validateTimeout } from "./internal/fetch.js";
 
 const DEFAULT_BASE_URL = "https://api.codespar.dev";
 
@@ -54,7 +57,12 @@ export class CodeSpar {
       apiKey: config.apiKey || process.env.CODESPAR_API_KEY || "",
       baseUrl: config.baseUrl || process.env.CODESPAR_BASE_URL || DEFAULT_BASE_URL,
       projectId: config.projectId || "",
+      timeout: config.timeout ?? 60000,
     };
+
+    // Fail fast at construction — a misconfigured default timeout must
+    // not produce a live-but-broken client that only fails on first use.
+    validateTimeout(this.config.timeout);
 
     if (!this.config.apiKey) {
       throw new Error(
@@ -69,15 +77,23 @@ export class CodeSpar {
    *
    * @param userId - Unique user identifier
    * @param config - Session configuration (servers, preset, metadata)
+   * @param opts   - Per-call timeout/abort for the POST /v1/sessions
+   *                 request itself; overrides the client default
+   *                 (parity with the Python client's create(timeout=)).
    */
-  async create(userId: string, config: SessionConfig = {}): Promise<Session> {
+  async create(
+    userId: string,
+    config: SessionConfig = {},
+    opts?: CallOptions,
+  ): Promise<Session> {
     SessionConfigSchema.parse(config);
     const projectId = config.projectId ?? this.config.projectId ?? undefined;
     return createSession(userId, config, {
       baseUrl: this.config.baseUrl,
       apiKey: this.config.apiKey,
       projectId: projectId || undefined,
-    });
+      timeout: this.config.timeout,
+    }, opts);
   }
 }
 
