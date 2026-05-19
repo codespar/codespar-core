@@ -14,8 +14,8 @@
     "@codespar/sdk": "^0.9.0"
   },
   "devDependencies": {
-    "@codespar/mcp-nuvem-fiscal": "^0.3.0",
-    "@codespar/mcp-z-api": "^0.2.1",
+    "@codespar/mcp-nuvem-fiscal": "0.3.0",
+    "@codespar/mcp-z-api": "0.2.1",
     "@copilotkit/aimock": "^1.24.1",
     "@types/node": "^20.0.0",
     "typescript": "^5.4.0",
