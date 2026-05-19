@@ -1,0 +1,119 @@
+{
+  "fixtures": [
+    {
+      "match": {
+        "userMessage": "sof",
+        "turnIndex": 0,
+        "hasToolResult": false
+      },
+      "response": {
+        "content": "Oba! O sofa de R$4.800 sai super bem em duas opcoes: (a) Pix com 8% de desconto, fechando em R$4.416,00 a vista; ou (b) 12x no cartao de credito em parcelas iguais de R$400,00, sem entrada. Qual prefere?",
+        "finishReason": "stop"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "6x",
+        "turnIndex": 0,
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "asaas__get_installments",
+            "arguments": {
+              "value": 4800,
+              "installments": 6
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "6x",
+        "turnIndex": 1,
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "Em 6x no cartao fica R$800,00 por mes, sem entrada e sem juros. Posso fechar nessa condicao?",
+        "finishReason": "stop"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Confirma",
+        "turnIndex": 0,
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "asaas__create_payment",
+            "arguments": {
+              "customer": "cus_demo_buyer_001",
+              "billingType": "CREDIT_CARD",
+              "value": 4800,
+              "dueDate": "2026-07-01",
+              "installments": 6,
+              "description": "Sofa 3 lugares — 6x no cartao"
+            }
+          },
+          {
+            "name": "nuvem-fiscal__create_nfe",
+            "arguments": {
+              "ambiente": 2,
+              "natureza_operacao": "Venda de mercadoria",
+              "emitente": {
+                "cnpj": "12345678000190",
+                "razao_social": "Mobiliario Demo LTDA",
+                "ie": "111111111111"
+              },
+              "destinatario": {
+                "cpf": "12345678901",
+                "nome": "Cliente Demo"
+              },
+              "itens": [
+                {
+                  "codigo": "SOFA-3L-001",
+                  "descricao": "Sofa 3 lugares",
+                  "ncm": "94013000",
+                  "cfop": "5102",
+                  "unidade": "UN",
+                  "quantidade": 1,
+                  "valor_unitario": 4800,
+                  "valor_total": 4800
+                }
+              ],
+              "pagamento": {
+                "forma_pagamento": "03",
+                "valor": 4800,
+                "parcelas": 6
+              }
+            }
+          },
+          {
+            "name": "z-api__send_text",
+            "arguments": {
+              "phone": "+5511987654321",
+              "message": "Pedido confirmado em 6x de R$800,00. NF-e emitida e enviada em anexo. Obrigado!"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Confirma",
+        "turnIndex": 1,
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "Pedido fechado em 6x de R$800,00. NF-e emitida e enviada via WhatsApp. Bem-vindo a casa nova!",
+        "finishReason": "stop"
+      }
+    }
+  ]
+}
