@@ -4,7 +4,7 @@
 
 import { CodesparApiError, networkErrorToApiError, throwFromResponse, TimeoutError } from "./errors.js";
 import type { SessionConfig, Tool, CallOptions } from "./types.js";
-import { fetchWithTimeout } from "./internal/fetch.js";
+import { fetchWithTimeout, validateTimeout } from "./internal/fetch.js";
 import { mergeSignals } from "./internal/abort.js";
 import type {
   Session,
@@ -246,6 +246,7 @@ export async function createSession(
 
     async *sendStream(message: string, opts?: CallOptions): AsyncIterable<StreamEvent> {
       const ms = opts?.timeout ?? deps.timeout;
+      validateTimeout(ms);
       const idleAc = new AbortController();
       const merged = mergeSignals([idleAc.signal, opts?.signal]);
       const idle = makeIdle(idleAc, ms);
@@ -456,6 +457,7 @@ export async function createSession(
       options: PaymentStatusStreamOptions = {},
     ): Promise<PaymentStatusResult> {
       const ms = options.timeout ?? deps.timeout;
+      validateTimeout(ms);
       const idleAc = new AbortController();
       const merged = mergeSignals([idleAc.signal, options.signal]);
       const idle = makeIdle(idleAc, ms);
@@ -502,6 +504,7 @@ export async function createSession(
       options: VerificationStatusStreamOptions = {},
     ): Promise<VerificationStatusResult> {
       const ms = options.timeout ?? deps.timeout;
+      validateTimeout(ms);
       const idleAc = new AbortController();
       const merged = mergeSignals([idleAc.signal, options.signal]);
       const idle = makeIdle(idleAc, ms);

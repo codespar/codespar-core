@@ -113,6 +113,46 @@ describe("fetchWithTimeout", () => {
     await expect(session.execute("t", {})).rejects.toBeInstanceOf(TimeoutError);
   }, 5000);
 
+  it.each([0, -5, NaN, Infinity, "30" as unknown as number, true as unknown as number])(
+    "rejects an invalid per-call timeout (%p) on a unary method",
+    async (bad) => {
+      globalThis.fetch = ((url: string) => {
+        if (String(url).endsWith("/v1/sessions")) return Promise.resolve({
+          ok: true, status: 201, text: async () => "",
+          json: async () => ({
+            id: "ses_v", org_id: "o", user_id: "u", servers: [],
+            status: "active", created_at: new Date().toISOString(), closed_at: null,
+          }),
+        } as Response);
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) } as Response);
+      }) as unknown as typeof fetch;
+      const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x" });
+      const session = await cs.create("u");
+      await expect(session.execute("t", {}, { timeout: bad })).rejects.toThrow(/timeout/i);
+    },
+  );
+
+  it.each([0, -5, NaN])(
+    "rejects an invalid per-call timeout (%p) on a stream method",
+    async (bad) => {
+      globalThis.fetch = ((url: string) => {
+        if (String(url).endsWith("/v1/sessions")) return Promise.resolve({
+          ok: true, status: 201, text: async () => "",
+          json: async () => ({
+            id: "ses_v", org_id: "o", user_id: "u", servers: [],
+            status: "active", created_at: new Date().toISOString(), closed_at: null,
+          }),
+        } as Response);
+        return Promise.resolve({ ok: true, body: null } as unknown as Response);
+      }) as unknown as typeof fetch;
+      const cs = new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x" });
+      const session = await cs.create("u");
+      await expect(async () => {
+        for await (const _ of session.sendStream("hi", { timeout: bad })) { /* */ }
+      }).rejects.toThrow(/timeout/i);
+    },
+  );
+
   it("create() honours a per-call timeout override on POST /v1/sessions", async () => {
     globalThis.fetch = ((_u: string, init: RequestInit) =>
       new Promise((_r, reject) =>
