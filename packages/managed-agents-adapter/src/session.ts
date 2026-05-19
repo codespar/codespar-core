@@ -41,6 +41,27 @@ function throwIfAborted(opts?: CallOptions): void {
 }
 
 /**
+ * Fail-fast per-call timeout validation, parity with the core SDK's
+ * validateTimeout and the Python normalize_timeout. MUST run before
+ * any runtime dispatch so an invalid value can never start a
+ * (possibly non-idempotent) commerce side effect before rejecting.
+ */
+function resolveDrainMs(timeout: number | undefined, fallback: number): number {
+  const ms = timeout ?? fallback;
+  if (
+    typeof ms !== "number" ||
+    Number.isNaN(ms) ||
+    !Number.isFinite(ms) ||
+    ms <= 0
+  ) {
+    throw new Error(
+      `timeout must be a positive, finite number of milliseconds, got ${String(ms)}`,
+    );
+  }
+  return ms;
+}
+
+/**
  * Race a promise against an absolute deadline and caller abort. Used
  * for EVERY potentially-unbounded await on the per-call budget path
  * (sendMessage and each stream read) so a stalled runtime can never
@@ -189,7 +210,7 @@ class ManagedAgentsSession implements SessionBase {
     // the drain — so a stall in any phase cannot escape timeout/abort
     // or pin the session mutex. Per-call timeout overrides the
     // configured drain timeout.
-    const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+    const drainMs = resolveDrainMs(opts?.timeout, this._drainTimeoutMs);
     const deadline = Date.now() + drainMs;
 
     // PolicyHook evaluates original params — must precede sanitizeParams.
@@ -249,7 +270,7 @@ class ManagedAgentsSession implements SessionBase {
       resolveMutex = r;
     });
     try {
-      const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+      const drainMs = resolveDrainMs(opts?.timeout, this._drainTimeoutMs);
       const deadline = Date.now() + drainMs;
       await guarded(
         this._runtime.sendMessage(this._sessionId, message),
@@ -279,7 +300,7 @@ class ManagedAgentsSession implements SessionBase {
       resolveMutex = r;
     });
     try {
-      const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+      const drainMs = resolveDrainMs(opts?.timeout, this._drainTimeoutMs);
       const deadline = Date.now() + drainMs;
       await guarded(
         this._runtime.sendMessage(this._sessionId, message),
@@ -305,7 +326,7 @@ class ManagedAgentsSession implements SessionBase {
   }
 
   async connections(opts?: CallOptions): Promise<BaseConnection[]> {
-    const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+    const drainMs = resolveDrainMs(opts?.timeout, this._drainTimeoutMs);
     const status = await guarded(
       this._runtime.getStatus(this._sessionId),
       Date.now() + drainMs,
@@ -321,7 +342,7 @@ class ManagedAgentsSession implements SessionBase {
     // a caller closing a session is never pinned behind a wedged op.
     this._status = "closed";
     if (!this._activeMutex) return;
-    const drainMs = opts?.timeout ?? this._drainTimeoutMs;
+    const drainMs = resolveDrainMs(opts?.timeout, this._drainTimeoutMs);
     await new Promise<void>((resolve) => {
       let settled = false;
       const done = () => {

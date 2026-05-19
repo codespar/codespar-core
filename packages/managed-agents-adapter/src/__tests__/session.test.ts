@@ -591,4 +591,28 @@ describe("per-call CallOptions (signal/timeout)", () => {
     expect(session.status).toBe("closed");
     void running;
   }, 5000);
+
+  it.each([0, -5, NaN, Infinity, "30" as unknown as number, true as unknown as number])(
+    "execute() rejects an invalid timeout (%p) WITHOUT dispatching to the runtime",
+    async (bad) => {
+      const runtime = runtimeWithToolResult();
+      const session = await openSession(runtime);
+      await expect(session.execute("t", {}, { timeout: bad })).rejects.toThrow(
+        /timeout/i,
+      );
+      expect(runtime.sendMessage as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([0, -5, NaN])(
+    "send()/connections() reject an invalid timeout (%p) before any runtime call",
+    async (bad) => {
+      const runtime = makeRuntime();
+      const session = await openSession(runtime);
+      await expect(session.send("hi", { timeout: bad })).rejects.toThrow(/timeout/i);
+      await expect(session.connections({ timeout: bad })).rejects.toThrow(/timeout/i);
+      expect(runtime.sendMessage as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+      expect(runtime.getStatus as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+    },
+  );
 });
