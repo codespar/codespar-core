@@ -133,7 +133,7 @@ export async function createSession(
       body: JSON.stringify(wireBody),
     },
     "createSession",
-    callOpts(),
+    callOpts(createOpts),
     async (res) => {
       if (!res.ok) await throwFromResponse(res, "createSession");
       return (await res.json()) as BackendSessionResponse;
@@ -600,9 +600,12 @@ export async function createSession(
     },
 
     async close(opts?: CallOptions): Promise<void> {
-      // Best-effort — the backend reaps stale sessions on a timer,
-      // so a network failure (or timeout) here shouldn't surface to the
-      // caller. The timeout only bounds how long close() may hang.
+      // Best-effort: the DELETE is bounded by the timeout/abort budget
+      // so close() can't hang, but its outcome is swallowed so a slow
+      // or failing backend cleanup never throws from a caller's
+      // teardown/finally. Parity with the Python client (suppresses
+      // ApiError + TimeoutError) and the managed-agents adapter (close
+      // never throws). The backend reaps stale sessions on a timer.
       try {
         await safeFetch(
           `${baseUrl}/v1/sessions/${data.id}`,
@@ -612,8 +615,7 @@ export async function createSession(
           async () => undefined,
         );
       } catch {
-        // Intentional swallow — matches the previous fire-and-forget
-        // contract; close() never threw.
+        // intentionally ignored — see above
       }
     },
   };
