@@ -29,6 +29,7 @@ import {
   ApprovalRequiredError,
   ConcurrentOperationError,
   DrainTimeoutError,
+  SessionClosedError,
 } from "./errors.js";
 
 const TOOL_NAME_RE = /^[a-zA-Z0-9_-]+$/;
@@ -152,6 +153,12 @@ class ManagedAgentsSession implements SessionBase {
     return this._status;
   }
 
+  // Read through a method so TS does not narrow `_status` from an
+  // earlier check — close() can flip it concurrently between awaits.
+  private isClosed(): boolean {
+    return this._status === "closed";
+  }
+
   /**
    * Execute a named tool via the Managed Agents API.
    *
@@ -170,6 +177,7 @@ class ManagedAgentsSession implements SessionBase {
     opts?: CallOptions,
   ): Promise<ToolResult> {
     throwIfAborted(opts);
+    if (this.isClosed()) throw new SessionClosedError();
     if (this._activeMutex) throw new ConcurrentOperationError();
 
     // Tool name validation runs before any message is constructed so a
@@ -185,6 +193,10 @@ class ManagedAgentsSession implements SessionBase {
     const deadline = Date.now() + drainMs;
 
     // PolicyHook evaluates original params — must precede sanitizeParams.
+    // Deliberately NOT under the mutex: close() during policy must be
+    // able to return promptly (it is terminal cleanup, not a barrier).
+    // Safety against dispatching after close is the isClosed() check
+    // below, right before sendMessage — not blocking close().
     if (this._policyHook) {
       const decision = await guarded(
         this._policyHook.evaluate(this._agentId, toolName),
@@ -199,6 +211,11 @@ class ManagedAgentsSession implements SessionBase {
     const resolvedParams = this._sanitizeParams
       ? this._sanitizeParams(params)
       : params;
+
+    // close() may have been requested during the awaited policy phase —
+    // never dispatch a (possibly non-idempotent) tool on a closed
+    // session, even though close() itself already returned.
+    if (this.isClosed()) throw new SessionClosedError();
 
     let resolveMutex!: () => void;
     this._activeMutex = new Promise<void>((r) => {
@@ -224,6 +241,7 @@ class ManagedAgentsSession implements SessionBase {
 
   async send(message: string, opts?: CallOptions): Promise<SendResult> {
     throwIfAborted(opts);
+    if (this.isClosed()) throw new SessionClosedError();
     if (this._activeMutex) throw new ConcurrentOperationError();
 
     let resolveMutex!: () => void;
@@ -253,6 +271,7 @@ class ManagedAgentsSession implements SessionBase {
     opts?: CallOptions,
   ): AsyncIterable<StreamEvent> {
     throwIfAborted(opts);
+    if (this.isClosed()) throw new SessionClosedError();
     if (this._activeMutex) throw new ConcurrentOperationError();
 
     let resolveMutex!: () => void;
