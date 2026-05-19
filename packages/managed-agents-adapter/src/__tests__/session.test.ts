@@ -266,6 +266,28 @@ describe("close() while operation in flight", () => {
     // close resolved after or at the same tick as execute
     expect(closedAt).toBeGreaterThanOrEqual(executedAt);
   });
+
+  it("does not dispatch a tool after close() when execute() was still in policyHook", async () => {
+    let allowPolicy!: () => void;
+    const policyGate = new Promise<void>((r) => { allowPolicy = r; });
+    const runtime = runtimeWithToolResult();
+    const session = await openSession(runtime, {
+      policyHook: {
+        evaluate: async () => {
+          await policyGate;
+          return { allowed: true };
+        },
+      },
+    });
+
+    const exec = session.execute("tool", {}).catch((e) => e);
+    await new Promise((r) => setTimeout(r, 20)); // ensure we're inside policyHook
+    await session.close();
+    expect(session.status).toBe("closed");
+    allowPolicy(); // policy now resolves — execute must NOT dispatch
+    await exec;
+    expect((runtime.sendMessage as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
+  }, 5000);
 });
 
 describe("DrainTimeoutError", () => {

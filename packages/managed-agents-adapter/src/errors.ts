@@ -60,3 +60,16 @@ export class DrainTimeoutError extends Error {
     this.timeoutMs = timeoutMs;
   }
 }
+
+/**
+ * Thrown when an operation is attempted on a session that has been
+ * closed — or close() was requested while the operation was still in
+ * a pre-dispatch phase (e.g. policy evaluation). Prevents dispatching
+ * a (possibly non-idempotent) commerce tool after terminal cleanup.
+ */
+export class SessionClosedError extends Error {
+  constructor() {
+    super("session is closed — operation not dispatched");
+    this.name = "SessionClosedError";
+  }
+}
