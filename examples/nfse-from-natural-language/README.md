@@ -31,26 +31,40 @@ keys.
 
 ## Why this requires an agent
 
-LC 116/2003 (Brazil's federal service-tax framework) enumerates
-service categories that map 1:1 to ISS rate brackets. The boundaries
-matter:
+The sharpest single-sentence differentiator for B2B service
+invoicing: **a customer's natural-language description of "platform
+access plus onboarding consulting" cannot be mapped to LC 116/2003
+service codes by any fixed (description → code) lookup, because the
+right bracket depends on what the line item *means* in context, not
+on which keywords appear.** A flow-builder that stamps a single
+service code per request gets it wrong every time a customer
+combines multiple service types in one message.
 
-- **Item 1.01** — software development
-- **Item 1.03** — data processing
-- **Item 1.05** — information and electronic-media services
-- **Item 17.01** — advice / consulting
+The judgment points compound inside this one short message:
 
-Municipal ISS rates inside São Paulo run 2.9% to 5% depending on the
-item picked. A SaaS access fee is Item 1.05; a consulting engagement
-on top of that SaaS is Item 17.01. A script that just takes
-`(description, amount)` and stamps a fixed code is wrong half the
-time. The LLM reads the customer's natural-language wording, splits
-the line items, and picks the right code per line.
+- **Splitting the line items.** "Platform access fee plus onboarding
+  consulting" is two services, not one — the agent has to recognise
+  the conjunction and issue two distinct NFS-e. A line-counting
+  heuristic over commas or "plus" tokens misroutes whenever the
+  customer phrases two services in a single noun phrase.
+- **Picking the right bracket per line.** LC 116/2003 enumerates
+  service categories that map 1:1 to ISS-rate brackets — Item 1.01
+  (software development), 1.03 (data processing), 1.05 (information
+  and electronic-media services), 17.01 (advice / consulting). A
+  SaaS access fee is 1.05; consulting on top of that SaaS is 17.01.
+  São Paulo municipal ISS runs 2.9 % – 5 % depending on the bracket;
+  stamping the wrong code is the tax-authority equivalent of
+  charging the wrong currency.
+- **Delivering the artefacts back on the same channel.** Once both
+  NFS-e are issued, the agent has to send both PDF URLs back via
+  WhatsApp — not just the first, not bundled into a "talk to
+  support" link. Knowing the customer expects both invoices in the
+  same reply is a judgment call a fixed flow cannot make.
 
-That's the agent thesis in one paragraph: an LLM is the only thing
-that can map fuzzy customer language to a regulated fiscal taxonomy
-without an O(N²) rules engine. This example demonstrates it
-end-to-end.
+That is the agent thesis in one paragraph for B2B service
+invoicing. The walking skeleton proves the OSS bridge runs the
+4-step happy path; this example proves the runtime carries an LLM
+through a fiscal-taxonomy decision a flow-builder cannot.
 
 ## What ships here
 
@@ -170,25 +184,29 @@ and the rest is unchanged.
 
 ## Acceptance criteria
 
-The vitest spec asserts five invariants pulled from the demo
-fixtures:
+The vitest spec asserts these invariants inside the single
+`session.send()` call:
 
-1. The runtime's `session.send()` returns a `SendResult` with a
-   string `message` field.
-2. `result.tool_calls` contains exactly two records with
-   `tool_name === "nuvem-fiscal__create_nfse"`, both with
-   `status === "success"`, both whose `output.id` matches `/^nfse_/`
-   and whose `output.status === "autorizada"`.
-3. Each NFS-e tool call returns a non-empty `pdf_url` string in its
-   output.
-4. `result.tool_calls` contains at least one record with
-   `tool_name === "z-api__send_text"`, and that record's
-   `input.message` field contains both `nfse_demo_001` and
-   `nfse_demo_002` literally — proving the WhatsApp outbound carries
-   both PDF references.
-5. `result.iterations >= 2` — the loop ran at least two turns,
-   confirming a multi-turn tool-use exchange and not a single-shot
+1. **Two distinct `nuvem-fiscal__create_nfse` calls**, one per line
+   item, both with `status === "success"`. The two calls must split on
+   the LC 116/2003 service code — exactly one carries
+   `input.servico.codigo === "1.05"` with `input.valor === 2800`, and
+   exactly one carries `input.servico.codigo === "17.01"` with
+   `input.valor === 1200`. A regression that flattens both line items
+   to a single bracket trips here.
+2. **Both NFS-e outputs carry demo-fixture shape.** Each call's
+   `output.id` matches `/^nfse_demo_/`, `output.status === "autorizada"`,
+   and `output.pdf_url` is a non-empty string.
+3. **At least one `z-api__send_text` call** with `status === "success"`
+   and `input.message` matching both `/nfse_demo_001/` and
+   `/nfse_demo_002/` — proving the WhatsApp outbound references both
+   PDFs, not just the first.
+4. **`result.iterations >= 3`** — three completion requests inside one
+   send (NFS-e tool-uses → z-api tool-use → final text), proving the
+   tool loop actually iterated rather than collapsing into a single
    response.
+5. **Every dispatched tool call records `status === "success"`** — no
+   swallowed failures across the turn.
 
 ## Live LLM smoke (`npm run validate:live`)
 

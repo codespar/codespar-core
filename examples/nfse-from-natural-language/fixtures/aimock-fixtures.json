@@ -34,6 +34,7 @@
     },
     {
       "match": {
+        "userMessage": "platform access fee",
         "turnIndex": 1,
         "hasToolResult": true
       },
@@ -52,6 +53,7 @@
     },
     {
       "match": {
+        "userMessage": "platform access fee",
         "turnIndex": 2,
         "hasToolResult": true
       },
