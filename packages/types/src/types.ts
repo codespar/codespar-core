@@ -10,6 +10,14 @@
  * Python client (`codespar`) follows the httpx convention and takes
  * **seconds** (e.g. `timeout=30` is 30s in Python, 30ms in TS). Do not
  * copy a numeric timeout between the two SDKs without converting.
+ *
+ * SSE IDLE SEMANTICS (intentional cross-SDK divergence): for streams,
+ * this TS SDK applies a strict SDK-level idle that resets only on a
+ * COMPLETE SSE frame (heartbeat or data) — an incomplete byte trickle
+ * that never closes a frame times out. The Python client instead
+ * relies on the httpx read timeout, which any incoming byte resets, so
+ * a partial-byte trickle keeps a Python stream alive. Both are valid
+ * liveness models; the behaviour is deliberately not unified.
  */
 export interface CallOptions {
   /** Per-call timeout in MILLISECONDS; overrides the client default. */

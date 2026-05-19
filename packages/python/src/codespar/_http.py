@@ -141,6 +141,15 @@ async def stream_sse(
     comment lines (``: keep-alive``) are swallowed. Each yielded dict
     is the JSON payload from a single SSE frame. Callers interpret
     the ``type`` field themselves.
+
+    IDLE SEMANTICS (intentional TS divergence): ``timeout`` is the
+    httpx read timeout — ANY incoming byte resets it, so a degraded
+    peer that dribbles partial bytes without ever completing a
+    ``\\n\\n`` frame keeps the stream alive. The TypeScript SDK uses a
+    stricter SDK-level idle that only resets on a COMPLETE SSE frame
+    (incomplete trickles time out there). This is a deliberate model
+    choice — httpx's "any network activity = liveness" is kept here;
+    do not assume the TS trickle-timeout behaviour in Python.
     """
     timeout = normalize_timeout(timeout)
     headers = build_headers(api_key, project_id, accept_sse=True)
@@ -199,6 +208,11 @@ async def stream_sse_get(
     (``snapshot`` / ``update`` / ``done``) rather than the
     chat-loop's anonymous JSON frames. Heartbeat comment frames
     (``: heartbeat 12345``) are filtered.
+
+    IDLE SEMANTICS (intentional TS divergence): same as ``stream_sse``
+    — ``timeout`` is the httpx read timeout (any byte resets it), not
+    the TS SDK's complete-frame idle. An incomplete-frame trickle does
+    NOT time out here by design.
     """
     timeout = normalize_timeout(timeout)
     headers = build_headers(api_key, project_id, accept_sse=True)
