@@ -55,6 +55,15 @@ describe("CodeSpar constructor", () => {
     // @ts-expect-error private config read for the test only
     expect(b.config.timeout).toBe(5000);
   });
+
+  it.each([0, -1, NaN, Infinity])(
+    "rejects an invalid default timeout (%p) at construction",
+    (bad) => {
+      expect(() => new CodeSpar({ apiKey: "csk_live_t", timeout: bad })).toThrow(
+        /timeout/i,
+      );
+    },
+  );
 });
 
 describe("SessionConfigSchema", () => {

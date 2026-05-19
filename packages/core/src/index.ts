@@ -45,6 +45,7 @@ import type { CodeSparConfig, SessionConfig, CallOptions } from "./types.js";
 import type { Session } from "@codespar/types";
 import { SessionConfigSchema } from "./types.js";
 import { createSession } from "./session.js";
+import { validateTimeout } from "./internal/fetch.js";
 
 const DEFAULT_BASE_URL = "https://api.codespar.dev";
 
@@ -58,6 +59,10 @@ export class CodeSpar {
       projectId: config.projectId || "",
       timeout: config.timeout ?? 60000,
     };
+
+    // Fail fast at construction — a misconfigured default timeout must
+    // not produce a live-but-broken client that only fails on first use.
+    validateTimeout(this.config.timeout);
 
     if (!this.config.apiKey) {
       throw new Error(

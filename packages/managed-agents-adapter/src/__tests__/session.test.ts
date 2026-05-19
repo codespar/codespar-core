@@ -388,6 +388,17 @@ describe("sendStream()", () => {
     // only the "done" event should be present; the unknown type was dropped
     expect(events.map((e) => e.type)).toEqual(["done"]);
   });
+
+  it.each([0, -5, NaN])(
+    "createManagedAgentsSession rejects invalid drainTimeoutMs (%p) before creating a remote session",
+    async (bad) => {
+      const runtime = makeRuntime();
+      await expect(
+        openSession(runtime, { drainTimeoutMs: bad }),
+      ).rejects.toThrow(/timeout/i);
+      expect(runtime.createSession as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("connections()", () => {

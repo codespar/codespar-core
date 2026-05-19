@@ -458,6 +458,12 @@ export async function createManagedAgentsSession(
   config: ManagedAgentsConfig,
   options: ManagedAgentsOptions = {},
 ): Promise<SessionBase> {
+  // Fail fast BEFORE creating a remote session — an invalid configured
+  // drain timeout must not leave an unusable managed-agent session
+  // behind (parity with the fail-fast rule on every other entry point).
+  if (options.drainTimeoutMs !== undefined) {
+    resolveDrainMs(options.drainTimeoutMs, DEFAULT_DRAIN_TIMEOUT_MS);
+  }
   const sessionId = await runtime.createSession(config);
   return new ManagedAgentsSession(runtime, sessionId, config.agentId, options);
 }
