@@ -38,6 +38,8 @@ export type {
 export { SessionConfigSchema } from "./types.js";
 export { loop } from "./loop.js";
 export { tools, findTools } from "./tools.js";
+export { CodesparApiError } from "./errors.js";
+export type { CodesparApiErrorOptions } from "./errors.js";
 
 import type { CodeSparConfig, SessionConfig } from "./types.js";
 import type { Session } from "@codespar/types";

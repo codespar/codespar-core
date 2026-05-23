@@ -76,7 +76,17 @@ async def request_json(
         code: str | None = None
         message = f"{method} {path} failed: {response.status_code}"
         if isinstance(parsed, dict):
-            code = parsed.get("error") if isinstance(parsed.get("error"), str) else None
+            # ``code`` is the post-PRD discriminant on the hosted-test-mode
+            # envelopes (Backend D3 + D7). ``error`` is the pre-PRD field
+            # kept as a fallback so older envelopes still surface a
+            # structured code value rather than None.
+            raw_code = parsed.get("code")
+            if isinstance(raw_code, str):
+                code = raw_code
+            else:
+                raw_error = parsed.get("error")
+                if isinstance(raw_error, str):
+                    code = raw_error
             msg = parsed.get("message")
             if isinstance(msg, str):
                 message = f"{message} — {msg}"
