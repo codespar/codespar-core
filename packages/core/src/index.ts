@@ -40,6 +40,29 @@ export { loop } from "./loop.js";
 export { tools, findTools } from "./tools.js";
 export { CodesparApiError } from "./errors.js";
 export type { CodesparApiErrorOptions } from "./errors.js";
+export {
+  AGENT_GATE_CODES,
+  AgentGateCode,
+  assertExhaustiveAgentGate,
+  isApprovalRequired,
+  isMocksEngineError,
+  isMocksExhausted,
+  isPolicyDenied,
+  isToolNotMocked,
+} from "./agent-gate.js";
+export type {
+  AgentGateToolResultOutput,
+  ApprovalRequiredOutput,
+  ApprovalRequiredToolCall,
+  MocksEngineErrorOutput,
+  MocksEngineErrorToolCall,
+  MocksExhaustedOutput,
+  MocksExhaustedToolCall,
+  PolicyDeniedOutput,
+  PolicyDeniedToolCall,
+  ToolNotMockedOutput,
+  ToolNotMockedToolCall,
+} from "./agent-gate.js";
 
 import type { CodeSparConfig, SessionConfig } from "./types.js";
 import type { Session } from "@codespar/types";

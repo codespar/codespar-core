@@ -29,6 +29,27 @@ from __future__ import annotations
 from ._async_client import AsyncCodeSpar
 from ._async_session import AsyncSession
 from ._sync_client import CodeSpar, Session
+from .agent_gate import (
+    AGENT_GATE_CODES,
+    APPROVAL_REQUIRED,
+    MOCKS_ENGINE_ERROR,
+    MOCKS_EXHAUSTED,
+    POLICY_DENIED,
+    TOOL_NOT_MOCKED,
+    AgentGateCode,
+    AgentGateToolResultOutput,
+    ApprovalRequiredOutput,
+    MocksEngineErrorOutput,
+    MocksExhaustedOutput,
+    PolicyDeniedOutput,
+    ToolNotMockedOutput,
+    assert_exhaustive_agent_gate,
+    is_approval_required,
+    is_mocks_engine_error,
+    is_mocks_exhausted,
+    is_policy_denied,
+    is_tool_not_mocked,
+)
 from .errors import (
     ApiError,
     CodeSparError,
@@ -95,7 +116,17 @@ from .types import (
 __version__ = "0.9.0"
 
 __all__ = [
+    "AGENT_GATE_CODES",
+    "APPROVAL_REQUIRED",
+    "MOCKS_ENGINE_ERROR",
+    "MOCKS_EXHAUSTED",
+    "POLICY_DENIED",
+    "TOOL_NOT_MOCKED",
+    # AgentGate type-narrowed guards
+    "AgentGateCode",
+    "AgentGateToolResultOutput",
     "ApiError",
+    "ApprovalRequiredOutput",
     "AssistantTextEvent",
     "AsyncCodeSpar",
     "AsyncSession",
@@ -131,11 +162,14 @@ __all__ = [
     # Test-mode mocks
     "MockObject",
     "MockValue",
+    "MocksEngineErrorOutput",
+    "MocksExhaustedOutput",
     "NotConnectedError",
     # Async settlement (codespar_pay etc.)
     "PaymentStatus",
     "PaymentStatusEvent",
     "PaymentStatusResult",
+    "PolicyDeniedOutput",
     "Preset",
     # Proxy
     "ProxyRequest",
@@ -162,6 +196,7 @@ __all__ = [
     "StreamEvent",
     "Tool",
     "ToolCallRecord",
+    "ToolNotMockedOutput",
     "ToolResult",
     "ToolResultEvent",
     "ToolUseEvent",
@@ -173,4 +208,10 @@ __all__ = [
     "WizardAction",
     # Version
     "__version__",
+    "assert_exhaustive_agent_gate",
+    "is_approval_required",
+    "is_mocks_engine_error",
+    "is_mocks_exhausted",
+    "is_policy_denied",
+    "is_tool_not_mocked",
 ]
