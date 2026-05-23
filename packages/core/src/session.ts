@@ -88,12 +88,23 @@ export async function createSession(
     projectId: config.projectId ?? deps.projectId,
   };
 
+  // Conditional spread keeps the wire body byte-identical to the
+  // pre-PRD shape when the caller omits mocks (R18 wire-neutrality).
+  // The field is forwarded verbatim — no canonical-name rewriting on
+  // the SDK side, so the double-underscore migration trap surfaces
+  // as the backend's mocks_invalid envelope rather than silent
+  // SDK-side normalization.
+  const wireBody: Record<string, unknown> = {
+    servers: req.servers,
+    user_id: userId,
+    ...(config.mocks !== undefined ? { mocks: config.mocks } : {}),
+  };
   const res = await safeFetch(
     `${baseUrl}/v1/sessions`,
     {
       method: "POST",
       headers,
-      body: JSON.stringify({ servers: req.servers, user_id: userId }),
+      body: JSON.stringify(wireBody),
     },
     "createSession",
   );

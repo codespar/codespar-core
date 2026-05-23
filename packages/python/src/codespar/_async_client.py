@@ -94,6 +94,12 @@ class AsyncCodeSpar:
         body: dict[str, object] = {"servers": servers, "user_id": user_id}
         if resolved.metadata:
             body["metadata"] = resolved.metadata
+        # Forward mocks verbatim — including the empty dict, which the
+        # backend accepts (strict-mode R3a activates only on non-empty
+        # maps). Omitting the key entirely keeps the absent-case wire
+        # body byte-identical to the pre-PRD shape (R18 wire-neutral).
+        if resolved.mocks is not None:
+            body["mocks"] = resolved.mocks
 
         data = await request_json(
             self._client,
@@ -169,6 +175,7 @@ class AsyncCodeSpar:
             "manage_connections",
             "metadata",
             "project_id",
+            "mocks",
         }
         unknown = set(kwargs) - allowed
         if unknown:
