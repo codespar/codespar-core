@@ -58,6 +58,8 @@ from .types import (
     ErrorEvent,
     HttpMethod,
     ManageConnections,
+    MockObject,
+    MockValue,
     PaymentStatus,
     PaymentStatusEvent,
     PaymentStatusResult,
@@ -126,6 +128,9 @@ __all__ = [
     "ErrorEvent",
     "HttpMethod",
     "ManageConnections",
+    # Test-mode mocks
+    "MockObject",
+    "MockValue",
     "NotConnectedError",
     # Async settlement (codespar_pay etc.)
     "PaymentStatus",

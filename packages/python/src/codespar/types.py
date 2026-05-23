@@ -15,12 +15,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
 Preset = Literal["brazilian", "mexican", "argentinian", "colombian", "all"]
 HttpMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
 SessionStatus = Literal["active", "closed", "error"]
 AuthType = Literal["oauth", "api_key", "cert", "none"]
+
+# ── Test-mode mocks ───────────────────────────────────────────────
+#
+# Mirrors the TS MockObject / MockValue aliases in @codespar/types.
+# A single MockObject is a static mock (same response every call);
+# a list of MockObject is a stateful mock consumed in order, one
+# per matching call, then ``mocks_exhausted`` once the list is
+# drained.
+MockObject: TypeAlias = dict[str, Any]
+MockValue: TypeAlias = MockObject | list[MockObject]
 
 
 @dataclass(slots=True)
@@ -33,13 +43,24 @@ class ManageConnections:
 
 @dataclass(slots=True)
 class SessionConfig:
-    """Per-session configuration passed to ``CodeSpar.create``."""
+    """Per-session configuration passed to ``CodeSpar.create``.
+
+    ``mocks`` is the test-mode field — a dict keyed on canonical tool
+    names (slash form, e.g. ``asaas/create_payment``) where each value
+    is either a single MockObject (static mock) or a list of MockObject
+    (stateful mock, consumed in order). Forwarded verbatim to
+    ``POST /v1/sessions`` so the OSS-runtime double-underscore form
+    (``asaas__create_payment``) reaches the backend unrewritten and
+    surfaces as ``mocks_invalid``. Requires a ``csk_test_*`` key
+    against a ``test``-environment project.
+    """
 
     servers: list[str] | None = None
     preset: Preset | None = None
     manage_connections: ManageConnections | None = None
     metadata: dict[str, str] | None = None
     project_id: str | None = None
+    mocks: dict[str, MockValue] | None = None
 
 
 @dataclass(slots=True)
