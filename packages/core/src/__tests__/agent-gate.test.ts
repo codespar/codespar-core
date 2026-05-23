@@ -181,8 +181,10 @@ describe("assertExhaustiveAgentGate", () => {
           return "engine";
         case AgentGateCode.ToolNotMocked:
           return "not_mocked";
+        case AgentGateCode.NotSupportedOnOss:
+          return "oss_skip";
         default:
-          // If a 6th code lands without this branch being updated, TS
+          // If a 7th code lands without this branch being updated, TS
           // fails: assertExhaustiveAgentGate(value) would error at
           // compile time on a non-never argument.
           return assertExhaustiveAgentGate(value);

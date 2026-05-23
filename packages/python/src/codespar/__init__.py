@@ -34,6 +34,7 @@ from .agent_gate import (
     APPROVAL_REQUIRED,
     MOCKS_ENGINE_ERROR,
     MOCKS_EXHAUSTED,
+    NOT_SUPPORTED_ON_OSS,
     POLICY_DENIED,
     TOOL_NOT_MOCKED,
     AgentGateCode,
@@ -41,12 +42,14 @@ from .agent_gate import (
     ApprovalRequiredOutput,
     MocksEngineErrorOutput,
     MocksExhaustedOutput,
+    NotSupportedOnOssOutput,
     PolicyDeniedOutput,
     ToolNotMockedOutput,
     assert_exhaustive_agent_gate,
     is_approval_required,
     is_mocks_engine_error,
     is_mocks_exhausted,
+    is_not_supported_on_oss,
     is_policy_denied,
     is_tool_not_mocked,
 )
@@ -120,6 +123,7 @@ __all__ = [
     "APPROVAL_REQUIRED",
     "MOCKS_ENGINE_ERROR",
     "MOCKS_EXHAUSTED",
+    "NOT_SUPPORTED_ON_OSS",
     "POLICY_DENIED",
     "TOOL_NOT_MOCKED",
     # AgentGate type-narrowed guards
@@ -165,6 +169,7 @@ __all__ = [
     "MocksEngineErrorOutput",
     "MocksExhaustedOutput",
     "NotConnectedError",
+    "NotSupportedOnOssOutput",
     # Async settlement (codespar_pay etc.)
     "PaymentStatus",
     "PaymentStatusEvent",
@@ -212,6 +217,7 @@ __all__ = [
     "is_approval_required",
     "is_mocks_engine_error",
     "is_mocks_exhausted",
+    "is_not_supported_on_oss",
     "is_policy_denied",
     "is_tool_not_mocked",
 ]

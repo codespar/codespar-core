@@ -25,6 +25,7 @@ APPROVAL_REQUIRED: Final[Literal["approval_required"]] = "approval_required"
 MOCKS_EXHAUSTED: Final[Literal["mocks_exhausted"]] = "mocks_exhausted"
 MOCKS_ENGINE_ERROR: Final[Literal["mocks_engine_error"]] = "mocks_engine_error"
 TOOL_NOT_MOCKED: Final[Literal["tool_not_mocked"]] = "tool_not_mocked"
+NOT_SUPPORTED_ON_OSS: Final[Literal["not_supported_on_oss"]] = "not_supported_on_oss"
 
 AgentGateCode = Literal[
     "policy_denied",
@@ -32,6 +33,7 @@ AgentGateCode = Literal[
     "mocks_exhausted",
     "mocks_engine_error",
     "tool_not_mocked",
+    "not_supported_on_oss",
 ]
 
 AGENT_GATE_CODES: Final[frozenset[str]] = frozenset(
@@ -41,6 +43,7 @@ AGENT_GATE_CODES: Final[frozenset[str]] = frozenset(
         MOCKS_EXHAUSTED,
         MOCKS_ENGINE_ERROR,
         TOOL_NOT_MOCKED,
+        NOT_SUPPORTED_ON_OSS,
     ]
 )
 
@@ -82,12 +85,20 @@ class ToolNotMockedOutput:
     code: Literal["tool_not_mocked"] = TOOL_NOT_MOCKED
 
 
+@dataclass(slots=True, frozen=True)
+class NotSupportedOnOssOutput:
+    capability: str
+    message: str
+    code: Literal["not_supported_on_oss"] = NOT_SUPPORTED_ON_OSS
+
+
 AgentGateToolResultOutput = (
     PolicyDeniedOutput
     | ApprovalRequiredOutput
     | MocksExhaustedOutput
     | MocksEngineErrorOutput
     | ToolNotMockedOutput
+    | NotSupportedOnOssOutput
 )
 
 
@@ -149,6 +160,15 @@ def is_tool_not_mocked(value: Any) -> TypeGuard[dict[str, Any]]:
     if code != TOOL_NOT_MOCKED or code not in AGENT_GATE_CODES:
         return False
     return _has_str(value, "tool_name") and _has_str(value, "message")
+
+
+def is_not_supported_on_oss(value: Any) -> TypeGuard[dict[str, Any]]:
+    if not _is_object(value):
+        return False
+    code = value.get("code")
+    if code != NOT_SUPPORTED_ON_OSS or code not in AGENT_GATE_CODES:
+        return False
+    return _has_str(value, "capability") and _has_str(value, "message")
 
 
 def assert_exhaustive_agent_gate(value: Any) -> None:

@@ -32,13 +32,18 @@ from codespar.agent_gate import (
 )
 
 
-def test_agent_gate_codes_frozenset_includes_five() -> None:
+def test_agent_gate_codes_frozenset_includes_five_core_variants() -> None:
+    """The five hosted-runtime variants from Backend D3 are always present.
+
+    The frozenset may grow over time (test-parity skip codes, future
+    governance variants); this test only enforces the floor — every
+    canonical hosted-runtime code must remain reachable.
+    """
     assert POLICY_DENIED in AGENT_GATE_CODES
     assert APPROVAL_REQUIRED in AGENT_GATE_CODES
     assert MOCKS_EXHAUSTED in AGENT_GATE_CODES
     assert MOCKS_ENGINE_ERROR in AGENT_GATE_CODES
     assert TOOL_NOT_MOCKED in AGENT_GATE_CODES
-    assert len(AGENT_GATE_CODES) == 5
 
 
 class TestPolicyDenied:
