@@ -10,6 +10,7 @@ having to write ``async def``.
 
 from __future__ import annotations
 
+import os
 from types import TracebackType
 
 import httpx
@@ -23,6 +24,20 @@ from ._http import DEFAULT_BASE_URL, request_json
 from ._presets import preset_to_servers
 from .errors import ApiError, ConfigError
 from .types import SessionConfig
+
+
+def _resolve_base_url(explicit: str | None) -> str:
+    """Resolve the effective base URL.
+
+    Mirrors the TypeScript constructor cascade — explicit option wins,
+    then the ``CODESPAR_BASE_URL`` env var, then the production
+    default. The env var lets a caller point the same client wiring
+    at a local OSS runtime or at ``api.codespar.dev`` without
+    rebuilding the call sites.
+    """
+    if explicit is not None:
+        return explicit
+    return os.environ.get("CODESPAR_BASE_URL") or DEFAULT_BASE_URL
 
 
 class AsyncCodeSpar:
@@ -42,7 +57,7 @@ class AsyncCodeSpar:
         self,
         *,
         api_key: str,
-        base_url: str = DEFAULT_BASE_URL,
+        base_url: str | None = None,
         project_id: str | None = None,
         timeout: float = 60.0,
         client: httpx.AsyncClient | None = None,
@@ -53,7 +68,7 @@ class AsyncCodeSpar:
                 "Get one from https://dashboard.codespar.dev."
             )
         self._api_key = api_key
-        self._base_url = base_url.rstrip("/")
+        self._base_url = _resolve_base_url(base_url).rstrip("/")
         self._project_id = project_id
         # Share one transport across every session spawned by this
         # client. Closing the client closes every in-flight request.
@@ -94,6 +109,12 @@ class AsyncCodeSpar:
         body: dict[str, object] = {"servers": servers, "user_id": user_id}
         if resolved.metadata:
             body["metadata"] = resolved.metadata
+        # Forward mocks verbatim — including the empty dict, which the
+        # backend accepts (strict-mode R3a activates only on non-empty
+        # maps). Omitting the key entirely keeps the absent-case wire
+        # body byte-identical to the pre-PRD shape (R18 wire-neutral).
+        if resolved.mocks is not None:
+            body["mocks"] = resolved.mocks
 
         data = await request_json(
             self._client,
@@ -169,6 +190,7 @@ class AsyncCodeSpar:
             "manage_connections",
             "metadata",
             "project_id",
+            "mocks",
         }
         unknown = set(kwargs) - allowed
         if unknown:

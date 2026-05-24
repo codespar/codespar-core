@@ -38,6 +38,31 @@ export type {
 export { SessionConfigSchema } from "./types.js";
 export { loop } from "./loop.js";
 export { tools, findTools } from "./tools.js";
+export { CodesparApiError } from "./errors.js";
+export type { CodesparApiErrorOptions } from "./errors.js";
+export {
+  TOOL_RESULT_CODES,
+  ToolResultCode,
+  assertExhaustiveToolResult,
+  isApprovalRequired,
+  isMocksEngineError,
+  isMocksExhausted,
+  isPolicyDenied,
+  isToolNotMocked,
+} from "./tool-result-codes.js";
+export type {
+  ApprovalRequiredOutput,
+  ApprovalRequiredToolCall,
+  MocksEngineErrorOutput,
+  MocksEngineErrorToolCall,
+  MocksExhaustedOutput,
+  MocksExhaustedToolCall,
+  PolicyDeniedOutput,
+  PolicyDeniedToolCall,
+  ToolNotMockedOutput,
+  ToolNotMockedToolCall,
+  ToolResultOutcome,
+} from "./tool-result-codes.js";
 
 import type { CodeSparConfig, SessionConfig } from "./types.js";
 import type { Session } from "@codespar/types";

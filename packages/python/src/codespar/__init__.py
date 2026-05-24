@@ -36,6 +36,27 @@ from .errors import (
     NotConnectedError,
     StreamError,
 )
+from .tool_result_codes import (
+    APPROVAL_REQUIRED,
+    MOCKS_ENGINE_ERROR,
+    MOCKS_EXHAUSTED,
+    POLICY_DENIED,
+    TOOL_NOT_MOCKED,
+    TOOL_RESULT_CODES,
+    ApprovalRequiredOutput,
+    MocksEngineErrorOutput,
+    MocksExhaustedOutput,
+    PolicyDeniedOutput,
+    ToolNotMockedOutput,
+    ToolResultCode,
+    ToolResultOutcome,
+    assert_exhaustive_tool_result,
+    is_approval_required,
+    is_mocks_engine_error,
+    is_mocks_exhausted,
+    is_policy_denied,
+    is_tool_not_mocked,
+)
 from .types import (
     AssistantTextEvent,
     AuthConfig,
@@ -58,6 +79,8 @@ from .types import (
     ErrorEvent,
     HttpMethod,
     ManageConnections,
+    MockObject,
+    MockValue,
     PaymentStatus,
     PaymentStatusEvent,
     PaymentStatusResult,
@@ -93,7 +116,14 @@ from .types import (
 __version__ = "0.9.0"
 
 __all__ = [
+    "APPROVAL_REQUIRED",
+    "MOCKS_ENGINE_ERROR",
+    "MOCKS_EXHAUSTED",
+    "POLICY_DENIED",
+    "TOOL_NOT_MOCKED",
+    "TOOL_RESULT_CODES",
     "ApiError",
+    "ApprovalRequiredOutput",
     "AssistantTextEvent",
     "AsyncCodeSpar",
     "AsyncSession",
@@ -126,11 +156,17 @@ __all__ = [
     "ErrorEvent",
     "HttpMethod",
     "ManageConnections",
+    # Test-mode mocks
+    "MockObject",
+    "MockValue",
+    "MocksEngineErrorOutput",
+    "MocksExhaustedOutput",
     "NotConnectedError",
     # Async settlement (codespar_pay etc.)
     "PaymentStatus",
     "PaymentStatusEvent",
     "PaymentStatusResult",
+    "PolicyDeniedOutput",
     "Preset",
     # Proxy
     "ProxyRequest",
@@ -157,8 +193,12 @@ __all__ = [
     "StreamEvent",
     "Tool",
     "ToolCallRecord",
+    "ToolNotMockedOutput",
     "ToolResult",
+    # Tool-result code type-narrowed guards
+    "ToolResultCode",
     "ToolResultEvent",
+    "ToolResultOutcome",
     "ToolUseEvent",
     "UserMessageEvent",
     # Async KYC verification (codespar_kyc)
@@ -168,4 +208,10 @@ __all__ = [
     "WizardAction",
     # Version
     "__version__",
+    "assert_exhaustive_tool_result",
+    "is_approval_required",
+    "is_mocks_engine_error",
+    "is_mocks_exhausted",
+    "is_policy_denied",
+    "is_tool_not_mocked",
 ]

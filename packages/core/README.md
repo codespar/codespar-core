@@ -105,7 +105,7 @@ const result = await loop(session, {
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `apiKey` | `string` | `CODESPAR_API_KEY` env | Your API key |
-| `baseUrl` | `string` | `https://api.codespar.dev` | API base URL |
+| `baseUrl` | `string` | `CODESPAR_BASE_URL` env, else `https://api.codespar.dev` | API base URL. Set `CODESPAR_BASE_URL=http://localhost:8000` to point the SDK at a [local OSS runtime](https://github.com/codespar/codespar); the managed backend is the default. |
 | `managed` | `boolean` | `true` | Enable managed billing/logging |
 | `projectId` | `string` | — | Optional `prj_<16alphanum>`. Client-wide default project; sent as `x-codespar-project`. Falls back to the org's default project when omitted. |
 
@@ -117,6 +117,7 @@ const result = await loop(session, {
 | `preset` | `string` | `"brazilian"`, `"mexican"`, `"argentinian"`, `"colombian"`, `"all"` |
 | `manageConnections.waitForConnections` | `boolean` | Block until all servers connected |
 | `projectId` | `string` | Optional `prj_<16alphanum>`. Overrides the client-level `projectId`; falls back to the org's default project when both are unset. |
+| `mocks` | `Record<string, MockValue>` | Optional test-mode mocks. See [Test-mode mocks](#test-mode-mocks). |
 
 ### Session methods
 
@@ -189,6 +190,129 @@ const session = await cs.create("user_123", {
 ```
 
 Precedence: `sessionConfig.projectId` > `clientConfig.projectId` > backend's org default. Format is validated at construction via Zod (`/^prj_[A-Za-z0-9]{16}$/`) so typos fail fast. See the [Projects concept doc](https://docs.codespar.dev/concepts/projects) for the full tenancy model.
+
+## Test-mode mocks
+
+Skip live providers in tests by passing a `mocks` map to `cs.create`. Keys are canonical tool names in slash form (`asaas/create_payment`, `melhor-envio/calculate_shipping`, …). Values are either a single object — used as the response on every matching call — or an array of objects consumed in order, returning `mocks_exhausted` once the list drains.
+
+```typescript
+import { CodeSpar } from "@codespar/sdk";
+
+const cs = new CodeSpar({ apiKey: process.env.CODESPAR_API_KEY });
+
+const session = await cs.create("user_test", {
+  servers: ["asaas"],
+  mocks: {
+    "asaas/create_payment": { id: "pay_test", status: "PENDING" },
+  },
+});
+
+const result = await session.execute("asaas/create_payment", { value: 100 });
+// result.data === { id: "pay_test", status: "PENDING" }
+```
+
+Pass an array for stateful mocks:
+
+```typescript
+mocks: {
+  "asaas/create_payment": [
+    { id: "pay_1", status: "PENDING" },
+    { id: "pay_1", status: "RECEIVED" },
+  ],
+}
+```
+
+Mocks live behind the managed backend's test-mode gate — a `csk_test_*` API key against a `test`-environment project. Live keys against the same map return `mocks_not_permitted`. The SDK forwards keys verbatim; if you send the OSS double-underscore form (`asaas__create_payment`) the backend rejects with `mocks_invalid` rather than the SDK silently rewriting.
+
+The OSS runtime accepts the same `mocks` shape on its session API (see [codespar/codespar#113](https://github.com/codespar/codespar/pull/113)), so the same test fixtures work whether you point at `api.codespar.dev` or a self-hosted instance via `CODESPAR_BASE_URL`. Self-hosted runtimes must additionally set `CODESPAR_TEST_MODE_ENABLED=true` on the server process; without it, the SDK receives `mocks_not_permitted` / HTTP 501 instead of fixture responses.
+
+Storage shape differs by runtime — the wire contract does not. The managed backend persists mocks and per-tool consume counters; sessions and their fixtures survive restarts and multi-replica deployments. The OSS runtime holds both in process memory; they are scoped to the HTTP-session process and are lost on restart, and channel-bridge sessions (WhatsApp, Slack, Telegram, Discord) cannot carry mocks under the OSS shape. Response envelopes, status codes, sibling fields, and gate ordering are byte-identical between runtimes regardless. See [the test-mode concept doc](https://docs.codespar.dev/concepts/test-mode) for the full per-runtime split.
+
+Test mode is a property of the runtime, not the session. On the managed backend it's `project.environment === 'test'`; on a self-hosted OSS runtime it's `CODESPAR_TEST_MODE_ENABLED=true` on the server process. When the runtime is in test mode, every external tool call your code or LLM dispatches must match a declared mock — unmatched calls return `tool_not_mocked` (HTTP 422 on the catalog-routed `/execute` path; a `tool_result` block on the chat-loop) and no upstream provider runs. The envelope covers three failure modes: the `mocks` map has no entry for the canonical name, the session was created with no `mocks` field, or the canonical name has an unknown server prefix. A session that doesn't declare `mocks` can't dispatch any tools in test mode; declare the mocks the test will exercise, or run the same code against a live-mode runtime where the real providers handle dispatch. Built-in metadata tools — `codespar_list_tools` on OSS, `codespar_discover` and `codespar_manage_connections` on the managed backend — bypass this gate.
+
+### Type aliases
+
+`MockObject` (`Record<string, unknown>`) and `MockValue` (`MockObject | MockObject[]`) ship from `@codespar/types` and re-export through `@codespar/sdk`. Use them when you want to define mock fixtures separately from the `create` call site.
+
+```typescript
+import type { MockValue } from "@codespar/sdk";
+
+const fixtures: Record<string, MockValue> = {
+  "asaas/create_payment": { id: "pay_test", status: "PENDING" },
+};
+```
+
+## Typed errors
+
+Every transport failure from `createSession`, `proxyExecute`, `send`, `sendStream`, `paymentStatus(Stream)`, `verificationStatus(Stream)`, and `authorize` throws a `CodesparApiError` with a structured `code` field. The old `e.message.includes("foo")` pattern is gone — branch on `e.code` instead.
+
+```typescript
+import { CodesparApiError } from "@codespar/sdk";
+
+try {
+  await cs.create("user_test", { mocks: { "asaas/create_payment": {} } });
+} catch (err) {
+  if (err instanceof CodesparApiError) {
+    if (err.code === "mocks_not_permitted") {
+      // Live key against a mocks map. Swap to csk_test_*.
+    } else if (err.code === "mocks_invalid") {
+      // Backend rejected a tool-name key. Check the slash form.
+    } else if (err.status === 0) {
+      // Network never reached the backend; err.cause has the fetch rejection.
+    }
+    throw err;
+  }
+}
+```
+
+`session.execute` keeps its returns-vs-throws asymmetry: tool failures come back as `ToolResult.success === false` with the body on `error`. Only transport-level failures throw.
+
+### Tool-result guards
+
+The five reserved tool-result codes (`policy_denied`, `approval_required`, `mocks_exhausted`, `mocks_engine_error`, `tool_not_mocked`) ship typed guards plus an exhaustive-match helper. Guards run against any `unknown` payload — both `ToolResult.data` from `session.execute` and `ToolCallRecord.output` from `send` / `sendStream`. Each guard checks the `code` discriminant AND the variant's required sibling fields, so a malformed payload returns false rather than narrowing positive on the code alone.
+
+```typescript
+import {
+  isApprovalRequired,
+  isMocksEngineError,
+  isMocksExhausted,
+  isPolicyDenied,
+  isToolNotMocked,
+  assertExhaustiveToolResult,
+  ToolResultCode,
+} from "@codespar/sdk";
+
+const result = await session.execute("asaas/create_payment", { value: 100 });
+
+if (isPolicyDenied(result.data)) {
+  console.warn(`blocked by ${result.data.rule_id}: ${result.data.message}`);
+} else if (isApprovalRequired(result.data)) {
+  console.log(`needs approval ${result.data.approval_id} by ${result.data.expires_at}`);
+} else if (isMocksExhausted(result.data)) {
+  // Stateful mock array drained — pad it or extend the test.
+} else if (isMocksEngineError(result.data)) {
+  // Backend-side mocks engine failure; usually a malformed fixture.
+} else if (isToolNotMocked(result.data)) {
+  console.warn(`no mock for ${result.data.tool_name}`);
+}
+```
+
+The same guards apply inside a `sendStream` loop against `event.toolCall.output`.
+
+When a `switch` over `ToolResultCode` covers every variant, call `assertExhaustiveToolResult` in the default branch. TypeScript fails to compile if a sixth code lands without a matching arm.
+
+```typescript
+function handle(outcome: ToolResultOutcome): string {
+  switch (outcome.code) {
+    case ToolResultCode.PolicyDenied: return outcome.rule_id;
+    case ToolResultCode.ApprovalRequired: return outcome.approval_id;
+    case ToolResultCode.MocksExhausted: return "exhausted";
+    case ToolResultCode.MocksEngineError: return "engine";
+    case ToolResultCode.ToolNotMocked: return outcome.tool_name;
+    default: return assertExhaustiveToolResult(outcome);
+  }
+}
+```
 
 ## Need more?
 

@@ -26,6 +26,7 @@ export CODESPAR_PROJECT_ID="prj_a1b2c3d4e5f6g7h8"
 | [`proxy_execute.py`](./proxy_execute.py) | Raw HTTP proxy to a provider API with server-side auth injection | `proxy_execute` |
 | [`connect_link.py`](./connect_link.py) | Generate an OAuth Connect Link for an end user | `authorize` |
 | [`async_basic.py`](./async_basic.py) | Same flow using `AsyncCodeSpar` for FastAPI / asyncio stacks | `AsyncCodeSpar` |
+| [`mocks_round_trip.py`](./mocks_round_trip.py) | Hosted test-mode mocks — static + stateful fixtures, `mocks_exhausted` branch | `mocks=`, `is_mocks_exhausted` |
 
 ## Running
 

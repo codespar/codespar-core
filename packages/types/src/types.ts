@@ -410,12 +410,46 @@ export interface ServerConnection {
   connected: boolean;
 }
 
+/* ── Test-mode mocks ───────────────────────────────────────────── */
+
+/**
+ * A single mock response payload. The backend forwards this payload
+ * verbatim to whatever consumer would have received the upstream
+ * provider's JSON, so any shape the catalog tool accepts as a real
+ * response is a valid MockObject.
+ */
+export type MockObject = Record<string, unknown>;
+
+/**
+ * The value paired with a canonical tool name in a session's mocks
+ * map. Either a single MockObject (static mock — the same response
+ * every call) or an array of MockObject (stateful mock — consumed
+ * in order, one per matching call, then `mocks_exhausted` once the
+ * list is drained).
+ */
+export type MockValue = MockObject | MockObject[];
+
 /* ── Session creation ─────────────────────────────────────────── */
 
 export interface CreateSessionRequest {
   servers: string[];
   metadata?: Record<string, string>;
   projectId?: string;
+  /**
+   * Optional map of canonical tool names to mock responses. Keys are
+   * canonical names in the slash form: `^[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9_-]*$`
+   * (e.g. `asaas/create_payment`). The OSS-runtime double-underscore
+   * form (`asaas__create_payment`) is a known migration trap — the
+   * SDK forwards keys verbatim, so the backend surfaces the
+   * canonical-form rejection at validate time rather than the SDK
+   * silently rewriting.
+   *
+   * Values follow the MockValue shape: a single MockObject for a
+   * static mock, or a MockObject[] for a stateful mock consumed in
+   * order. An empty map (`{}`) is accepted on the wire; strict-mode
+   * R3a activates only on non-empty maps.
+   */
+  mocks?: Record<string, MockValue>;
 }
 
 /* ── Tool execution ─────────────────────────────────────────────── */

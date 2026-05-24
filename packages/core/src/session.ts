@@ -2,6 +2,7 @@
  * Session implementation for the CodeSpar managed runtime.
  */
 
+import { networkErrorToApiError, throwFromResponse } from "./errors.js";
 import type { SessionConfig, Tool } from "./types.js";
 import type {
   Session,
@@ -32,6 +33,22 @@ interface SessionDeps {
   baseUrl: string;
   apiKey: string;
   projectId?: string;
+}
+
+// Wraps `fetch` so network rejections become CodesparApiError
+// (status: 0) at the very edge of the SDK, rather than bubbling
+// raw TypeError / DOMException up to the caller. Every transport
+// site in this file goes through here.
+async function safeFetch(
+  input: RequestInfo | URL,
+  init: RequestInit | undefined,
+  what: string,
+): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (cause) {
+    throw networkErrorToApiError(cause, what);
+  }
 }
 
 interface BackendSessionResponse {
@@ -71,14 +88,28 @@ export async function createSession(
     projectId: config.projectId ?? deps.projectId,
   };
 
-  const res = await fetch(`${baseUrl}/v1/sessions`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ servers: req.servers, user_id: userId }),
-  });
+  // Conditional spread keeps the wire body byte-identical to the
+  // pre-PRD shape when the caller omits mocks (R18 wire-neutrality).
+  // The field is forwarded verbatim — no canonical-name rewriting on
+  // the SDK side, so the double-underscore migration trap surfaces
+  // as the backend's mocks_invalid envelope rather than silent
+  // SDK-side normalization.
+  const wireBody: Record<string, unknown> = {
+    servers: req.servers,
+    user_id: userId,
+    ...(config.mocks !== undefined ? { mocks: config.mocks } : {}),
+  };
+  const res = await safeFetch(
+    `${baseUrl}/v1/sessions`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(wireBody),
+    },
+    "createSession",
+  );
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`createSession failed: ${res.status} ${body}`);
+    await throwFromResponse(res, "createSession");
   }
   const data = (await res.json()) as BackendSessionResponse;
 
@@ -119,11 +150,15 @@ export async function createSession(
 
     async execute(toolName: string, params: Record<string, unknown>): Promise<ToolResult> {
       const start = Date.now();
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/execute`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ tool: toolName, input: params }),
-      });
+      const r = await safeFetch(
+        `${baseUrl}/v1/sessions/${data.id}/execute`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ tool: toolName, input: params }),
+        },
+        "execute",
+      );
       if (!r.ok) {
         const body = await r.text();
         return {
@@ -140,49 +175,59 @@ export async function createSession(
     },
 
     async proxyExecute(request: ProxyRequest): Promise<ProxyResult> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/proxy_execute`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          server: request.server,
-          endpoint: request.endpoint,
-          method: request.method,
-          body: request.body,
-          params: request.params,
-          headers: request.headers,
-        }),
-      });
+      const r = await safeFetch(
+        `${baseUrl}/v1/sessions/${data.id}/proxy_execute`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            server: request.server,
+            endpoint: request.endpoint,
+            method: request.method,
+            body: request.body,
+            params: request.params,
+            headers: request.headers,
+          }),
+        },
+        "proxyExecute",
+      );
       if (!r.ok) {
-        const body = await r.text();
-        throw new Error(`proxyExecute failed: ${r.status} ${body}`);
+        await throwFromResponse(r, "proxyExecute");
       }
       return (await r.json()) as ProxyResult;
     },
 
     async send(message: string): Promise<SendResult> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/send`, {
-        method: "POST",
-        headers: { ...headers, Accept: "application/json" },
-        body: JSON.stringify({ message }),
-      });
+      const r = await safeFetch(
+        `${baseUrl}/v1/sessions/${data.id}/send`,
+        {
+          method: "POST",
+          headers: { ...headers, Accept: "application/json" },
+          body: JSON.stringify({ message }),
+        },
+        "send",
+      );
       if (!r.ok) {
-        const body = await r.text();
-        throw new Error(`send failed: ${r.status} ${body}`);
+        await throwFromResponse(r, "send");
       }
       return (await r.json()) as SendResult;
     },
 
     async *sendStream(message: string): AsyncIterable<StreamEvent> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/send`, {
-        method: "POST",
-        headers: { ...headers, Accept: "text/event-stream" },
-        body: JSON.stringify({ message }),
-      });
+      const r = await safeFetch(
+        `${baseUrl}/v1/sessions/${data.id}/send`,
+        {
+          method: "POST",
+          headers: { ...headers, Accept: "text/event-stream" },
+          body: JSON.stringify({ message }),
+        },
+        "sendStream",
+      );
       if (!r.ok || !r.body) {
-        const body = await r.text();
-        throw new Error(`sendStream failed: ${r.status} ${body}`);
+        await throwFromResponse(r, "sendStream");
       }
-      yield* parseSseStream(r.body);
+      // Once we're past the !r.ok branch, r.body is guaranteed non-null.
+      yield* parseSseStream(r.body!);
     },
 
     /**
@@ -262,13 +307,13 @@ export async function createSession(
     },
 
     async paymentStatus(toolCallId: string): Promise<PaymentStatusResult> {
-      const r = await fetch(
+      const r = await safeFetch(
         `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/payment-status`,
         { headers },
+        "paymentStatus",
       );
       if (!r.ok) {
-        const body = await r.text();
-        throw new Error(`paymentStatus failed: ${r.status} ${body}`);
+        await throwFromResponse(r, "paymentStatus");
       }
       return (await r.json()) as PaymentStatusResult;
     },
@@ -276,13 +321,13 @@ export async function createSession(
     async verificationStatus(
       toolCallId: string,
     ): Promise<VerificationStatusResult> {
-      const r = await fetch(
+      const r = await safeFetch(
         `${baseUrl}/v1/tool-calls/${encodeURIComponent(toolCallId)}/verification-status`,
         { headers },
+        "verificationStatus",
       );
       if (!r.ok) {
-        const body = await r.text();
-        throw new Error(`verificationStatus failed: ${r.status} ${body}`);
+        await throwFromResponse(r, "verificationStatus");
       }
       return (await r.json()) as VerificationStatusResult;
     },
@@ -294,15 +339,18 @@ export async function createSession(
       const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
         toolCallId,
       )}/payment-status/stream`;
-      const r = await fetch(url, {
-        headers: { ...headers, Accept: "text/event-stream" },
-        signal: options.signal,
-      });
+      const r = await safeFetch(
+        url,
+        {
+          headers: { ...headers, Accept: "text/event-stream" },
+          signal: options.signal,
+        },
+        "paymentStatusStream",
+      );
       if (!r.ok || !r.body) {
-        const body = await r.text();
-        throw new Error(
-          `paymentStatusStream failed: ${r.status} ${body}`,
-        );
+        await throwFromResponse(r, "paymentStatusStream");
+        // unreachable — throwFromResponse always throws
+        throw new Error("unreachable");
       }
       let last: PaymentStatusResult | null = null;
       for await (const frame of parseStatusSseStream(r.body)) {
@@ -326,15 +374,18 @@ export async function createSession(
       const url = `${baseUrl}/v1/tool-calls/${encodeURIComponent(
         toolCallId,
       )}/verification-status/stream`;
-      const r = await fetch(url, {
-        headers: { ...headers, Accept: "text/event-stream" },
-        signal: options.signal,
-      });
+      const r = await safeFetch(
+        url,
+        {
+          headers: { ...headers, Accept: "text/event-stream" },
+          signal: options.signal,
+        },
+        "verificationStatusStream",
+      );
       if (!r.ok || !r.body) {
-        const body = await r.text();
-        throw new Error(
-          `verificationStatusStream failed: ${r.status} ${body}`,
-        );
+        await throwFromResponse(r, "verificationStatusStream");
+        // unreachable — throwFromResponse always throws
+        throw new Error("unreachable");
       }
       let last: VerificationStatusResult | null = null;
       for await (const frame of parseStatusSseStream(r.body)) {
@@ -354,19 +405,22 @@ export async function createSession(
     },
 
     async authorize(serverId: string, config: AuthConfig): Promise<AuthResult> {
-      const r = await fetch(`${baseUrl}/v1/connect/start`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          server_id: serverId,
-          user_id: data.user_id,
-          redirect_uri: config.redirectUri,
-          scopes: config.scopes,
-        }),
-      });
+      const r = await safeFetch(
+        `${baseUrl}/v1/connect/start`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            server_id: serverId,
+            user_id: data.user_id,
+            redirect_uri: config.redirectUri,
+            scopes: config.scopes,
+          }),
+        },
+        "authorize",
+      );
       if (!r.ok) {
-        const body = await r.text();
-        throw new Error(`authorize failed: ${r.status} ${body}`);
+        await throwFromResponse(r, "authorize");
       }
       const payload = (await r.json()) as {
         link_token: string;
@@ -381,21 +435,38 @@ export async function createSession(
     },
 
     async connections(): Promise<ServerConnection[]> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${data.id}/connections`, {
-        headers,
-      });
-      if (!r.ok) return cachedConnections ?? [];
-      const payload = (await r.json()) as BackendConnectionsResponse;
-      cachedConnections = payload.servers;
-      cachedTools = payload.tools;
-      return payload.servers;
+      // Best-effort — both transport failures (CodesparApiError from
+      // safeFetch) and non-2xx responses fall back to the cached
+      // payload so a transient blip doesn't crater the session.
+      try {
+        const r = await safeFetch(
+          `${baseUrl}/v1/sessions/${data.id}/connections`,
+          { headers },
+          "connections",
+        );
+        if (!r.ok) return cachedConnections ?? [];
+        const payload = (await r.json()) as BackendConnectionsResponse;
+        cachedConnections = payload.servers;
+        cachedTools = payload.tools;
+        return payload.servers;
+      } catch {
+        return cachedConnections ?? [];
+      }
     },
 
     async close(): Promise<void> {
-      await fetch(`${baseUrl}/v1/sessions/${data.id}`, {
-        method: "DELETE",
-        headers,
-      });
+      // Best-effort — the backend reaps stale sessions on a timer,
+      // so a network failure here shouldn't surface to the caller.
+      try {
+        await safeFetch(
+          `${baseUrl}/v1/sessions/${data.id}`,
+          { method: "DELETE", headers },
+          "close",
+        );
+      } catch {
+        // Intentional swallow — matches the previous fire-and-forget
+        // contract; close() never threw.
+      }
     },
   };
 

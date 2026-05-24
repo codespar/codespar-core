@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ToolResult } from "@codespar/types";
+import type { MockValue, ToolResult } from "@codespar/types";
 
 /* ── Configuration ─────────────────────────────────────────────── */
 
@@ -30,6 +30,22 @@ export interface SessionConfig {
   metadata?: Record<string, string>;
   /** Optional project scope. Defaults to the org's default project when omitted. */
   projectId?: string;
+  /**
+   * Test-mode mocks. Map of canonical tool names (slash form,
+   * `^[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9_-]*$` — e.g.
+   * `asaas/create_payment`) to mock responses. Values are either a
+   * single MockObject (static mock) or an array of MockObject
+   * (stateful mock, consumed in order).
+   *
+   * Requires a `csk_test_*` key against a `test`-environment project
+   * — the backend rejects with `mocks_not_permitted` otherwise.
+   * Forwarded verbatim to `POST /v1/sessions` so the OSS-runtime
+   * double-underscore form (`asaas__create_payment`) reaches the
+   * backend unrewritten and surfaces as `mocks_invalid`. An empty
+   * `{}` is accepted; strict-mode (R3a) activates only on non-empty
+   * maps.
+   */
+  mocks?: Record<string, MockValue>;
 }
 
 /* ── Tools ────────────────────────────────────────────────────── */
@@ -87,6 +103,14 @@ export interface LoopResult {
 
 /* ── Validation schemas ───────────────────────────────────────── */
 
+// Mock values pass through verbatim — the backend owns the strict
+// validation, so the client-side schema accepts any object shape
+// rather than re-encoding the rules and risking drift.
+const MockValueSchema = z.union([
+  z.record(z.unknown()),
+  z.array(z.record(z.unknown())),
+]);
+
 export const SessionConfigSchema = z.object({
   servers: z.array(z.string()).optional(),
   preset: z.enum(["brazilian", "mexican", "argentinian", "colombian", "all"]).optional(),
@@ -98,4 +122,5 @@ export const SessionConfigSchema = z.object({
     .optional(),
   metadata: z.record(z.string()).optional(),
   projectId: z.string().regex(/^prj_[A-Za-z0-9]{16}$/).optional(),
+  mocks: z.record(MockValueSchema).optional(),
 });
