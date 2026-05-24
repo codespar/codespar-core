@@ -3,9 +3,9 @@
  * `tool_result.output` union surfaced on streamed `ToolCallRecord`
  * values.
  *
- * The six variants are inert wire shapes — they only describe what the
+ * The five variants are inert wire shapes — they only describe what the
  * backend may stamp on `tool_result.output`. The guards turn `unknown`
- * into one of the six `*Output` interfaces so callers can branch
+ * into one of the five `*Output` interfaces so callers can branch
  * without casting.
  *
  * Each guard checks both the `code` discriminant against
@@ -13,7 +13,7 @@
  * well-formed `code` with a missing sibling returns false rather
  * than narrowing positive on the discriminant alone. The exhaustive-
  * match utility (`assertExhaustiveToolResult`) makes a switch over
- * ToolResultCode fail to compile if a seventh variant lands without
+ * ToolResultCode fail to compile if a sixth variant lands without
  * the consumer updating their handler.
  */
 
@@ -25,13 +25,6 @@ export const ToolResultCode = {
   MocksExhausted: "mocks_exhausted",
   MocksEngineError: "mocks_engine_error",
   ToolNotMocked: "tool_not_mocked",
-  // Bidirectional test-parity skip envelope. Surfaces when a test
-  // suite runs against an OSS runtime that hasn't shipped the
-  // matched-on-OSS subset of the wire contract yet. Callers
-  // translate `e.code === "not_supported_on_oss"` into
-  // `it.skip(...)` / `pytest.skip(...)` rather than treating it
-  // as an opaque transport failure.
-  NotSupportedOnOss: "not_supported_on_oss",
 } as const;
 
 export type ToolResultCode = (typeof ToolResultCode)[keyof typeof ToolResultCode];
@@ -42,7 +35,6 @@ export const TOOL_RESULT_CODES: ReadonlySet<ToolResultCode> = new Set([
   ToolResultCode.MocksExhausted,
   ToolResultCode.MocksEngineError,
   ToolResultCode.ToolNotMocked,
-  ToolResultCode.NotSupportedOnOss,
 ]);
 
 export interface PolicyDeniedOutput {
@@ -74,19 +66,12 @@ export interface ToolNotMockedOutput {
   message: string;
 }
 
-export interface NotSupportedOnOssOutput {
-  code: typeof ToolResultCode.NotSupportedOnOss;
-  capability: string;
-  message: string;
-}
-
 export type ToolResultOutcome =
   | PolicyDeniedOutput
   | ApprovalRequiredOutput
   | MocksExhaustedOutput
   | MocksEngineErrorOutput
-  | ToolNotMockedOutput
-  | NotSupportedOnOssOutput;
+  | ToolNotMockedOutput;
 
 // Narrowed ToolCallRecord aliases — when a guard succeeds the
 // `output` field is known to be the corresponding *Output variant.
@@ -104,9 +89,6 @@ export type MocksEngineErrorToolCall = ToolCallRecord & {
 };
 export type ToolNotMockedToolCall = ToolCallRecord & {
   output: ToolNotMockedOutput;
-};
-export type NotSupportedOnOssToolCall = ToolCallRecord & {
-  output: NotSupportedOnOssOutput;
 };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -154,14 +136,6 @@ export function isToolNotMocked(value: unknown): value is ToolNotMockedOutput {
   if (value.code !== ToolResultCode.ToolNotMocked) return false;
   if (!TOOL_RESULT_CODES.has(value.code as ToolResultCode)) return false;
   return readStringField(value, "tool_name") !== null
-    && readStringField(value, "message") !== null;
-}
-
-export function isNotSupportedOnOss(value: unknown): value is NotSupportedOnOssOutput {
-  if (!isObject(value)) return false;
-  if (value.code !== ToolResultCode.NotSupportedOnOss) return false;
-  if (!TOOL_RESULT_CODES.has(value.code as ToolResultCode)) return false;
-  return readStringField(value, "capability") !== null
     && readStringField(value, "message") !== null;
 }
 

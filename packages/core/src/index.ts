@@ -47,7 +47,6 @@ export {
   isApprovalRequired,
   isMocksEngineError,
   isMocksExhausted,
-  isNotSupportedOnOss,
   isPolicyDenied,
   isToolNotMocked,
 } from "./tool-result-codes.js";
@@ -58,8 +57,6 @@ export type {
   MocksEngineErrorToolCall,
   MocksExhaustedOutput,
   MocksExhaustedToolCall,
-  NotSupportedOnOssOutput,
-  NotSupportedOnOssToolCall,
   PolicyDeniedOutput,
   PolicyDeniedToolCall,
   ToolNotMockedOutput,

@@ -181,10 +181,8 @@ describe("assertExhaustiveToolResult", () => {
           return "engine";
         case ToolResultCode.ToolNotMocked:
           return "not_mocked";
-        case ToolResultCode.NotSupportedOnOss:
-          return "oss_skip";
         default:
-          // If a 7th code lands without this branch being updated, TS
+          // If a 6th code lands without this branch being updated, TS
           // fails: assertExhaustiveToolResult(value) would error at
           // compile time on a non-never argument.
           return assertExhaustiveToolResult(value);
