@@ -1,9 +1,9 @@
 """
 Tool-result code guard tests — Python parallel of tool-result-codes.test.ts.
 
-Asserts the same surface: six output dataclasses, six
+Asserts the same surface: five output dataclasses, five
 discriminant constants, the ToolResultCode literal union, the
-TOOL_RESULT_CODES frozenset, six PEP 647 TypeGuard predicates,
+TOOL_RESULT_CODES frozenset, five PEP 647 TypeGuard predicates,
 and assert_exhaustive_tool_result.
 
 Round-trip parity: the same fixtures used in the TS test exercise
@@ -35,9 +35,9 @@ from codespar.tool_result_codes import (
 def test_tool_result_codes_frozenset_includes_five_core_variants() -> None:
     """The five hosted-runtime variants are always present.
 
-    The frozenset may grow over time (test-parity skip codes, future
-    governance variants); this test only enforces the floor — every
-    canonical hosted-runtime code must remain reachable.
+    The frozenset may grow over time as new governance variants land;
+    this test enforces the floor — every canonical hosted-runtime code
+    must remain reachable.
     """
     assert POLICY_DENIED in TOOL_RESULT_CODES
     assert APPROVAL_REQUIRED in TOOL_RESULT_CODES

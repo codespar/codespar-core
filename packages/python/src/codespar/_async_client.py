@@ -31,10 +31,9 @@ def _resolve_base_url(explicit: str | None) -> str:
 
     Mirrors the TypeScript constructor cascade — explicit option wins,
     then the ``CODESPAR_BASE_URL`` env var, then the production
-    default. The env var is the bidirectional-test-parity seam: a
-    suite authored against the hosted backend points
-    ``CODESPAR_BASE_URL`` at the OSS runtime to validate that the
-    matched-on-OSS subset of the wire contract behaves the same.
+    default. The env var lets a caller point the same client wiring
+    at a local OSS runtime or at ``api.codespar.dev`` without
+    rebuilding the call sites.
     """
     if explicit is not None:
         return explicit
