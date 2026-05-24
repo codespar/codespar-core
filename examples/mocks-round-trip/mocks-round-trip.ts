@@ -7,7 +7,7 @@
  *     returning `mocks_exhausted` once the list drains
  *
  * Requires a csk_test_* key against a test-environment project — live
- * keys against the same map return `mocks_not_authorized`.
+ * keys against the same map return `mocks_not_permitted`.
  *
  * Usage:
  *   export CODESPAR_API_KEY=csk_test_xxxxxxxxxxxxx
@@ -49,7 +49,7 @@ async function main(): Promise<number> {
       mocks: fixtures,
     });
   } catch (err) {
-    if (err instanceof CodesparApiError && err.code === "mocks_not_authorized") {
+    if (err instanceof CodesparApiError && err.code === "mocks_not_permitted") {
       console.error(
         "error: this API key cannot use mocks. Swap to a csk_test_* key " +
           "against a test-environment project.",

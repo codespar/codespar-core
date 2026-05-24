@@ -222,7 +222,7 @@ mocks: {
 }
 ```
 
-Mocks live behind the managed backend's test-mode gate — a `csk_test_*` API key against a `test`-environment project. Live keys against the same map return `mocks_not_authorized`. The SDK forwards keys verbatim; if you send the OSS double-underscore form (`asaas__create_payment`) the backend rejects with `mocks_invalid` rather than the SDK silently rewriting.
+Mocks live behind the managed backend's test-mode gate — a `csk_test_*` API key against a `test`-environment project. Live keys against the same map return `mocks_not_permitted`. The SDK forwards keys verbatim; if you send the OSS double-underscore form (`asaas__create_payment`) the backend rejects with `mocks_invalid` rather than the SDK silently rewriting.
 
 The OSS runtime accepts the same `mocks` shape on its session API (see [codespar/codespar#113](https://github.com/codespar/codespar/pull/113)), so the same test fixtures work whether you point at `api.codespar.dev` or a self-hosted instance via `CODESPAR_BASE_URL`.
 
@@ -249,7 +249,7 @@ try {
   await cs.create("user_test", { mocks: { "asaas/create_payment": {} } });
 } catch (err) {
   if (err instanceof CodesparApiError) {
-    if (err.code === "mocks_not_authorized") {
+    if (err.code === "mocks_not_permitted") {
       // Live key against a mocks map. Swap to csk_test_*.
     } else if (err.code === "mocks_invalid") {
       // Backend rejected a tool-name key. Check the slash form.

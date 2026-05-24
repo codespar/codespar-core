@@ -16,7 +16,7 @@ The hosted test-mode SDK surface lands across `@codespar/sdk`, `@codespar/types`
 
 - **SemVer-minor break for callers parsing `e.message` strings.** The generic `throw new Error("send failed: 500 ...")` shape is gone — every transport call site (`createSession`, `proxyExecute`, `send`, `sendStream`, `paymentStatus(Stream)`, `verificationStatus(Stream)`, `authorize`) now throws `CodesparApiError`. Migration recipe: `e.message.includes("foo")` becomes `e.code === "foo"`.
 - `session.execute(...)` keeps its existing returns-vs-throws asymmetry — non-ok responses still come back as `ToolResult.success === false` with the body in `error`. Only transport exceptions change shape.
-- Python `_http.py` honors `code` over `error` when both are present on a non-success response body. The new test-mode envelopes (`mocks_not_authorized`, `mocks_invalid`, `mocks_payload_too_large`) carry `code`; pre-test-mode responses that only set `error` remain compatible.
+- Python `_http.py` honors `code` over `error` when both are present on a non-success response body. The new test-mode envelopes (`mocks_not_permitted`, `mocks_invalid`, `mocks_payload_too_large`) carry `code`; pre-test-mode responses that only set `error` remain compatible.
 
 ## 0.9.0
 

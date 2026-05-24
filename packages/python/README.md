@@ -267,7 +267,7 @@ mocks={
 }
 ```
 
-Mocks live behind the managed backend's test-mode gate — a `csk_test_*` API key against a `test`-environment project. Live keys against the same map return `mocks_not_authorized`. The SDK forwards keys verbatim; the OSS double-underscore form (`asaas__create_payment`) reaches the backend unrewritten and surfaces as `mocks_invalid` rather than the SDK silently rewriting.
+Mocks live behind the managed backend's test-mode gate — a `csk_test_*` API key against a `test`-environment project. Live keys against the same map return `mocks_not_permitted`. The SDK forwards keys verbatim; the OSS double-underscore form (`asaas__create_payment`) reaches the backend unrewritten and surfaces as `mocks_invalid` rather than the SDK silently rewriting.
 
 The OSS runtime accepts the same `mocks` shape on its session API (see [codespar/codespar#113](https://github.com/codespar/codespar/pull/113)), so the same fixtures work whether you point at `api.codespar.dev` or a self-hosted instance via `CODESPAR_BASE_URL`.
 
@@ -325,7 +325,7 @@ from codespar import ApiError, CodeSpar
 try:
     cs.create("user_test", mocks={"asaas/create_payment": {}})
 except ApiError as exc:
-    if exc.code == "mocks_not_authorized":
+    if exc.code == "mocks_not_permitted":
         # Live key against a mocks map. Swap to csk_test_*.
         ...
     elif exc.code == "mocks_invalid":

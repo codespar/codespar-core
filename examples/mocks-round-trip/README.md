@@ -6,7 +6,7 @@ Standalone demo of the hosted test-mode `mocks` field on `cs.create`. Runs a sma
 
 - A **static mock** (`asaas/create_customer`) that returns the same object on every call.
 - A **stateful mock** (`asaas/create_payment`) — an array of objects consumed in order. The third call drains the list and returns `mocks_exhausted`; the example uses the `isMocksExhausted` guard to branch on it.
-- The error path when an API key isn't authorized for mocks (`mocks_not_authorized`).
+- The error path when an API key isn't authorized for mocks (`mocks_not_permitted`).
 
 A matching Python version is at [`packages/python/examples/mocks_round_trip.py`](../../packages/python/examples/mocks_round_trip.py).
 

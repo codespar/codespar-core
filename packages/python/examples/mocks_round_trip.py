@@ -7,7 +7,7 @@ Demonstrates the two mock shapes accepted by ``cs.create(mocks=...)``:
     returning ``mocks_exhausted`` once the list drains
 
 Requires a ``csk_test_*`` key against a test-environment project — live
-keys against the same map return ``mocks_not_authorized``.
+keys against the same map return ``mocks_not_permitted``.
 
 Usage:
     export CODESPAR_API_KEY="csk_test_..."
@@ -55,7 +55,7 @@ def main() -> int:
                 mocks=FIXTURES,
             )
         except ApiError as exc:
-            if exc.code == "mocks_not_authorized":
+            if exc.code == "mocks_not_permitted":
                 print(
                     "error: this API key cannot use mocks. Swap to a "
                     "csk_test_* key against a test-environment project.",
