@@ -20,7 +20,7 @@ const session = await cs.create("user_123", { preset: "brazilian" });
 const tools = getTools(session);
 ```
 
-The session itself also exposes the F3.M2 router wrappers — `session.discover(query)`, `session.connectionWizard({...})`, `session.paymentStatus(toolCallId)` — for tool search, connect deep-links, and async settlement correlation.
+The session itself also exposes the meta-tool router wrappers — `session.discover(query)`, `session.connectionWizard({...})`, `session.paymentStatus(toolCallId)` — for tool search, connect deep-links, and async settlement correlation.
 
 ## API
 

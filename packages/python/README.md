@@ -50,8 +50,8 @@ with CodeSpar(api_key="csk_live_...") as cs:
 ## Tool discovery + connection wizard
 
 Beyond `session.execute(tool, params)`, the SDK exposes typed wrappers
-for the F3.M2 meta-tools `codespar_discover` and
-`codespar_manage_connections`:
+for the `codespar_discover` and `codespar_manage_connections`
+meta-tools:
 
 ```python
 from codespar import CodeSpar, ConnectionWizardOptions, DiscoverOptions

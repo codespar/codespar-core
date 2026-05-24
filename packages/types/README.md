@@ -99,10 +99,10 @@ function useSession(session: SessionBase) {
 | `ProxyResult` | Return value of `proxyExecute()` — `status`, `data`, `headers`, `duration`, `proxy_call_id` |
 | `AuthConfig` | Input to `authorize()` — `redirectUri`, `scopes?` |
 | `AuthResult` | Return value of `authorize()` — `linkToken`, `authorizeUrl`, `expiresAt` |
-| `DiscoverOptions` / `DiscoverResult` / `DiscoverToolMatch` / `DiscoverPlanStep` | Wire shapes for `session.discover(...)` (F3.M2 `codespar_discover`) |
-| `ConnectionWizardOptions` / `ConnectionWizardResult` / `ConnectionStatusRow` | Wire shapes for `session.connectionWizard(...)` (F3.M2 `codespar_manage_connections`) |
-| `ChargeArgs` / `ChargeBuyer` / `ChargeResult` | Wire shapes for `session.charge(...)` (F3.M2 `codespar_charge`, inbound) |
-| `ShipArgs` / `ShipAddress` / `ShipItem` / `ShipResult` | Wire shapes for `session.ship(...)` (F3.M2 `codespar_ship`) |
+| `DiscoverOptions` / `DiscoverResult` / `DiscoverToolMatch` / `DiscoverPlanStep` | Wire shapes for `session.discover(...)` (`codespar_discover`) |
+| `ConnectionWizardOptions` / `ConnectionWizardResult` / `ConnectionStatusRow` | Wire shapes for `session.connectionWizard(...)` (`codespar_manage_connections`) |
+| `ChargeArgs` / `ChargeBuyer` / `ChargeResult` | Wire shapes for `session.charge(...)` (`codespar_charge`, inbound) |
+| `ShipArgs` / `ShipAddress` / `ShipItem` / `ShipResult` | Wire shapes for `session.ship(...)` (`codespar_ship`) |
 | `PaymentStatus` / `PaymentStatusResult` / `PaymentStatusEvent` | Wire shapes for `session.paymentStatus(toolCallId)` — async webhook correlation |
 | `PaymentStatusStreamOptions` | Options for `session.paymentStatusStream(...)` — `onUpdate?`, `signal?` |
 | `VerificationStatus` / `VerificationStatusResult` / `VerificationStatusEvent` | Wire shapes for `session.verificationStatus(toolCallId)` — async KYC poll |
