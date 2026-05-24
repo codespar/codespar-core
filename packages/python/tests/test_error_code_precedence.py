@@ -4,7 +4,7 @@ Tests for the Python ApiError code-extraction precedence.
 The original HTTP layer read ``parsed.get("error")`` as the structured
 code field. The hosted-test-mode envelopes (see codespar-enterprise's
 Backend D3 + D7) standardise on ``code`` as the discriminant — the
-managed backend now returns ``{"code": "mocks_not_authorized",
+managed backend now returns ``{"code": "mocks_not_permitted",
 "message": "..."}`` for the create-time gate envelopes. ``code``
 takes precedence over ``error`` so the new envelopes surface
 correctly; ``error`` is still honored as a fallback for pre-PRD
@@ -31,7 +31,7 @@ async def test_code_field_takes_precedence_over_error_field(
         method="POST",
         status_code=403,
         json={
-            "code": "mocks_not_authorized",
+            "code": "mocks_not_permitted",
             "error": "old_legacy_code",
             "message": "csk_test_* key required",
         },
@@ -41,7 +41,7 @@ async def test_code_field_takes_precedence_over_error_field(
         with pytest.raises(ApiError) as exc_info:
             await cs.create("user_demo", preset="brazilian")
 
-    assert exc_info.value.code == "mocks_not_authorized"
+    assert exc_info.value.code == "mocks_not_permitted"
     assert exc_info.value.status == 403
 
 

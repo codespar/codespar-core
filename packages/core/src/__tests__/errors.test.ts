@@ -30,14 +30,14 @@ describe("CodesparApiError", () => {
     const cause = new Error("underlying");
     const err = new CodesparApiError("boom", {
       status: 403,
-      code: "mocks_not_authorized",
-      body: { error: "mocks_not_authorized", message: "test mode key required" },
+      code: "mocks_not_permitted",
+      body: { error: "mocks_not_permitted", message: "test mode key required" },
       cause,
     });
     expect(err.status).toBe(403);
-    expect(err.code).toBe("mocks_not_authorized");
+    expect(err.code).toBe("mocks_not_permitted");
     expect(err.body).toEqual({
-      error: "mocks_not_authorized",
+      error: "mocks_not_permitted",
       message: "test mode key required",
     });
     expect(err.cause).toBe(cause);
@@ -64,7 +64,7 @@ describe("session transport-failure call sites throw CodesparApiError", () => {
       status: 403,
       text: async () =>
         JSON.stringify({
-          error: "mocks_not_authorized",
+          error: "mocks_not_permitted",
           message: "csk_test_* key required",
         }),
     }) as unknown as typeof fetch;
@@ -81,7 +81,7 @@ describe("session transport-failure call sites throw CodesparApiError", () => {
       expect(err).toBeInstanceOf(CodesparApiError);
       const apiErr = err as CodesparApiError;
       expect(apiErr.status).toBe(403);
-      expect(apiErr.code).toBe("mocks_not_authorized");
+      expect(apiErr.code).toBe("mocks_not_permitted");
     }
   });
 

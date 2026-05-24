@@ -38,7 +38,7 @@ export interface SessionConfig {
    * (stateful mock, consumed in order).
    *
    * Requires a `csk_test_*` key against a `test`-environment project
-   * — the backend rejects with `mocks_not_authorized` otherwise.
+   * — the backend rejects with `mocks_not_permitted` otherwise.
    * Forwarded verbatim to `POST /v1/sessions` so the OSS-runtime
    * double-underscore form (`asaas__create_payment`) reaches the
    * backend unrewritten and surfaces as `mocks_invalid`. An empty
