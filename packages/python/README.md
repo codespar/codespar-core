@@ -235,9 +235,76 @@ After the user completes the OAuth flow, CodeSpar stores the tokens in
 the per-project vault and forwards them back to `redirect_uri` with
 `?status=connected&connection_id=<id>` appended.
 
+## Test-mode mocks
+
+Skip live providers in tests by passing a `mocks` dict to `cs.create`. Keys are canonical tool names in slash form (`asaas/create_payment`, `melhor-envio/calculate_shipping`, ...). Values are either a single dict — used as the response on every matching call — or a list of dicts consumed in order, returning `mocks_exhausted` once the list drains.
+
+```python
+import os
+from codespar import CodeSpar
+
+with CodeSpar(api_key=os.environ["CODESPAR_API_KEY"]) as cs:
+    session = cs.create(
+        "user_test",
+        servers=["asaas"],
+        mocks={
+            "asaas/create_payment": {"id": "pay_test", "status": "PENDING"},
+        },
+    )
+
+    result = session.execute("asaas/create_payment", {"value": 100})
+    # result.data == {"id": "pay_test", "status": "PENDING"}
+```
+
+Pass a list for stateful mocks:
+
+```python
+mocks={
+    "asaas/create_payment": [
+        {"id": "pay_1", "status": "PENDING"},
+        {"id": "pay_1", "status": "RECEIVED"},
+    ],
+}
+```
+
+Mocks live behind the managed backend's test-mode gate — a `csk_test_*` API key against a `test`-environment project. Live keys against the same map return `mocks_not_authorized`. The SDK forwards keys verbatim; the OSS double-underscore form (`asaas__create_payment`) reaches the backend unrewritten and surfaces as `mocks_invalid` rather than the SDK silently rewriting.
+
+The OSS runtime accepts the same `mocks` shape on its session API (see [codespar/codespar#113](https://github.com/codespar/codespar/pull/113)), so the same fixtures work whether you point at `api.codespar.dev` or a self-hosted instance via `CODESPAR_BASE_URL`.
+
+### Type aliases
+
+`MockObject` (`dict[str, Any]`) and `MockValue` (`MockObject | list[MockObject]`) export from `codespar`. Use them when you want to define fixtures separately from the `create` call site.
+
+```python
+from codespar import MockValue
+
+fixtures: dict[str, MockValue] = {
+    "asaas/create_payment": {"id": "pay_test", "status": "PENDING"},
+}
+```
+
+`AsyncCodeSpar` accepts the same `mocks=...` kwarg.
+
+## Base URL — managed or self-hosted OSS
+
+`CodeSpar` and `AsyncCodeSpar` honor the `CODESPAR_BASE_URL` environment variable. The constructor cascade is explicit `base_url` arg, then the env var, then the managed default at `https://api.codespar.dev`.
+
+```bash
+# Point the same client wiring at a local OSS runtime
+export CODESPAR_BASE_URL=http://localhost:8000
+```
+
+Then your code stays unchanged:
+
+```python
+cs = CodeSpar(api_key="local")  # OSS runtimes accept any non-empty bearer
+```
+
+Pass `base_url=` explicitly when you need to override the env var.
+
 ## Errors
 
-Every failure is wrapped:
+Every failure wraps in the `CodeSparError` hierarchy:
 
 ```python
 from codespar import ApiError, ConfigError, StreamError
@@ -249,6 +316,62 @@ except ConfigError as exc:
 except ApiError as exc:
     print(f"Backend said {exc.status}: {exc.code}")
 ```
+
+`ApiError.code` is the structured discriminant on every non-success response — branch on it instead of parsing `str(exc)` or `exc.body`. The legacy `error` field on pre-test-mode envelopes is honored as a fallback when `code` is missing, so older responses still surface a code value.
+
+```python
+from codespar import ApiError, CodeSpar
+
+try:
+    cs.create("user_test", mocks={"asaas/create_payment": {}})
+except ApiError as exc:
+    if exc.code == "mocks_not_authorized":
+        # Live key against a mocks map. Swap to csk_test_*.
+        ...
+    elif exc.code == "mocks_invalid":
+        # Backend rejected a tool-name key. Check the slash form.
+        ...
+    elif exc.status == 0:
+        # Network never reached the backend; exc.__cause__ has the httpx error.
+        ...
+    else:
+        raise
+```
+
+### Tool-result guards
+
+The five reserved tool-result codes ship typed guards plus an exhaustive-match helper. Each guard checks the `code` discriminant AND the variant's required sibling fields — a payload with a well-formed `code` but a missing `rule_id` / `approval_id` / `tool_name` returns False rather than narrowing positive.
+
+```python
+from codespar import (
+    CodeSpar,
+    assert_exhaustive_tool_result,
+    is_approval_required,
+    is_mocks_engine_error,
+    is_mocks_exhausted,
+    is_policy_denied,
+    is_tool_not_mocked,
+)
+
+with CodeSpar(api_key="csk_test_...") as cs:
+    session = cs.create("user_test", servers=["asaas"])
+    result = session.execute("asaas/create_payment", {"value": 100})
+
+    if is_policy_denied(result.data):
+        print(f"blocked by {result.data['rule_id']}: {result.data['message']}")
+    elif is_approval_required(result.data):
+        print(f"approval {result.data['approval_id']} expires {result.data['expires_at']}")
+    elif is_mocks_exhausted(result.data):
+        # Stateful mock list drained — pad it or extend the test.
+        ...
+    elif is_mocks_engine_error(result.data):
+        # Backend-side mocks engine failure; usually a malformed fixture.
+        ...
+    elif is_tool_not_mocked(result.data):
+        print(f"no mock for {result.data['tool_name']}")
+```
+
+`assert_exhaustive_tool_result(value)` raises `AssertionError` from a default branch — call it after handling each variant so a sixth code landing without a handler trips at the boundary instead of being silently swallowed.
 
 ## Design parity with the JS SDK
 
