@@ -63,8 +63,8 @@ push, no `gh release`). Use this before every release to sanity-check.
   Versions are bumped manually and reviewed in a PR. The script asserts the
   on-disk versions match `TYPES_VERSION` / `SDK_VERSION` / `PYTHON_VERSION`
   constants and ships those exact values.
-- **Skip the test/typecheck pre-flight.** F2.M3 shipped a regression
-  because tests were skipped under time pressure. Don't.
+- **Skip the test/typecheck pre-flight.** A prior SDK release shipped a
+  regression because tests were skipped under time pressure. Don't.
 - **Cache npm tokens or hardcode credentials.** Each `npm publish` re-prompts
   for OTP via stdin. PyPI uses OIDC trusted publishing — no API token at all.
 - **Modify `.github/workflows/publish-python.yml`** as part of a release.

@@ -68,7 +68,7 @@ const charge = await session.execute("asaas/create_payment", {
   value: 150,
 });
 
-// Don't know which tool to call? Discover by use case (F3.M2 Tool Router).
+// Don't know which tool to call? Discover by use case via the meta-tool router.
 // Returns recommended + related, plus connection status so the agent knows
 // whether to set anything up first.
 const found = await session.discover("send a pix payment");
@@ -127,7 +127,7 @@ const result = await loop(session, {
 });
 ```
 
-### Meta-tools (F3.M2 router)
+### Meta-tools
 
 Beyond direct canonical-tool calls, the SDK exposes commerce-grade
 **meta-tools** that route to the best provider per request, with
