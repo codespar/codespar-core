@@ -269,7 +269,7 @@ mocks={
 
 Mocks live behind the managed backend's test-mode gate — a `csk_test_*` API key against a `test`-environment project. Live keys against the same map return `mocks_not_permitted`. The SDK forwards keys verbatim; the OSS double-underscore form (`asaas__create_payment`) reaches the backend unrewritten and surfaces as `mocks_invalid` rather than the SDK silently rewriting.
 
-The OSS runtime accepts the same `mocks` shape on its session API (see [codespar/codespar#113](https://github.com/codespar/codespar/pull/113)), so the same fixtures work whether you point at `api.codespar.dev` or a self-hosted instance via `CODESPAR_BASE_URL`.
+The OSS runtime accepts the same `mocks` shape on its session API (see [codespar/codespar#113](https://github.com/codespar/codespar/pull/113)), so the same fixtures work whether you point at `api.codespar.dev` or a self-hosted instance via `CODESPAR_BASE_URL`. Self-hosted runtimes must additionally set `CODESPAR_TEST_MODE_ENABLED=true` on the server process; without it, the SDK receives `mocks_not_permitted` / HTTP 501 instead of fixture responses.
 
 ### Type aliases
 
