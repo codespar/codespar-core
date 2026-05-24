@@ -4,7 +4,7 @@ Tests for the Python parallel of the bidirectional test-parity surface.
   - CODESPAR_BASE_URL env var is the default for the AsyncCodeSpar /
     CodeSpar constructor's ``base_url`` parameter when no explicit
     value is passed.
-  - is_not_supported_on_oss guard recognises the new AgentGate
+  - is_not_supported_on_oss guard recognises the new tool-result
     variant and validates the ``capability`` sibling.
 """
 
@@ -15,9 +15,9 @@ from typing import Any
 from unittest.mock import patch
 
 from codespar import AsyncCodeSpar, CodeSpar
-from codespar.agent_gate import (
-    AGENT_GATE_CODES,
+from codespar.tool_result_codes import (
     NOT_SUPPORTED_ON_OSS,
+    TOOL_RESULT_CODES,
     is_not_supported_on_oss,
 )
 
@@ -54,7 +54,7 @@ def test_default_base_url_when_env_unset() -> None:
 
 def test_not_supported_on_oss_in_codes_frozenset() -> None:
     assert NOT_SUPPORTED_ON_OSS == "not_supported_on_oss"
-    assert NOT_SUPPORTED_ON_OSS in AGENT_GATE_CODES
+    assert NOT_SUPPORTED_ON_OSS in TOOL_RESULT_CODES
 
 
 def test_is_not_supported_on_oss_positive() -> None:

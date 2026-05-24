@@ -1,10 +1,10 @@
 """
-AgentGate guard tests — Python parallel of agent-gate.test.ts.
+Tool-result code guard tests — Python parallel of tool-result-codes.test.ts.
 
-Asserts the same surface: five output dataclasses, five
-discriminant constants, the AgentGateCode literal union, the
-_AGENT_GATE_CODES frozenset, five PEP 647 TypeGuard predicates,
-and assert_exhaustive_agent_gate.
+Asserts the same surface: six output dataclasses, six
+discriminant constants, the ToolResultCode literal union, the
+TOOL_RESULT_CODES frozenset, six PEP 647 TypeGuard predicates,
+and assert_exhaustive_tool_result.
 
 Round-trip parity: the same fixtures used in the TS test exercise
 the Python guards and agree on every outcome.
@@ -16,14 +16,14 @@ from typing import Any
 
 import pytest
 
-from codespar.agent_gate import (
-    AGENT_GATE_CODES,
+from codespar.tool_result_codes import (
     APPROVAL_REQUIRED,
     MOCKS_ENGINE_ERROR,
     MOCKS_EXHAUSTED,
     POLICY_DENIED,
     TOOL_NOT_MOCKED,
-    assert_exhaustive_agent_gate,
+    TOOL_RESULT_CODES,
+    assert_exhaustive_tool_result,
     is_approval_required,
     is_mocks_engine_error,
     is_mocks_exhausted,
@@ -32,18 +32,18 @@ from codespar.agent_gate import (
 )
 
 
-def test_agent_gate_codes_frozenset_includes_five_core_variants() -> None:
-    """The five hosted-runtime variants from Backend D3 are always present.
+def test_tool_result_codes_frozenset_includes_five_core_variants() -> None:
+    """The five hosted-runtime variants are always present.
 
     The frozenset may grow over time (test-parity skip codes, future
     governance variants); this test only enforces the floor — every
     canonical hosted-runtime code must remain reachable.
     """
-    assert POLICY_DENIED in AGENT_GATE_CODES
-    assert APPROVAL_REQUIRED in AGENT_GATE_CODES
-    assert MOCKS_EXHAUSTED in AGENT_GATE_CODES
-    assert MOCKS_ENGINE_ERROR in AGENT_GATE_CODES
-    assert TOOL_NOT_MOCKED in AGENT_GATE_CODES
+    assert POLICY_DENIED in TOOL_RESULT_CODES
+    assert APPROVAL_REQUIRED in TOOL_RESULT_CODES
+    assert MOCKS_EXHAUSTED in TOOL_RESULT_CODES
+    assert MOCKS_ENGINE_ERROR in TOOL_RESULT_CODES
+    assert TOOL_NOT_MOCKED in TOOL_RESULT_CODES
 
 
 class TestPolicyDenied:
@@ -139,9 +139,9 @@ class TestToolNotMocked:
         assert is_tool_not_mocked(out) is False
 
 
-def test_assert_exhaustive_agent_gate_raises_on_unknown() -> None:
-    with pytest.raises(AssertionError, match="agent-gate"):
-        assert_exhaustive_agent_gate({"code": "rogue"})  # type: ignore[arg-type]
+def test_assert_exhaustive_tool_result_raises_on_unknown() -> None:
+    with pytest.raises(AssertionError, match="tool-result-codes"):
+        assert_exhaustive_tool_result({"code": "rogue"})  # type: ignore[arg-type]
 
 
 def test_round_trip_corpus_agrees_with_ts_guards() -> None:

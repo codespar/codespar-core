@@ -29,36 +29,36 @@ from __future__ import annotations
 from ._async_client import AsyncCodeSpar
 from ._async_session import AsyncSession
 from ._sync_client import CodeSpar, Session
-from .agent_gate import (
-    AGENT_GATE_CODES,
-    APPROVAL_REQUIRED,
-    MOCKS_ENGINE_ERROR,
-    MOCKS_EXHAUSTED,
-    NOT_SUPPORTED_ON_OSS,
-    POLICY_DENIED,
-    TOOL_NOT_MOCKED,
-    AgentGateCode,
-    AgentGateToolResultOutput,
-    ApprovalRequiredOutput,
-    MocksEngineErrorOutput,
-    MocksExhaustedOutput,
-    NotSupportedOnOssOutput,
-    PolicyDeniedOutput,
-    ToolNotMockedOutput,
-    assert_exhaustive_agent_gate,
-    is_approval_required,
-    is_mocks_engine_error,
-    is_mocks_exhausted,
-    is_not_supported_on_oss,
-    is_policy_denied,
-    is_tool_not_mocked,
-)
 from .errors import (
     ApiError,
     CodeSparError,
     ConfigError,
     NotConnectedError,
     StreamError,
+)
+from .tool_result_codes import (
+    APPROVAL_REQUIRED,
+    MOCKS_ENGINE_ERROR,
+    MOCKS_EXHAUSTED,
+    NOT_SUPPORTED_ON_OSS,
+    POLICY_DENIED,
+    TOOL_NOT_MOCKED,
+    TOOL_RESULT_CODES,
+    ApprovalRequiredOutput,
+    MocksEngineErrorOutput,
+    MocksExhaustedOutput,
+    NotSupportedOnOssOutput,
+    PolicyDeniedOutput,
+    ToolNotMockedOutput,
+    ToolResultCode,
+    ToolResultOutcome,
+    assert_exhaustive_tool_result,
+    is_approval_required,
+    is_mocks_engine_error,
+    is_mocks_exhausted,
+    is_not_supported_on_oss,
+    is_policy_denied,
+    is_tool_not_mocked,
 )
 from .types import (
     AssistantTextEvent,
@@ -119,16 +119,13 @@ from .types import (
 __version__ = "0.9.0"
 
 __all__ = [
-    "AGENT_GATE_CODES",
     "APPROVAL_REQUIRED",
     "MOCKS_ENGINE_ERROR",
     "MOCKS_EXHAUSTED",
     "NOT_SUPPORTED_ON_OSS",
     "POLICY_DENIED",
     "TOOL_NOT_MOCKED",
-    # AgentGate type-narrowed guards
-    "AgentGateCode",
-    "AgentGateToolResultOutput",
+    "TOOL_RESULT_CODES",
     "ApiError",
     "ApprovalRequiredOutput",
     "AssistantTextEvent",
@@ -203,7 +200,10 @@ __all__ = [
     "ToolCallRecord",
     "ToolNotMockedOutput",
     "ToolResult",
+    # Tool-result code type-narrowed guards
+    "ToolResultCode",
     "ToolResultEvent",
+    "ToolResultOutcome",
     "ToolUseEvent",
     "UserMessageEvent",
     # Async KYC verification (codespar_kyc)
@@ -213,7 +213,7 @@ __all__ = [
     "WizardAction",
     # Version
     "__version__",
-    "assert_exhaustive_agent_gate",
+    "assert_exhaustive_tool_result",
     "is_approval_required",
     "is_mocks_engine_error",
     "is_mocks_exhausted",
