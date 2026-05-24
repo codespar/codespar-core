@@ -226,6 +226,8 @@ Mocks live behind the managed backend's test-mode gate — a `csk_test_*` API ke
 
 The OSS runtime accepts the same `mocks` shape on its session API (see [codespar/codespar#113](https://github.com/codespar/codespar/pull/113)), so the same test fixtures work whether you point at `api.codespar.dev` or a self-hosted instance via `CODESPAR_BASE_URL`. Self-hosted runtimes must additionally set `CODESPAR_TEST_MODE_ENABLED=true` on the server process; without it, the SDK receives `mocks_not_permitted` / HTTP 501 instead of fixture responses.
 
+Test mode is a property of the runtime, not the session. On the managed backend it's `project.environment === 'test'`; on a self-hosted OSS runtime it's `CODESPAR_TEST_MODE_ENABLED=true` on the server process. When the runtime is in test mode, every tool call your code or LLM dispatches must match a declared mock — unmatched calls return `tool_not_mocked` and no upstream provider runs. A session that doesn't declare `mocks` can't dispatch any tools in test mode; declare the mocks the test will exercise, or run the same code against a live-mode runtime where the real providers handle dispatch.
+
 ### Type aliases
 
 `MockObject` (`Record<string, unknown>`) and `MockValue` (`MockObject | MockObject[]`) ship from `@codespar/types` and re-export through `@codespar/sdk`. Use them when you want to define mock fixtures separately from the `create` call site.
