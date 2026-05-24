@@ -28,7 +28,7 @@ def build_headers(
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
-        "User-Agent": "codespar-python/0.9.0",
+        "User-Agent": "codespar-python/0.10.0",
     }
     if project_id:
         headers["x-codespar-project"] = project_id

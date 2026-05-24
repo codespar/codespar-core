@@ -21,9 +21,9 @@ set -euo pipefail
 # Versions — keep in sync with package.json / pyproject.toml. The script
 # does NOT bump these; it asserts they match what's on disk before publishing.
 # ---------------------------------------------------------------------------
-TYPES_VERSION="0.7.0"
-SDK_VERSION="0.9.0"
-PYTHON_VERSION="0.9.0"
+TYPES_VERSION="0.10.0"
+SDK_VERSION="0.10.0"
+PYTHON_VERSION="0.10.0"
 
 # ---------------------------------------------------------------------------
 # CLI flags — set by parse_args, consumed everywhere.
@@ -152,30 +152,45 @@ read_otp() {
 
 generate_changelog() {
   cat <<'EOF'
-## codespar 0.9.0 (Python) / @codespar/sdk 0.9.0 / @codespar/types 0.7.0
+## codespar 0.10.0 (Python) / @codespar/sdk 0.10.0 / @codespar/types 0.10.0
 
-SSE streaming for async settlement + verification status, replacing
-polling for long-running pending → settled flows.
+Hosted test-mode SDK surface — mocks forwarding on session create,
+structured `CodesparApiError`, five type-narrowed tool-result guards,
+and `CODESPAR_BASE_URL` env-var resolution so the same client wiring
+targets the managed backend or a self-hosted OSS runtime.
 
 ### Added
-- `session.paymentStatusStream(toolCallId, { onUpdate?, signal? })` —
-  Server-Sent Events stream over `GET /v1/tool-calls/:id/payment-status/stream`.
-  Pushes initial snapshot + every state change; resolves on terminal.
-  AbortSignal cancels.
-- `session.verificationStatusStream(toolCallId, { onUpdate?, signal? })`
-  — KYC sibling with the same lifecycle.
-- Python paridade: `AsyncSession.payment_status_stream` /
-  `verification_status_stream` (sync wrappers on the blocking client).
+- `cs.create(userId, { mocks })` (TS) and `cs.create("u", mocks=...)`
+  (Python). Keys are canonical tool names in slash form
+  (`asaas/create_payment`); values are a `MockObject` for a static
+  mock or a `MockObject[]` for a stateful mock consumed in order.
+  Forwarded verbatim — the SDK does not rewrite tool names.
+- `CodesparApiError` (TS) — typed envelope for transport failures
+  carrying `{ status, code?, body?, cause? }`. Migration recipe for
+  callers parsing `e.message`: use `e.code === "foo"`.
+- `tool-result-codes` module — `isPolicyDenied`, `isApprovalRequired`,
+  `isMocksExhausted`, `isMocksEngineError`, `isToolNotMocked`,
+  `ToolResultCode` union, `TOOL_RESULT_CODES` set, and
+  `assertExhaustiveToolResult` exhaustive-match helper. Each guard
+  checks the `code` discriminant AND its required sibling fields.
+- `CODESPAR_BASE_URL` env-var resolution in the Python `CodeSpar` /
+  `AsyncCodeSpar` constructors (the TS constructor already did this).
+  Cascade: explicit option, then env var, then `https://api.codespar.dev`.
 
-### Types (@codespar/types 0.7.0)
-- `PaymentStatusStreamOptions`, `VerificationStatusStreamOptions`.
-- New `Session.paymentStatusStream` + `verificationStatusStream`
-  signatures.
+### Types (@codespar/types 0.10.0)
+- `MockObject` and `MockValue` aliases; `CreateSessionRequest` widened
+  with optional `mocks` field.
+- Note: 0.8.0 and 0.9.0 were not released for `@codespar/types`; this
+  jump aligns it with the SDK and Python package versions.
 
-### Compat
-- Polling siblings (`paymentStatus` / `verificationStatus`) stay live
-  — additive change only. Adapter packages remain on `^0.3.0` ranges
-  for `@codespar/sdk` (method additions, no breaking changes).
+### Changed
+- Every transport call site now throws `CodesparApiError` instead of
+  the legacy `Error("send failed: 500 ...")`. `session.execute(...)`
+  keeps its returns-vs-throws asymmetry — only transport exceptions
+  change shape.
+- Python `_http.py` honors `code` over `error` when both are present
+  on a non-success response body.
+- Python `User-Agent` bumped to `codespar-python/0.10.0`.
 EOF
 }
 
