@@ -37,7 +37,7 @@
     "directory": "packages/letta"
   },
   "peerDependencies": {
-    "@codespar/sdk": "^0.9.0"
+    "@codespar/sdk": "^0.10.0"
   },
   "devDependencies": {
     "@codespar/sdk": "*",

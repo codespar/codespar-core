@@ -113,7 +113,7 @@ from .types import (
     WizardAction,
 )
 
-__version__ = "0.9.0"
+__version__ = "0.10.0"
 
 __all__ = [
     "APPROVAL_REQUIRED",
