@@ -5,7 +5,7 @@
  * `e.message` strings.
  *
  * The reserved code namespace covers the hosted-test-mode wire
- * contract (AgentGate tool-call codes + create-time envelope codes —
+ * contract (tool-result codes + create-time envelope codes —
  * see the README's "Reserved error codes" section). Customers
  * extending CodesparApiError should prefix their own codes (e.g.
  * `"myapp.policy_denied"`) to avoid collision with reserved values.

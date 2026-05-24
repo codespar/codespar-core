@@ -4,23 +4,23 @@
  *   1. CODESPAR_BASE_URL env var is the default for `baseUrl` when
  *      no explicit option is passed to `new CodeSpar({...})`. An
  *      explicit `baseUrl` always wins.
- *   2. `isNotSupportedOnOss` guard recognises the new AgentGate
+ *   2. `isNotSupportedOnOss` guard recognises the new tool-result
  *      payload variant and validates the `capability` sibling.
  *   3. `CodesparApiError.code` namespace extends by one
  *      (`not_supported_on_oss`) — already supported structurally
  *      since `code` is `string | undefined`; this test asserts the
  *      reserved-name constant is exported alongside the existing
- *      AgentGate codes for callers comparing against a stable
+ *      tool-result codes for callers comparing against a stable
  *      identifier.
  */
 
 import { describe, it, expect } from "vitest";
 import { CodeSpar } from "../index.js";
 import {
-  AGENT_GATE_CODES,
-  AgentGateCode,
+  TOOL_RESULT_CODES,
+  ToolResultCode,
   isNotSupportedOnOss,
-} from "../agent-gate.js";
+} from "../tool-result-codes.js";
 
 describe("CODESPAR_BASE_URL env-var fallback", () => {
   it("uses CODESPAR_BASE_URL when no explicit baseUrl is passed", () => {
@@ -63,14 +63,14 @@ describe("CODESPAR_BASE_URL env-var fallback", () => {
 });
 
 describe("isNotSupportedOnOss guard", () => {
-  it("AgentGateCode.NotSupportedOnOss is part of the constant + frozenset", () => {
-    expect(AgentGateCode.NotSupportedOnOss).toBe("not_supported_on_oss");
-    expect(AGENT_GATE_CODES.has(AgentGateCode.NotSupportedOnOss)).toBe(true);
+  it("ToolResultCode.NotSupportedOnOss is part of the constant + frozenset", () => {
+    expect(ToolResultCode.NotSupportedOnOss).toBe("not_supported_on_oss");
+    expect(TOOL_RESULT_CODES.has(ToolResultCode.NotSupportedOnOss)).toBe(true);
   });
 
   it("returns true for a well-formed payload", () => {
     const out: unknown = {
-      code: AgentGateCode.NotSupportedOnOss,
+      code: ToolResultCode.NotSupportedOnOss,
       capability: "session.send",
       message: "OSS runtime lacks chat-loop support",
     };
@@ -79,7 +79,7 @@ describe("isNotSupportedOnOss guard", () => {
 
   it("returns false when capability sibling is missing", () => {
     const out: unknown = {
-      code: AgentGateCode.NotSupportedOnOss,
+      code: ToolResultCode.NotSupportedOnOss,
       message: "missing capability",
     };
     expect(isNotSupportedOnOss(out)).toBe(false);
@@ -87,7 +87,7 @@ describe("isNotSupportedOnOss guard", () => {
 
   it("returns false on foreign discriminant", () => {
     const out: unknown = {
-      code: AgentGateCode.PolicyDenied,
+      code: ToolResultCode.PolicyDenied,
       capability: "x",
       message: "y",
     };

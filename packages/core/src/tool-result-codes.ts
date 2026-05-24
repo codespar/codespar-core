@@ -1,24 +1,25 @@
 /**
- * AgentGate type-narrowed helpers.
+ * Tool-result code helpers — type-narrowed guards for the discriminated
+ * `tool_result.output` union surfaced on streamed `ToolCallRecord`
+ * values.
  *
- * Pure consumer-side narrowing for the hosted-test-mode tool_result
- * discriminated union (Backend D3). The five variants surface as
- * `tool_result.output` payloads on streamed `ToolCallRecord` values;
- * the guards turn `unknown` into one of the five `*Output`
- * interfaces so callers can branch without casting.
+ * The six variants are inert wire shapes — they only describe what the
+ * backend may stamp on `tool_result.output`. The guards turn `unknown`
+ * into one of the six `*Output` interfaces so callers can branch
+ * without casting.
  *
  * Each guard checks both the `code` discriminant against
- * AGENT_GATE_CODES AND its own required sibling fields — so a
+ * TOOL_RESULT_CODES AND its own required sibling fields — so a
  * well-formed `code` with a missing sibling returns false rather
  * than narrowing positive on the discriminant alone. The exhaustive-
- * match utility (`assertExhaustiveAgentGate`) makes a switch over
- * AgentGateCode fail to compile if a sixth variant lands without
+ * match utility (`assertExhaustiveToolResult`) makes a switch over
+ * ToolResultCode fail to compile if a seventh variant lands without
  * the consumer updating their handler.
  */
 
 import type { ToolCallRecord } from "@codespar/types";
 
-export const AgentGateCode = {
+export const ToolResultCode = {
   PolicyDenied: "policy_denied",
   ApprovalRequired: "approval_required",
   MocksExhausted: "mocks_exhausted",
@@ -33,53 +34,53 @@ export const AgentGateCode = {
   NotSupportedOnOss: "not_supported_on_oss",
 } as const;
 
-export type AgentGateCode = (typeof AgentGateCode)[keyof typeof AgentGateCode];
+export type ToolResultCode = (typeof ToolResultCode)[keyof typeof ToolResultCode];
 
-export const AGENT_GATE_CODES: ReadonlySet<AgentGateCode> = new Set([
-  AgentGateCode.PolicyDenied,
-  AgentGateCode.ApprovalRequired,
-  AgentGateCode.MocksExhausted,
-  AgentGateCode.MocksEngineError,
-  AgentGateCode.ToolNotMocked,
-  AgentGateCode.NotSupportedOnOss,
+export const TOOL_RESULT_CODES: ReadonlySet<ToolResultCode> = new Set([
+  ToolResultCode.PolicyDenied,
+  ToolResultCode.ApprovalRequired,
+  ToolResultCode.MocksExhausted,
+  ToolResultCode.MocksEngineError,
+  ToolResultCode.ToolNotMocked,
+  ToolResultCode.NotSupportedOnOss,
 ]);
 
 export interface PolicyDeniedOutput {
-  code: typeof AgentGateCode.PolicyDenied;
+  code: typeof ToolResultCode.PolicyDenied;
   rule_id: string;
   message: string;
 }
 
 export interface ApprovalRequiredOutput {
-  code: typeof AgentGateCode.ApprovalRequired;
+  code: typeof ToolResultCode.ApprovalRequired;
   approval_id: string;
   expires_at: string;
   message: string;
 }
 
 export interface MocksExhaustedOutput {
-  code: typeof AgentGateCode.MocksExhausted;
+  code: typeof ToolResultCode.MocksExhausted;
   message: string;
 }
 
 export interface MocksEngineErrorOutput {
-  code: typeof AgentGateCode.MocksEngineError;
+  code: typeof ToolResultCode.MocksEngineError;
   message: string;
 }
 
 export interface ToolNotMockedOutput {
-  code: typeof AgentGateCode.ToolNotMocked;
+  code: typeof ToolResultCode.ToolNotMocked;
   tool_name: string;
   message: string;
 }
 
 export interface NotSupportedOnOssOutput {
-  code: typeof AgentGateCode.NotSupportedOnOss;
+  code: typeof ToolResultCode.NotSupportedOnOss;
   capability: string;
   message: string;
 }
 
-export type AgentGateToolResultOutput =
+export type ToolResultOutcome =
   | PolicyDeniedOutput
   | ApprovalRequiredOutput
   | MocksExhaustedOutput
@@ -119,16 +120,16 @@ function readStringField(obj: Record<string, unknown>, key: string): string | nu
 
 export function isPolicyDenied(value: unknown): value is PolicyDeniedOutput {
   if (!isObject(value)) return false;
-  if (value.code !== AgentGateCode.PolicyDenied) return false;
-  if (!AGENT_GATE_CODES.has(value.code as AgentGateCode)) return false;
+  if (value.code !== ToolResultCode.PolicyDenied) return false;
+  if (!TOOL_RESULT_CODES.has(value.code as ToolResultCode)) return false;
   return readStringField(value, "rule_id") !== null
     && readStringField(value, "message") !== null;
 }
 
 export function isApprovalRequired(value: unknown): value is ApprovalRequiredOutput {
   if (!isObject(value)) return false;
-  if (value.code !== AgentGateCode.ApprovalRequired) return false;
-  if (!AGENT_GATE_CODES.has(value.code as AgentGateCode)) return false;
+  if (value.code !== ToolResultCode.ApprovalRequired) return false;
+  if (!TOOL_RESULT_CODES.has(value.code as ToolResultCode)) return false;
   return readStringField(value, "approval_id") !== null
     && readStringField(value, "expires_at") !== null
     && readStringField(value, "message") !== null;
@@ -136,43 +137,43 @@ export function isApprovalRequired(value: unknown): value is ApprovalRequiredOut
 
 export function isMocksExhausted(value: unknown): value is MocksExhaustedOutput {
   if (!isObject(value)) return false;
-  if (value.code !== AgentGateCode.MocksExhausted) return false;
-  if (!AGENT_GATE_CODES.has(value.code as AgentGateCode)) return false;
+  if (value.code !== ToolResultCode.MocksExhausted) return false;
+  if (!TOOL_RESULT_CODES.has(value.code as ToolResultCode)) return false;
   return readStringField(value, "message") !== null;
 }
 
 export function isMocksEngineError(value: unknown): value is MocksEngineErrorOutput {
   if (!isObject(value)) return false;
-  if (value.code !== AgentGateCode.MocksEngineError) return false;
-  if (!AGENT_GATE_CODES.has(value.code as AgentGateCode)) return false;
+  if (value.code !== ToolResultCode.MocksEngineError) return false;
+  if (!TOOL_RESULT_CODES.has(value.code as ToolResultCode)) return false;
   return readStringField(value, "message") !== null;
 }
 
 export function isToolNotMocked(value: unknown): value is ToolNotMockedOutput {
   if (!isObject(value)) return false;
-  if (value.code !== AgentGateCode.ToolNotMocked) return false;
-  if (!AGENT_GATE_CODES.has(value.code as AgentGateCode)) return false;
+  if (value.code !== ToolResultCode.ToolNotMocked) return false;
+  if (!TOOL_RESULT_CODES.has(value.code as ToolResultCode)) return false;
   return readStringField(value, "tool_name") !== null
     && readStringField(value, "message") !== null;
 }
 
 export function isNotSupportedOnOss(value: unknown): value is NotSupportedOnOssOutput {
   if (!isObject(value)) return false;
-  if (value.code !== AgentGateCode.NotSupportedOnOss) return false;
-  if (!AGENT_GATE_CODES.has(value.code as AgentGateCode)) return false;
+  if (value.code !== ToolResultCode.NotSupportedOnOss) return false;
+  if (!TOOL_RESULT_CODES.has(value.code as ToolResultCode)) return false;
   return readStringField(value, "capability") !== null
     && readStringField(value, "message") !== null;
 }
 
 /**
- * Exhaustive-match witness. A `switch` over `AgentGateCode` should
+ * Exhaustive-match witness. A `switch` over `ToolResultCode` should
  * pass `value` here in the default branch — TS fails to compile if
  * `value` isn't narrowed to `never`, i.e. if a code variant escaped
  * the switch. The runtime body throws so a hostile cast at runtime
  * doesn't silently swallow an unknown code.
  */
-export function assertExhaustiveAgentGate(value: never): never {
+export function assertExhaustiveToolResult(value: never): never {
   throw new Error(
-    `agent-gate: unexpected output variant ${JSON.stringify(value)}`,
+    `tool-result-codes: unexpected output variant ${JSON.stringify(value)}`,
   );
 }
