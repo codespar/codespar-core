@@ -2,13 +2,12 @@
 Tests for the Python ApiError code-extraction precedence.
 
 The original HTTP layer read ``parsed.get("error")`` as the structured
-code field. The hosted-test-mode envelopes (see codespar-enterprise's
-Backend D3 + D7) standardise on ``code`` as the discriminant — the
-managed backend now returns ``{"code": "mocks_not_permitted",
-"message": "..."}`` for the create-time gate envelopes. ``code``
-takes precedence over ``error`` so the new envelopes surface
-correctly; ``error`` is still honored as a fallback for pre-PRD
-responses that haven't migrated.
+code field. The hosted-test-mode envelopes standardise on ``code`` as
+the discriminant — the managed backend now returns
+``{"code": "mocks_not_permitted", "message": "..."}`` for the
+create-time gate envelopes. ``code`` takes precedence over ``error``
+so the new envelopes surface correctly; ``error`` is still honored as
+a fallback for legacy responses that haven't migrated.
 
 The ApiError class itself is unchanged — only the call-site
 extraction logic in ``_http.request_json`` shifts.
