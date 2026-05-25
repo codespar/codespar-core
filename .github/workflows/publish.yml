@@ -38,7 +38,13 @@ jobs:
 
       - name: Publish all packages
         run: |
-          set +e  # Don't fail the job on individual publish errors
+          # Bash's "exit on error" is off for the loop body so one bad package
+          # doesn't prevent the others from publishing. Real failures are
+          # accumulated in `failed_pkgs` and surfaced as a non-zero exit at
+          # the end so the workflow's status reflects ground truth.
+          set +e
+          failed_pkgs=()
+          lagging_pkgs=()
           for dir in packages/*/; do
             if [ -f "$dir/package.json" ]; then
               pkg_name=$(node -p "require('./$dir/package.json').name")
@@ -48,14 +54,31 @@ jobs:
               out=$(npm publish --access public 2>&1)
               code=$?
               if [ $code -ne 0 ]; then
-                # Treat "version already exists" as success so republishing
-                # the same tag doesn't break the workflow — but surface any
-                # other failure mode loudly for debugging.
+                # Three classes of non-zero exit from `npm publish`:
+                #
+                # 1. "You cannot publish over the previously published
+                #    versions" — version already in registry. Idempotent
+                #    re-runs of the same tag land here; soft-pass.
+                #
+                # 2. "404 Not Found - PUT" on a scope we own — npm's
+                #    misleading shape for "publish succeeded but registry
+                #    reflection lags ~5min." See ops note:
+                #    feedback/npm publish 404 on first-time scoped package is
+                #    often a lie. Soft-pass with a warning so the operator
+                #    knows to re-verify with `npm view` after the lag window.
+                #
+                # 3. Anything else — real failure (bad token scope, malformed
+                #    tarball, network, registry outage). Surface loudly +
+                #    accumulate so the workflow exits non-zero.
                 if echo "$out" | grep -q "You cannot publish over the previously published versions"; then
                   echo "✓ $pkg_name already at this version, skipping"
+                elif echo "$out" | grep -qE "404 Not Found.*PUT.*registry\.npmjs\.org/@codespar"; then
+                  echo "⚠ $pkg_name returned 404-PUT — likely propagation lag (verify with 'npm view $pkg_name' in 10 min)"
+                  lagging_pkgs+=("$pkg_name")
                 else
                   echo "✗ $pkg_name FAILED:"
                   echo "$out"
+                  failed_pkgs+=("$pkg_name")
                 fi
               else
                 echo "$out"
@@ -65,3 +88,17 @@ jobs:
               cd "$GITHUB_WORKSPACE"
             fi
           done
+
+          echo ""
+          echo "=== Publish summary ==="
+          if [ ${#lagging_pkgs[@]} -gt 0 ]; then
+            echo "⚠ ${#lagging_pkgs[@]} package(s) returned 404-PUT — propagation lag suspected:"
+            printf '   - %s\n' "${lagging_pkgs[@]}"
+            echo "  Verify each with: npm view <pkg> version"
+          fi
+          if [ ${#failed_pkgs[@]} -gt 0 ]; then
+            echo "✗ ${#failed_pkgs[@]} package(s) FAILED for non-recoverable reasons:"
+            printf '   - %s\n' "${failed_pkgs[@]}"
+            exit 1
+          fi
+          echo "✓ All publishable packages succeeded (or were already current)"
