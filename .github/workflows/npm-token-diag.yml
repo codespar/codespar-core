@@ -1,0 +1,78 @@
+name: NPM Token Diagnostic
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Configure npm auth (mirror of publish.yml)
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+          echo "always-auth=true" >> ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: npm whoami
+        run: |
+          set -e
+          echo "=== Account the rotated NPM_TOKEN belongs to ==="
+          npm whoami
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Token scope — what packages can this token publish to
+        run: |
+          echo "=== npm access list packages (granular tokens) ==="
+          npm access list packages 2>&1 || echo "(npm access list packages not supported for this token type)"
+          echo ""
+          echo "=== Per-package access check ==="
+          for pkg in '@codespar/types' '@codespar/sdk' '@codespar/api-types'; do
+            echo "--- $pkg ---"
+            npm access list collaborators "$pkg" 2>&1 || true
+          done
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npx turbo run build
+
+      - name: Dry-run publish — @codespar/types
+        run: |
+          set -e
+          echo "=== Dry-running @codespar/types publish ==="
+          cd packages/types
+          npm publish --dry-run --access public 2>&1
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Dry-run publish — @codespar/sdk
+        run: |
+          set -e
+          echo "=== Dry-running @codespar/sdk publish ==="
+          cd packages/core
+          npm publish --dry-run --access public 2>&1
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "If both dry-runs ended with 'npm notice Tarball Details' and no 4xx/5xx,"
+          echo "the NPM_TOKEN has the right scope to publish @codespar/types@0.10.0 and"
+          echo "@codespar/sdk@0.10.0. If a step failed with 401/403/404 on PUT, the token"
+          echo "lacks publish rights on the @codespar scope — confirming the earlier"
+          echo "panel finding that the real failure is scope, not propagation lag."
