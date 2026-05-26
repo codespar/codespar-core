@@ -22,8 +22,79 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
           echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
           echo "always-auth=true" >> ~/.npmrc
-          echo "whoami:"
-          npm whoami
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Preflight — verify NPM_TOKEN has publish scope on @codespar
+        run: |
+          # Fail-loud guard that runs before the publish loop. The loop
+          # tolerates 404-PUT as propagation lag only because preflight has
+          # already proven the token has write access to the @codespar scope.
+          # A wrong-scope or wrong-account token must fail HERE, not be
+          # misclassified as a "lag warning" later.
+          set -e
+
+          echo "=== npm whoami ==="
+          WHO=$(npm whoami)
+          echo "Authenticated as: $WHO"
+          if [ "$WHO" != "codespar-npm" ]; then
+            echo ""
+            echo "✗ NPM_TOKEN does not belong to 'codespar-npm' (got '$WHO')."
+            echo "  Rotate the token from the codespar-npm npm account and update"
+            echo "  the NPM_TOKEN repo secret; tokens from any other account cannot"
+            echo "  publish to the @codespar scope."
+            exit 1
+          fi
+
+          echo ""
+          echo "=== Per-package write-access check ==="
+          # `npm access list packages @codespar --json` returns
+          # { "@codespar/<pkg>": "write" | "read-only" | "read-write", ... }
+          # for every package the authenticated user has any access to.
+          ACCESS_JSON=$(npm access list packages @codespar --json 2>&1)
+          echo "$ACCESS_JSON"
+          echo ""
+
+          REQUIRED_PKGS='@codespar/types @codespar/sdk @codespar/api-types'
+          MISSING=()
+          READ_ONLY=()
+          for pkg in $REQUIRED_PKGS; do
+            LEVEL=$(echo "$ACCESS_JSON" | jq -r --arg p "$pkg" '.[$p] // "<missing>"')
+            echo "  $pkg → $LEVEL"
+            case "$LEVEL" in
+              write|read-write)
+                ;;
+              "<missing>")
+                MISSING+=("$pkg")
+                ;;
+              *)
+                READ_ONLY+=("$pkg:$LEVEL")
+                ;;
+            esac
+          done
+
+          if [ ${#MISSING[@]} -gt 0 ] || [ ${#READ_ONLY[@]} -gt 0 ]; then
+            echo ""
+            echo "✗ NPM_TOKEN lacks write access on required packages:"
+            if [ ${#MISSING[@]} -gt 0 ]; then
+              echo "  missing from token's access list:"
+              printf '    - %s\n' "${MISSING[@]}"
+            fi
+            if [ ${#READ_ONLY[@]} -gt 0 ]; then
+              echo "  insufficient access level:"
+              printf '    - %s\n' "${READ_ONLY[@]}"
+            fi
+            echo ""
+            echo "  The token is authenticated but read-only on the scope."
+            echo "  A 404-PUT on first publish from this token is an auth-scope"
+            echo "  failure, NOT propagation lag. Generate a new token with"
+            echo "  --read-only=false (or grant the granular token publish rights"
+            echo "  on the @codespar scope), then update the NPM_TOKEN secret."
+            exit 1
+          fi
+
+          echo ""
+          echo "✓ Preflight passed: token authenticated as $WHO with write access on all required packages."
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -38,7 +109,13 @@ jobs:
 
       - name: Publish all packages
         run: |
-          set +e  # Don't fail the job on individual publish errors
+          # Bash's "exit on error" is off for the loop body so one bad package
+          # doesn't prevent the others from publishing. Real failures are
+          # accumulated in `failed_pkgs` and surfaced as a non-zero exit at
+          # the end so the workflow's status reflects ground truth.
+          set +e
+          failed_pkgs=()
+          lagging_pkgs=()
           for dir in packages/*/; do
             if [ -f "$dir/package.json" ]; then
               pkg_name=$(node -p "require('./$dir/package.json').name")
@@ -48,14 +125,31 @@ jobs:
               out=$(npm publish --access public 2>&1)
               code=$?
               if [ $code -ne 0 ]; then
-                # Treat "version already exists" as success so republishing
-                # the same tag doesn't break the workflow — but surface any
-                # other failure mode loudly for debugging.
+                # Three classes of non-zero exit from `npm publish`:
+                #
+                # 1. "You cannot publish over the previously published
+                #    versions" — version already in registry. Idempotent
+                #    re-runs of the same tag land here; soft-pass.
+                #
+                # 2. "404 Not Found - PUT" on a scope we own — npm's
+                #    misleading shape for "publish succeeded but registry
+                #    reflection lags ~5min." See ops note:
+                #    feedback/npm publish 404 on first-time scoped package is
+                #    often a lie. Soft-pass with a warning so the operator
+                #    knows to re-verify with `npm view` after the lag window.
+                #
+                # 3. Anything else — real failure (bad token scope, malformed
+                #    tarball, network, registry outage). Surface loudly +
+                #    accumulate so the workflow exits non-zero.
                 if echo "$out" | grep -q "You cannot publish over the previously published versions"; then
                   echo "✓ $pkg_name already at this version, skipping"
+                elif echo "$out" | grep -qE "404 Not Found.*PUT.*registry\.npmjs\.org/@codespar"; then
+                  echo "⚠ $pkg_name returned 404-PUT — likely propagation lag (verify with 'npm view $pkg_name' in 10 min)"
+                  lagging_pkgs+=("$pkg_name")
                 else
                   echo "✗ $pkg_name FAILED:"
                   echo "$out"
+                  failed_pkgs+=("$pkg_name")
                 fi
               else
                 echo "$out"
@@ -65,3 +159,17 @@ jobs:
               cd "$GITHUB_WORKSPACE"
             fi
           done
+
+          echo ""
+          echo "=== Publish summary ==="
+          if [ ${#lagging_pkgs[@]} -gt 0 ]; then
+            echo "⚠ ${#lagging_pkgs[@]} package(s) returned 404-PUT — propagation lag suspected:"
+            printf '   - %s\n' "${lagging_pkgs[@]}"
+            echo "  Verify each with: npm view <pkg> version"
+          fi
+          if [ ${#failed_pkgs[@]} -gt 0 ]; then
+            echo "✗ ${#failed_pkgs[@]} package(s) FAILED for non-recoverable reasons:"
+            printf '   - %s\n' "${failed_pkgs[@]}"
+            exit 1
+          fi
+          echo "✓ All publishable packages succeeded (or were already current)"
