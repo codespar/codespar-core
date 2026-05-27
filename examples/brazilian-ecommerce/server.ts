@@ -191,7 +191,11 @@ app.post<{
           action: "label" as const,
           origin: { postal_code: "01310-100" }, // operator-supplied default
           destination: buyer.address,
-          items: items.map((i) => ({ weight_g: 500, quantity: i.qty })),
+          items: items.map((i) => ({
+            weight_g: 500,
+            quantity: i.qty,
+            declared_value: i.price,
+          })),
           service_level: "cheapest" as const,
           metadata: {
             nfe_key: (prev[0]!.data as { access_key: string }).access_key,
