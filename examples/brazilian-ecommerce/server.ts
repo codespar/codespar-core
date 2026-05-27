@@ -193,6 +193,9 @@ app.post<{
           destination: buyer.address,
           items: items.map((i) => ({
             weight_g: 500,
+            length_cm: 20,
+            width_cm: 15,
+            height_cm: 10,
             quantity: i.qty,
             declared_value: i.price,
           })),
