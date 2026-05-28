@@ -37,14 +37,9 @@ jobs:
           echo "=== npm whoami ==="
           WHO=$(npm whoami)
           echo "Authenticated as: $WHO"
-          if [ "$WHO" != "codespar-npm" ]; then
-            echo ""
-            echo "✗ NPM_TOKEN does not belong to 'codespar-npm' (got '$WHO')."
-            echo "  Rotate the token from the codespar-npm npm account and update"
-            echo "  the NPM_TOKEN repo secret; tokens from any other account cannot"
-            echo "  publish to the @codespar scope."
-            exit 1
-          fi
+          # Identity is informational only. The per-package write-access check
+          # below is the real gate — any properly-scoped @codespar token can
+          # publish, so CI isn't pinned to one specific publisher account.
 
           echo ""
           echo "=== Per-package write-access check ==="
@@ -144,8 +139,21 @@ jobs:
                 if echo "$out" | grep -q "You cannot publish over the previously published versions"; then
                   echo "✓ $pkg_name already at this version, skipping"
                 elif echo "$out" | grep -qE "404 Not Found.*PUT.*registry\.npmjs\.org/@codespar"; then
-                  echo "⚠ $pkg_name returned 404-PUT — likely propagation lag (verify with 'npm view $pkg_name' in 10 min)"
-                  lagging_pkgs+=("$pkg_name")
+                  # 404-PUT is only plausibly "propagation lag" when the
+                  # package has never been published before — npm's
+                  # first-publish path occasionally races registry-reflection
+                  # for new scoped packages. When a prior version exists on
+                  # the registry, 404-PUT cannot be lag; it's a real failure
+                  # (auth scope, registry outage, etc.) and must surface.
+                  prior_version=$(cd "$GITHUB_WORKSPACE" && npm view "$pkg_name" version 2>/dev/null || true)
+                  if [ -z "$prior_version" ]; then
+                    echo "⚠ $pkg_name returned 404-PUT on first publish — possible propagation lag (verify with 'npm view $pkg_name' in 10 min)"
+                    lagging_pkgs+=("$pkg_name")
+                  else
+                    echo "✗ $pkg_name FAILED with 404-PUT but prior version $prior_version exists on the registry — this is NOT propagation lag:"
+                    echo "$out"
+                    failed_pkgs+=("$pkg_name")
+                  fi
                 else
                   echo "✗ $pkg_name FAILED:"
                   echo "$out"
