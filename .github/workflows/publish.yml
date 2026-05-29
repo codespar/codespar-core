@@ -14,7 +14,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Configure npm auth
@@ -59,6 +59,14 @@ jobs:
           set +e
           failed_pkgs=()
           lagging_pkgs=()
+          # `ok_pkgs` covers both true publishes and idempotent
+          # already-at-this-version soft-passes. We need a non-zero
+          # count here to distinguish "the run actually accepted
+          # something" from "every package ended in failed/lagging,
+          # which the 0.10.0 silent-fail incident showed is what
+          # npm/cli#9268 (auth rejection masquerading as 404-PUT)
+          # looks like across an entire scope."
+          ok_pkgs=()
           for dir in packages/*/; do
             if [ -f "$dir/package.json" ]; then
               pkg_name=$(node -p "require('./$dir/package.json').name")
@@ -86,6 +94,7 @@ jobs:
                 #    accumulate so the workflow exits non-zero.
                 if echo "$out" | grep -q "You cannot publish over the previously published versions"; then
                   echo "✓ $pkg_name already at this version, skipping"
+                  ok_pkgs+=("$pkg_name")
                 elif echo "$out" | grep -qE "404 Not Found.*PUT.*registry\.npmjs\.org/@codespar"; then
                   # 404-PUT is only plausibly "propagation lag" when the
                   # package has never been published before — npm's
@@ -110,6 +119,7 @@ jobs:
               else
                 echo "$out"
                 echo "✓ $pkg_name published"
+                ok_pkgs+=("$pkg_name")
               fi
               echo "::endgroup::"
               cd "$GITHUB_WORKSPACE"
@@ -126,6 +136,29 @@ jobs:
           if [ ${#failed_pkgs[@]} -gt 0 ]; then
             echo "✗ ${#failed_pkgs[@]} package(s) FAILED for non-recoverable reasons:"
             printf '   - %s\n' "${failed_pkgs[@]}"
+            exit 1
+          fi
+          # Hard-fail rule 1: multi-package 404-PUT in a single run.
+          # Real registry propagation lag affects one package at a time
+          # (typically the first publish of a brand-new package name).
+          # Lag affecting 2+ scoped packages in one run is implausible —
+          # the 0.10.0 silent-fail incident showed all 17 packages
+          # 404-PUT'd as the npm/cli#9268 auth rejection masquerading
+          # as propagation lag, and the previous heuristic swallowed
+          # every one of them as soft-pass. Escalate to hard failure.
+          if [ ${#lagging_pkgs[@]} -ge 2 ]; then
+            echo "✗ ${#lagging_pkgs[@]} package(s) returned 404-PUT in one run — registry-wide propagation lag across a whole scope does not happen."
+            echo "  This pattern matches npm/cli#9268: the registry rejects the token (likely a granular access token with bypass_2fa: true) and the npm CLI reports the 403 as a misleading 404-PUT."
+            echo "  Failing the run loudly rather than claiming success."
+            exit 1
+          fi
+          # Hard-fail rule 2: zero accepted publishes. If the run ended
+          # with every publishable package in either failed or lagging
+          # state and nothing was actually accepted by the registry,
+          # the workflow must not exit green — that is exactly the
+          # 0.10.0 silent-fail shape.
+          if [ ${#ok_pkgs[@]} -eq 0 ] && [ ${#lagging_pkgs[@]} -gt 0 ]; then
+            echo "✗ Zero packages were accepted by the registry in this run (${#lagging_pkgs[@]} lagging, ${#failed_pkgs[@]} failed). Refusing to exit green."
             exit 1
           fi
           echo "✓ All publishable packages succeeded (or were already current)"
