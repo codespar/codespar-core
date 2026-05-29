@@ -4,10 +4,14 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -17,7 +21,16 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Upgrade npm for OIDC
+        # OIDC trusted publishing requires npm 11.5.1+; Node 22 ships 10.9.x.
+        # Only the dispatch path uses OIDC; tag-push still uses NPM_TOKEN.
+        if: github.event_name == 'workflow_dispatch'
+        run: npm install -g npm@latest
+
       - name: Configure npm auth
+        # Any _authToken in ~/.npmrc pre-empts OIDC, so this step is
+        # skipped on the dispatch path to let OIDC trusted publishing run.
+        if: github.event_name == 'push'
         run: |
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
           echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
@@ -25,7 +38,22 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: OIDC availability check
+        # Under OIDC the publisher identity is not codespar-npm, so the
+        # token-shape preflight below is skipped. Instead, assert that the
+        # id-token endpoint is wired and log the CLI versions in use.
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL}" ]; then
+            echo "ACTIONS_ID_TOKEN_REQUEST_URL is empty — id-token: write permission is not wired."
+            exit 1
+          fi
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL is set"
+          echo "npm  --version: $(npm --version)"
+          echo "node --version: $(node --version)"
+
       - name: Auth check — npm whoami
+        if: github.event_name == 'push'
         run: |
           # Per-package access enumeration via `npm access list packages
           # @codespar` requires org-read scope, which classic automation
@@ -67,7 +95,15 @@ jobs:
           # npm/cli#9268 (auth rejection masquerading as 404-PUT)
           # looks like across an entire scope."
           ok_pkgs=()
-          for dir in packages/*/; do
+          # workflow_dispatch is the OIDC smoke-test path: only @codespar/sdk
+          # (packages/core) and @codespar/types have trusted-publisher bindings
+          # registered on npmjs.com. Tag-push still iterates every package.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            publish_dirs="packages/core/ packages/types/"
+          else
+            publish_dirs=$(ls -d packages/*/)
+          fi
+          for dir in $publish_dirs; do
             if [ -f "$dir/package.json" ]; then
               pkg_name=$(node -p "require('./$dir/package.json').name")
               echo ""
