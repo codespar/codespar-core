@@ -1,0 +1,39 @@
+name: hosted-runtime smoke
+
+on:
+  pull_request:
+    paths:
+      - 'packages/core/**'
+      - 'packages/types/**'
+      - 'packages/python/**'
+      - 'scripts/hosted-smoke.mjs'
+      - '.github/workflows/hosted-runtime-smoke.yml'
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    # Validates the published @codespar/sdk against the wire-compatible
+    # runtime hosted at api.codespar.dev. Installs the SDK fresh from
+    # npm (not the workspace source) so a future SDK change that breaks
+    # the wire shape fails this job on the next PR against the still-
+    # published version.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install published @codespar/sdk
+        run: |
+          mkdir _smoke && cd _smoke
+          npm init -y >/dev/null
+          npm install @codespar/sdk@0.10.0
+
+      - name: Run hosted-runtime smoke
+        env:
+          CODESPAR_API_KEY: ${{ secrets.CODESPAR_HOSTED_TEST_API_KEY }}
+          CODESPAR_BASE_URL: https://api.codespar.dev
+          CODESPAR_SDK_DIR: _smoke
+        run: node scripts/hosted-smoke.mjs
