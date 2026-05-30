@@ -22,8 +22,8 @@
  *     (`node_modules/@codespar/sdk`). Defaults to `./_smoke`.
  */
 
-import { createRequire } from "node:module";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const apiKey = process.env.CODESPAR_API_KEY;
 if (!apiKey) {
@@ -35,8 +35,8 @@ if (!apiKey) {
 }
 
 const sdkDir = resolve(process.env.CODESPAR_SDK_DIR ?? "_smoke");
-const requireFromSdkDir = createRequire(resolve(sdkDir, "package.json"));
-const { CodeSpar, CodesparApiError } = requireFromSdkDir("@codespar/sdk");
+const sdkEntry = pathToFileURL(resolve(sdkDir, "node_modules/@codespar/sdk/dist/index.js"));
+const { CodeSpar, CodesparApiError } = await import(sdkEntry.href);
 
 const FIXTURE = {
   id: "cus_test",
