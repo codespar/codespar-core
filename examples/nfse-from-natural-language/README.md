@@ -142,6 +142,8 @@ export AIMOCK_PORT=4020
 npm run validate
 ```
 
+> `:latest` is republished on each `v*` tag of `codespar/codespar`; the structural fix to also publish from `main` on every push is tracked in [codespar/codespar#117](https://github.com/codespar/codespar/issues/117).
+
 ## Three mockability layers
 
 The example pins three independently swappable layers between "fully
