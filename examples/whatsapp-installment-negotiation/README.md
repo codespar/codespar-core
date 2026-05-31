@@ -70,15 +70,15 @@ commerce conversation a flow-builder cannot.
 | `skeleton.test.ts` | Vitest spec — calls `session.send()` three times across the buyer's turns, asserts the Asaas preview, the Asaas `create_payment` with `installments: 6`, the Nuvem Fiscal `create_nfe`, and at least one Z-API `send_text` carrying the confirmation |
 | `live.test.ts` | Live LLM smoke — gated on `CODESPAR_LIVE_SMOKE=1`, runs the same three-turn flow against real `api.anthropic.com` with coarser, probabilistic-tolerant assertions |
 | `package.json` | Pins `@codespar/mcp-asaas@0.2.0`, `@codespar/mcp-nuvem-fiscal@0.3.0`, `@codespar/mcp-z-api@0.2.1` (exact pins), `@codespar/sdk@^0.9.0`, and `@copilotkit/aimock@^1.24.1` |
-| `mcp-servers.json` | Server registry consumed by the bridge — three stdio servers (`asaas`, `nuvem-fiscal`, `z-api`), each spawned with `--demo` |
+| `mcp-servers.json` | Server registry consumed by the bridge — three stdio servers (`asaas`, `nuvem-fiscal`, `z-api`), spawned plain so the runtime registers their tool schemas; tool responses come from the test's inline `mocks` map, not the servers |
 | `fixtures/aimock-fixtures.json` | Five-entry aimock fixture: opener text → Asaas preview tool_use → preview reply text → close tool_use × 3 → confirmation text |
-| `scripts/validate.sh` | Boots aimock first, then resolves a runtime (Docker / local clone / already-running), polls `/health`, runs vitest, kills both on exit |
+| `scripts/validate.sh` | Boots aimock first, then resolves a runtime (already-running / local clone / docker) with `CODESPAR_TEST_MODE_ENABLED=true`, polls `/health`, runs vitest, kills both on exit |
 | `scripts/validate-live.sh` | Same three runtime modes, no aimock, requires real `ANTHROPIC_API_KEY` — runs `live.test.ts` only |
 | `tsconfig.json` | Minimal TS config (NodeNext, strict, vitest globals) |
 | `vitest.config.ts` | Test timeouts long enough for multi-turn LLM-driven loops |
 | `.gitignore` | `node_modules/`, runtime + aimock log/pid files |
 
-## Three run paths
+## Two run paths
 
 ```bash
 cd examples/whatsapp-installment-negotiation
@@ -92,40 +92,47 @@ stand-in), then picks one of three runtime sources, first match wins:
 1. **`CODESPAR_BASE_URL` is set** — uses the already-running runtime
    at that URL. The script does NOT manage the runtime's lifecycle,
    and that runtime must already be configured with
-   `ANTHROPIC_BASE_URL=http://localhost:4010` or its `session.send()`
-   call will hit the real Anthropic API instead of the local aimock.
+   `ANTHROPIC_BASE_URL=http://localhost:4010` (or its `session.send()`
+   call will hit the real Anthropic API instead of the local aimock)
+   AND `CODESPAR_TEST_MODE_ENABLED=true` (or `cs.create()` rejects the
+   test's `mocks` map with HTTP 501 `mocks_not_permitted`).
 2. **`CODESPAR_RUNTIME_DIR` is set** — boots `node server/start.mjs`
    from that directory on port 3000 with
-   `ANTHROPIC_BASE_URL=http://localhost:4010` and
-   `ANTHROPIC_API_KEY=placeholder` exported, polls `/health` for up to
-   20s, runs vitest, then kills the runtime + aimock on exit.
+   `ANTHROPIC_BASE_URL=http://localhost:4010`,
+   `ANTHROPIC_API_KEY=placeholder`, and `CODESPAR_TEST_MODE_ENABLED=true`
+   exported, polls `/health` for up to 20s, runs vitest, then kills
+   the runtime + aimock on exit. The clone must include the runtime's
+   session-mocks support (commit `5830dc4` / PR #113 or later on `main`).
 3. **`docker` is on PATH** — pulls and runs
    `ghcr.io/codespar/codespar:latest` with the example dir mounted at
-   `/example` and `--add-host=host.docker.internal:host-gateway` so
-   the container can reach the host's aimock at
-   `host.docker.internal:4010`. This is the default path; no env vars
-   required.
+   `/example`, `--add-host=host.docker.internal:host-gateway` so the
+   container can reach the host's aimock at `host.docker.internal:4010`,
+   and `CODESPAR_TEST_MODE_ENABLED=true` wired in. This is the default
+   path; no env vars required. The image must include session-mocks
+   support (commit `5830dc4` / PR #113 or later).
 
-If none of the above is available, the script prints setup
-instructions and exits non-zero.
+If none is available, the script prints setup instructions and exits
+non-zero.
 
 ```bash
 # Option A (recommended) — install Docker, then just run:
 npm run validate
 
 # Option B — point at a running runtime (you manage its lifecycle AND
-# make sure its ANTHROPIC_BASE_URL points at the local aimock).
+# make sure its ANTHROPIC_BASE_URL points at the local aimock AND it
+# was started with CODESPAR_TEST_MODE_ENABLED=true).
 export CODESPAR_BASE_URL=http://localhost:3000
 npm run validate
 
-# Option C — point at a local clone of codespar/codespar.
+# Option C — point at a local clone of codespar/codespar (the script
+# manages it, in test mode):
 git clone https://github.com/codespar/codespar.git /tmp/codespar
-(cd /tmp/codespar && npm install && npx turbo run build)
+(cd /tmp/codespar && git checkout main && npm install && npx turbo run build)
 export CODESPAR_RUNTIME_DIR=/tmp/codespar
 npm run validate
 
 # Pin a specific runtime image instead of :latest:
-export CODESPAR_RUNTIME_IMAGE=ghcr.io/codespar/codespar:v0.2.1
+export CODESPAR_RUNTIME_IMAGE=ghcr.io/codespar/codespar:latest
 npm run validate
 
 # Move aimock off port 4010 if it conflicts with something else on
@@ -134,6 +141,8 @@ export AIMOCK_PORT=4020
 npm run validate
 ```
 
+> `:latest` is republished on each `v*` tag of `codespar/codespar`; the structural fix to also publish from `main` on every push is tracked in [codespar/codespar#117](https://github.com/codespar/codespar/issues/117).
+
 ## Three mockability layers
 
 The example pins three independently swappable layers between "fully
@@ -141,20 +150,23 @@ offline test" and "live production." Each one toggles by changing a
 single configuration surface; nothing in the test or runtime code
 branches on demo mode.
 
-**Layer 1 — MCP server fixtures (`--demo` in `mcp-servers.json`).**
-The three MCP servers spawn with their `--demo` flag, which makes
-them return deterministic fixture payloads without touching real
-Asaas, Nuvem Fiscal, or Z-API APIs. `@codespar/mcp-asaas@0.2.0` has
-stateful demo handlers for `create_payment` (distinct fixture ids
-per call, echoes installment intent when
-`billingType: CREDIT_CARD` + `installments >= 2`) and
-`get_installments` (preview path: pass `value` + `installments` and
-get back a hypothetical schedule with `status: PREVIEW` without
-creating a payment). `@codespar/mcp-nuvem-fiscal@0.3.0` has the same
-stateful pattern for `create_nfe` / `create_nfse`. To swap to live:
-drop `--demo` from `mcp-servers.json` and export real
-`ASAAS_API_KEY`, `NUVEM_FISCAL_CLIENT_ID` / `_CLIENT_SECRET`, and
-`Z_API_*` credentials.
+**Layer 1 — tool responses (`mocks` on `cs.create()`).**
+The runtime runs with `CODESPAR_TEST_MODE_ENABLED=true`, and the test
+declares a per-tool `mocks` map on `cs.create({ servers, mocks })`.
+Each key is a canonical `server/tool` name
+(`asaas/get_installments`, `asaas/create_payment`,
+`nuvem-fiscal/create_nfe`, `z-api/send_text`) and each value is the
+deterministic payload that tool returns. In test mode the runtime
+intercepts every external tool dispatch before it reaches the MCP
+bridge — the servers still spawn (so their tool schemas register) but
+never touch real Asaas, Nuvem Fiscal, or Z-API APIs, and any tool the
+agent calls without a matching entry is a hard `tool_not_mocked`
+failure rather than a silent fallthrough. Fixtures are pinned
+per-test, so each test owns the exact shape it asserts on instead of
+trusting an MCP server's demo handler. To swap to live: unset
+`CODESPAR_TEST_MODE_ENABLED` and export real `ASAAS_API_KEY`,
+`NUVEM_FISCAL_CLIENT_ID` / `_CLIENT_SECRET`, and `Z_API_*`
+credentials.
 
 **Layer 2 — LLM responses (`ANTHROPIC_BASE_URL` → aimock).**
 `@copilotkit/aimock` listens on port 4010 and serves the Anthropic
@@ -167,13 +179,14 @@ reply text → close tool_uses × 3 → final confirmation text. To swap
 to live: unset `ANTHROPIC_BASE_URL` and set a real
 `ANTHROPIC_API_KEY` (see "Live LLM smoke" below).
 
-**Layer 3 — live everything.** Remove `--demo` from
-`mcp-servers.json`, set real Asaas + Nuvem Fiscal + Z-API
-credentials, unset `ANTHROPIC_BASE_URL`, and the same test code runs
-against real fiscal-authority endpoints, real WhatsApp delivery, real
-PSP charges, and a real Claude model. The test code does not change.
-The fixture file becomes dead weight, which is the point: fixtures
-are the on-ramp, not the destination.
+**Layer 3 — live everything.** Unset `CODESPAR_TEST_MODE_ENABLED` so
+the runtime dispatches tools for real, set real Asaas + Nuvem Fiscal +
+Z-API credentials, unset `ANTHROPIC_BASE_URL`, and the same test code
+runs against real fiscal-authority endpoints, real WhatsApp delivery,
+real PSP charges, and a real Claude model. The test code does not
+change. The `mocks` map and the aimock fixture both become dead
+weight, which is the point: fixtures are the on-ramp, not the
+destination.
 
 ### How to extend the fixture for your own multi-turn flow
 
@@ -204,9 +217,10 @@ Note that `userMessage` matching is a case-sensitive substring check,
 so use the exact casing the buyer types (e.g. `"Confirma"`, not
 `"confirm"`).
 
-**Demo arithmetic is flat (no juros).** The Asaas `--demo` handler
-computes `installmentValue = value / installments` with no interest,
-to keep the demo deterministic and the fixture coupling simple. Real
+**Demo arithmetic is flat (no juros).** The `asaas/get_installments`
+mock returns a flat `installmentValue = value / installments`
+(R$4.800 / 6 = R$800) with no interest, to keep the demo
+deterministic and the fixture coupling simple. Real
 Brazilian credit-card installments usually carry interest after 3x or
 6x; modelling that would shift the NF-e taxable amount in ways that
 deserve their own demo (tracked as a known gap in the section below).
@@ -265,21 +279,27 @@ The vitest spec asserts these invariants across the three
 
 ## Live LLM smoke (`npm run validate:live`)
 
-`validate.sh` is fully mocked — aimock stands in for Anthropic, MCP
-servers stay in `--demo` mode. That gets the example green
-deterministically and cheaply, but it cannot catch regressions that
-only surface against real `api.anthropic.com`: tool-name regex
-violations, invalid model ids, system-prompt issues that change
-Claude's behaviour across turns. To verify those too, run:
+`validate.sh` is fully mocked — aimock stands in for Anthropic, and
+tool responses come from the `mocks` API on `cs.create()` (runtime in
+test mode). That gets the example green deterministically and cheaply,
+but it cannot catch regressions that only surface against real
+`api.anthropic.com`: tool-name regex violations, invalid model ids,
+system-prompt issues that change Claude's behaviour across turns. To
+verify those too, run:
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-... npm run validate:live
 ```
 
 That boots a runtime with your `ANTHROPIC_API_KEY` (no aimock), runs
-`live.test.ts`, and tears down. The MCP servers stay in `--demo` so
-no Asaas / Nuvem-Fiscal / Z-API credentials are needed. The live
-test carries much more explicit per-turn prompts than the aimock
+`live.test.ts`, and tears down. The live path points the runtime at a
+separate `mcp-servers.live.json` (via `CODESPAR_MCP_SERVERS_PATH`)
+that re-injects the MCP `--demo` flag, so no Asaas / Nuvem-Fiscal /
+Z-API credentials are needed; the test-mode path uses the default
+`mcp-servers.json` and stubs at the runtime layer via
+`cs.create({ mocks })`. Two paths, two configs, one cleanly-split
+dependency surface. The live test carries much more explicit per-turn
+prompts than the aimock
 test — buyer role, product, amount, demo-mode framing, and
 turn-specific instructions — because real Claude is appropriately
 cautious on under-specified commerce prompts and will ask for
@@ -311,18 +331,21 @@ in review comments:
    recalculation is genuinely fiddly because each PSP exposes
    interest differently and the SEFAZ rules vary by state. Tracked
    as a follow-on issue; not in scope for this demo.
-2. **aimock fixture coupling.** `aimock@1.24.1` matches fixtures on
-   structure (`turnIndex`, `hasToolResult`, `userMessage` substring),
-   not on the actual tool-result values from a prior turn. Turn 2's
-   "R$800,00 por mes" reply text is hardcoded in the fixture; the
-   downstream Asaas demo handler must also return `installmentValue:
-   800` for those two values to agree. As long as both are
-   deterministic — which the W1 Asaas handler now guarantees — the
-   coupling works fine. A more rigorous fixture format would let a
-   later turn's reply read from the prior tool result; that would
-   need either a custom aimock fork or an upstream feature request
-   (see the workspace tracking notes). Not a blocker; documenting
-   the gap so a copying customer sees it.
+2. **Fixture coupling — resolved by the mocks API.** `aimock@1.24.1`
+   matches LLM fixtures on structure (`turnIndex`, `hasToolResult`,
+   `userMessage` substring), not on the actual tool-result values from
+   a prior turn, so turn 2's "R$800,00 por mes" reply text is
+   hardcoded in the aimock fixture and has to agree with whatever the
+   tool layer returns for `installmentValue`. Previously that agreement
+   depended on trusting the MCP server's demo-handler math. The mocks
+   API closes that gap: the tool output is pinned per-test directly on
+   `cs.create({ mocks })` — `asaas/get_installments` returns
+   `installmentValue: 800` because this test says so, not because a
+   demo handler computed it — so the reply text and the tool value are
+   authored side by side in one file and stay in sync by construction.
+   The only residual coupling is keeping those two literals consistent
+   when you edit the fixture, which a copying customer can see at a
+   glance.
 3. **The aimock layer is a stand-in, not a model.** This example
    does NOT exercise real Claude reasoning in the default test
    path. A regression in Anthropic tool-use protocol (block

@@ -11,7 +11,7 @@
     "validate:live": "./scripts/validate-live.sh"
   },
   "dependencies": {
-    "@codespar/sdk": "^0.9.0"
+    "@codespar/sdk": "^0.10.0"
   },
   "devDependencies": {
     "@codespar/mcp-asaas": "0.2.0",
