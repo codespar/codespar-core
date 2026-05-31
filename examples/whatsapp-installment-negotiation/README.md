@@ -277,21 +277,27 @@ The vitest spec asserts these invariants across the three
 
 ## Live LLM smoke (`npm run validate:live`)
 
-`validate.sh` is fully mocked — aimock stands in for Anthropic, MCP
-servers stay in `--demo` mode. That gets the example green
-deterministically and cheaply, but it cannot catch regressions that
-only surface against real `api.anthropic.com`: tool-name regex
-violations, invalid model ids, system-prompt issues that change
-Claude's behaviour across turns. To verify those too, run:
+`validate.sh` is fully mocked — aimock stands in for Anthropic, and
+tool responses come from the `mocks` API on `cs.create()` (runtime in
+test mode). That gets the example green deterministically and cheaply,
+but it cannot catch regressions that only surface against real
+`api.anthropic.com`: tool-name regex violations, invalid model ids,
+system-prompt issues that change Claude's behaviour across turns. To
+verify those too, run:
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-... npm run validate:live
 ```
 
 That boots a runtime with your `ANTHROPIC_API_KEY` (no aimock), runs
-`live.test.ts`, and tears down. The MCP servers stay in `--demo` so
-no Asaas / Nuvem-Fiscal / Z-API credentials are needed. The live
-test carries much more explicit per-turn prompts than the aimock
+`live.test.ts`, and tears down. The live path points the runtime at a
+separate `mcp-servers.live.json` (via `CODESPAR_MCP_SERVERS_PATH`)
+that re-injects the MCP `--demo` flag, so no Asaas / Nuvem-Fiscal /
+Z-API credentials are needed; the test-mode path uses the default
+`mcp-servers.json` and stubs at the runtime layer via
+`cs.create({ mocks })`. Two paths, two configs, one cleanly-split
+dependency surface. The live test carries much more explicit per-turn
+prompts than the aimock
 test — buyer role, product, amount, demo-mode framing, and
 turn-specific instructions — because real Claude is appropriately
 cautious on under-specified commerce prompts and will ask for
