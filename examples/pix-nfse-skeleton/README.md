@@ -55,28 +55,32 @@ npm install
 npm run validate
 ```
 
-`validate.sh` picks one of two runtime sources, first match wins:
+`validate.sh` picks one of three runtime sources, first match wins:
 
 1. **`CODESPAR_BASE_URL` is set** — uses the already-running runtime at that URL. No lifecycle management; you start/stop the runtime yourself. That runtime must have been started with `CODESPAR_TEST_MODE_ENABLED=true`, or `cs.create()` rejects the mocks payload with HTTP 501 `mocks_not_permitted`.
-2. **`CODESPAR_RUNTIME_DIR` is set** — boots `node server/start.mjs` from that directory on port 3000 with `CODESPAR_TEST_MODE_ENABLED=true`, polls `/health` for up to 20s, runs `vitest`, then kills the runtime on exit. This is the recommended path.
+2. **`CODESPAR_RUNTIME_DIR` is set** — boots `node server/start.mjs` from that directory on port 3000 with `CODESPAR_TEST_MODE_ENABLED=true`, polls `/health` for up to 20s, runs `vitest`, then kills the runtime on exit. The clone must include the runtime's session-mocks support (commit `5830dc4` / PR #113 or later on `main`).
+3. **`docker` is on PATH** — pulls and runs `ghcr.io/codespar/codespar:latest` with the example dir mounted at `/example` (so the bridge reads `./mcp-servers.json` from there) and `CODESPAR_TEST_MODE_ENABLED=true` wired in. This is the default path; no env vars required. The image must include session-mocks support (commit `5830dc4` / PR #113 or later).
 
-A Docker onramp used to be the default, but the published `ghcr.io/codespar/codespar:latest` image predates session-mocks support, so it can't run this spec until a newer image is published. Use Option C below in the meantime.
-
-If neither source is available, the script prints setup instructions and exits non-zero. There's no implicit sibling-directory fallback — examples must work from any layout.
+If none of the above is available, the script prints setup instructions and exits non-zero. There's no implicit sibling-directory fallback — examples must work from any layout.
 
 ```bash
+# Option A (recommended) — install Docker, then just run:
+npm run validate
+
 # Option B — point at a running runtime (you manage its lifecycle).
 # It must have been started with CODESPAR_TEST_MODE_ENABLED=true.
 export CODESPAR_BASE_URL=http://localhost:3000
 npm run validate
 
-# Option C (recommended) — point at a local clone of codespar/codespar
-# (the script boots and kills it for you, in test mode). The clone must
-# include session-mocks support on main (commit 5830dc4 or later).
+# Option C — point at a local clone of codespar/codespar (the script
+# manages it, in test mode):
 git clone https://github.com/codespar/codespar.git /tmp/codespar
 (cd /tmp/codespar && git checkout main && npm install && npx turbo run build)
 export CODESPAR_RUNTIME_DIR=/tmp/codespar
-export CODESPAR_TEST_MODE_ENABLED=true
+npm run validate
+
+# Pin a specific runtime image instead of :latest:
+export CODESPAR_RUNTIME_IMAGE=ghcr.io/codespar/codespar:latest
 npm run validate
 ```
 

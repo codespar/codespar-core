@@ -74,7 +74,7 @@ through a fiscal-taxonomy decision a flow-builder cannot.
 | `package.json` | Pins `@codespar/mcp-nuvem-fiscal@^0.3.0`, `@codespar/mcp-z-api@^0.2.1`, and `@copilotkit/aimock@^1.24.1` |
 | `mcp-servers.json` | Server registry consumed by the bridge — same shape as the walking skeleton, two stdio servers. Tool responses come from the `mocks` field on `cs.create()`, not from the servers themselves |
 | `fixtures/aimock-fixtures.json` | Three-turn aimock fixture: turn 0 emits two `nuvem-fiscal__create_nfse` tool_use blocks; turn 1 emits one `z-api__send_text` tool_use; turn 2 emits the final text summary |
-| `scripts/validate.sh` | Boots aimock first, then resolves a runtime (local clone / already-running) with test mode enabled, polls `/health`, runs vitest, kills both on exit |
+| `scripts/validate.sh` | Boots aimock first, then resolves a runtime (already-running / local clone / docker) with test mode enabled, polls `/health`, runs vitest, kills both on exit |
 | `tsconfig.json` | Minimal TS config (NodeNext, strict, vitest globals) |
 | `vitest.config.ts` | 60s test timeout (LLM-driven loops are slower than the deterministic skeleton) |
 | `.gitignore` | `node_modules/`, runtime + aimock log/pid files |
@@ -88,7 +88,7 @@ npm run validate
 ```
 
 `validate.sh` always boots aimock on port 4010 first (the LLM
-stand-in), then picks one of two runtime sources, first match wins:
+stand-in), then picks one of three runtime sources, first match wins:
 
 1. **`CODESPAR_BASE_URL` is set** — uses the already-running runtime
    at that URL. The script does NOT manage the runtime's lifecycle,
@@ -102,32 +102,38 @@ stand-in), then picks one of two runtime sources, first match wins:
    `ANTHROPIC_BASE_URL=http://localhost:4010`,
    `ANTHROPIC_API_KEY=placeholder`, and `CODESPAR_TEST_MODE_ENABLED=true`
    exported, polls `/health` for up to 20s, runs vitest, then kills the
-   runtime + aimock on exit. This is the recommended path.
+   runtime + aimock on exit. The clone must include the runtime's
+   session-mocks support (commit `5830dc4` / PR #113 or later on `main`).
+3. **`docker` is on PATH** — pulls and runs
+   `ghcr.io/codespar/codespar:latest` with the example dir mounted at
+   `/example`, `--add-host=host.docker.internal:host-gateway` so the
+   container can reach the host's aimock at `host.docker.internal:4010`,
+   and `CODESPAR_TEST_MODE_ENABLED=true` wired in. This is the default
+   path; no env vars required. The image must include session-mocks
+   support (commit `5830dc4` / PR #113 or later).
 
-Docker mode is temporarily unavailable: the published
-`ghcr.io/codespar/codespar:latest` image and the current latest `v*`
-tag (`v0.2.1`) both predate the runtime's mocks support, so there is no
-container on-ramp for this test yet. Until a post-mocks image is
-published on ghcr.io, use Option C (a sibling clone of
-`codespar/codespar` main).
-
-If neither source is available, the script prints setup instructions
-and exits non-zero.
+If none is available, the script prints setup instructions and exits
+non-zero.
 
 ```bash
-# Option C (recommended) — point at a local clone of codespar/codespar
-# main. The clone MUST include the mocks support (commit 5830dc4 or
-# later on main).
-git clone https://github.com/codespar/codespar.git /tmp/codespar
-(cd /tmp/codespar && git checkout main && npm install && npx turbo run build)
-export CODESPAR_RUNTIME_DIR=/tmp/codespar
-export CODESPAR_TEST_MODE_ENABLED=true
+# Option A (recommended) — install Docker, then just run:
 npm run validate
 
 # Option B — point at a running runtime (you manage its lifecycle AND
 # make sure its ANTHROPIC_BASE_URL points at the local aimock AND it
 # runs with CODESPAR_TEST_MODE_ENABLED=true).
 export CODESPAR_BASE_URL=http://localhost:3000
+npm run validate
+
+# Option C — point at a local clone of codespar/codespar (the script
+# manages it, in test mode):
+git clone https://github.com/codespar/codespar.git /tmp/codespar
+(cd /tmp/codespar && git checkout main && npm install && npx turbo run build)
+export CODESPAR_RUNTIME_DIR=/tmp/codespar
+npm run validate
+
+# Pin a specific runtime image instead of :latest:
+export CODESPAR_RUNTIME_IMAGE=ghcr.io/codespar/codespar:latest
 npm run validate
 
 # Move aimock off port 4010 if it conflicts with something else on
