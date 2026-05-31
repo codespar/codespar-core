@@ -72,14 +72,14 @@ through a fiscal-taxonomy decision a flow-builder cannot.
 |---|---|
 | `skeleton.test.ts` | Vitest spec — calls `session.send(naturalLanguagePrompt)`, asserts two `nuvem-fiscal__create_nfse` calls plus at least one `z-api__send_text` call whose message body carries both PDF URLs |
 | `package.json` | Pins `@codespar/mcp-nuvem-fiscal@^0.3.0`, `@codespar/mcp-z-api@^0.2.1`, and `@copilotkit/aimock@^1.24.1` |
-| `mcp-servers.json` | Server registry consumed by the bridge — same shape as the walking skeleton, two stdio servers, both spawned with `--demo` |
+| `mcp-servers.json` | Server registry consumed by the bridge — same shape as the walking skeleton, two stdio servers. Tool responses come from the `mocks` field on `cs.create()`, not from the servers themselves |
 | `fixtures/aimock-fixtures.json` | Three-turn aimock fixture: turn 0 emits two `nuvem-fiscal__create_nfse` tool_use blocks; turn 1 emits one `z-api__send_text` tool_use; turn 2 emits the final text summary |
-| `scripts/validate.sh` | Boots aimock first, then resolves a runtime (Docker / local clone / already-running), polls `/health`, runs vitest, kills both on exit |
+| `scripts/validate.sh` | Boots aimock first, then resolves a runtime (local clone / already-running) with test mode enabled, polls `/health`, runs vitest, kills both on exit |
 | `tsconfig.json` | Minimal TS config (NodeNext, strict, vitest globals) |
 | `vitest.config.ts` | 60s test timeout (LLM-driven loops are slower than the deterministic skeleton) |
 | `.gitignore` | `node_modules/`, runtime + aimock log/pid files |
 
-## Three run paths
+## Run paths
 
 ```bash
 cd examples/nfse-from-natural-language
@@ -88,45 +88,46 @@ npm run validate
 ```
 
 `validate.sh` always boots aimock on port 4010 first (the LLM
-stand-in), then picks one of three runtime sources, first match wins:
+stand-in), then picks one of two runtime sources, first match wins:
 
 1. **`CODESPAR_BASE_URL` is set** — uses the already-running runtime
    at that URL. The script does NOT manage the runtime's lifecycle,
    and that runtime must already be configured with
-   `ANTHROPIC_BASE_URL=http://localhost:4010` or its `session.send()`
-   call will hit the real Anthropic API instead of the local aimock.
+   `ANTHROPIC_BASE_URL=http://localhost:4010` (or its `session.send()`
+   call will hit the real Anthropic API instead of the local aimock)
+   and `CODESPAR_TEST_MODE_ENABLED=true` (or session create rejects the
+   `mocks` field with HTTP 501 `mocks_not_permitted`).
 2. **`CODESPAR_RUNTIME_DIR` is set** — boots `node server/start.mjs`
    from that directory on port 3000 with
-   `ANTHROPIC_BASE_URL=http://localhost:4010` and
-   `ANTHROPIC_API_KEY=placeholder` exported, polls `/health` for up to
-   20s, runs vitest, then kills the runtime + aimock on exit.
-3. **`docker` is on PATH** — pulls and runs
-   `ghcr.io/codespar/codespar:latest` with the example dir mounted at
-   `/example` and `--add-host=host.docker.internal:host-gateway` so
-   the container can reach the host's aimock at
-   `host.docker.internal:4010`. This is the default path; no env vars
-   required.
+   `ANTHROPIC_BASE_URL=http://localhost:4010`,
+   `ANTHROPIC_API_KEY=placeholder`, and `CODESPAR_TEST_MODE_ENABLED=true`
+   exported, polls `/health` for up to 20s, runs vitest, then kills the
+   runtime + aimock on exit. This is the recommended path.
 
-If none of the above is available, the script prints setup
-instructions and exits non-zero.
+Docker mode is temporarily unavailable: the published
+`ghcr.io/codespar/codespar:latest` image and the current latest `v*`
+tag (`v0.2.1`) both predate the runtime's mocks support, so there is no
+container on-ramp for this test yet. Until a post-mocks image is
+published on ghcr.io, use Option C (a sibling clone of
+`codespar/codespar` main).
+
+If neither source is available, the script prints setup instructions
+and exits non-zero.
 
 ```bash
-# Option A (recommended) — install Docker, then just run:
+# Option C (recommended) — point at a local clone of codespar/codespar
+# main. The clone MUST include the mocks support (commit 5830dc4 or
+# later on main).
+git clone https://github.com/codespar/codespar.git /tmp/codespar
+(cd /tmp/codespar && git checkout main && npm install && npx turbo run build)
+export CODESPAR_RUNTIME_DIR=/tmp/codespar
+export CODESPAR_TEST_MODE_ENABLED=true
 npm run validate
 
 # Option B — point at a running runtime (you manage its lifecycle AND
-# make sure its ANTHROPIC_BASE_URL points at the local aimock).
+# make sure its ANTHROPIC_BASE_URL points at the local aimock AND it
+# runs with CODESPAR_TEST_MODE_ENABLED=true).
 export CODESPAR_BASE_URL=http://localhost:3000
-npm run validate
-
-# Option C — point at a local clone of codespar/codespar.
-git clone https://github.com/codespar/codespar.git /tmp/codespar
-(cd /tmp/codespar && npm install && npx turbo run build)
-export CODESPAR_RUNTIME_DIR=/tmp/codespar
-npm run validate
-
-# Pin a specific runtime image instead of :latest:
-export CODESPAR_RUNTIME_IMAGE=ghcr.io/codespar/codespar:v0.1.0
 npm run validate
 
 # Move aimock off port 4010 if it conflicts with something else on
@@ -142,16 +143,20 @@ offline test" and "live production." Each one toggles by changing a
 single configuration surface; nothing in the test or runtime code
 branches on demo mode.
 
-**Layer 1 — MCP server fixtures (`--demo` in `mcp-servers.json`).**
-The two MCP servers spawn with their `--demo` flag, which makes them
-return deterministic fixture payloads without touching real Nuvem
-Fiscal or Z-API APIs. `@codespar/mcp-nuvem-fiscal@^0.3.0` has a
-stateful demo handler — two `create_nfse` calls inside one process
-return distinct ids `nfse_demo_001` / `nfse_demo_002` and echo the
-input `servico.codigo`, `valor`, and `servico.descricao` back. To
-swap to live: drop `--demo` from `mcp-servers.json` and export the
-real `NUVEM_FISCAL_CLIENT_ID` / `NUVEM_FISCAL_CLIENT_SECRET` (OAuth
-client credentials) plus a `Z_API_*` instance + token.
+**Layer 1 — tool responses (`mocks` API on `cs.create()`).**
+The test declares a fixture per tool on `cs.create({ servers, mocks })`.
+With the runtime in test mode (`CODESPAR_TEST_MODE_ENABLED=true`), every
+external tool dispatch is intercepted by the mocks engine before it
+reaches the MCP bridge — a matching entry returns its scripted output,
+and a dispatch with no matching entry fails with `tool_not_mocked`
+rather than falling through to a real provider. The
+`nuvem-fiscal/create_nfse` fixture is a stateful array, so the two
+`create_nfse` calls the agent splits into return distinct ids
+`nfse_demo_001` / `nfse_demo_002` — the per-call output is pinned in the
+test itself, not inferred from an MCP server's demo handler. To swap to
+live: drop the `mocks` field, run the runtime without test mode, and
+export the real `NUVEM_FISCAL_CLIENT_ID` / `NUVEM_FISCAL_CLIENT_SECRET`
+(OAuth client credentials) plus a `Z_API_*` instance + token.
 
 **Layer 2 — LLM responses (`ANTHROPIC_BASE_URL` → aimock).**
 `@copilotkit/aimock` listens on port 4010 and serves the Anthropic
@@ -162,13 +167,12 @@ real model. The fixture file at `fixtures/aimock-fixtures.json` encodes the
 three-turn dance: tool_use × 2 → tool_use × 1 → final text. To swap to
 live: unset `ANTHROPIC_BASE_URL` and set a real `ANTHROPIC_API_KEY`.
 
-**Layer 3 — live everything.** Remove `--demo` from
-`mcp-servers.json`, set real Nuvem Fiscal + Z-API credentials, unset
-`ANTHROPIC_BASE_URL`, and the same test code runs against real
+**Layer 3 — live everything.** Drop the `mocks` field and run the
+runtime without test mode, set real Nuvem Fiscal + Z-API credentials,
+unset `ANTHROPIC_BASE_URL`, and the same test code runs against real
 fiscal-authority endpoints, real WhatsApp delivery, and a real Claude
-model. The test code does not change. The fixture file becomes dead
-weight, which is the point: fixtures are the on-ramp, not the
-destination.
+model. The test code does not change. The fixtures become dead weight,
+which is the point: fixtures are the on-ramp, not the destination.
 
 ## WhatsApp inbound: where this fits in production
 
@@ -210,7 +214,7 @@ The vitest spec asserts these invariants inside the single
 
 ## Live LLM smoke (`npm run validate:live`)
 
-`validate.sh` is fully mocked — aimock stands in for Anthropic, MCP servers stay in `--demo` mode. That gets the example green deterministically and cheaply, but it cannot catch regressions that only surface against real `api.anthropic.com`: tool-name regex violations, invalid model ids, system-prompt issues that change Claude's behaviour. To verify those too, run:
+`validate.sh` is fully mocked — aimock stands in for Anthropic, and tool responses come from the `mocks` API on `cs.create()` (runtime in test mode). That gets the example green deterministically and cheaply, but it cannot catch regressions that only surface against real `api.anthropic.com`: tool-name regex violations, invalid model ids, system-prompt issues that change Claude's behaviour. To verify those too, run:
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-... npm run validate:live
@@ -225,17 +229,21 @@ This is **not in CI** — it costs real Anthropic spend (a few cents per run) an
 Flagged here so they survive as latent debt rather than getting lost
 in review comments:
 
-1. **Fixture coverage of fiscal edge cases is shallow.** The
-   `create_nfse` demo handler models the happy path: stateful id
-   generation, echoed inputs, `status: "autorizada"`. It does not
-   model SEFAZ amendment windows (NFS-e issued within 24h can usually
-   be amended, beyond that you cut a cancellation NFS-e), the
-   municipal ISS-rate differentials that determine which prefecture
-   to file under for cross-municipality work, contested-cart fiscal
-   blocks (when payment dispute opens, the NFS-e must be withheld or
-   reversed), or LGPD / PCI considerations for the customer-data
-   payload. These all matter in production and are not exercised by
-   this example.
+1. **Fiscal edge cases now pin per-test via the mocks API.** The
+   happy-path fixture here models stateful id generation and
+   `status: "autorizada"`, but the mocks API resolves what used to be a
+   coverage gap: a test can declare any `create_nfse` output it needs
+   per-test — a rejection status, a cancellation NFS-e, an amendment
+   response — by pinning that exact payload on `cs.create({ mocks })`
+   rather than relying on a single demo-handler implementation to model
+   it. SEFAZ amendment windows (NFS-e issued within 24h can usually be
+   amended, beyond that you cut a cancellation NFS-e), municipal
+   ISS-rate differentials for cross-municipality work, contested-cart
+   fiscal blocks (when a payment dispute opens, the NFS-e must be
+   withheld or reversed), and LGPD / PCI considerations for the
+   customer-data payload all matter in production; with the mocks API
+   each can now get its own deterministic test fixture instead of
+   waiting on demo-handler math.
 2. **aimock fixture is positional, not semantic.** The fixture
    matches on `turnIndex` and `hasToolResult`, not on the actual
    content of the user's message or the runtime's tool-use shape. A

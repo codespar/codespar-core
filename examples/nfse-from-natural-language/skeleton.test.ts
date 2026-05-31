@@ -1,22 +1,28 @@
 /**
  * Service invoice from natural language — an LLM-driven end-to-end test
- * against the OSS MCP bridge using `session.send()`.
+ * against the OSS runtime using `session.send()`.
  *
  * One natural-language message in, two NFS-e issued, one WhatsApp
- * outbound carrying both PDF links. The LLM call goes through
- * @copilotkit/aimock (via the runtime's ANTHROPIC_BASE_URL) and the
- * MCP servers run with `--demo` to return deterministic fixtures.
+ * outbound carrying both PDF links. Two stub layers keep the run
+ * deterministic and offline:
+ *   - LLM stub: @copilotkit/aimock answers the runtime's Anthropic
+ *     calls (via ANTHROPIC_BASE_URL), scripting the tool-use turns.
+ *   - Tool stub: the `mocks` field on `cs.create()` intercepts every
+ *     external tool dispatch before it reaches the MCP bridge. The
+ *     nuvem-fiscal/create_nfse fixture is a stateful array, so the two
+ *     create_nfse calls the agent splits into (LC 116/2003 brackets
+ *     1.05 and 17.01) return distinct ids per call.
  *
- * Source of truth for the fixture payloads: the two MCP packages with
- * `--demo` on their spawn line in `mcp-servers.json`, plus the aimock
- * fixture file at `./fixtures/aimock-fixtures.json`. The runtime is started
- * separately (see scripts/validate.sh) so its cwd matches this
- * directory and the bridge reads `./mcp-servers.json`.
+ * The runtime must run with CODESPAR_TEST_MODE_ENABLED=true; in that
+ * mode every external dispatch needs a matching mock or the call fails
+ * with tool_not_mocked. The runtime is started separately (see
+ * scripts/validate.sh) so its cwd matches this directory and the bridge
+ * reads `./mcp-servers.json`.
  */
 
 import { afterAll, describe, expect, it } from "vitest";
 import { CodeSpar } from "@codespar/sdk";
-import type { Session } from "@codespar/sdk";
+import type { MockValue, Session } from "@codespar/sdk";
 
 // `local` is an OSS sentinel — the self-hosted runtime accepts any
 // non-empty Bearer token. Managed mode replaces this with a real
@@ -24,6 +30,31 @@ import type { Session } from "@codespar/sdk";
 const CODESPAR_API_KEY = process.env.CODESPAR_API_KEY ?? "local";
 const CODESPAR_BASE_URL =
   process.env.CODESPAR_BASE_URL ?? "http://localhost:3000";
+
+// Tool-stub layer. Keys use the canonical `server/tool` form. The
+// nuvem-fiscal/create_nfse entry is a stateful array: call 1 returns
+// nfse_demo_001, call 2 returns nfse_demo_002. That per-call pinning is
+// this demo's whole point — the agent splits the natural-language
+// message into two create_nfse calls (service codes 1.05 and 17.01),
+// and each gets its own scripted output.
+const mocks: Record<string, MockValue> = {
+  "nuvem-fiscal/create_nfse": [
+    {
+      id: "nfse_demo_001",
+      status: "autorizada",
+      pdf_url: "https://example.com/nfse_demo_001.pdf",
+    },
+    {
+      id: "nfse_demo_002",
+      status: "autorizada",
+      pdf_url: "https://example.com/nfse_demo_002.pdf",
+    },
+  ],
+  "z-api/send_text": {
+    messageId: "msg_demo_001",
+    status: "success",
+  },
+};
 
 let session: Session | undefined;
 
@@ -36,6 +67,7 @@ describe("Service invoice from natural language", () => {
 
     session = await cs.create(`nfse-from-nl-${Date.now()}`, {
       servers: ["nuvem-fiscal", "z-api"],
+      mocks,
     });
 
     const result = await session.send(
@@ -43,7 +75,7 @@ describe("Service invoice from natural language", () => {
     );
 
     // ── Two NFS-e issued, both successful, both shaped like the
-    //    stateful demo handler in @codespar/mcp-nuvem-fiscal returns. ──
+    //    stateful create_nfse mock fixture returns. ──
     const nfseCalls = result.tool_calls.filter(
       (tc) => tc.tool_name === "nuvem-fiscal__create_nfse",
     );
@@ -85,7 +117,9 @@ describe("Service invoice from natural language", () => {
       expect(data.pdf_url!.length).toBeGreaterThan(0);
     });
 
-    // ── WhatsApp outbound carrying both PDF URLs. ──
+    // ── WhatsApp outbound carrying both PDF URLs. The message text
+    //    (with both nfse_demo ids) comes from the aimock-scripted
+    //    z-api__send_text arguments, not from this mock's output. ──
     const sendCalls = result.tool_calls.filter(
       (tc) => tc.tool_name === "z-api__send_text",
     );

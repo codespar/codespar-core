@@ -2,7 +2,7 @@
   "name": "@codespar/example-nfse-from-natural-language",
   "version": "0.0.0",
   "private": true,
-  "description": "Service invoice from a natural-language message — driven by session.send() + aimock against the OSS MCP bridge with --demo fixtures.",
+  "description": "Service invoice from a natural-language message — driven by session.send() + aimock against the OSS runtime with mocks-API tool fixtures.",
   "type": "module",
   "scripts": {
     "test": "vitest run",
