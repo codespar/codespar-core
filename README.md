@@ -33,6 +33,7 @@ LATAM-first by design: Pix + NF-e + WhatsApp + PSP routing are first-class, with
 | [`@codespar/autogen`](packages/autogen) | Microsoft AutoGen |
 | [`@codespar/camel`](packages/camel) | CAMEL-AI |
 | [`@codespar/letta`](packages/letta) | Letta (MemGPT) |
+| [`@codespar/hermes`](packages/hermes) | Hermes Agent (Nous Research) |
 
 ## Quick Start
 
