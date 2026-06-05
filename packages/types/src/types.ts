@@ -103,6 +103,23 @@ export interface Session extends SessionBase {
    * the router picks the cheapest carrier per request.
    */
   ship(args: ShipArgs): Promise<ShipResult>;
+  /**
+   * Record money movement in a double-entry ledger, read account
+   * balances, or create accounts. Typed wrapper around
+   * `execute("codespar_ledger", {...})`. Routes to the tenant's
+   * self-hosted Lerian Midaz instance (multi-currency, multi-asset,
+   * immutable + auditable). Distinct from pay/charge (those move real
+   * money via PSPs) — this is the system of record / books.
+   */
+  ledger(args: LedgerArgs): Promise<LedgerResult>;
+  /**
+   * Issue and control payment cards (codespar_issue). Typed wrapper
+   * around `execute("codespar_issue", {...})`. Routes to Pomelo
+   * card-issuing — card-virtual / card-physical / card-control
+   * (freeze/unfreeze/cancel) / card-get. The agent-spend-card
+   * primitive; distinct from pay/charge which move money.
+   */
+  issue(args: IssueArgs): Promise<IssueResult>;
   mcp?: { url: string; headers: Record<string, string> };
 }
 
@@ -211,6 +228,105 @@ export interface ShipResult {
   carrier?: string;
   estimated_delivery?: string;
   cost_minor?: number;
+  raw?: unknown;
+}
+
+/* ── codespar_ledger wire shape ──────────────────────────────── */
+
+/**
+ * Ledger args. Three actions over a tenant's self-hosted double-entry
+ * ledger (Lerian Midaz). Mirrors the backend's MetaLedgerArgs
+ * (codespar-enterprise) so the wire payload matches byte-for-byte.
+ *   - entry    Post an n:n journal transaction (source debits must
+ *              equal destination credits, same asset)
+ *   - balance  Read an account's balances
+ *   - account  Create an account for an asset
+ * The connection (base_url + org_id + ledger_id) is operator-seeded,
+ * never passed by the agent. Amounts are in MINOR units (cents).
+ */
+export interface LedgerLeg {
+  /** Account alias, e.g. "@wallet/user_123". */
+  account: string;
+  /** Amount in minor units (cents). */
+  amount: number;
+}
+
+export interface LedgerArgs {
+  /** entry | balance | account. */
+  action: "entry" | "balance" | "account";
+  /** Asset / currency code for entry + account (BRL, USD, USDC, ...). */
+  asset?: string;
+  /** Decimal places for the asset. Default 2 (fiat); JPY=0, most
+   *  crypto=6/8. */
+  scale?: number;
+  /** Debit side(s) of an entry. Required for action=entry. */
+  source?: LedgerLeg[];
+  /** Credit side(s) of an entry. Required for action=entry. */
+  destination?: LedgerLeg[];
+  /** Transaction description (entry only). */
+  description?: string;
+  /** Account UUID to read balances for. Required for action=balance. */
+  account?: string;
+  /** Account alias for action=account, e.g. "@wallet/user_123". */
+  alias?: string;
+  /** Account display name (action=account). */
+  name?: string;
+  /** Midaz account type (deposit, savings, external). Default deposit.
+   *  action=account only. */
+  type?: string;
+  /** Free-form metadata stored on the entry / account. */
+  metadata?: Record<string, unknown>;
+}
+
+export interface LedgerResult {
+  /** Transaction or account id (entry / account actions). */
+  id?: string | null;
+  status?: string;
+  /** Account id echoed back on creation. */
+  account_id?: string | null;
+  alias?: string | null;
+  /** Per-asset available + on-hold amounts (action=balance). */
+  balances?: unknown;
+  raw?: unknown;
+}
+
+/* ── codespar_issue wire shape ───────────────────────────────── */
+
+/**
+ * Card-issuing args. Four actions over a card-issuing provider (Pomelo).
+ * Mirrors the backend's MetaIssueArgs (codespar-enterprise) so the wire
+ * payload matches byte-for-byte. Asset-agnostic — the program currency
+ * is set on the card program, not per call.
+ *   - card-virtual   Issue a virtual card (active immediately)
+ *   - card-physical  Issue a physical card (needs shipping_address)
+ *   - card-control   Freeze / unfreeze / cancel an existing card
+ *   - card-get       Read a card's status
+ */
+export interface IssueArgs {
+  action: "card-virtual" | "card-physical" | "card-control" | "card-get";
+  /** Cardholder id (maps to Pomelo user_id). Required to issue. */
+  cardholder_id?: string;
+  /** Card program / BIN (maps to Pomelo affinity_group_id). Required to
+   *  issue. */
+  program_id?: string;
+  /** Card id — required for card-control / card-get. */
+  card_id?: string;
+  /** Control verb: freeze→BLOCKED, unfreeze→ACTIVE, cancel→DISABLED. */
+  control?: "freeze" | "unfreeze" | "cancel";
+  /** Reason stamped on a control action. */
+  reason?: string;
+  /** Shipping address for card-physical. */
+  shipping_address?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface IssueResult {
+  id?: string | null;
+  status?: string | null;
+  card_type?: string | null;
+  last_four?: string | null;
+  cardholder_id?: string | null;
+  program_id?: string | null;
   raw?: unknown;
 }
 

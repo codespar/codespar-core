@@ -35,6 +35,10 @@ from .types import (
     DiscoverToolMatch,
     DoneEvent,
     ErrorEvent,
+    IssueArgs,
+    IssueResult,
+    LedgerArgs,
+    LedgerResult,
     PaymentStatusEvent,
     PaymentStatusResult,
     ProxyRequest,
@@ -192,6 +196,29 @@ def _parse_ship_result(raw: dict[str, Any]) -> ShipResult:
         carrier=raw.get("carrier"),
         estimated_delivery=raw.get("estimated_delivery"),
         cost_minor=raw.get("cost_minor"),
+        raw=raw.get("raw"),
+    )
+
+
+def _parse_ledger_result(raw: dict[str, Any]) -> LedgerResult:
+    return LedgerResult(
+        id=raw.get("id"),
+        status=raw.get("status"),
+        account_id=raw.get("account_id"),
+        alias=raw.get("alias"),
+        balances=raw.get("balances"),
+        raw=raw.get("raw"),
+    )
+
+
+def _parse_issue_result(raw: dict[str, Any]) -> IssueResult:
+    return IssueResult(
+        id=raw.get("id"),
+        status=raw.get("status"),
+        card_type=raw.get("card_type"),
+        last_four=raw.get("last_four"),
+        cardholder_id=raw.get("cardholder_id"),
+        program_id=raw.get("program_id"),
         raw=raw.get("raw"),
     )
 
@@ -520,6 +547,94 @@ class AsyncSession:
         if not isinstance(result.data, dict):
             raise ApiError("ship: malformed response", status=0, body=result.data)
         return _parse_ship_result(result.data)
+
+    async def ledger(self, args: LedgerArgs) -> LedgerResult:
+        """
+        Post a double-entry journal entry, read an account's balances,
+        or create an account on the tenant's self-hosted Lerian Midaz
+        ledger. Typed wrapper around ``execute("codespar_ledger", {...})``.
+
+        ``args.action`` is one of ``entry`` | ``balance`` | ``account``.
+        For ``entry``: asset + source + destination are required (source
+        debits must equal destination credits, same asset). For
+        ``balance``: ``account`` (id) is required. For ``account``:
+        ``asset`` is required. Amounts are in MINOR units (cents). The
+        connection (base_url + org_id + ledger_id) is operator-seeded.
+        """
+        params: dict[str, Any] = {"action": args.action}
+        if args.asset is not None:
+            params["asset"] = args.asset
+        if args.scale is not None:
+            params["scale"] = args.scale
+        if args.source is not None:
+            params["source"] = [
+                {"account": leg.account, "amount": leg.amount}
+                for leg in args.source
+            ]
+        if args.destination is not None:
+            params["destination"] = [
+                {"account": leg.account, "amount": leg.amount}
+                for leg in args.destination
+            ]
+        if args.description is not None:
+            params["description"] = args.description
+        if args.account is not None:
+            params["account"] = args.account
+        if args.alias is not None:
+            params["alias"] = args.alias
+        if args.name is not None:
+            params["name"] = args.name
+        if args.type is not None:
+            params["type"] = args.type
+        if args.metadata is not None:
+            params["metadata"] = args.metadata
+        result = await self.execute("codespar_ledger", params)
+        if not result.success:
+            raise ApiError(
+                f"ledger failed: {result.error or 'unknown'}",
+                status=0,
+                body=result.error,
+            )
+        if not isinstance(result.data, dict):
+            raise ApiError("ledger: malformed response", status=0, body=result.data)
+        return _parse_ledger_result(result.data)
+
+    async def issue(self, args: IssueArgs) -> IssueResult:
+        """
+        Issue a virtual/physical card, control (freeze/unfreeze/cancel)
+        one, or read its status on the tenant's Pomelo card-issuing
+        program. Typed wrapper around ``execute("codespar_issue", {...})``.
+
+        ``args.action`` is one of ``card-virtual`` | ``card-physical`` |
+        ``card-control`` | ``card-get``. cardholder_id + program_id are
+        required to issue; card_id is required for control + get;
+        card-physical needs shipping_address.
+        """
+        params: dict[str, Any] = {"action": args.action}
+        if args.cardholder_id is not None:
+            params["cardholder_id"] = args.cardholder_id
+        if args.program_id is not None:
+            params["program_id"] = args.program_id
+        if args.card_id is not None:
+            params["card_id"] = args.card_id
+        if args.control is not None:
+            params["control"] = args.control
+        if args.reason is not None:
+            params["reason"] = args.reason
+        if args.shipping_address is not None:
+            params["shipping_address"] = args.shipping_address
+        if args.metadata is not None:
+            params["metadata"] = args.metadata
+        result = await self.execute("codespar_issue", params)
+        if not result.success:
+            raise ApiError(
+                f"issue failed: {result.error or 'unknown'}",
+                status=0,
+                body=result.error,
+            )
+        if not isinstance(result.data, dict):
+            raise ApiError("issue: malformed response", status=0, body=result.data)
+        return _parse_issue_result(result.data)
 
     async def verification_status(
         self, tool_call_id: str

@@ -459,6 +459,98 @@ class ShipResult:
     raw: Any = None
 
 
+# ── codespar_ledger wire shape ─────────────────────────────────────
+
+
+LedgerAction = Literal["entry", "balance", "account"]
+
+
+@dataclass(slots=True)
+class LedgerLeg:
+    """One side of a journal entry. ``account`` is a Midaz account alias
+    (e.g. ``@wallet/user_123``); ``amount`` is in minor units (cents)."""
+
+    account: str
+    amount: int
+
+
+@dataclass(slots=True)
+class LedgerArgs:
+    """Input shape for ``Session.ledger``.
+
+    Three actions over a tenant's self-hosted double-entry ledger
+    (Lerian Midaz). Mirrors the backend's MetaLedgerArgs so the wire
+    payload matches byte-for-byte. The connection (base_url + org_id +
+    ledger_id) is operator-seeded, never passed by the agent. Amounts
+    are in MINOR units (cents).
+      - ``entry``    Post an n:n journal transaction (source debits must
+                     equal destination credits, same asset)
+      - ``balance``  Read an account's balances
+      - ``account``  Create an account for an asset
+    """
+
+    action: LedgerAction
+    asset: str | None = None
+    scale: int | None = None
+    source: list[LedgerLeg] | None = None
+    destination: list[LedgerLeg] | None = None
+    description: str | None = None
+    account: str | None = None
+    alias: str | None = None
+    name: str | None = None
+    type: str | None = None
+    metadata: dict[str, Any] | None = None
+
+
+@dataclass(slots=True)
+class LedgerResult:
+    id: str | None = None
+    status: str | None = None
+    account_id: str | None = None
+    alias: str | None = None
+    balances: Any = None
+    raw: Any = None
+
+
+# ── codespar_issue wire shape ──────────────────────────────────────
+
+
+IssueAction = Literal["card-virtual", "card-physical", "card-control", "card-get"]
+
+
+@dataclass(slots=True)
+class IssueArgs:
+    """Input shape for ``Session.issue`` (Pomelo card issuing).
+
+    Mirrors the backend's MetaIssueArgs. Asset-agnostic — the program
+    currency is set on the card program, not per call.
+      - ``card-virtual``   Issue a virtual card (active immediately)
+      - ``card-physical``  Issue a physical card (needs shipping_address)
+      - ``card-control``   Freeze / unfreeze / cancel an existing card
+      - ``card-get``       Read a card's status
+    """
+
+    action: IssueAction
+    cardholder_id: str | None = None
+    program_id: str | None = None
+    card_id: str | None = None
+    control: Literal["freeze", "unfreeze", "cancel"] | None = None
+    reason: str | None = None
+    shipping_address: dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None
+
+
+@dataclass(slots=True)
+class IssueResult:
+    id: str | None = None
+    status: str | None = None
+    card_type: str | None = None
+    last_four: str | None = None
+    cardholder_id: str | None = None
+    program_id: str | None = None
+    raw: Any = None
+
+
 # ── /v1/tool-calls/:id/payment-status wire shape ───────────────────
 
 

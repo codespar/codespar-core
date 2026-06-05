@@ -31,6 +31,10 @@ from .types import (
     ConnectionWizardResult,
     DiscoverOptions,
     DiscoverResult,
+    IssueArgs,
+    IssueResult,
+    LedgerArgs,
+    LedgerResult,
     PaymentStatusResult,
     ProxyRequest,
     ProxyResult,
@@ -172,6 +176,14 @@ class Session:
     def ship(self, args: ShipArgs) -> ShipResult:
         """Sync wrapper around ``AsyncSession.ship``. See that for docs."""
         return self._runner.run(self._async.ship(args))
+
+    def ledger(self, args: LedgerArgs) -> LedgerResult:
+        """Sync wrapper around ``AsyncSession.ledger``. See that for docs."""
+        return self._runner.run(self._async.ledger(args))
+
+    def issue(self, args: IssueArgs) -> IssueResult:
+        """Sync wrapper around ``AsyncSession.issue``. See that for docs."""
+        return self._runner.run(self._async.issue(args))
 
     def proxy_execute(self, request: ProxyRequest) -> ProxyResult:
         return self._runner.run(self._async.proxy_execute(request))

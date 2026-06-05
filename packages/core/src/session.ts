@@ -27,6 +27,10 @@ import type {
   ChargeResult,
   ShipArgs,
   ShipResult,
+  LedgerArgs,
+  LedgerResult,
+  IssueArgs,
+  IssueResult,
 } from "@codespar/types";
 
 interface SessionDeps {
@@ -304,6 +308,42 @@ export async function createSession(
         throw new Error(`ship failed: ${result.error ?? "unknown"}`);
       }
       return result.data as ShipResult;
+    },
+
+    /**
+     * codespar_ledger wrapper. Post a double-entry journal entry, read
+     * an account's balances, or create an account on the tenant's
+     * self-hosted Midaz ledger. Same wire as
+     * `execute("codespar_ledger", {...})` but returns a typed
+     * LedgerResult so the caller doesn't have to cast through
+     * ToolResult.data.
+     */
+    async ledger(args: LedgerArgs): Promise<LedgerResult> {
+      const result = await session.execute(
+        "codespar_ledger",
+        args as unknown as Record<string, unknown>,
+      );
+      if (!result.success) {
+        throw new Error(`ledger failed: ${result.error ?? "unknown"}`);
+      }
+      return result.data as LedgerResult;
+    },
+
+    /**
+     * codespar_issue wrapper. Issue a virtual/physical card, control
+     * (freeze/unfreeze/cancel) one, or read its status on the tenant's
+     * Pomelo card-issuing program. Same wire as
+     * `execute("codespar_issue", {...})` but returns a typed IssueResult.
+     */
+    async issue(args: IssueArgs): Promise<IssueResult> {
+      const result = await session.execute(
+        "codespar_issue",
+        args as unknown as Record<string, unknown>,
+      );
+      if (!result.success) {
+        throw new Error(`issue failed: ${result.error ?? "unknown"}`);
+      }
+      return result.data as IssueResult;
     },
 
     async paymentStatus(toolCallId: string): Promise<PaymentStatusResult> {

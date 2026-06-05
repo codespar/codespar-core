@@ -38,6 +38,7 @@ function fakeSession(tools: Tool[]): Session {
     async charge() { return {} as any; },
     async ship() { return {} as any; },
     async ledger() { return {} as any; },
+    async issue() { return {} as any; },
     async paymentStatus() { return { status: 'pending' } as any; },
     async paymentStatusStream() { return {} as any; },
     async verificationStatus() { return { status: 'pending' } as any; },
