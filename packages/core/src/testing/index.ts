@@ -79,6 +79,28 @@ export function fakeSession(
       return { id: "shp_fake", status: args.action === "track" ? "in_transit" : "created" };
     },
 
+    async ledger(args) {
+      if (args.action === "balance") {
+        return { account_id: args.account ?? "acc_fake", balances: [] };
+      }
+      if (args.action === "account") {
+        return { id: "acc_fake", account_id: "acc_fake", alias: args.alias ?? null };
+      }
+      return { id: "txn_fake", status: "POSTED" };
+    },
+
+    async issue(args) {
+      if (args.action === "card-control" || args.action === "card-get") {
+        return { id: args.card_id ?? "card_fake", status: "ACTIVE", card_type: "VIRTUAL" };
+      }
+      return {
+        id: "card_fake",
+        status: "ACTIVE",
+        card_type: args.action === "card-physical" ? "PHYSICAL" : "VIRTUAL",
+        last_four: "4242",
+      };
+    },
+
     async paymentStatus(toolCallId) {
       return { tool_call_id: toolCallId, payment_status: "pending", idempotency_key: null, original_status: "success", events: [] };
     },

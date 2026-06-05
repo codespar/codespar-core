@@ -63,6 +63,7 @@ export const ServerAuthSchemaResponseSchema = z.object({
     "cert",
     "hmac_signed",
     "jwt_ecdsa",
+    "two_header",
     "none",
   ]),
   environment: EnvironmentSchema,

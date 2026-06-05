@@ -100,6 +100,16 @@ const label = await session.ship({
   items: [/* ... */],
 });
 
+// Double-entry ledger (codespar_ledger) — routes to your self-hosted
+// Midaz instance. Amounts in minor units; source debits must equal
+// destination credits.
+const posting = await session.ledger({
+  action: "entry",
+  asset: "BRL",
+  source: [{ account: "@external/BRL", amount: 12500 }],
+  destination: [{ account: "@wallet/user_1", amount: 12500 }],
+});
+
 // Async settlement — codespar_charge / codespar_pay return synchronously,
 // but real settlement lands via webhook. Poll, or stream over SSE.
 const settled = await session.paymentStatus(charge.tool_call_id);
