@@ -1,17 +1,19 @@
 /**
- * Pix + NFS-e walking skeleton — a 4-step `loop()` chain against the OSS
- * MCP bridge using --demo fixtures from @codespar/mcp-asaas and
- * @codespar/mcp-nuvem-fiscal.
+ * Pix + NFS-e walking skeleton — a 4-step `loop()` chain (Asaas → Nuvem
+ * Fiscal) whose tool responses come from per-test fixtures declared inline
+ * via the `mocks` field on `cs.create()`.
  *
- * Source of truth for fixture payloads: those two MCP packages with
- * `--demo` on their spawn line (see mcp-servers.json). The runtime is
- * started separately (see scripts/validate.sh) so its cwd matches this
- * directory and the bridge reads `./mcp-servers.json`.
+ * Mockability shape: a single layer. There is no LLM in this loop — the
+ * steps are explicit, so no LLM-stub layer is needed. Every external tool
+ * the loop dispatches is pinned by an entry in the `mocks` map below; the
+ * runtime's test-mode dispatch seam intercepts each call before the MCP
+ * bridge, so no Asaas account or Nuvem Fiscal credential is required and a
+ * tool the loop calls without a matching mock fails as `tool_not_mocked`.
  */
 
 import { afterAll, describe, expect, it } from "vitest";
 import { CodeSpar, loop } from "@codespar/sdk";
-import type { LoopConfig, Session, ToolResult } from "@codespar/sdk";
+import type { LoopConfig, MockValue, Session, ToolResult } from "@codespar/sdk";
 
 // `local` is an OSS sentinel — the self-hosted runtime accepts any
 // non-empty Bearer token. Managed mode replaces this with a real
@@ -20,10 +22,44 @@ const CODESPAR_API_KEY = process.env.CODESPAR_API_KEY ?? "local";
 const CODESPAR_BASE_URL =
   process.env.CODESPAR_BASE_URL ?? "http://localhost:3000";
 
+// One fixture per tool the 4-step loop invokes. Each is a single-shot
+// object (same payload on every matching call). Shapes are pinned to the
+// assertions below — the customer id on the payment fixture is fixed
+// rather than echoed from the input, since a mock returns its scripted
+// output, not the request.
+const mocks: Record<string, MockValue> = {
+  "asaas/create_customer": {
+    id: "cus_demo_42",
+    name: "Cliente Demo",
+    cpfCnpj: "11144477735",
+    email: "cliente@example.com",
+    mobilePhone: "21995302656",
+  },
+  "asaas/create_payment": {
+    id: "pay_demo_1",
+    billingType: "PIX",
+    value: 150.0,
+    customer: "cus_demo_42",
+    status: "PENDING",
+  },
+  "asaas/get_pix_qrcode": {
+    payload:
+      "00020126580014br.gov.bcb.pix0136demo-pix-key-0000-0000-0000-000000005204000053039865802BR5909Cliente Demo6009Sao Paulo62070503***6304ABCD",
+    encodedImage:
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMCAQAA",
+  },
+  "nuvem-fiscal/create_nfse": {
+    id: "nfse_demo_1",
+    status: "autorizada",
+    numero: 1,
+    valorServico: 150.0,
+  },
+};
+
 let session: Session | undefined;
 
 describe("Pix + NFS-e walking skeleton", () => {
-  it("runs the 4-step loop end-to-end against the demo bridge", async () => {
+  it("runs the 4-step loop end-to-end against mocked tools", async () => {
     const cs = new CodeSpar({
       apiKey: CODESPAR_API_KEY,
       baseUrl: CODESPAR_BASE_URL,
@@ -31,6 +67,7 @@ describe("Pix + NFS-e walking skeleton", () => {
 
     session = await cs.create(`pix-nfse-skeleton-${Date.now()}`, {
       servers: ["asaas", "nuvem-fiscal"],
+      mocks,
     });
 
     const dueDate = new Date(Date.now() + 86_400_000)
@@ -98,8 +135,8 @@ describe("Pix + NFS-e walking skeleton", () => {
     expect(typeof payment.customer).toBe("string");
 
     // Step 3 — asaas/get_pix_qrcode → real BR-Code payload prefix
-    // (`00020126…` is the BR-Code static-EMV envelope; the demo
-    // fixture emits a payload starting with that header).
+    // (`00020126…` is the BR-Code static-EMV envelope; the fixture
+    // emits a payload starting with that header).
     expect(result.results[2]!.success).toBe(true);
     const qr = result.results[2]!.data as {
       payload: string;
@@ -123,7 +160,7 @@ describe("Pix + NFS-e walking skeleton", () => {
     expect(typeof nfse.numero).toBe("number");
     expect(typeof nfse.valorServico).toBe("number");
 
-    // No step's dispatch reported failure (the bridge round-trips were
+    // No step's dispatch reported failure (the mocked round-trips were
     // clean end-to-end, not just on the final aggregate flag).
     for (const r of result.results) {
       expect(r.success).toBe(true);

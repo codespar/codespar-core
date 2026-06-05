@@ -8,95 +8,33 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
-      - name: Configure npm auth
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
-          echo "always-auth=true" >> ~/.npmrc
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Upgrade npm for OIDC
+        # OIDC trusted publishing requires npm 11.5.1+; Node 22 ships 10.9.x.
+        run: npm install -g npm@latest
 
-      - name: Preflight — verify NPM_TOKEN has publish scope on @codespar
+      - name: OIDC availability check
+        # Assert that the id-token endpoint is wired and log the CLI
+        # versions in use.
         run: |
-          # Fail-loud guard that runs before the publish loop. The loop
-          # tolerates 404-PUT as propagation lag only because preflight has
-          # already proven the token has write access to the @codespar scope.
-          # A wrong-scope or wrong-account token must fail HERE, not be
-          # misclassified as a "lag warning" later.
-          set -e
-
-          echo "=== npm whoami ==="
-          WHO=$(npm whoami)
-          echo "Authenticated as: $WHO"
-          if [ "$WHO" != "codespar-npm" ]; then
-            echo ""
-            echo "✗ NPM_TOKEN does not belong to 'codespar-npm' (got '$WHO')."
-            echo "  Rotate the token from the codespar-npm npm account and update"
-            echo "  the NPM_TOKEN repo secret; tokens from any other account cannot"
-            echo "  publish to the @codespar scope."
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL}" ]; then
+            echo "ACTIONS_ID_TOKEN_REQUEST_URL is empty — id-token: write permission is not wired."
             exit 1
           fi
-
-          echo ""
-          echo "=== Per-package write-access check ==="
-          # `npm access list packages @codespar --json` returns
-          # { "@codespar/<pkg>": "write" | "read-only" | "read-write", ... }
-          # for every package the authenticated user has any access to.
-          ACCESS_JSON=$(npm access list packages @codespar --json 2>&1)
-          echo "$ACCESS_JSON"
-          echo ""
-
-          REQUIRED_PKGS='@codespar/types @codespar/sdk @codespar/api-types'
-          MISSING=()
-          READ_ONLY=()
-          for pkg in $REQUIRED_PKGS; do
-            LEVEL=$(echo "$ACCESS_JSON" | jq -r --arg p "$pkg" '.[$p] // "<missing>"')
-            echo "  $pkg → $LEVEL"
-            case "$LEVEL" in
-              write|read-write)
-                ;;
-              "<missing>")
-                MISSING+=("$pkg")
-                ;;
-              *)
-                READ_ONLY+=("$pkg:$LEVEL")
-                ;;
-            esac
-          done
-
-          if [ ${#MISSING[@]} -gt 0 ] || [ ${#READ_ONLY[@]} -gt 0 ]; then
-            echo ""
-            echo "✗ NPM_TOKEN lacks write access on required packages:"
-            if [ ${#MISSING[@]} -gt 0 ]; then
-              echo "  missing from token's access list:"
-              printf '    - %s\n' "${MISSING[@]}"
-            fi
-            if [ ${#READ_ONLY[@]} -gt 0 ]; then
-              echo "  insufficient access level:"
-              printf '    - %s\n' "${READ_ONLY[@]}"
-            fi
-            echo ""
-            echo "  The token is authenticated but read-only on the scope."
-            echo "  A 404-PUT on first publish from this token is an auth-scope"
-            echo "  failure, NOT propagation lag. Generate a new token with"
-            echo "  --read-only=false (or grant the granular token publish rights"
-            echo "  on the @codespar scope), then update the NPM_TOKEN secret."
-            exit 1
-          fi
-
-          echo ""
-          echo "✓ Preflight passed: token authenticated as $WHO with write access on all required packages."
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL is set"
+          echo "npm  --version: $(npm --version)"
+          echo "node --version: $(node --version)"
 
       - name: Install dependencies
         run: npm ci
@@ -116,6 +54,14 @@ jobs:
           set +e
           failed_pkgs=()
           lagging_pkgs=()
+          # `ok_pkgs` covers both true publishes and idempotent
+          # already-at-this-version soft-passes. We need a non-zero
+          # count here to distinguish "the run actually accepted
+          # something" from "every package ended in failed/lagging,
+          # which the 0.10.0 silent-fail incident showed is what
+          # npm/cli#9268 (auth rejection masquerading as 404-PUT)
+          # looks like across an entire scope."
+          ok_pkgs=()
           for dir in packages/*/; do
             if [ -f "$dir/package.json" ]; then
               pkg_name=$(node -p "require('./$dir/package.json').name")
@@ -143,9 +89,23 @@ jobs:
                 #    accumulate so the workflow exits non-zero.
                 if echo "$out" | grep -q "You cannot publish over the previously published versions"; then
                   echo "✓ $pkg_name already at this version, skipping"
+                  ok_pkgs+=("$pkg_name")
                 elif echo "$out" | grep -qE "404 Not Found.*PUT.*registry\.npmjs\.org/@codespar"; then
-                  echo "⚠ $pkg_name returned 404-PUT — likely propagation lag (verify with 'npm view $pkg_name' in 10 min)"
-                  lagging_pkgs+=("$pkg_name")
+                  # 404-PUT is only plausibly "propagation lag" when the
+                  # package has never been published before — npm's
+                  # first-publish path occasionally races registry-reflection
+                  # for new scoped packages. When a prior version exists on
+                  # the registry, 404-PUT cannot be lag; it's a real failure
+                  # (auth scope, registry outage, etc.) and must surface.
+                  prior_version=$(cd "$GITHUB_WORKSPACE" && npm view "$pkg_name" version 2>/dev/null || true)
+                  if [ -z "$prior_version" ]; then
+                    echo "⚠ $pkg_name returned 404-PUT on first publish — possible propagation lag (verify with 'npm view $pkg_name' in 10 min)"
+                    lagging_pkgs+=("$pkg_name")
+                  else
+                    echo "✗ $pkg_name FAILED with 404-PUT but prior version $prior_version exists on the registry — this is NOT propagation lag:"
+                    echo "$out"
+                    failed_pkgs+=("$pkg_name")
+                  fi
                 else
                   echo "✗ $pkg_name FAILED:"
                   echo "$out"
@@ -154,6 +114,7 @@ jobs:
               else
                 echo "$out"
                 echo "✓ $pkg_name published"
+                ok_pkgs+=("$pkg_name")
               fi
               echo "::endgroup::"
               cd "$GITHUB_WORKSPACE"
@@ -170,6 +131,29 @@ jobs:
           if [ ${#failed_pkgs[@]} -gt 0 ]; then
             echo "✗ ${#failed_pkgs[@]} package(s) FAILED for non-recoverable reasons:"
             printf '   - %s\n' "${failed_pkgs[@]}"
+            exit 1
+          fi
+          # Hard-fail rule 1: multi-package 404-PUT in a single run.
+          # Real registry propagation lag affects one package at a time
+          # (typically the first publish of a brand-new package name).
+          # Lag affecting 2+ scoped packages in one run is implausible —
+          # the 0.10.0 silent-fail incident showed all 17 packages
+          # 404-PUT'd as the npm/cli#9268 auth rejection masquerading
+          # as propagation lag, and the previous heuristic swallowed
+          # every one of them as soft-pass. Escalate to hard failure.
+          if [ ${#lagging_pkgs[@]} -ge 2 ]; then
+            echo "✗ ${#lagging_pkgs[@]} package(s) returned 404-PUT in one run — registry-wide propagation lag across a whole scope does not happen."
+            echo "  This pattern matches npm/cli#9268: the registry rejects the token (likely a granular access token with bypass_2fa: true) and the npm CLI reports the 403 as a misleading 404-PUT."
+            echo "  Failing the run loudly rather than claiming success."
+            exit 1
+          fi
+          # Hard-fail rule 2: zero accepted publishes. If the run ended
+          # with every publishable package in either failed or lagging
+          # state and nothing was actually accepted by the registry,
+          # the workflow must not exit green — that is exactly the
+          # 0.10.0 silent-fail shape.
+          if [ ${#ok_pkgs[@]} -eq 0 ] && [ ${#lagging_pkgs[@]} -gt 0 ]; then
+            echo "✗ Zero packages were accepted by the registry in this run (${#lagging_pkgs[@]} lagging, ${#failed_pkgs[@]} failed). Refusing to exit green."
             exit 1
           fi
           echo "✓ All publishable packages succeeded (or were already current)"

@@ -7,9 +7,10 @@ A 4-step end-to-end validation of the OSS MCP bridge:
 3. `asaas/get_pix_qrcode`
 4. `nuvem-fiscal/create_nfse`
 
-The whole chain runs against the published `@codespar/mcp-*` packages with
-their `--demo` flag — no real Asaas account or Nuvem Fiscal credential is
-required.
+The chain's tool responses come from per-test fixtures declared inline via
+the `mocks` field on `cs.create()` — no real Asaas account or Nuvem Fiscal
+credential is required. The runtime's test-mode dispatch seam intercepts
+each tool call before the MCP bridge and returns the matching fixture.
 
 ## What this is, and what it isn't
 
@@ -38,7 +39,7 @@ sequence; the others demonstrate that an agent can drive it.
 | File | Purpose |
 |---|---|
 | `skeleton.test.ts` | Vitest spec — builds a `LoopConfig`, calls `loop(session, config)`, asserts the 6 invariants from §"Acceptance criteria" |
-| `package.json` | Pins `@codespar/mcp-asaas` and `@codespar/mcp-nuvem-fiscal` exactly so demo-fixture drift surfaces explicitly |
+| `package.json` | Pins `@codespar/mcp-asaas` and `@codespar/mcp-nuvem-fiscal` so the servers spawn and the runtime registers their tool schemas |
 | `mcp-servers.json` | Server registry consumed by the bridge — flat object, `command: string[]`, `transport: "stdio"` |
 | `scripts/validate.sh` | Boots the OSS runtime, polls `/health`, runs vitest, kills the runtime on exit |
 | `tsconfig.json` | Minimal TS config (NodeNext, strict, vitest globals) |
@@ -56,9 +57,9 @@ npm run validate
 
 `validate.sh` picks one of three runtime sources, first match wins:
 
-1. **`CODESPAR_BASE_URL` is set** — uses the already-running runtime at that URL. No lifecycle management; you start/stop the runtime yourself.
-2. **`CODESPAR_RUNTIME_DIR` is set** — boots `node server/start.mjs` from that directory on port 3000, polls `/health` for up to 20s, runs `vitest`, then kills the runtime on exit.
-3. **`docker` is on PATH** — pulls and runs `ghcr.io/codespar/codespar:latest` with the example dir mounted at `/example` (so the bridge reads `./mcp-servers.json` from there and resolves the spawned MCP server paths against the example's installed `node_modules`). This is the default path; no env vars required.
+1. **`CODESPAR_BASE_URL` is set** — uses the already-running runtime at that URL. No lifecycle management; you start/stop the runtime yourself. That runtime must have been started with `CODESPAR_TEST_MODE_ENABLED=true`, or `cs.create()` rejects the mocks payload with HTTP 501 `mocks_not_permitted`.
+2. **`CODESPAR_RUNTIME_DIR` is set** — boots `node server/start.mjs` from that directory on port 3000 with `CODESPAR_TEST_MODE_ENABLED=true`, polls `/health` for up to 20s, runs `vitest`, then kills the runtime on exit. The clone must include the runtime's session-mocks support (commit `5830dc4` / PR #113 or later on `main`).
+3. **`docker` is on PATH** — pulls and runs `ghcr.io/codespar/codespar:latest` with the example dir mounted at `/example` (so the bridge reads `./mcp-servers.json` from there) and `CODESPAR_TEST_MODE_ENABLED=true` wired in. This is the default path; no env vars required. The image must include session-mocks support (commit `5830dc4` / PR #113 or later).
 
 If none of the above is available, the script prints setup instructions and exits non-zero. There's no implicit sibling-directory fallback — examples must work from any layout.
 
@@ -66,20 +67,24 @@ If none of the above is available, the script prints setup instructions and exit
 # Option A (recommended) — install Docker, then just run:
 npm run validate
 
-# Option B — point at a running runtime (you manage its lifecycle)
+# Option B — point at a running runtime (you manage its lifecycle).
+# It must have been started with CODESPAR_TEST_MODE_ENABLED=true.
 export CODESPAR_BASE_URL=http://localhost:3000
 npm run validate
 
-# Option C — point at a local clone of codespar/codespar (the script manages it)
+# Option C — point at a local clone of codespar/codespar (the script
+# manages it, in test mode):
 git clone https://github.com/codespar/codespar.git /tmp/codespar
-(cd /tmp/codespar && npm install && npx turbo run build)
+(cd /tmp/codespar && git checkout main && npm install && npx turbo run build)
 export CODESPAR_RUNTIME_DIR=/tmp/codespar
 npm run validate
 
 # Pin a specific runtime image instead of :latest:
-export CODESPAR_RUNTIME_IMAGE=ghcr.io/codespar/codespar:v0.1.0
+export CODESPAR_RUNTIME_IMAGE=ghcr.io/codespar/codespar:latest
 npm run validate
 ```
+
+> `:latest` is republished on each `v*` tag of `codespar/codespar`; the structural fix to also publish from `main` on every push is tracked in [codespar/codespar#117](https://github.com/codespar/codespar/issues/117).
 
 ### Managed (api.codespar.dev)
 
@@ -100,27 +105,37 @@ on this path.
 
 ## What backs the fixture path
 
-This example exercises a **real session + real bridge + spawned MCP
-children running with `--demo`**. It does not use
-`@codespar/sdk/testing`'s `fakeSession()`.
+This demo's mockability has a single stub layer. Because the steps are
+explicit and no LLM picks tools, there is no LLM-stub layer here — only
+the tool-stub layer and the live path:
 
-- The demo-mode mock lives **inside each MCP server**
-  (`@codespar/mcp-asaas`, `@codespar/mcp-nuvem-fiscal`), not inside the
-  SDK. `fakeSession()` bypasses the bridge entirely; this example
-  exercises it.
-- `MCP_DEMO=true` is data-driven, not magic — the `--demo` flag on the
-  `command` array in `mcp-servers.json` is the source of truth. The
-  spawned MCP server reads the flag and returns deterministic fixtures.
-- Demo mode is the on-ramp, not the destination. Removing `--demo` and
-  setting real `ASAAS_API_KEY` / `NUVEM_FISCAL_*` credentials runs the
-  same code against live APIs. The test code does not branch on demo
-  mode.
+| Layer | This demo |
+|---|---|
+| Tool stub | `mocks` API on `cs.create()` |
+| Live | real Asaas + real Nuvem Fiscal |
+
+- The fixtures live **in the test**, declared inline on
+  `cs.create({ servers, mocks })`. The runtime's test-mode dispatch seam
+  (`CODESPAR_TEST_MODE_ENABLED=true`) intercepts every external tool call
+  before the MCP bridge and returns the matching fixture. A tool the loop
+  calls without a matching mock entry fails as `tool_not_mocked` — strict
+  by definition, no fallthrough to a real provider.
+- This exercises a **real session + real bridge** with mocked tool
+  responses; it does not use `@codespar/sdk/testing`'s `fakeSession()`,
+  which bypasses the bridge entirely.
+- The MCP server packages still support a `--demo` flag for their own
+  internal testing, but the customer-facing pedagogy is the `mocks` API:
+  you get per-test fixture pinning instead of trusting each server's
+  demo-handler.
+- Mocks are the on-ramp, not the destination. Dropping
+  `CODESPAR_TEST_MODE_ENABLED` and setting real `ASAAS_API_KEY` /
+  `NUVEM_FISCAL_*` credentials runs the same code against live APIs. The
+  test code does not branch on test mode.
 
 ## Acceptance criteria
 
-The vitest spec asserts these per-step invariants pulled from the demo
-fixtures in `@codespar/mcp-asaas@0.1.3` and
-`@codespar/mcp-nuvem-fiscal@0.2.1`:
+The vitest spec asserts these per-step invariants, each pinned by the
+inline `mocks` fixtures declared in `skeleton.test.ts`:
 
 1. **Aggregate** — `result.success === true`, `result.completedSteps === 4`,
    every `result.results[i].success === true`.
@@ -150,7 +165,7 @@ mangling field names, or the `loop()` step ordering drifting.
 ANTHROPIC_API_KEY=sk-ant-... npm run validate:live
 ```
 
-That boots a runtime with your `ANTHROPIC_API_KEY` (no aimock), runs `live.test.ts`, and tears down. The MCP servers stay in `--demo` mode so no Asaas / Nuvem-Fiscal credentials are needed. The live test sends a natural-language prompt that asks Claude to orchestrate the four-step flow itself (create Asaas customer → Pix charge → fetch QR → issue NFS-e); the assertions stay coarse (at-least-one Asaas dispatch, at-least-one Nuvem-Fiscal dispatch, every dispatched call succeeds) because real Claude is probabilistic.
+That boots a runtime with your `ANTHROPIC_API_KEY` (no aimock), runs `live.test.ts`, and tears down. The live path points the runtime at a separate `mcp-servers.live.json` (via `CODESPAR_MCP_SERVERS_PATH`) that re-injects the MCP `--demo` flag, so no Asaas / Nuvem-Fiscal credentials are needed; the test-mode path (`validate.sh`) uses the default `mcp-servers.json` and stubs at the runtime layer via `cs.create({ mocks })`. Two paths, two configs, one cleanly-split dependency surface. The live test sends a natural-language prompt that asks Claude to orchestrate the four-step flow itself (create Asaas customer → Pix charge → fetch QR → issue NFS-e); the assertions stay coarse (at-least-one Asaas dispatch, at-least-one Nuvem-Fiscal dispatch, every dispatched call succeeds) because real Claude is probabilistic.
 
 This is **not in CI** — it costs real Anthropic spend (a few cents per run) and is probabilistic enough that flakes would be noise. Run it locally before pushing changes that touch the OSS chat loop, the tool catalog, the SDK's `session.send()`, the LATAM-commerce system prompt, or this example's MCP fixtures. The aimock-mode tests can't catch tool-name regex violations or invalid model ids; only this can.
 

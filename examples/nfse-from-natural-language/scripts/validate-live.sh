@@ -1,15 +1,32 @@
 #!/usr/bin/env bash
 #
 # Live LLM smoke — same shape as `validate.sh` but the runtime hits real
-# `api.anthropic.com` instead of `@copilotkit/aimock`. MCP servers still
-# run with `--demo` (see `mcp-servers.json`) so no Nuvem-Fiscal / Z-API
-# credentials are required, but a real `ANTHROPIC_API_KEY` is.
+# `api.anthropic.com` instead of `@copilotkit/aimock`, and the MCP servers
+# spawn with `--demo` so no Nuvem-Fiscal / Z-API credentials are needed.
+# A real `ANTHROPIC_API_KEY` is required.
+#
+# The `--demo` flag lives in `mcp-servers.live.json` (a sibling of the
+# test-mode `mcp-servers.json`). This script points the runtime at the
+# live config via `CODESPAR_MCP_SERVERS_PATH` so the bridge spawns the
+# demo-mode MCP servers. The test-mode path (`validate.sh`) uses the
+# default `mcp-servers.json` and stubs tools at the runtime layer with
+# `cs.create({ mocks })`, so the two paths stay cleanly separated.
 #
 # Runtime resolution (same three modes as validate.sh, minus aimock):
-#   1. CODESPAR_BASE_URL is set       → use it, do NOT manage lifecycle
+#   1. CODESPAR_BASE_URL is set       → use it, do NOT manage lifecycle.
+#                                       Caller's runtime must already have
+#                                       CODESPAR_MCP_SERVERS_PATH pointed at
+#                                       this dir's `mcp-servers.live.json`,
+#                                       or the bridge falls back to the
+#                                       test-mode config and the spawned
+#                                       servers will try real Nuvem / Z-API
+#                                       APIs with no credentials.
 #   2. CODESPAR_RUNTIME_DIR is set    → boot `node server/start.mjs` from there
+#                                       with CODESPAR_MCP_SERVERS_PATH set to
+#                                       the live config.
 #   3. `docker` is available          → `docker run` of the published image
 #                                       (default ghcr.io/codespar/codespar:latest)
+#                                       with -e CODESPAR_MCP_SERVERS_PATH set.
 #   4. none of the above              → print instructions and exit non-zero
 #
 # Costs real Anthropic API spend per run (a few cents). Don't wire this
@@ -43,11 +60,16 @@ HEALTH_URL="http://localhost:${RUNTIME_PORT}/health"
 RUNTIME_IMAGE="${CODESPAR_RUNTIME_IMAGE:-ghcr.io/codespar/codespar:latest}"
 
 # Mode 1: a runtime is already reachable. Caller owns lifecycle AND env;
-# they must have already wired ANTHROPIC_API_KEY into the running runtime.
+# they must have already wired ANTHROPIC_API_KEY and CODESPAR_MCP_SERVERS_PATH
+# into the running runtime.
 if [ -n "${CODESPAR_BASE_URL:-}" ]; then
   echo "validate-live.sh: using running runtime at $CODESPAR_BASE_URL (lifecycle not managed)"
   echo "validate-live.sh: assuming the runtime already has ANTHROPIC_API_KEY set"
-  MCP_DEMO=true CODESPAR_LIVE_SMOKE=1 npx vitest run live.test.ts
+  echo "validate-live.sh: NOTE — that runtime must also have"
+  echo "validate-live.sh:        CODESPAR_MCP_SERVERS_PATH=$SKELETON_DIR/mcp-servers.live.json"
+  echo "validate-live.sh:        or it will spawn the test-mode MCP servers (no --demo)"
+  echo "validate-live.sh:        and the live smoke will try real provider APIs."
+  CODESPAR_LIVE_SMOKE=1 npx vitest run live.test.ts
   echo "validate-live.sh: ok"
   exit 0
 fi
@@ -63,7 +85,7 @@ if [ -n "${CODESPAR_RUNTIME_DIR:-}" ]; then
   echo "validate-live.sh: starting runtime from $CODESPAR_RUNTIME_DIR (port $RUNTIME_PORT)…"
   (
     cd "$SKELETON_DIR"
-    MCP_DEMO=true \
+    CODESPAR_MCP_SERVERS_PATH="$SKELETON_DIR/mcp-servers.live.json" \
     PORT="$RUNTIME_PORT" \
     ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
     node "$CODESPAR_RUNTIME_DIR/server/start.mjs" \
@@ -96,14 +118,15 @@ if [ -n "${CODESPAR_RUNTIME_DIR:-}" ]; then
     sleep 1
   done
 
-  MCP_DEMO=true \
   CODESPAR_BASE_URL="http://localhost:${RUNTIME_PORT}" \
   CODESPAR_LIVE_SMOKE=1 npx vitest run live.test.ts
   echo "validate-live.sh: ok"
   exit 0
 fi
 
-# Mode 3: published Docker image. Pass ANTHROPIC_API_KEY through.
+# Mode 3: published Docker image. Pass ANTHROPIC_API_KEY +
+# CODESPAR_MCP_SERVERS_PATH through. Container cwd is /example (mounted),
+# so the relative path resolves to the live config inside the container.
 if command -v docker >/dev/null 2>&1; then
   CONTAINER_NAME="codespar-nfse-live-$$"
   RUNTIME_LOG="$SKELETON_DIR/.runtime.log"
@@ -115,6 +138,7 @@ if command -v docker >/dev/null 2>&1; then
     -v "$SKELETON_DIR:/example" \
     -w /example \
     -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
+    -e CODESPAR_MCP_SERVERS_PATH=./mcp-servers.live.json \
     "$RUNTIME_IMAGE" \
     node /app/server/start.mjs \
     > "$RUNTIME_LOG" 2>&1 || {
@@ -141,7 +165,6 @@ if command -v docker >/dev/null 2>&1; then
     sleep 1
   done
 
-  MCP_DEMO=true \
   CODESPAR_BASE_URL="http://localhost:${RUNTIME_PORT}" \
   CODESPAR_LIVE_SMOKE=1 npx vitest run live.test.ts
   echo "validate-live.sh: ok"

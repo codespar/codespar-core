@@ -4,25 +4,39 @@
 # stand-in Anthropic API, verifies a runtime is reachable, then runs
 # the vitest spec against it.
 #
+# The spec declares per-tool fixtures via the `mocks` field on
+# `cs.create()`. That only works against a runtime started in test mode
+# (`CODESPAR_TEST_MODE_ENABLED=true`); without it, `POST /sessions`
+# rejects the mocks payload with HTTP 501 `mocks_not_permitted`.
+#
 # Runtime resolution (first match wins):
 #   1. CODESPAR_BASE_URL is set       → use it, do NOT manage its lifecycle.
 #                                       Operator must already have configured
 #                                       that runtime with
 #                                       ANTHROPIC_BASE_URL=http://localhost:4010
 #                                       (or the LLM calls will hit the real
-#                                       Anthropic API).
+#                                       Anthropic API) AND
+#                                       CODESPAR_TEST_MODE_ENABLED=true (see
+#                                       the NOTE under Mode 1 below).
 #   2. CODESPAR_RUNTIME_DIR is set    → boot `node server/start.mjs` from there
 #                                       with ANTHROPIC_BASE_URL pointed at the
-#                                       local aimock.
+#                                       local aimock and
+#                                       CODESPAR_TEST_MODE_ENABLED=true.
 #   3. `docker` is available          → `docker run` of the published image
 #                                       (default ghcr.io/codespar/codespar:latest)
-#                                       with --add-host=host.docker.internal:host-gateway
-#                                       and ANTHROPIC_BASE_URL=http://host.docker.internal:4010
+#                                       with --add-host=host.docker.internal:host-gateway,
+#                                       ANTHROPIC_BASE_URL=http://host.docker.internal:4010,
+#                                       and CODESPAR_TEST_MODE_ENABLED=true. The
+#                                       image must include the runtime's session-mocks
+#                                       support (commit 5830dc4 / PR #113 or later).
 #   4. none of the above              → print instructions and exit non-zero
 #
-# Source of truth for demo mode: --demo in mcp-servers.json. The
-# MCP_DEMO=true env below is informational parity only. ANTHROPIC_API_KEY
-# is a placeholder — the SDK requires a value, aimock ignores it.
+# Tool responses come from the per-tool `mocks` map declared inline on
+# `cs.create()` in `skeleton.test.ts`; the MCP servers spawn plain (no
+# demo flag) — in test mode the dispatch seam intercepts before the
+# bridge, so they are never actually invoked, but they must still spawn
+# so the runtime registers their tool schemas. ANTHROPIC_API_KEY is a
+# placeholder — the SDK requires a value, aimock ignores it.
 
 set -euo pipefail
 
@@ -92,22 +106,28 @@ stop_aimock() {
 
 # Mode 1: a runtime is already reachable. Just start aimock and run
 # the test. Operator owns the runtime lifecycle AND the runtime's
-# ANTHROPIC_BASE_URL configuration; we warn loudly.
+# ANTHROPIC_BASE_URL + test-mode configuration; we warn loudly.
 if [ -n "${CODESPAR_BASE_URL:-}" ]; then
   echo "validate.sh: using running runtime at $CODESPAR_BASE_URL (lifecycle not managed)"
   echo "validate.sh: NOTE — that runtime must already be configured with"
   echo "validate.sh:        ANTHROPIC_BASE_URL=http://localhost:$AIMOCK_PORT"
   echo "validate.sh:        or session.send() will reach the real Anthropic API."
+  echo "validate.sh: NOTE — that runtime must also have CODESPAR_TEST_MODE_ENABLED=true,"
+  echo "validate.sh:        or cs.create() will reject the mocks map with HTTP 501"
+  echo "validate.sh:        mocks_not_permitted."
   start_aimock
   trap stop_aimock EXIT INT TERM
-  MCP_DEMO=true npx vitest run
+  npx vitest run
   echo "validate.sh: ok"
   exit 0
 fi
 
 # Mode 2: explicit clone path. Boot the runtime from this directory
 # (so the bridge reads `./mcp-servers.json`) AND export
-# ANTHROPIC_BASE_URL so its Anthropic SDK calls aimock.
+# ANTHROPIC_BASE_URL so its Anthropic SDK calls aimock and
+# CODESPAR_TEST_MODE_ENABLED so the mocks engine intercepts tool
+# dispatch. The clone must include the runtime's session-mocks support
+# (see Option C in the failure block below for the minimum commit).
 if [ -n "${CODESPAR_RUNTIME_DIR:-}" ]; then
   if [ ! -d "$CODESPAR_RUNTIME_DIR" ]; then
     echo "validate.sh: CODESPAR_RUNTIME_DIR=$CODESPAR_RUNTIME_DIR does not exist" >&2
@@ -124,7 +144,7 @@ if [ -n "${CODESPAR_RUNTIME_DIR:-}" ]; then
   echo "validate.sh: starting runtime from $CODESPAR_RUNTIME_DIR (port $RUNTIME_PORT)…"
   (
     cd "$SKELETON_DIR"
-    MCP_DEMO=true \
+    CODESPAR_TEST_MODE_ENABLED=true \
     PORT="$RUNTIME_PORT" \
     ANTHROPIC_BASE_URL="http://localhost:$AIMOCK_PORT" \
     ANTHROPIC_API_KEY="placeholder" \
@@ -160,7 +180,6 @@ if [ -n "${CODESPAR_RUNTIME_DIR:-}" ]; then
     sleep 1
   done
 
-  MCP_DEMO=true \
   CODESPAR_BASE_URL="http://localhost:${RUNTIME_PORT}" \
   npx vitest run
 
@@ -172,6 +191,9 @@ fi
 # example directory so the bridge reads `./mcp-servers.json` from a
 # mounted volume. ANTHROPIC_BASE_URL points at the host's aimock via
 # host.docker.internal (made resolvable via --add-host).
+# CODESPAR_TEST_MODE_ENABLED=true is passed in so the runtime honours
+# the mocks the spec declares on cs.create(). The image MUST include
+# session-mocks support (commit 5830dc4 / PR #113 or later).
 if command -v docker >/dev/null 2>&1; then
   start_aimock
 
@@ -185,6 +207,7 @@ if command -v docker >/dev/null 2>&1; then
     -p "$RUNTIME_PORT:3000" \
     -v "$SKELETON_DIR:/example" \
     -w /example \
+    -e CODESPAR_TEST_MODE_ENABLED=true \
     -e ANTHROPIC_BASE_URL="http://host.docker.internal:$AIMOCK_PORT" \
     -e ANTHROPIC_API_KEY="placeholder" \
     "$RUNTIME_IMAGE" \
@@ -216,7 +239,6 @@ if command -v docker >/dev/null 2>&1; then
     sleep 1
   done
 
-  MCP_DEMO=true \
   CODESPAR_BASE_URL="http://localhost:${RUNTIME_PORT}" \
   npx vitest run
 
@@ -229,26 +251,33 @@ cat >&2 <<EOF
 validate.sh: no runtime configured. Pick one:
 
   Option A (recommended) — install Docker and re-run this script. It
-  will pull and run ghcr.io/codespar/codespar:latest automatically,
-  wired to a local @copilotkit/aimock that stands in for the Anthropic
-  Messages API. No real Anthropic key needed.
+  will pull and run ghcr.io/codespar/codespar:latest automatically with
+  CODESPAR_TEST_MODE_ENABLED=true wired in, alongside a local
+  @copilotkit/aimock that stands in for the Anthropic Messages API. No
+  real Anthropic key needed. The image must include session-mocks
+  support (commit 5830dc4 / PR #113 or later):
     https://docs.docker.com/get-docker/
     npm run validate
 
   Option B — point at an already-running runtime. The script does NOT
   manage that runtime's lifecycle. Make sure it is already configured
   with ANTHROPIC_BASE_URL=http://localhost:4010 so its session.send()
-  call lands on the aimock this script boots, NOT the real Anthropic
-  API:
+  call lands on the aimock this script boots (NOT the real Anthropic
+  API), and with CODESPAR_TEST_MODE_ENABLED=true so the mocks declared
+  on cs.create() are honoured (otherwise cs.create() returns HTTP 501
+  mocks_not_permitted):
     export CODESPAR_BASE_URL=http://localhost:3000
     # ensure that runtime was started with ANTHROPIC_BASE_URL=http://localhost:4010
+    # and CODESPAR_TEST_MODE_ENABLED=true
     npm run validate
 
   Option C — point at a local clone of codespar/codespar (this script
-  boots and kills it for you and wires ANTHROPIC_BASE_URL at the
-  local aimock):
+  boots and kills it for you, wires ANTHROPIC_BASE_URL at the local
+  aimock, and turns on test mode). The clone must include the
+  runtime's session-mocks support — commit 5830dc4 (PR #113) or later
+  on main:
     git clone https://github.com/codespar/codespar.git /tmp/codespar
-    (cd /tmp/codespar && npm install && npx turbo run build)
+    (cd /tmp/codespar && git checkout main && npm install && npx turbo run build)
     export CODESPAR_RUNTIME_DIR=/tmp/codespar
     npm run validate
 
