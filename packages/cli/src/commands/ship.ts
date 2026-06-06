@@ -7,6 +7,7 @@ import { info, json, success } from "../output.js";
 interface ShipCommandOptions {
   apiKey: string;
   baseUrl: string;
+  project?: string;
   user?: string;
   input?: string;
   inputFile?: string;
@@ -23,7 +24,7 @@ export async function shipCommand(opts: ShipCommandOptions): Promise<void> {
   validateShipArgs(args);
 
   const userId = opts.user ?? "cli-user";
-  const cs = new CodeSpar({ apiKey: opts.apiKey, baseUrl: opts.baseUrl });
+  const cs = new CodeSpar({ apiKey: opts.apiKey, baseUrl: opts.baseUrl, projectId: opts.project });
   const session = await cs.create(userId, { servers: [] });
 
   try {
@@ -40,7 +41,6 @@ export async function shipCommand(opts: ShipCommandOptions): Promise<void> {
     if (result.label_url) info(`Label URL: ${result.label_url}`);
     if (result.estimated_delivery) info(`ETA: ${result.estimated_delivery}`);
     if (typeof result.cost_minor === "number") info(`Cost (minor units): ${result.cost_minor}`);
-    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
   } finally {
     await session.close();
   }

@@ -6,6 +6,7 @@ import { info, json, success, warn } from "../output.js";
 interface VerificationStatusCommandOptions {
   apiKey: string;
   baseUrl: string;
+  project?: string;
   user?: string;
   stream?: boolean;
   timeout?: string;
@@ -35,7 +36,7 @@ export async function verificationStatusCommand(
   }
 
   const userId = opts.user ?? "cli-user";
-  const cs = new CodeSpar({ apiKey: opts.apiKey, baseUrl: opts.baseUrl });
+  const cs = new CodeSpar({ apiKey: opts.apiKey, baseUrl: opts.baseUrl, projectId: opts.project });
   const session = await cs.create(userId, { servers: [] });
 
   try {
@@ -103,5 +104,4 @@ function renderResult(result: VerificationStatusResult, asJson: boolean): void {
   info(`idempotency_key: ${result.idempotency_key ?? "-"}`);
   if (result.hosted_url) info(`hosted_url: ${result.hosted_url}`);
   info(`events: ${result.events.length}`);
-  process.stdout.write(JSON.stringify(result, null, 2) + "\n");
 }

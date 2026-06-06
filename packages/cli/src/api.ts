@@ -1,4 +1,17 @@
-import { CliError, type CliConfig } from "./config.js";
+import { CliError } from "./config.js";
+import { VERSION } from "./version.js";
+
+export interface ApiClientConfig {
+  apiKey: string;
+  baseUrl: string;
+  /** Resolved project. When set, every request carries `x-codespar-project`
+   *  so multi-project orgs scope to the right project (without it the org
+   *  default is used server-side). */
+  project?: string;
+  /** Per-request timeout in ms. Default 30s. Streaming commands (logs tail,
+   *  payment-status --stream) use their own long-lived path, not this. */
+  timeoutMs?: number;
+}
 
 /**
  * Thin fetch wrapper around the CodeSpar REST API. The SDK doesn't expose
@@ -6,7 +19,11 @@ import { CliError, type CliConfig } from "./config.js";
  * so we hit the HTTP surface directly with the user's API key.
  */
 export class ApiClient {
-  constructor(private readonly config: Required<Pick<CliConfig, "apiKey" | "baseUrl">>) {}
+  private readonly timeoutMs: number;
+
+  constructor(private readonly config: ApiClientConfig) {
+    this.timeoutMs = config.timeoutMs ?? 30_000;
+  }
 
   async get<T>(path: string, query?: Record<string, string | undefined>): Promise<T> {
     return this.request<T>("GET", path, undefined, query);
@@ -33,21 +50,35 @@ export class ApiClient {
       }
     }
 
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${this.config.apiKey}`,
+      "Content-Type": "application/json",
+      "User-Agent": `codespar-cli/${VERSION}`,
+    };
+    if (this.config.project) headers["x-codespar-project"] = this.config.project;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
     let res: Response;
     try {
       res = await fetch(url, {
         method,
-        headers: {
-          Authorization: `Bearer ${this.config.apiKey}`,
-          "Content-Type": "application/json",
-          "User-Agent": "codespar-cli/0.1.0",
-        },
+        headers,
         body: body !== undefined ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
       });
     } catch (err) {
+      if ((err as Error).name === "AbortError") {
+        throw new CliError(
+          `Request to ${method} ${url.pathname} timed out after ${this.timeoutMs}ms.`,
+        );
+      }
       throw new CliError(
         `Network error calling ${method} ${url.pathname}: ${(err as Error).message}`,
       );
+    } finally {
+      clearTimeout(timer);
     }
 
     if (!res.ok) {

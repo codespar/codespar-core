@@ -6,6 +6,7 @@ import { info, json, success, warn } from "../output.js";
 interface PaymentStatusCommandOptions {
   apiKey: string;
   baseUrl: string;
+  project?: string;
   user?: string;
   stream?: boolean;
   timeout?: string;
@@ -35,7 +36,7 @@ export async function paymentStatusCommand(
   }
 
   const userId = opts.user ?? "cli-user";
-  const cs = new CodeSpar({ apiKey: opts.apiKey, baseUrl: opts.baseUrl });
+  const cs = new CodeSpar({ apiKey: opts.apiKey, baseUrl: opts.baseUrl, projectId: opts.project });
   const session = await cs.create(userId, { servers: [] });
 
   try {
@@ -102,5 +103,4 @@ function renderResult(result: PaymentStatusResult, asJson: boolean): void {
   info(`original_status: ${result.original_status}`);
   info(`idempotency_key: ${result.idempotency_key ?? "-"}`);
   info(`events: ${result.events.length}`);
-  process.stdout.write(JSON.stringify(result, null, 2) + "\n");
 }

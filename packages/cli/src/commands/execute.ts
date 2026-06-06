@@ -10,6 +10,7 @@ interface ExecuteOptions {
   user?: string;
   apiKey: string;
   baseUrl: string;
+  project?: string;
   json?: boolean;
 }
 
@@ -24,7 +25,7 @@ export async function executeCommand(toolName: string, opts: ExecuteOptions): Pr
   const input = await resolveInput(opts);
   const userId = opts.user ?? "cli-user";
 
-  const cs = new CodeSpar({ apiKey: opts.apiKey, baseUrl: opts.baseUrl });
+  const cs = new CodeSpar({ apiKey: opts.apiKey, baseUrl: opts.baseUrl, projectId: opts.project });
   const session = await cs.create(userId, { servers: [opts.server] });
 
   try {

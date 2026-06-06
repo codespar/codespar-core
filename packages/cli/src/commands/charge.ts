@@ -7,6 +7,7 @@ import { info, json, success } from "../output.js";
 interface ChargeCommandOptions {
   apiKey: string;
   baseUrl: string;
+  project?: string;
   user?: string;
   input?: string;
   inputFile?: string;
@@ -23,7 +24,7 @@ export async function chargeCommand(opts: ChargeCommandOptions): Promise<void> {
   validateChargeArgs(args);
 
   const userId = opts.user ?? "cli-user";
-  const cs = new CodeSpar({ apiKey: opts.apiKey, baseUrl: opts.baseUrl });
+  const cs = new CodeSpar({ apiKey: opts.apiKey, baseUrl: opts.baseUrl, projectId: opts.project });
   const session = await cs.create(userId, { servers: [] });
 
   try {
@@ -44,7 +45,6 @@ export async function chargeCommand(opts: ChargeCommandOptions): Promise<void> {
       info("Pix copy-paste:");
       process.stdout.write(`\n${result.pix_copy_paste}\n\n`);
     }
-    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
   } finally {
     await session.close();
   }
