@@ -1,8 +1,11 @@
-import { readFile } from "node:fs/promises";
 import { CodeSpar } from "@codespar/sdk";
 import type { ShipArgs, ShipResult } from "@codespar/sdk";
 import { CliError } from "../config.js";
 import { info, json, success } from "../output.js";
+import { resolveMetaInput } from "./meta-input.js";
+
+const EXAMPLE =
+  '{"action":"quote","origin":{"postal_code":"01310100"},"destination":{"postal_code":"22041011"},"items":[{"weight_g":500}]}';
 
 interface ShipCommandOptions {
   apiKey: string;
@@ -20,7 +23,7 @@ interface ShipCommandOptions {
  * carrier so no `--server` is required.
  */
 export async function shipCommand(opts: ShipCommandOptions): Promise<void> {
-  const args = await resolveShipInput(opts);
+  const args = (await resolveMetaInput(opts, "ship", EXAMPLE)) as unknown as ShipArgs;
   validateShipArgs(args);
 
   const userId = opts.user ?? "cli-user";
@@ -43,36 +46,6 @@ export async function shipCommand(opts: ShipCommandOptions): Promise<void> {
     if (typeof result.cost_minor === "number") info(`Cost (minor units): ${result.cost_minor}`);
   } finally {
     await session.close();
-  }
-}
-
-async function resolveShipInput(opts: ShipCommandOptions): Promise<ShipArgs> {
-  if (opts.input && opts.inputFile) {
-    throw new CliError("Pass either --input or --input-file, not both.");
-  }
-  if (!opts.input && !opts.inputFile) {
-    throw new CliError(
-      "ship requires --input '<json>' or --input-file <path>. " +
-        'Example: --input \'{"action":"quote","origin":{"postal_code":"01310100"},"destination":{"postal_code":"22041011"},"items":[{"weight_g":500}]}\'',
-    );
-  }
-  const raw = opts.inputFile
-    ? await readFile(opts.inputFile, "utf-8")
-    : (opts.input as string);
-  const source = opts.inputFile ?? "--input";
-  return parseJsonObject(raw, source) as unknown as ShipArgs;
-}
-
-function parseJsonObject(raw: string, source: string): Record<string, unknown> {
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      throw new CliError(`${source} must be a JSON object.`);
-    }
-    return parsed as Record<string, unknown>;
-  } catch (err) {
-    if (err instanceof CliError) throw err;
-    throw new CliError(`${source} is not valid JSON: ${(err as Error).message}`);
   }
 }
 

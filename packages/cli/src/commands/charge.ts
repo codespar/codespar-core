@@ -1,8 +1,11 @@
-import { readFile } from "node:fs/promises";
 import { CodeSpar } from "@codespar/sdk";
 import type { ChargeArgs, ChargeResult } from "@codespar/sdk";
 import { CliError } from "../config.js";
 import { info, json, success } from "../output.js";
+import { resolveMetaInput } from "./meta-input.js";
+
+const EXAMPLE =
+  '{"amount":50,"currency":"BRL","method":"pix","description":"Test","buyer":{"name":"Ana"}}';
 
 interface ChargeCommandOptions {
   apiKey: string;
@@ -20,7 +23,7 @@ interface ChargeCommandOptions {
  * Args are read from `--input` (JSON string) or `--input-file` (path).
  */
 export async function chargeCommand(opts: ChargeCommandOptions): Promise<void> {
-  const args = await resolveChargeInput(opts);
+  const args = (await resolveMetaInput(opts, "charge", EXAMPLE)) as unknown as ChargeArgs;
   validateChargeArgs(args);
 
   const userId = opts.user ?? "cli-user";
@@ -47,36 +50,6 @@ export async function chargeCommand(opts: ChargeCommandOptions): Promise<void> {
     }
   } finally {
     await session.close();
-  }
-}
-
-async function resolveChargeInput(opts: ChargeCommandOptions): Promise<ChargeArgs> {
-  if (opts.input && opts.inputFile) {
-    throw new CliError("Pass either --input or --input-file, not both.");
-  }
-  if (!opts.input && !opts.inputFile) {
-    throw new CliError(
-      "charge requires --input '<json>' or --input-file <path>. " +
-        'Example: --input \'{"amount":50,"currency":"BRL","method":"pix","description":"Test","buyer":{"name":"Ana"}}\'',
-    );
-  }
-  const raw = opts.inputFile
-    ? await readFile(opts.inputFile, "utf-8")
-    : (opts.input as string);
-  const source = opts.inputFile ?? "--input";
-  return parseJsonObject(raw, source) as unknown as ChargeArgs;
-}
-
-function parseJsonObject(raw: string, source: string): Record<string, unknown> {
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      throw new CliError(`${source} must be a JSON object.`);
-    }
-    return parsed as Record<string, unknown>;
-  } catch (err) {
-    if (err instanceof CliError) throw err;
-    throw new CliError(`${source} is not valid JSON: ${(err as Error).message}`);
   }
 }
 

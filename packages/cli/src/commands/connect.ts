@@ -1,10 +1,10 @@
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { ApiClient } from "../api.js";
 import { CliError } from "../config.js";
 import { info, json, success, table } from "../output.js";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 interface Connection {
   id: string;
@@ -155,12 +155,35 @@ export async function revokeConnectCommand(
  * `xdg-open` on Linux, `start` on Windows. Intentionally minimal — we
  * don't bring in `open`/`openurl` npm packages just for this.
  */
+/**
+ * Parse + validate that `url` is a real http(s) URL before handing it to the
+ * OS browser-opener. Rejects malformed URLs and non-http(s) schemes
+ * (file://, javascript:, ...). Exported for testing.
+ */
+export function assertHttpUrl(url: string): URL {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new CliError(`Refusing to open a malformed URL: ${url}`);
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new CliError(`Refusing to open a non-http(s) URL (${parsed.protocol}).`);
+  }
+  return parsed;
+}
+
 async function openInBrowser(url: string): Promise<void> {
-  const cmd =
+  // Pass the URL as a literal argv (execFile, no shell) so a Connect Link
+  // carrying shell metacharacters — `$(...)`, backticks — can't inject a
+  // command. Double-quoting it under exec() did NOT prevent that ($ and
+  // backticks are still live inside double quotes).
+  const parsed = assertHttpUrl(url);
+  const [cmd, args]: [string, string[]] =
     process.platform === "darwin"
-      ? `open ${JSON.stringify(url)}`
+      ? ["open", [parsed.href]]
       : process.platform === "win32"
-        ? `start "" ${JSON.stringify(url)}`
-        : `xdg-open ${JSON.stringify(url)}`;
-  await execAsync(cmd);
+        ? ["cmd", ["/c", "start", "", parsed.href]]
+        : ["xdg-open", [parsed.href]];
+  await execFileAsync(cmd, args);
 }
