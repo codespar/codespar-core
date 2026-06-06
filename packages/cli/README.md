@@ -43,6 +43,14 @@ codespar init my-agent
 | `tools list` | List tools (filter by `--server`) |
 | `tools show <name>` | Show a tool's full input/output schema |
 | `execute <tool>` | Run a single tool call in a throwaway session |
+| `discover <query>` | Search the catalog for tools matching a use case |
+| `charge` | Issue an inbound charge via `codespar_charge` |
+| `ship` | Generate label / quote rates / track via `codespar_ship` |
+| `ledger` | Post entries / read balances / create accounts via `codespar_ledger` |
+| `issue` | Issue / freeze / read agent spend cards via `codespar_issue` |
+| `payment-status <id>` | Poll async settlement status (add `--stream`) |
+| `verification-status <id>` | Poll async KYC status (add `--stream`) |
+| `wizard [server]` | Connection wizard — required secrets, connect URL, next steps |
 | `sessions list` | List recent sessions (filter by `--status`, `--limit`) |
 | `sessions show <id>` | Show session details (add `--logs` for tool calls) |
 | `sessions close <id>` | Close an active session |
@@ -59,13 +67,14 @@ codespar init my-agent
 | `--json` | Machine-readable JSON output (pipe into `jq`) |
 | `--api-key <key>` | Override the stored key |
 | `--base-url <url>` | Point at a custom API (staging, self-hosted) |
+| `--project <id>` | Scope requests to a project (multi-project orgs) |
 
 ## Configuration
 
 Resolution order (first match wins):
 
-1. Command-line flags (`--api-key`, `--base-url`)
-2. Environment variables (`CODESPAR_API_KEY`, `CODESPAR_BASE_URL`)
+1. Command-line flags (`--api-key`, `--base-url`, `--project`)
+2. Environment variables (`CODESPAR_API_KEY`, `CODESPAR_BASE_URL`, `CODESPAR_PROJECT`)
 3. Config file at `~/.codespar/config.json` (chmod 600)
 
 ## Templates
