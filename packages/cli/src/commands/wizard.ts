@@ -6,6 +6,7 @@ import { c, info, json, kv, success, table } from "../output.js";
 interface WizardCommandOptions {
   apiKey: string;
   baseUrl: string;
+  project?: string;
   user?: string;
   action?: string;
   country?: string;
@@ -39,7 +40,7 @@ export async function wizardCommand(
   if (opts.returnTo) wizardOpts.return_to = opts.returnTo;
 
   const userId = opts.user ?? "cli-user";
-  const cs = new CodeSpar({ apiKey: opts.apiKey, baseUrl: opts.baseUrl });
+  const cs = new CodeSpar({ apiKey: opts.apiKey, baseUrl: opts.baseUrl, projectId: opts.project });
   const session = await cs.create(userId, { servers: [] });
 
   try {

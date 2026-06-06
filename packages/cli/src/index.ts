@@ -24,10 +24,11 @@ import { shipCommand } from "./commands/ship.js";
 import { paymentStatusCommand } from "./commands/payment-status.js";
 import { verificationStatusCommand } from "./commands/verification-status.js";
 import { wizardCommand } from "./commands/wizard.js";
+import { ledgerCommand } from "./commands/ledger.js";
+import { issueCommand } from "./commands/issue.js";
 import { c } from "./output.js";
 import { printBanner } from "./banner.js";
-
-const VERSION = "0.4.0";
+import { VERSION } from "./version.js";
 
 const program = new Command();
 program
@@ -36,15 +37,28 @@ program
   .version(VERSION, "-v, --version")
   .option("--api-key <key>", "CodeSpar API key (overrides config + env)")
   .option("--base-url <url>", "API base URL (overrides config + env)")
+  .option("--project <id>", "Project to scope requests to (overrides config + env)")
   .option("--json", "Output machine-readable JSON instead of tables");
+
+/**
+ * Resolve auth + scope from CLI flags > env > config file. The single place
+ * `project` is wired, so every command — raw ApiClient and SDK alike —
+ * scopes to the right project (`x-codespar-project`) instead of silently
+ * falling back to the org default.
+ */
+async function resolveAuth(): Promise<{ apiKey: string; baseUrl: string; project?: string }> {
+  const config = await loadConfig();
+  const root = program.opts<{ apiKey?: string; baseUrl?: string; project?: string }>();
+  return {
+    apiKey: root.apiKey ?? requireApiKey(config),
+    baseUrl: root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev",
+    project: root.project ?? config.project,
+  };
+}
 
 /** Build an authenticated ApiClient from config + CLI-level flags. */
 async function authedClient(): Promise<ApiClient> {
-  const config = await loadConfig();
-  const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
-  const apiKey = root.apiKey ?? requireApiKey(config);
-  const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
-  return new ApiClient({ apiKey, baseUrl });
+  return new ApiClient(await resolveAuth());
 }
 
 function rootJsonFlag(): boolean {
@@ -129,14 +143,10 @@ program
   .option("-f, --input-file <path>", "Input as JSON file path")
   .option("-u, --user <id>", "User id for the session (default: cli-user)")
   .action(async (tool: string, opts: { server: string; input?: string; inputFile?: string; user?: string }) => {
-    const config = await loadConfig();
-    const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
-    const apiKey = root.apiKey ?? requireApiKey(config);
-    const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+    const auth = await resolveAuth();
     await executeCommand(tool, {
       ...opts,
-      apiKey,
-      baseUrl,
+      ...auth,
       json: rootJsonFlag(),
     });
   });
@@ -226,14 +236,10 @@ program
       query: string,
       opts: { limit?: string; category?: string; country?: string; user?: string },
     ) => {
-      const config = await loadConfig();
-      const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
-      const apiKey = root.apiKey ?? requireApiKey(config);
-      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      const auth = await resolveAuth();
       await discoverCommand(query, {
         ...opts,
-        apiKey,
-        baseUrl,
+        ...auth,
         json: rootJsonFlag(),
       });
     },
@@ -247,14 +253,10 @@ program
   .option("-u, --user <id>", "User id for the session (default: cli-user)")
   .action(
     async (opts: { input?: string; inputFile?: string; user?: string }) => {
-      const config = await loadConfig();
-      const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
-      const apiKey = root.apiKey ?? requireApiKey(config);
-      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      const auth = await resolveAuth();
       await chargeCommand({
         ...opts,
-        apiKey,
-        baseUrl,
+        ...auth,
         json: rootJsonFlag(),
       });
     },
@@ -268,14 +270,10 @@ program
   .option("-u, --user <id>", "User id for the session (default: cli-user)")
   .action(
     async (opts: { input?: string; inputFile?: string; user?: string }) => {
-      const config = await loadConfig();
-      const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
-      const apiKey = root.apiKey ?? requireApiKey(config);
-      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      const auth = await resolveAuth();
       await shipCommand({
         ...opts,
-        apiKey,
-        baseUrl,
+        ...auth,
         json: rootJsonFlag(),
       });
     },
@@ -292,14 +290,10 @@ program
       toolCallId: string,
       opts: { stream?: boolean; timeout?: string; user?: string },
     ) => {
-      const config = await loadConfig();
-      const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
-      const apiKey = root.apiKey ?? requireApiKey(config);
-      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      const auth = await resolveAuth();
       await paymentStatusCommand(toolCallId, {
         ...opts,
-        apiKey,
-        baseUrl,
+        ...auth,
         json: rootJsonFlag(),
       });
     },
@@ -316,14 +310,10 @@ program
       toolCallId: string,
       opts: { stream?: boolean; timeout?: string; user?: string },
     ) => {
-      const config = await loadConfig();
-      const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
-      const apiKey = root.apiKey ?? requireApiKey(config);
-      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      const auth = await resolveAuth();
       await verificationStatusCommand(toolCallId, {
         ...opts,
-        apiKey,
-        baseUrl,
+        ...auth,
         json: rootJsonFlag(),
       });
     },
@@ -348,14 +338,44 @@ program
         user?: string;
       },
     ) => {
-      const config = await loadConfig();
-      const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
-      const apiKey = root.apiKey ?? requireApiKey(config);
-      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      const auth = await resolveAuth();
       await wizardCommand(serverId, {
         ...opts,
-        apiKey,
-        baseUrl,
+        ...auth,
+        json: rootJsonFlag(),
+      });
+    },
+  );
+
+program
+  .command("ledger")
+  .description("Post journal entries / read balances / create accounts via codespar_ledger (Midaz)")
+  .option("-i, --input <json>", "Ledger args as JSON string")
+  .option("-f, --input-file <path>", "Ledger args from JSON file")
+  .option("-u, --user <id>", "User id for the session (default: cli-user)")
+  .action(
+    async (opts: { input?: string; inputFile?: string; user?: string }) => {
+      const auth = await resolveAuth();
+      await ledgerCommand({
+        ...opts,
+        ...auth,
+        json: rootJsonFlag(),
+      });
+    },
+  );
+
+program
+  .command("issue")
+  .description("Issue / freeze / read agent spend cards via codespar_issue (Pomelo)")
+  .option("-i, --input <json>", "Issue args as JSON string")
+  .option("-f, --input-file <path>", "Issue args from JSON file")
+  .option("-u, --user <id>", "User id for the session (default: cli-user)")
+  .action(
+    async (opts: { input?: string; inputFile?: string; user?: string }) => {
+      const auth = await resolveAuth();
+      await issueCommand({
+        ...opts,
+        ...auth,
         json: rootJsonFlag(),
       });
     },
@@ -372,11 +392,8 @@ logs
   .option("-t, --tool <name>", "Filter by tool name")
   .option("--limit <n>", "Request up to N backfilled entries before tailing")
   .action(async (opts: { server?: string; status?: string; tool?: string; limit?: string }) => {
-    const config = await loadConfig();
-    const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
-    const apiKey = root.apiKey ?? requireApiKey(config);
-    const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
-    await tailLogsCommand({ apiKey, baseUrl }, { ...opts, json: rootJsonFlag() });
+    const auth = await resolveAuth();
+    await tailLogsCommand(auth, { ...opts, json: rootJsonFlag() });
   });
 
 // ============ init ============

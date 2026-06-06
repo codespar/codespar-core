@@ -1,4 +1,4 @@
-import { CliError, type CliConfig } from "../config.js";
+import { CliError } from "../config.js";
 import { c, json } from "../output.js";
 
 interface LogEntry {
@@ -26,7 +26,7 @@ interface TailOptions {
  * will close the connection when stdin closes.
  */
 export async function tailLogsCommand(
-  config: Required<Pick<CliConfig, "apiKey" | "baseUrl">>,
+  config: { apiKey: string; baseUrl: string; project?: string },
   opts: TailOptions,
 ): Promise<void> {
   const url = new URL("/v1/logs/stream", config.baseUrl);
@@ -41,6 +41,7 @@ export async function tailLogsCommand(
       headers: {
         Authorization: `Bearer ${config.apiKey}`,
         Accept: "text/event-stream",
+        ...(config.project ? { "x-codespar-project": config.project } : {}),
       },
     });
   } catch (err) {
