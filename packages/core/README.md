@@ -30,7 +30,7 @@ All wrappers call into the same managed runtime as `session.execute(...)`; you g
 
 ### Crypto + KYC meta-tools
 
-`codespar_crypto_pay` (Coinbase Commerce + Bitso) and `codespar_kyc` (Persona, Sift, Konduto, Truora) are routable today. The verification half now has a typed wrapper (`session.verificationStatus` / `verificationStatusStream`); a `session.cryptoPay(...)` typed wrapper is not in 0.9.0 — call via raw `session.execute("codespar_crypto_pay", {...})` for now.
+`codespar_crypto_pay` (Coinbase Commerce + Bitso + UnblockPay + Foxbit) and `codespar_kyc` (Persona, Sift, Konduto, Truora) are routable today. The verification half now has a typed wrapper (`session.verificationStatus` / `verificationStatusStream`); a `session.cryptoPay(...)` typed wrapper is not in 0.9.0 — call via raw `session.execute("codespar_crypto_pay", {...})` for now.
 
 ```typescript
 // Crypto: receive a USDC payment via Coinbase Commerce hosted checkout
@@ -41,6 +41,19 @@ const charge = await session.execute("codespar_crypto_pay", {
   description: "Order #42",
 });
 // charge.output.hosted_url → redirect buyer here
+
+// Crypto: send a USDC payout to an external wallet (UnblockPay stablecoin-payout)
+const payout = await session.execute("codespar_crypto_pay", {
+  rail: "stablecoin-payout",
+  amount: 100,
+  currency: "USDC",
+  direction: "send",
+  counterparty: {
+    address: "0xRecipientWalletAddress...",
+    country: "MX", // ISO 3166-1 alpha-2 — required when direction is "send"
+  },
+});
+// payout.output.id / .status → poll via session.paymentStatus(payout.tool_call_id)
 
 // KYC: kick off a Persona identity verification, then poll typed
 const inquiry = await session.execute("codespar_kyc", {
