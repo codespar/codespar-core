@@ -1,7 +1,7 @@
 {
   "name": "@codespar/mcp",
-  "version": "0.4.0",
-  "description": "MCP transport for CodeSpar — connect Claude Desktop, Cursor, VS Code to CodeSpar sessions",
+  "version": "0.5.0",
+  "description": "MCP server for CodeSpar — give Claude, Codex, Cursor & ChatGPT a commerce agent (pay, charge, wallet, mandates, Pomelo card) over MCP",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,6 +10,9 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
+  },
+  "bin": {
+    "codespar-mcp": "./dist/bin.js"
   },
   "files": [
     "dist",
@@ -35,6 +38,10 @@
     "type": "git",
     "url": "https://github.com/codespar/codespar-core",
     "directory": "packages/mcp"
+  },
+  "dependencies": {
+    "@codespar/sdk": "^0.10.0",
+    "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "peerDependencies": {
     "@codespar/sdk": "^0.10.0"

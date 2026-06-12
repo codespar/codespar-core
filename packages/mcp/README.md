@@ -1,8 +1,39 @@
 # @codespar/mcp
 
-MCP transport for CodeSpar — connect Claude Desktop, Cursor, VS Code, and other MCP clients to CodeSpar sessions.
+MCP server for CodeSpar — give Claude, Codex, Cursor, VS Code (and any MCP client)
+a Latin-American commerce agent: search & checkout, Pix, wallet/balance, spend
+mandates & limits, and Pomelo card issuing — all as MCP tools.
 
-## Install
+## Run as a server (`codespar-mcp`)
+
+A stdio MCP server that bridges your MCP client to a CodeSpar session's tools. It
+talks to the CodeSpar REST API directly, so it works against the live meta-tools
+today (`codespar_pay`, `codespar_charge`, `codespar_discover`, wallet, mandates,
+and `codespar_issue` → Pomelo card). One env var (`CODESPAR_API_KEY`) and you're in.
+
+**Claude Code / Claude Desktop**
+
+```bash
+claude mcp add codespar -- npx -y @codespar/mcp
+# then set CODESPAR_API_KEY in the server's env
+```
+
+**Codex** — `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.codespar]
+command = "npx"
+args = ["-y", "@codespar/mcp"]
+env = { CODESPAR_API_KEY = "csk_live_...", CODESPAR_PRESET = "brazilian" }
+```
+
+**Cursor / VS Code** — `{ "command": "npx", "args": ["-y", "@codespar/mcp"], "env": { "CODESPAR_API_KEY": "csk_live_..." } }`
+
+Config (env or `--flag`): `CODESPAR_API_KEY` (required), `CODESPAR_PROJECT` (`prj_…`),
+`CODESPAR_PRESET` (`brazilian`|`mexican`|`argentinian`|`colombian`|`all`, default
+`brazilian`), `CODESPAR_SERVERS` (comma list, overrides preset), `CODESPAR_USER_ID`.
+
+## Use as a config helper (library)
 
 ```bash
 npm install @codespar/mcp @codespar/sdk
