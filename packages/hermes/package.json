@@ -1,6 +1,7 @@
 {
   "name": "@codespar/hermes",
   "version": "0.4.0",
+  "private": true,
   "description": "Hermes Agent adapter for CodeSpar — convert session tools to Hermes MCP/plugin tool format",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,6 +1,7 @@
 {
   "name": "@codespar/managed-agents-adapter",
   "version": "0.1.0",
+  "private": true,
   "description": "Bridges the Anthropic Managed Agents SDK to the codespar SessionBase interface",
   "type": "module",
   "main": "./dist/index.js",

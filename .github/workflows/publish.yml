@@ -68,6 +68,16 @@ jobs:
               echo ""
               echo "::group::Publishing $pkg_name"
               cd "$dir"
+              # `"private": true` is the standard npm "do not publish" flag — a
+              # package held back (built + tested in the monorepo, not yet
+              # released). Skip it cleanly so the run stays green; flip the flag
+              # off when it's ready to ship on the next tag.
+              if [ "$(node -p "require('./package.json').private === true" 2>/dev/null || echo false)" = "true" ]; then
+                echo "↷ $pkg_name is private — held, skipping"
+                echo "::endgroup::"
+                cd "$GITHUB_WORKSPACE"
+                continue
+              fi
               out=$(npm publish --access public 2>&1)
               code=$?
               if [ $code -ne 0 ]; then
