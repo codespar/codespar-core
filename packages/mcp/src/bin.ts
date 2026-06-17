@@ -40,6 +40,21 @@ function log(msg: string): void {
 }
 
 async function main(): Promise<void> {
+  // Canonical invocation is `codespar-mcp serve` (what every install snippet on
+  // /agents shows). Accept it explicitly — and a bare invocation, for
+  // back-compat — and reject an unknown command instead of silently ignoring an
+  // unmatched positional the way earlier builds did.
+  const command =
+    process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : "serve";
+  if (command !== "serve") {
+    log(
+      `unknown command "${command}". Usage: codespar-mcp serve ` +
+        `[--project <prj_…>] [--preset brazilian|mexican|argentinian|colombian|all] ` +
+        `[--servers a,b,c] [--user <id>]`,
+    );
+    process.exit(1);
+  }
+
   const apiKey = process.env.CODESPAR_API_KEY;
   if (!apiKey) {
     log("CODESPAR_API_KEY is required. Get one at https://codespar.dev/dashboard/settings?tab=api-keys");
@@ -63,7 +78,7 @@ async function main(): Promise<void> {
   log(`exposing ${toolList.length} tool(s): ${toolList.map((t) => t.name).join(", ") || "(none — check connections)"}`);
 
   const server = new Server(
-    { name: "codespar", version: "0.5.0" },
+    { name: "codespar", version: "0.5.1" },
     { capabilities: { tools: {} } },
   );
 

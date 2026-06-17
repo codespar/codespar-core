@@ -61,13 +61,16 @@ describe("@codespar/mcp", () => {
     expect(cfg.headers.Authorization).toBe("Bearer csk_live_x");
   });
 
-  it("getClaudeDesktopConfig wraps in mcpServers shape", () => {
+  it("getClaudeDesktopConfig emits the `serve` stdio launch with CODESPAR_API_KEY", () => {
     const session = fakeSession();
     const cfg = getClaudeDesktopConfig(session);
     expect(cfg.mcpServers.codespar).toBeDefined();
     expect(cfg.mcpServers.codespar!.command).toBe("npx");
-    expect(cfg.mcpServers.codespar!.args).toContain("ses_demo");
-    expect(cfg.mcpServers.codespar!.env?.MCP_URL).toBe(session.mcp!.url);
+    // The canonical bin invocation — not a `--session` flag the bin doesn't read.
+    expect(cfg.mcpServers.codespar!.args).toEqual(["-y", "@codespar/mcp", "serve"]);
+    // The bin reads CODESPAR_API_KEY from env, derived from the session bearer.
+    expect(cfg.mcpServers.codespar!.env?.CODESPAR_API_KEY).toBe("csk_live_x");
+    expect(cfg.mcpServers.codespar!.env?.MCP_URL).toBeUndefined();
   });
 
   it("getClaudeDesktopConfig accepts custom server name", () => {

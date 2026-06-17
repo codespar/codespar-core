@@ -5,11 +5,11 @@
  * external MCP clients (Claude Desktop, Cursor, VS Code) to a CodeSpar
  * session.
  *
- * **Status (0.2.0):** Config files are generated correctly. The runtime
- * MCP endpoint on the backend is planned for Marco 3 — until then, the
- * generated configs reference an endpoint that returns 404. This package
- * is shipped now so devs can wire their tooling and have it work the
- * moment the backend MCP transport ships.
+ * `getClaudeDesktopConfig` emits a stdio launch (`npx -y @codespar/mcp serve`)
+ * with `CODESPAR_API_KEY` in env — the exact shape the bin reads, and the same
+ * one shown on https://codespar.dev/agents. `getCursorConfig`/`getMcpConfig`
+ * return the remote `{ url, headers }` transport (the session's hosted MCP
+ * endpoint) for clients that connect over HTTP instead of stdio.
  *
  * @example
  * ```ts
@@ -61,14 +61,19 @@ export function getClaudeDesktopConfig(
   serverName = "codespar",
 ): { mcpServers: Record<string, ClaudeDesktopServerConfig> } {
   if (!session.mcp) throw new Error("Session does not have an MCP transport configured.");
+  // The stdio bin reads CODESPAR_API_KEY from env (not the MCP URL or an auth
+  // header). Derive it from the session's bearer so the emitted config boots
+  // as-is. `--session` is not a bin flag — the canonical command is `serve`.
+  const apiKey = (session.mcp.headers["Authorization"] ?? "").replace(/^Bearer\s+/i, "");
+  const project = session.mcp.headers["x-codespar-project"];
   return {
     mcpServers: {
       [serverName]: {
         command: "npx",
-        args: ["-y", "@codespar/mcp", "--session", session.id],
+        args: ["-y", "@codespar/mcp", "serve"],
         env: {
-          MCP_URL: session.mcp.url,
-          ...session.mcp.headers,
+          CODESPAR_API_KEY: apiKey,
+          ...(project ? { CODESPAR_PROJECT: project } : {}),
         },
       },
     },
