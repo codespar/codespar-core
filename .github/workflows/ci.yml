@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
         run: npm audit --omit=dev
 
   validate-example-skeleton:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     # GitHub-hosted runners ship with Docker. This job runs the
     # examples/pix-nfse-skeleton/ end-to-end via the published runtime
     # image at ghcr.io/codespar/codespar:latest, so a regression in
@@ -59,7 +59,7 @@ jobs:
         run: npm run validate
 
   validate-example-nfse-from-natural-language:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     # Exercises the natural-language NFS-e example end-to-end via the
     # published runtime image at ghcr.io/codespar/codespar:latest. Boots
     # @copilotkit/aimock on port 4010 as the stand-in Anthropic API and
@@ -83,7 +83,7 @@ jobs:
         run: npm run validate
 
   validate-example-whatsapp-installment-negotiation:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     # Exercises the multi-turn installment-negotiation example end-to-end
     # via the published runtime image at ghcr.io/codespar/codespar:latest.
     # Three buyer messages drive three session.send() calls; the Asaas
