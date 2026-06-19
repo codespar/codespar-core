@@ -7,7 +7,7 @@ Two layers:
      packages/types/src/testing/shop-fixtures.ts) into the dataclass
      result and assert every field maps one-to-one. This is the
      dict->dataclass parse-helper round-trip the contract requires
-     (R11) and the guard against TS<->Python wire drift.
+     and the guard against TS<->Python wire drift.
   2. Dispatch: drive ``session.shop(...)`` over a mocked backend and
      assert the action-correct result type + the wire params the
      facade sends.

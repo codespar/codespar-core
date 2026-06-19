@@ -253,27 +253,14 @@ compatibility-assessed change.
 **Pagination is deferred — not specified in v0.** There is no page token, cursor,
 or offset in this contract. A consumer requests a single page bounded by `limit`.
 
-## Vocabulary crosswalk (Tier 0/1/2 ↔ S1–S6)
+## Rail tagging
 
-Two merchant vocabularies appear in the broader record and classify on
-**different axes** — so this is a crosswalk, not a bijection:
-
-- **Tier 0/1/2** classifies by integration depth / execution rail: Tier 0
-  hosted-browser scrape, Tier 1 connected API, Tier 2 native catalog.
-- **S1–S6** classifies by how the agent transacts (storefront shapes).
-
-A single merchant platform (e.g. VTEX) spans tiers, so the axes do not map 1:1.
-
-| Tier | Integration depth | Crosswalk to S-shapes |
-|---|---|---|
-| Tier 0 | hosted-browser scrape (drive the store's real checkout headlessly) | maps to whichever S-shape the scraped storefront presents — no fixed S-row |
-| Tier 1 | connected upstream API | maps to the connected-API S-shapes; one platform can appear at Tier 0 and Tier 1 |
-| Tier 2 | native catalog / native checkout | maps to the native-listing S-shapes |
-
-**Neither vocabulary is normative for the wire shape.** The `codespar_shop` wire
-shape is **rail-tagged via the `rail` field**, not tier-tagged or shape-tagged.
-Tier and S-shape are lane/coverage lenses; they do not change the actions,
-schemas, or status values this contract defines.
+The `codespar_shop` wire shape is **rail-tagged via the `rail` field**. The
+`rail` value names which integration an implementation used to serve the call
+(e.g. `vtex`, `meli`); it is informational and does not change the actions,
+schemas, or status values this contract defines. A consumer reads `rail` for
+diagnostics, not control flow — the same action and result shape applies
+regardless of rail.
 
 ## Cross-registrant obligations
 

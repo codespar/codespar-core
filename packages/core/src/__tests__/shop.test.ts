@@ -1,11 +1,10 @@
 /**
  * codespar_shop typed facade tests.
  *
- * Covers the R12 obligation: the discriminated `ShopArgs`/`ShopResult`
- * union gives a caller the action-correct result type without an
- * untyped cast. A `ready_for_payment` status result exposes typed
- * `pix_copia_e_cola` + `total_minor`; a `canceled` result exposes typed
- * `error`. The facade also mirrors `charge()`: it dispatches
+ * Covers the discriminated `ShopArgs`/`ShopResult` union: it gives a
+ * caller the action-correct result type without an untyped cast. A
+ * `ready_for_payment` status result exposes typed `pix_copia_e_cola` +
+ * `total_minor`; a `canceled` result exposes typed `error`. The facade also mirrors `charge()`: it dispatches
  * `execute("codespar_shop", args)` and throws `shop failed: <error>` on
  * `!success`.
  *
@@ -131,7 +130,7 @@ describe("session.shop facade", () => {
     expect(calls[0]!.toolName).toBe("codespar_shop");
     expect(calls[0]!.params).toEqual(args);
 
-    // R12: discriminate on the search shape.
+    // discriminate on the search shape.
     if ("products" in result) {
       const search: ShopSearchResult = result;
       expect(search.rail).toBe("vtex");
@@ -181,7 +180,7 @@ describe("session.shop facade", () => {
     expect(result.checkout_session_id).toBe("cks_1");
   });
 
-  it("R12: a ready_for_payment status exposes typed pix_copia_e_cola + total_minor", async () => {
+  it("a ready_for_payment status exposes typed pix_copia_e_cola + total_minor", async () => {
     const data: ShopStatusResult = {
       checkout_session_id: "cks_1",
       status: "ready_for_payment",
@@ -210,7 +209,7 @@ describe("session.shop facade", () => {
     }
   });
 
-  it("R12: a canceled status exposes the typed error field", async () => {
+  it("a canceled status exposes the typed error field", async () => {
     const data: ShopStatusResult = {
       checkout_session_id: "cks_2",
       status: "canceled",
@@ -236,7 +235,7 @@ describe("session.shop facade", () => {
 });
 
 /**
- * Compile-time discriminated-union assertions (R12). These do not run
+ * Compile-time discriminated-union assertions. These do not run
  * assertions at runtime — they fail the build if the union stops
  * narrowing correctly, which is the real guarantee the contract makes.
  */

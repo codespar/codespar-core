@@ -30,7 +30,7 @@ function expectAllPresent(label: string, tokens: string[]): void {
 }
 
 describe("codespar_shop contract-spec completeness", () => {
-  it("enumerates the closed action set (R1)", () => {
+  it("enumerates the closed action set", () => {
     expectAllPresent("actions", [
       "`search`",
       "`checkout`",
@@ -40,7 +40,7 @@ describe("codespar_shop contract-spec completeness", () => {
     ]);
   });
 
-  it("documents every input field per action (R2)", () => {
+  it("documents every input field per action", () => {
     expectAllPresent("search inputs", ["`query`", "`limit`", "`merchant`"]);
     expectAllPresent("checkout inputs", [
       "`items`",
@@ -57,7 +57,7 @@ describe("codespar_shop contract-spec completeness", () => {
     expectAllPresent("status inputs", ["`checkout_session_id`"]);
   });
 
-  it("documents every output field + the ShopOffer/ShopVariant shapes (R3)", () => {
+  it("documents every output field + the ShopOffer/ShopVariant shapes", () => {
     expectAllPresent("offer/variant", [
       "`ShopOffer`",
       "`ShopVariant`",
@@ -77,7 +77,7 @@ describe("codespar_shop contract-spec completeness", () => {
     expectAllPresent("zero-result", ["`products: []`"]);
   });
 
-  it("documents the state machine (R4)", () => {
+  it("documents the state machine", () => {
     expectAllPresent("state machine", [
       "`in_progress`",
       "`ready_for_payment`",
@@ -87,7 +87,7 @@ describe("codespar_shop contract-spec completeness", () => {
     ]);
   });
 
-  it("enumerates the error taxonomy + channels (R5)", () => {
+  it("enumerates the error taxonomy + channels", () => {
     expectAllPresent("errors", [
       "`invalid_args`",
       "`provider_error`",
@@ -103,11 +103,11 @@ describe("codespar_shop contract-spec completeness", () => {
     expect(spec).toMatch(/KYC.*NOT part of this contract/s);
   });
 
-  it("records vtex_identity_required as net-new (R5a)", () => {
+  it("records vtex_identity_required as net-new", () => {
     expectAllPresent("vtex identity", ["`vtex_identity_required`", "net-new"]);
   });
 
-  it("documents merchant stance, the enforced limit, and pagination (R6)", () => {
+  it("documents merchant stance, the enforced limit, and pagination", () => {
     expectAllPresent("merchant + limits", [
       "open string",
       "catch-all",
@@ -117,26 +117,22 @@ describe("codespar_shop contract-spec completeness", () => {
     expect(spec).toMatch(/Pagination is deferred/);
   });
 
-  it("records the unversioned-v0 + additive versioning stance (R8)", () => {
+  it("records the unversioned-v0 + additive versioning stance", () => {
     expectAllPresent("versioning", [
       "Unversioned v0",
       "additive",
     ]);
   });
 
-  it("includes the Tier 0/1/2 ↔ S1–S6 crosswalk with the non-normative statement (R9)", () => {
-    expectAllPresent("crosswalk", [
-      "Tier 0",
-      "Tier 1",
-      "Tier 2",
-      "S1–S6",
-      "crosswalk",
-      "Neither vocabulary is normative",
+  it("documents rail tagging as informational, not control flow", () => {
+    expectAllPresent("rail tagging", [
+      "Rail tagging",
       "`rail`",
+      "informational",
     ]);
   });
 
-  it("documents the capability token, redaction + abort obligations (R10/R16)", () => {
+  it("documents the capability token, redaction + abort obligations", () => {
     expectAllPresent("obligations", [
       'capabilities: ["shop"]',
       "advisory",

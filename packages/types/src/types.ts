@@ -517,7 +517,7 @@ export interface ShopStatusResult {
 /**
  * Discriminated result union mirroring `ShopArgs`. A `ready_for_payment`
  * status result exposes typed `pix_copia_e_cola` + `total_minor`; a
- * `canceled` result exposes typed `error` — no `unknown` cast (R12).
+ * `canceled` result exposes typed `error` — no `unknown` cast.
  */
 export type ShopResult =
   | ShopSearchResult
