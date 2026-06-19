@@ -120,6 +120,26 @@ export interface Session extends SessionBase {
    * primitive; distinct from pay/charge which move money.
    */
   issue(args: IssueArgs): Promise<IssueResult>;
+  /**
+   * Buy-side shopping: catalog search → async checkout → Pix mint.
+   * Typed wrapper around `execute("codespar_shop", {...})`. The
+   * discriminated `ShopArgs`/`ShopResult` give the action-correct
+   * result type per action without an untyped cast.
+   *
+   * Checkout is async: `{action:"checkout"}` returns
+   * `{checkout_session_id, status:"in_progress"}`; poll
+   * `{action:"checkout_status", checkout_session_id}` until
+   * `ready_for_payment` (carries `pix_copia_e_cola`) or `canceled`
+   * (carries `error`). Settle the returned Pix via a separate payment
+   * tool — settlement and governance are out of this contract.
+   *
+   * A session declares the `shop` capability to surface this method
+   * (the `capabilities: ["shop"]` token); see the contract spec.
+   * Requires a runtime that implements the `codespar_shop` meta-tool —
+   * a self-hosted OSS runtime with no registered implementation returns
+   * "Tool not registered".
+   */
+  shop(args: ShopArgs): Promise<ShopResult>;
   mcp?: { url: string; headers: Record<string, string> };
 }
 
@@ -329,6 +349,180 @@ export interface IssueResult {
   program_id?: string | null;
   raw?: unknown;
 }
+
+/* ── codespar_shop wire shape ────────────────────────────────── */
+
+/**
+ * Buy-side shopping primitive: catalog search → checkout → Pix mint.
+ * Three actions over the canonical async/flattened wire shape:
+ *   - search           Find offers for a query at a merchant
+ *   - checkout         Start an async checkout (returns a session id)
+ *   - checkout_status  Poll a checkout session to terminal state
+ *
+ * The contract is the source of truth for the wire payload; the
+ * full consumer-facing specification (schemas, error table, state
+ * machine, versioning stance) lives in docs/codespar-shop-contract.md.
+ *
+ * The contract stops at minting a payable `pix_copia_e_cola`; it does
+ * NOT settle money and performs no KYC / mandate / cap check. Those are
+ * separate tools with separate governance — a returned Pix is a payment
+ * request, not an approved purchase.
+ *
+ * The typed `session.shop()` facade requires a runtime that implements
+ * the `codespar_shop` meta-tool. A self-hosted OSS runtime with no
+ * registered implementation returns "Tool not registered".
+ */
+
+/** One buyable SKU under a `ShopOffer`. */
+export interface ShopVariant {
+  /**
+   * The ready-to-buy SKU id. Note the field-name asymmetry the contract
+   * documents (not a bug): pass this `sku_id` as the checkout item's
+   * `variant_id`. The product id is NOT buyable — only the SKU is.
+   */
+  sku_id: string;
+  title?: string;
+  /** Integer minor units (centavos). */
+  price_minor?: number;
+  /** ISO-4217 currency code (default "BRL"). */
+  currency?: string;
+  available: boolean;
+}
+
+/** A flattened catalog offer returned by `search`. */
+export interface ShopOffer {
+  product_id: string;
+  /** Offer-level SKU when the offer has a single buyable SKU. */
+  sku_id?: string;
+  title?: string;
+  /** Integer minor units (centavos). */
+  price_minor?: number;
+  /** ISO-4217 currency code (default "BRL"). */
+  currency?: string;
+  image?: string;
+  url?: string;
+  available: boolean;
+  variants: ShopVariant[];
+}
+
+/** A line item for a VTEX-rail `checkout`. */
+export interface ShopCheckoutItem {
+  /** The buyable SKU — pass `ShopVariant.sku_id` here. */
+  variant_id: string;
+  /** Defaults to 1 when omitted. */
+  quantity?: number;
+  /** VTEX marketplace sub-seller id for a third-party SKU. */
+  seller?: string;
+}
+
+/** Optional vaulted buyer profile merged with the saved profile. */
+export interface ShopBuyer {
+  name?: string;
+  email?: string;
+  cpf?: string;
+  phone?: string;
+}
+
+/** Optional vaulted delivery address; `cep` required when present. */
+export interface ShopAddress {
+  cep: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+}
+
+/** Search the catalog for offers. */
+export interface ShopSearchArgs {
+  action: "search";
+  /** Free-form query (required). */
+  query: string;
+  /** Result cap, enforce-clamped to 1..20 (default 10). */
+  limit?: number;
+  /** Open merchant string resolved to a rail at runtime. */
+  merchant?: string;
+}
+
+/**
+ * Start a checkout. The "items XOR url, gated by rail" rule: pass
+ * `items` for the VTEX rail, or `url` for the Mercado Livre PDP rail —
+ * not both. Returns immediately with a session id; poll
+ * `checkout_status` for the terminal Pix.
+ */
+export interface ShopCheckoutArgs {
+  action: "checkout";
+  merchant?: string;
+  /** VTEX rail: line items by SKU. */
+  items?: ShopCheckoutItem[];
+  /** Mercado Livre rail: the product-detail-page URL. */
+  url?: string;
+  /** Buyer scope; defaults to the calling agent's id when omitted. */
+  consumer_id?: string;
+  buyer?: ShopBuyer;
+  address?: ShopAddress;
+}
+
+/** Poll a checkout session for its terminal state. */
+export interface ShopStatusArgs {
+  action: "checkout_status";
+  checkout_session_id: string;
+}
+
+/**
+ * Discriminated on `action`, so a caller gets the action-correct
+ * result type without an untyped cast (the closed action set is
+ * `search | checkout | checkout_status`; default `search`).
+ */
+export type ShopArgs = ShopSearchArgs | ShopCheckoutArgs | ShopStatusArgs;
+
+/** Terminal/non-terminal checkout-status values. */
+export type ShopCheckoutStatus =
+  | "in_progress"
+  | "ready_for_payment"
+  | "canceled";
+
+/** Result of `search`. Zero results is `products: []`, not an error. */
+export interface ShopSearchResult {
+  rail: string;
+  products: ShopOffer[];
+}
+
+/** Result of `checkout` — always async, status is `in_progress`. */
+export interface ShopCheckoutResult {
+  checkout_session_id: string;
+  status: "in_progress";
+  /** Advisory free-text status message. */
+  message?: string;
+}
+
+/**
+ * Result of `checkout_status`. `pix_copia_e_cola` + `total_minor` are
+ * present only at `ready_for_payment`; `error` only at `canceled`.
+ */
+export interface ShopStatusResult {
+  checkout_session_id: string;
+  status: ShopCheckoutStatus;
+  rail?: string;
+  /** Integer minor units (centavos). */
+  total_minor?: number;
+  /** The payable Pix copia-e-cola — present only at ready_for_payment. */
+  pix_copia_e_cola?: string;
+  order_status?: string;
+  /** Failure detail — present only at canceled. */
+  error?: string;
+}
+
+/**
+ * Discriminated result union mirroring `ShopArgs`. A `ready_for_payment`
+ * status result exposes typed `pix_copia_e_cola` + `total_minor`; a
+ * `canceled` result exposes typed `error` — no `unknown` cast.
+ */
+export type ShopResult =
+  | ShopSearchResult
+  | ShopCheckoutResult
+  | ShopStatusResult;
 
 /* ── /v1/tool-calls/:id/payment-status wire shape ──────────────── */
 
@@ -642,4 +836,91 @@ export interface AuthResult {
   linkToken: string;
   authorizeUrl: string;
   expiresAt: string;
+}
+
+/* ── Meta-tool registration seam (plugin hook interface) ──────────
+ *
+ * Canonical, published definition of the meta-tool seam — the fifth plugin
+ * hook — that lets any implementation register a named, higher-level tool the
+ * runtime dispatches by name. `@codespar/core` re-exports these types from
+ * here, so a hook author still imports them from `@codespar/core` alongside
+ * the other plugin hooks; this package is the published type surface those
+ * definitions are carried on, so an out-of-process implementation that
+ * registers a meta-tool can depend on a stable, versioned contract.
+ * ─────────────────────────────────────────────────────────────── */
+
+/**
+ * Execution context passed to a meta-tool hook.
+ *
+ * This is the public, strict subset of the context a registrant receives:
+ * only the trusted, scope-defining fields cross the boundary. A registrant
+ * that needs richer internal context (database handles, provider clients,
+ * etc.) constructs it itself, derived ONLY from the trusted `orgId`/
+ * `projectId` here — never from agent-supplied input. The core never
+ * widens this shape; widening happens inside the registrant.
+ */
+export interface MetaToolExecutionContext {
+  /** Tenant/org the calling session is scoped to (authorization root). */
+  orgId: string;
+  /** Project the session is scoped to; null for system-wide contexts. */
+  projectId: string | null;
+  /** The session driving this execution. */
+  sessionId: string;
+  /** Optional least-privilege agent scope; defaults to the caller. */
+  agentId?: string | null;
+  /** Whether this runs against live or test rails. */
+  environment?: "live" | "test";
+  /** Abort signal — registrants SHOULD honor it to cancel in-flight work. */
+  signal?: AbortSignal;
+}
+
+/**
+ * Advertised definition of a meta-tool, fed to tool-listing surfaces
+ * (`codespar_list_tools`, the chat-loop catalog) so the tools a runtime
+ * advertises track what is actually registered.
+ */
+export interface MetaToolDefinition {
+  name: string;
+  description: string;
+  input_schema: {
+    type: "object";
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+}
+
+/** Result envelope a meta-tool hook returns. */
+export interface MetaToolResult {
+  /** Identifier of the server/provider that produced the result. */
+  server_id: string;
+  /** The tool's output payload. */
+  output: unknown;
+  /** Wall-clock duration of the execution, in milliseconds. */
+  duration_ms: number;
+}
+
+/**
+ * Meta-tool hook — the fifth plugin hook. Lets any implementation register
+ * a named, higher-level tool (a "meta-tool") that the runtime dispatches by
+ * name through the standard execute path, alongside the four existing hooks
+ * (`PolicyHook`/`ObservabilityHook`/`SecretsHook`/`IntegrationHook`).
+ *
+ * A registered hook runs arbitrary in-process code on the execute path, so
+ * it is trusted by construction — treat a third-party registrant with the
+ * same scrutiny as any dependency you import and call. The seam does not
+ * sandbox registrants.
+ */
+export interface MetaToolHook {
+  /** Diagnostic id for this registrant, e.g. "example". */
+  id: string;
+  /** Meta-tool names this hook serves. */
+  handles: string[];
+  /** Optional advertised definitions for tool-listing surfaces. */
+  definitions?(): MetaToolDefinition[];
+  /** Execute a meta-tool by name with the public execution context. */
+  execute(
+    name: string,
+    input: Record<string, unknown>,
+    ctx: MetaToolExecutionContext,
+  ): Promise<MetaToolResult>;
 }

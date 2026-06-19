@@ -44,6 +44,8 @@ from .types import (
     SessionInfo,
     ShipArgs,
     ShipResult,
+    ShopArgs,
+    ShopResult,
     StreamEvent,
     Tool,
     ToolResult,
@@ -184,6 +186,10 @@ class Session:
     def issue(self, args: IssueArgs) -> IssueResult:
         """Sync wrapper around ``AsyncSession.issue``. See that for docs."""
         return self._runner.run(self._async.issue(args))
+
+    def shop(self, args: ShopArgs) -> ShopResult:
+        """Sync wrapper around ``AsyncSession.shop``. See that for docs."""
+        return self._runner.run(self._async.shop(args))
 
     def proxy_execute(self, request: ProxyRequest) -> ProxyResult:
         return self._runner.run(self._async.proxy_execute(request))

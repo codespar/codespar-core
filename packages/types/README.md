@@ -49,6 +49,7 @@ interface Session extends SessionBase {
   // Meta-tool wrappers — typed payloads, same wire as session.execute(...)
   charge(args: ChargeArgs): Promise<ChargeResult>;
   ship(args: ShipArgs): Promise<ShipResult>;
+  shop(args: ShopArgs): Promise<ShopResult>;
 
   // Async settlement (codespar_charge / codespar_pay)
   paymentStatus(toolCallId: string): Promise<PaymentStatusResult>;
@@ -103,10 +104,13 @@ function useSession(session: SessionBase) {
 | `ConnectionWizardOptions` / `ConnectionWizardResult` / `ConnectionStatusRow` | Wire shapes for `session.connectionWizard(...)` (`codespar_manage_connections`) |
 | `ChargeArgs` / `ChargeBuyer` / `ChargeResult` | Wire shapes for `session.charge(...)` (`codespar_charge`, inbound) |
 | `ShipArgs` / `ShipAddress` / `ShipItem` / `ShipResult` | Wire shapes for `session.ship(...)` (`codespar_ship`) |
+| `ShopArgs` / `ShopSearchArgs` / `ShopCheckoutArgs` / `ShopStatusArgs` / `ShopOffer` / `ShopVariant` / `ShopResult` / `ShopSearchResult` / `ShopCheckoutResult` / `ShopStatusResult` / `ShopCheckoutStatus` | Wire shapes for `session.shop(...)` (`codespar_shop`) — discriminated on `action`. Canonical spec: [`docs/codespar-shop-contract.md`](../../docs/codespar-shop-contract.md) |
 | `PaymentStatus` / `PaymentStatusResult` / `PaymentStatusEvent` | Wire shapes for `session.paymentStatus(toolCallId)` — async webhook correlation |
 | `PaymentStatusStreamOptions` | Options for `session.paymentStatusStream(...)` — `onUpdate?`, `signal?` |
 | `VerificationStatus` / `VerificationStatusResult` / `VerificationStatusEvent` | Wire shapes for `session.verificationStatus(toolCallId)` — async KYC poll |
 | `VerificationStatusStreamOptions` | Options for `session.verificationStatusStream(...)` — `onUpdate?`, `signal?` |
+
+> **The typed meta-tool facades (`shop()`, `charge()`, `ship()`, …) require a runtime that implements the meta-tool.** These wire types are the contract; the facade in `@codespar/sdk` is a client over `execute("codespar_<tool>", args)`. Against a self-hosted runtime with no registered implementation for that meta-tool, the call returns `Tool not registered`. The types + facade are MIT and self-hostable; the implementation is registered by the runtime the SDK points at.
 
 ## Conformance testing
 

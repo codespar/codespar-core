@@ -10,6 +10,7 @@ Eight new typed methods on `Session`, grouped by capability:
 
 - `session.charge(args)` — INBOUND charges (`codespar_charge`). Buyer pays merchant. Pix BRL via Asaas / MP / iugu / Stone; card USD via Stripe. Distinct from `codespar_pay` (outbound transfers).
 - `session.ship(args)` — shipping (`codespar_ship`). One typed entry into Melhor Envio's 3 rails (`action: "label" | "quote" | "track"`).
+- `session.shop(args)` — buy-side shopping (`codespar_shop`). Catalog search → async checkout → Pix mint (`action: "search" | "checkout" | "checkout_status"`). Discriminated `ShopArgs`/`ShopResult` give the action-correct result type. Checkout is async: start, then poll `checkout_status` until `ready_for_payment` (carries `pix_copia_e_cola`) or `canceled`. Settle the returned Pix via a separate payment tool — settlement and governance are out of this contract. Full spec: [`docs/codespar-shop-contract.md`](../../docs/codespar-shop-contract.md).
 
 **Async settlement** — `codespar_charge` / `codespar_pay` return synchronously, but real settlement lands via webhook:
 
@@ -26,7 +27,9 @@ Eight new typed methods on `Session`, grouped by capability:
 - `session.discover(query, options?)` — semantic + lexical tool search across the catalog (`codespar_discover`, pgvector + pg_trgm).
 - `session.connectionWizard(options)` — connect deep-link backend (`codespar_manage_connections`). Credentials never travel through this method.
 
-All wrappers call into the same managed runtime as `session.execute(...)`; you get typed payloads instead of hand-rolling the meta-tool envelope.
+All wrappers call into the same runtime as `session.execute(...)`; you get typed payloads instead of hand-rolling the meta-tool envelope.
+
+> **The typed meta-tool facades (`shop()`, `charge()`, `ship()`, …) are clients, not implementations.** Each is a thin wrapper over `execute("codespar_<tool>", args)` and requires a runtime that **implements** that meta-tool (a registered implementation behind the contract). Against a self-hosted runtime with no registered implementation, the call returns `Tool not registered`. The contract + the typed facade ship here MIT; the implementation is registered by the runtime you point `baseUrl` at.
 
 ### Crypto + KYC meta-tools
 
