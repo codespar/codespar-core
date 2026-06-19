@@ -551,6 +551,140 @@ class IssueResult:
     raw: Any = None
 
 
+# ── codespar_shop wire shape ───────────────────────────────────────
+
+ShopAction = Literal["search", "checkout", "checkout_status"]
+ShopCheckoutStatus = Literal["in_progress", "ready_for_payment", "canceled"]
+
+
+@dataclass(slots=True)
+class ShopVariant:
+    """One buyable SKU under a ``ShopOffer``.
+
+    Note the field-name asymmetry the contract documents (not a bug):
+    pass this ``sku_id`` as the checkout item's ``variant_id``. The
+    product id is NOT buyable — only the SKU is.
+    """
+
+    sku_id: str
+    available: bool
+    title: str | None = None
+    price_minor: int | None = None  # integer minor units (centavos)
+    currency: str | None = None  # ISO-4217, default "BRL"
+
+
+@dataclass(slots=True)
+class ShopOffer:
+    """A flattened catalog offer returned by ``search``."""
+
+    product_id: str
+    available: bool
+    variants: list[ShopVariant]
+    sku_id: str | None = None
+    title: str | None = None
+    price_minor: int | None = None
+    currency: str | None = None
+    image: str | None = None
+    url: str | None = None
+
+
+@dataclass(slots=True)
+class ShopCheckoutItem:
+    """A line item for a VTEX-rail ``checkout``."""
+
+    variant_id: str  # pass ShopVariant.sku_id here
+    quantity: int | None = None  # defaults to 1 when omitted
+    seller: str | None = None  # VTEX marketplace sub-seller id
+
+
+@dataclass(slots=True)
+class ShopBuyer:
+    """Optional vaulted buyer profile, merged with the saved profile."""
+
+    name: str | None = None
+    email: str | None = None
+    cpf: str | None = None
+    phone: str | None = None
+
+
+@dataclass(slots=True)
+class ShopAddress:
+    """Optional vaulted delivery address; ``cep`` required when present."""
+
+    cep: str
+    street: str | None = None
+    number: str | None = None
+    complement: str | None = None
+    neighborhood: str | None = None
+    city: str | None = None
+    state: str | None = None
+
+
+@dataclass(slots=True)
+class ShopArgs:
+    """Input shape for ``Session.shop``.
+
+    The closed action set is ``search | checkout | checkout_status``
+    (default ``search``). Per-action field requirements:
+      - ``search``: ``query`` required; ``limit`` clamped 1..20.
+      - ``checkout``: ``items`` XOR ``url``, gated by rail (``items``
+        for VTEX, ``url`` for the Mercado Livre PDP path).
+      - ``checkout_status``: ``checkout_session_id`` required.
+
+    Mirrors the TS ``ShopArgs`` discriminated union as a single
+    dataclass; the ``shop()`` wrapper serializes only the fields the
+    given action uses, matching the TS facade's wire payload.
+    """
+
+    action: ShopAction
+    query: str | None = None
+    limit: int | None = None
+    merchant: str | None = None
+    items: list[ShopCheckoutItem] | None = None
+    url: str | None = None
+    consumer_id: str | None = None
+    buyer: ShopBuyer | None = None
+    address: ShopAddress | None = None
+    checkout_session_id: str | None = None
+
+
+@dataclass(slots=True)
+class ShopSearchResult:
+    """Result of ``search``. Zero results is ``products=[]``, not error."""
+
+    rail: str
+    products: list[ShopOffer]
+
+
+@dataclass(slots=True)
+class ShopCheckoutResult:
+    """Result of ``checkout`` — always async, status ``in_progress``."""
+
+    checkout_session_id: str
+    status: Literal["in_progress"]
+    message: str | None = None
+
+
+@dataclass(slots=True)
+class ShopStatusResult:
+    """Result of ``checkout_status``.
+
+    ``pix_copia_e_cola`` + ``total_minor`` are present only at
+    ``ready_for_payment``; ``error`` only at ``canceled``.
+    """
+
+    checkout_session_id: str
+    status: ShopCheckoutStatus
+    rail: str | None = None
+    total_minor: int | None = None
+    pix_copia_e_cola: str | None = None
+    order_status: str | None = None
+    error: str | None = None
+
+
+ShopResult = ShopSearchResult | ShopCheckoutResult | ShopStatusResult
+
+
 # ── /v1/tool-calls/:id/payment-status wire shape ───────────────────
 
 

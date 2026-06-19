@@ -120,6 +120,26 @@ export interface Session extends SessionBase {
    * primitive; distinct from pay/charge which move money.
    */
   issue(args: IssueArgs): Promise<IssueResult>;
+  /**
+   * Buy-side shopping: catalog search → async checkout → Pix mint.
+   * Typed wrapper around `execute("codespar_shop", {...})`. The
+   * discriminated `ShopArgs`/`ShopResult` give the action-correct
+   * result type per action without an untyped cast.
+   *
+   * Checkout is async: `{action:"checkout"}` returns
+   * `{checkout_session_id, status:"in_progress"}`; poll
+   * `{action:"checkout_status", checkout_session_id}` until
+   * `ready_for_payment` (carries `pix_copia_e_cola`) or `canceled`
+   * (carries `error`). Settle the returned Pix via a separate payment
+   * tool — settlement and governance are out of this contract.
+   *
+   * A session declares the `shop` capability to surface this method
+   * (the `capabilities: ["shop"]` token); see the contract spec.
+   * Requires a runtime that implements the `codespar_shop` meta-tool —
+   * a self-hosted OSS runtime with no registered implementation returns
+   * "Tool not registered".
+   */
+  shop(args: ShopArgs): Promise<ShopResult>;
   mcp?: { url: string; headers: Record<string, string> };
 }
 
@@ -329,6 +349,180 @@ export interface IssueResult {
   program_id?: string | null;
   raw?: unknown;
 }
+
+/* ── codespar_shop wire shape ────────────────────────────────── */
+
+/**
+ * Buy-side shopping primitive: catalog search → checkout → Pix mint.
+ * Three actions over the canonical async/flattened wire shape:
+ *   - search           Find offers for a query at a merchant
+ *   - checkout         Start an async checkout (returns a session id)
+ *   - checkout_status  Poll a checkout session to terminal state
+ *
+ * The contract is the source of truth for the wire payload; the
+ * full consumer-facing specification (schemas, error table, state
+ * machine, versioning stance) lives in docs/codespar-shop-contract.md.
+ *
+ * The contract stops at minting a payable `pix_copia_e_cola`; it does
+ * NOT settle money and performs no KYC / mandate / cap check. Those are
+ * separate tools with separate governance — a returned Pix is a payment
+ * request, not an approved purchase.
+ *
+ * The typed `session.shop()` facade requires a runtime that implements
+ * the `codespar_shop` meta-tool. A self-hosted OSS runtime with no
+ * registered implementation returns "Tool not registered".
+ */
+
+/** One buyable SKU under a `ShopOffer`. */
+export interface ShopVariant {
+  /**
+   * The ready-to-buy SKU id. Note the field-name asymmetry the contract
+   * documents (not a bug): pass this `sku_id` as the checkout item's
+   * `variant_id`. The product id is NOT buyable — only the SKU is.
+   */
+  sku_id: string;
+  title?: string;
+  /** Integer minor units (centavos). */
+  price_minor?: number;
+  /** ISO-4217 currency code (default "BRL"). */
+  currency?: string;
+  available: boolean;
+}
+
+/** A flattened catalog offer returned by `search`. */
+export interface ShopOffer {
+  product_id: string;
+  /** Offer-level SKU when the offer has a single buyable SKU. */
+  sku_id?: string;
+  title?: string;
+  /** Integer minor units (centavos). */
+  price_minor?: number;
+  /** ISO-4217 currency code (default "BRL"). */
+  currency?: string;
+  image?: string;
+  url?: string;
+  available: boolean;
+  variants: ShopVariant[];
+}
+
+/** A line item for a VTEX-rail `checkout`. */
+export interface ShopCheckoutItem {
+  /** The buyable SKU — pass `ShopVariant.sku_id` here. */
+  variant_id: string;
+  /** Defaults to 1 when omitted. */
+  quantity?: number;
+  /** VTEX marketplace sub-seller id for a third-party SKU. */
+  seller?: string;
+}
+
+/** Optional vaulted buyer profile merged with the saved profile. */
+export interface ShopBuyer {
+  name?: string;
+  email?: string;
+  cpf?: string;
+  phone?: string;
+}
+
+/** Optional vaulted delivery address; `cep` required when present. */
+export interface ShopAddress {
+  cep: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+}
+
+/** Search the catalog for offers. */
+export interface ShopSearchArgs {
+  action: "search";
+  /** Free-form query (required). */
+  query: string;
+  /** Result cap, enforce-clamped to 1..20 (default 10). */
+  limit?: number;
+  /** Open merchant string resolved to a rail at runtime. */
+  merchant?: string;
+}
+
+/**
+ * Start a checkout. The "items XOR url, gated by rail" rule: pass
+ * `items` for the VTEX rail, or `url` for the Mercado Livre PDP rail —
+ * not both. Returns immediately with a session id; poll
+ * `checkout_status` for the terminal Pix.
+ */
+export interface ShopCheckoutArgs {
+  action: "checkout";
+  merchant?: string;
+  /** VTEX rail: line items by SKU. */
+  items?: ShopCheckoutItem[];
+  /** Mercado Livre rail: the product-detail-page URL. */
+  url?: string;
+  /** Buyer scope; defaults to the calling agent's id when omitted. */
+  consumer_id?: string;
+  buyer?: ShopBuyer;
+  address?: ShopAddress;
+}
+
+/** Poll a checkout session for its terminal state. */
+export interface ShopStatusArgs {
+  action: "checkout_status";
+  checkout_session_id: string;
+}
+
+/**
+ * Discriminated on `action`, so a caller gets the action-correct
+ * result type without an untyped cast (the closed action set is
+ * `search | checkout | checkout_status`; default `search`).
+ */
+export type ShopArgs = ShopSearchArgs | ShopCheckoutArgs | ShopStatusArgs;
+
+/** Terminal/non-terminal checkout-status values. */
+export type ShopCheckoutStatus =
+  | "in_progress"
+  | "ready_for_payment"
+  | "canceled";
+
+/** Result of `search`. Zero results is `products: []`, not an error. */
+export interface ShopSearchResult {
+  rail: string;
+  products: ShopOffer[];
+}
+
+/** Result of `checkout` — always async, status is `in_progress`. */
+export interface ShopCheckoutResult {
+  checkout_session_id: string;
+  status: "in_progress";
+  /** Advisory free-text status message. */
+  message?: string;
+}
+
+/**
+ * Result of `checkout_status`. `pix_copia_e_cola` + `total_minor` are
+ * present only at `ready_for_payment`; `error` only at `canceled`.
+ */
+export interface ShopStatusResult {
+  checkout_session_id: string;
+  status: ShopCheckoutStatus;
+  rail?: string;
+  /** Integer minor units (centavos). */
+  total_minor?: number;
+  /** The payable Pix copia-e-cola — present only at ready_for_payment. */
+  pix_copia_e_cola?: string;
+  order_status?: string;
+  /** Failure detail — present only at canceled. */
+  error?: string;
+}
+
+/**
+ * Discriminated result union mirroring `ShopArgs`. A `ready_for_payment`
+ * status result exposes typed `pix_copia_e_cola` + `total_minor`; a
+ * `canceled` result exposes typed `error` — no `unknown` cast (R12).
+ */
+export type ShopResult =
+  | ShopSearchResult
+  | ShopCheckoutResult
+  | ShopStatusResult;
 
 /* ── /v1/tool-calls/:id/payment-status wire shape ──────────────── */
 

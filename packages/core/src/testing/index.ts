@@ -101,6 +101,16 @@ export function fakeSession(
       };
     },
 
+    async shop(args) {
+      if (args.action === "search") {
+        return { rail: "fake", products: [] };
+      }
+      if (args.action === "checkout") {
+        return { checkout_session_id: "cks_fake", status: "in_progress" };
+      }
+      return { checkout_session_id: args.checkout_session_id, status: "in_progress" };
+    },
+
     async paymentStatus(toolCallId) {
       return { tool_call_id: toolCallId, payment_status: "pending", idempotency_key: null, original_status: "success", events: [] };
     },

@@ -15,6 +15,10 @@
         "import": "./dist/testing/contract-suite.js",
         "types": "./dist/testing/contract-suite.d.ts"
       }
+    },
+    "./testing/shop-fixtures": {
+      "import": "./dist/testing/shop-fixtures.js",
+      "types": "./dist/testing/shop-fixtures.d.ts"
     }
   },
   "files": [

@@ -31,6 +31,8 @@ import type {
   LedgerResult,
   IssueArgs,
   IssueResult,
+  ShopArgs,
+  ShopResult,
 } from "@codespar/types";
 
 interface SessionDeps {
@@ -344,6 +346,30 @@ export async function createSession(
         throw new Error(`issue failed: ${result.error ?? "unknown"}`);
       }
       return result.data as IssueResult;
+    },
+
+    /**
+     * codespar_shop wrapper. Catalog search → async checkout → Pix mint.
+     * Same wire as `execute("codespar_shop", {...})` but returns a typed
+     * ShopResult so the caller doesn't have to cast through
+     * ToolResult.data. Checkout is async: `{action:"checkout"}` returns
+     * `{checkout_session_id, status:"in_progress"}`; poll
+     * `{action:"checkout_status", checkout_session_id}` until
+     * `ready_for_payment` (carries `pix_copia_e_cola`) or `canceled`.
+     *
+     * Requires a runtime that implements the `codespar_shop` meta-tool
+     * (a registered implementation behind the contract); a self-hosted
+     * OSS runtime with none returns "Tool not registered".
+     */
+    async shop(args: ShopArgs): Promise<ShopResult> {
+      const result = await session.execute(
+        "codespar_shop",
+        args as unknown as Record<string, unknown>,
+      );
+      if (!result.success) {
+        throw new Error(`shop failed: ${result.error ?? "unknown"}`);
+      }
+      return result.data as ShopResult;
     },
 
     async paymentStatus(toolCallId: string): Promise<PaymentStatusResult> {

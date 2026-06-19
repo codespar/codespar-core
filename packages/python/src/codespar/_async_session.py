@@ -49,6 +49,13 @@ from .types import (
     SessionInfo,
     ShipArgs,
     ShipResult,
+    ShopArgs,
+    ShopCheckoutResult,
+    ShopOffer,
+    ShopResult,
+    ShopSearchResult,
+    ShopStatusResult,
+    ShopVariant,
     StreamEvent,
     Tool,
     ToolCallRecord,
@@ -220,6 +227,68 @@ def _parse_issue_result(raw: dict[str, Any]) -> IssueResult:
         cardholder_id=raw.get("cardholder_id"),
         program_id=raw.get("program_id"),
         raw=raw.get("raw"),
+    )
+
+
+def _parse_shop_variant(raw: dict[str, Any]) -> ShopVariant:
+    return ShopVariant(
+        sku_id=str(raw.get("sku_id", "")),
+        available=bool(raw.get("available", False)),
+        title=raw.get("title"),
+        price_minor=raw.get("price_minor"),
+        currency=raw.get("currency"),
+    )
+
+
+def _parse_shop_offer(raw: dict[str, Any]) -> ShopOffer:
+    variants_raw = raw.get("variants") or []
+    return ShopOffer(
+        product_id=str(raw.get("product_id", "")),
+        available=bool(raw.get("available", False)),
+        variants=[
+            _parse_shop_variant(v) for v in variants_raw if isinstance(v, dict)
+        ],
+        sku_id=raw.get("sku_id"),
+        title=raw.get("title"),
+        price_minor=raw.get("price_minor"),
+        currency=raw.get("currency"),
+        image=raw.get("image"),
+        url=raw.get("url"),
+    )
+
+
+def _parse_shop_result(raw: dict[str, Any], action: str) -> ShopResult:
+    """Map the wire payload to the action-correct dataclass.
+
+    The wire shape is discriminated by the call's ``action`` (search →
+    products, checkout → in_progress session, checkout_status → terminal
+    poll), mirroring the TS discriminated ``ShopResult`` union.
+    """
+    if action == "search":
+        products_raw = raw.get("products") or []
+        return ShopSearchResult(
+            rail=str(raw.get("rail", "")),
+            products=[
+                _parse_shop_offer(p)
+                for p in products_raw
+                if isinstance(p, dict)
+            ],
+        )
+    if action == "checkout":
+        return ShopCheckoutResult(
+            checkout_session_id=str(raw.get("checkout_session_id", "")),
+            status="in_progress",
+            message=raw.get("message"),
+        )
+    # checkout_status
+    return ShopStatusResult(
+        checkout_session_id=str(raw.get("checkout_session_id", "")),
+        status=raw.get("status", "in_progress"),
+        rail=raw.get("rail"),
+        total_minor=raw.get("total_minor"),
+        pix_copia_e_cola=raw.get("pix_copia_e_cola"),
+        order_status=raw.get("order_status"),
+        error=raw.get("error"),
     )
 
 
@@ -635,6 +704,90 @@ class AsyncSession:
         if not isinstance(result.data, dict):
             raise ApiError("issue: malformed response", status=0, body=result.data)
         return _parse_issue_result(result.data)
+
+    async def shop(self, args: ShopArgs) -> ShopResult:
+        """
+        Buy-side shopping: catalog search → async checkout → Pix mint.
+        Typed wrapper around ``execute("codespar_shop", {...})``. The
+        result type is action-correct: ``search`` → ``ShopSearchResult``,
+        ``checkout`` → ``ShopCheckoutResult``, ``checkout_status`` →
+        ``ShopStatusResult`` (version-locked to the TS discriminated
+        ``ShopResult`` union).
+
+        Checkout is async: ``action="checkout"`` returns
+        ``{checkout_session_id, status:"in_progress"}``; poll
+        ``action="checkout_status"`` until ``ready_for_payment`` (carries
+        ``pix_copia_e_cola``) or ``canceled`` (carries ``error``). Settle
+        the returned Pix via a separate payment tool — settlement and
+        governance are out of this contract.
+
+        Requires a runtime that implements the ``codespar_shop``
+        meta-tool; a self-hosted OSS runtime with no registered
+        implementation returns "Tool not registered".
+        """
+        params: dict[str, Any] = {"action": args.action}
+        if args.action == "search":
+            if args.query is not None:
+                params["query"] = args.query
+            if args.limit is not None:
+                params["limit"] = args.limit
+            if args.merchant is not None:
+                params["merchant"] = args.merchant
+        elif args.action == "checkout":
+            if args.merchant is not None:
+                params["merchant"] = args.merchant
+            if args.items is not None:
+                params["items"] = [
+                    {
+                        "variant_id": it.variant_id,
+                        **(
+                            {"quantity": it.quantity}
+                            if it.quantity is not None
+                            else {}
+                        ),
+                        **({"seller": it.seller} if it.seller else {}),
+                    }
+                    for it in args.items
+                ]
+            if args.url is not None:
+                params["url"] = args.url
+            if args.consumer_id is not None:
+                params["consumer_id"] = args.consumer_id
+            if args.buyer is not None:
+                params["buyer"] = {
+                    **({"name": args.buyer.name} if args.buyer.name else {}),
+                    **({"email": args.buyer.email} if args.buyer.email else {}),
+                    **({"cpf": args.buyer.cpf} if args.buyer.cpf else {}),
+                    **({"phone": args.buyer.phone} if args.buyer.phone else {}),
+                }
+            if args.address is not None:
+                a = args.address
+                params["address"] = {
+                    "cep": a.cep,
+                    **({"street": a.street} if a.street else {}),
+                    **({"number": a.number} if a.number else {}),
+                    **({"complement": a.complement} if a.complement else {}),
+                    **(
+                        {"neighborhood": a.neighborhood}
+                        if a.neighborhood
+                        else {}
+                    ),
+                    **({"city": a.city} if a.city else {}),
+                    **({"state": a.state} if a.state else {}),
+                }
+        else:  # checkout_status
+            if args.checkout_session_id is not None:
+                params["checkout_session_id"] = args.checkout_session_id
+        result = await self.execute("codespar_shop", params)
+        if not result.success:
+            raise ApiError(
+                f"shop failed: {result.error or 'unknown'}",
+                status=0,
+                body=result.error,
+            )
+        if not isinstance(result.data, dict):
+            raise ApiError("shop: malformed response", status=0, body=result.data)
+        return _parse_shop_result(result.data, args.action)
 
     async def verification_status(
         self, tool_call_id: str

@@ -1,0 +1,52 @@
+{
+  "search": {
+    "rail": "vtex",
+    "products": [
+      {
+        "product_id": "prod_1",
+        "sku_id": "sku_1",
+        "title": "Ração para gato 1kg",
+        "price_minor": 4990,
+        "currency": "BRL",
+        "image": "https://example.test/img/sku_1.jpg",
+        "url": "https://cobasi.test/p/sku_1",
+        "available": true,
+        "variants": [
+          {
+            "sku_id": "sku_1",
+            "title": "1kg",
+            "price_minor": 4990,
+            "currency": "BRL",
+            "available": true
+          }
+        ]
+      }
+    ]
+  },
+  "search_empty": {
+    "rail": "vtex",
+    "products": []
+  },
+  "checkout": {
+    "checkout_session_id": "cks_abc123",
+    "status": "in_progress",
+    "message": "checkout started"
+  },
+  "status_in_progress": {
+    "checkout_session_id": "cks_abc123",
+    "status": "in_progress"
+  },
+  "status_ready_for_payment": {
+    "checkout_session_id": "cks_abc123",
+    "status": "ready_for_payment",
+    "rail": "vtex",
+    "total_minor": 4990,
+    "pix_copia_e_cola": "00020126580014br.gov.bcb.pix0136cks-fixture5204000053039865802BR6304ABCD",
+    "order_status": "pending"
+  },
+  "status_canceled": {
+    "checkout_session_id": "cks_def456",
+    "status": "canceled",
+    "error": "browser_worker_checkout_failed"
+  }
+}
