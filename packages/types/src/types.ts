@@ -189,6 +189,105 @@ export interface ChargeResult {
   raw?: unknown;
 }
 
+/* ── codespar_pay wire shape ─────────────────────────────────── */
+
+/**
+ * Outbound payment — the runtime pays a recipient (a transfer/payout).
+ * Distinct from `codespar_charge`, which is inbound (a buyer pays the
+ * merchant). The discriminator is the `recipient` (a Pix key, account,
+ * or email) versus charge's `buyer` object.
+ *
+ * A payee can be addressed two ways:
+ *   - `recipient` — a Pix key / account / email the rail resolves to a payee.
+ *   - `copia_e_cola` — a Pix copia-e-cola / BR Code that already encodes the
+ *     payee. When present it identifies the payee server-side and takes
+ *     precedence over `recipient`; at least one of the two must be given.
+ *
+ * `amount` is in MINOR currency units (centavos: R$ 1.25 → 125). This
+ * differs from `ChargeArgs.amount`, which is MAJOR units — pay settles a
+ * concrete transfer where minor-unit precision matters, charge presents a
+ * human-facing price.
+ */
+export interface PayArgs {
+  /** Amount in MINOR currency units (centavos: R$ 1.25 → 125). */
+  amount: number;
+  /** ISO-4217 currency code (BRL, USD, ...). */
+  currency: string;
+  /** Payee address — a Pix key, account number, or email. Required unless
+   *  `copia_e_cola` is given. */
+  recipient?: string;
+  /** A Pix copia-e-cola / BR Code that encodes the payee. Takes precedence
+   *  over `recipient` when present. Required unless `recipient` is given. */
+  copia_e_cola?: string;
+  /** Payment description. */
+  description: string;
+  /** Payment method. Defaults to "pix" when omitted. */
+  method?: "pix" | "card" | "boleto" | "wallet";
+  /** Free-form metadata forwarded to the rail. */
+  metadata?: Record<string, unknown>;
+}
+
+export interface PayResult {
+  id: string;
+  status: string;
+  /** True once the rail confirms settlement; false for an accepted-but-
+   *  still-settling async payment (e.g. a Pix cash-out reported as
+   *  processing). */
+  settled?: boolean;
+  /** Human-friendly status line for the agent to relay, so a raw
+   *  "processing" isn't surfaced as "did it work?". */
+  status_message?: string;
+  /** Echoed amount in MINOR currency units. */
+  amount: number;
+  currency: string;
+  method: string;
+  /** Echoed payee — the resolved recipient. */
+  recipient: string;
+  pix_qr_code?: string;
+  pix_copy_paste?: string;
+  raw?: unknown;
+}
+
+/* ── codespar_kyc wire shape ─────────────────────────────────── */
+
+/**
+ * KYC / risk-scoring args. The `buyer` envelope carries everything the
+ * verification rail needs to identify the subject (name, email, national
+ * document, country); the rail plucks the fields it needs.
+ *
+ * `check_type` selects the verification rail:
+ *   - identity    Full KYC (document + selfie + database)
+ *   - document    Document-only verification
+ *   - risk-score  Behavioral risk score (returns a numeric `score`)
+ *   - sanctions   OFAC / PEP screening
+ *
+ * KYC is async: a returned result records that the verification was created
+ * with the rail. The subject completes the hosted flow off-platform; poll
+ * the disposition with the `verificationStatus` correlation method.
+ */
+export interface KycArgs {
+  /** Subject details the rail identifies the person from. */
+  buyer: Record<string, unknown>;
+  /** identity | document | risk-score | sanctions. */
+  check_type: "identity" | "document" | "risk-score" | "sanctions";
+  /** Free-form metadata forwarded to the rail. */
+  metadata?: Record<string, unknown>;
+}
+
+export interface KycResult {
+  /** Rail-side verification id the agent polls for completion. */
+  verification_id: string;
+  status: string;
+  check_type: string;
+  /** Hosted verification URL when the rail issues one. Null for
+   *  server-side scoring rails that have no hosted flow. */
+  hosted_url?: string | null;
+  /** Numeric risk score in [0, 1] for risk-score checks; higher = more
+   *  fraud-like. Absent for identity / document checks. */
+  score?: number;
+  raw?: unknown;
+}
+
 /* ── codespar_ship wire shape ────────────────────────────────── */
 
 /**
