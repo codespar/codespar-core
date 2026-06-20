@@ -116,9 +116,25 @@ export interface ErrorRules {
 }
 
 /**
+ * The happy-path contract for a single-shot tool — one with no action
+ * discriminator (e.g. `codespar_discover`). Names a minimal valid input to
+ * drive the tool with and the result wire shape the response must satisfy,
+ * so the kit asserts the result shape rather than only that it succeeded.
+ */
+export interface SingleShotRule {
+  /** A minimal valid input the kit posts to drive the happy path. */
+  sampleInput: Record<string, unknown>;
+  /** The result wire shape the successful response must satisfy. */
+  result: WireShape;
+}
+
+/**
  * The full contract descriptor for one meta-tool — the machine-readable
  * contract the conformance kit consumes. Names the tool, its wire types,
- * its action state machine, and its error rules.
+ * its action state machine (or single-shot rule), and its error rules.
+ *
+ * Exactly one of `stateMachine` (action-discriminated tools) or
+ * `singleShot` (tools with no action) describes the happy path.
  */
 export interface MetaToolContractDescriptor {
   /** The wire tool name, e.g. "codespar_shop". */
@@ -130,6 +146,9 @@ export interface MetaToolContractDescriptor {
   resultType: string;
   /** The action state machine. Present for action-discriminated tools. */
   stateMachine?: ActionStateMachine;
+  /** The single-shot happy-path rule. Present for tools with no action
+   *  discriminator (mutually exclusive with `stateMachine`). */
+  singleShot?: SingleShotRule;
   /** The error rules every runtime serving this tool must honor. */
   errors: ErrorRules;
 }
@@ -142,12 +161,32 @@ export const TOOL_NOT_REGISTERED_PREFIX = "Tool not registered" as const;
 /**
  * `codespar_discover` is a single-shot search (no action discriminator):
  * it takes a `use_case` and returns a `DiscoverResult`. The contract is the
- * result wire shape plus the two error rules.
+ * result wire shape (DiscoverResult's real fields) plus the two error
+ * rules. `recommended` is intentionally not required: it is nullable by
+ * contract (`DiscoverToolMatch | null`), so a conforming result MAY return
+ * `recommended: null` — when present it must be an object.
  */
 export const DISCOVER_CONTRACT: MetaToolContractDescriptor = {
   toolName: "codespar_discover",
   argsType: "DiscoverOptions",
   resultType: "DiscoverResult",
+  singleShot: {
+    sampleInput: { use_case: "test conformance probe" },
+    result: {
+      name: "DiscoverResult",
+      fields: [
+        { name: "use_case", kind: "string" },
+        {
+          name: "search_strategy",
+          kind: "string-enum",
+          values: ["embedding", "trigram", "empty"],
+        },
+        { name: "recommended", kind: "object", required: false },
+        { name: "related", kind: "array" },
+        { name: "next_steps", kind: "array" },
+      ],
+    },
+  },
   errors: {
     unregisteredErrorPrefix: TOOL_NOT_REGISTERED_PREFIX,
     // A discover call with no use_case is malformed — the tool cannot
@@ -190,6 +229,11 @@ export const MANAGE_CONNECTIONS_CONTRACT: MetaToolContractDescriptor = {
           name: "ConnectionWizardResult",
           fields: [
             { name: "action", kind: "string-enum", values: ["status"] },
+            { name: "connections", kind: "array" },
+            // `status` is `ConnectionStatusRow | null` — an object when a
+            // row is found, null when the server is unknown. Validated
+            // only when present.
+            { name: "status", kind: "object", required: false },
           ],
         },
       },
@@ -200,6 +244,11 @@ export const MANAGE_CONNECTIONS_CONTRACT: MetaToolContractDescriptor = {
           name: "ConnectionWizardResult",
           fields: [
             { name: "action", kind: "string-enum", values: ["initiate"] },
+            { name: "connections", kind: "array" },
+            // `initiate` is `ConnectionWizardInstructions | null` — an
+            // object when the wizard is issued, null otherwise. Validated
+            // only when present.
+            { name: "initiate", kind: "object", required: false },
           ],
         },
       },

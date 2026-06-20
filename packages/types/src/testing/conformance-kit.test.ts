@@ -22,6 +22,7 @@ import {
   fieldMatches,
   checkWireShape,
   checkActionResult,
+  checkSingleShotResult,
   checkUnregisteredError,
   checkMalformedError,
   formatViolations,
@@ -196,6 +197,70 @@ describe("checkActionResult", () => {
     );
     expect(violations[0].code).toBe("action-state");
     expect(violations[0].detail).toContain("teleport");
+  });
+});
+
+/* ── checkSingleShotResult (the Fix #1 teeth) ────────────────── */
+
+describe("checkSingleShotResult", () => {
+  const conformingDiscover = okResult({
+    use_case: "buy cat food",
+    search_strategy: "embedding",
+    recommended: null,
+    related: [],
+    next_steps: [],
+  });
+
+  it("passes a conforming DiscoverResult", () => {
+    expect(checkSingleShotResult(DISCOVER_CONTRACT, conformingDiscover)).toEqual(
+      [],
+    );
+  });
+
+  it("flags a scalar result that succeeded but is not the wire shape", () => {
+    // The exact hole the validation spike found: a single-shot tool
+    // returning `output: 42` used to pass on success alone.
+    const violations = checkSingleShotResult(DISCOVER_CONTRACT, okResult(42));
+    expect(violations.length).toBeGreaterThan(0);
+    expect(violations[0].code).toBe("wire-shape");
+    expect(violations[0].detail).toContain("expected an object");
+  });
+
+  it("flags a missing required field", () => {
+    const violations = checkSingleShotResult(
+      DISCOVER_CONTRACT,
+      okResult({
+        use_case: "x",
+        search_strategy: "embedding",
+        related: [],
+        // next_steps missing
+      }),
+    );
+    expect(violations[0].code).toBe("wire-shape");
+    expect(violations[0].detail).toContain("DiscoverResult.next_steps");
+  });
+
+  it("flags a search_strategy outside the enum", () => {
+    const violations = checkSingleShotResult(
+      DISCOVER_CONTRACT,
+      okResult({
+        use_case: "x",
+        search_strategy: "vibes",
+        recommended: null,
+        related: [],
+        next_steps: [],
+      }),
+    );
+    expect(violations[0].detail).toContain("search_strategy");
+  });
+
+  it("flags a success-expected single-shot tool that returned an error", () => {
+    const violations = checkSingleShotResult(
+      DISCOVER_CONTRACT,
+      errResult("boom"),
+    );
+    expect(violations[0].code).toBe("wire-shape");
+    expect(violations[0].detail).toContain("boom");
   });
 });
 
@@ -462,5 +527,29 @@ describe("runMetaToolConformanceSuite against a fake backend", () => {
     // 1 single-shot case + 2 error legs.
     expect(results.length).toBe(3);
     expect(DISCOVER_CONTRACT.stateMachine).toBeUndefined();
+  });
+
+  it("fails the single-shot case when a no-state-machine tool returns the wrong shape", async () => {
+    // Regression guard for the hollow-green hole: discover used to pass on
+    // `success: true` alone, so a scalar `output: 42` slipped through. With
+    // the descriptor's single-shot wire shape the case must now FAIL.
+    teardown = installFakeBackend((tool, input) => {
+      if (tool.endsWith("__unregistered_probe")) {
+        return { ...errResult(`Tool not registered: ${tool}`), tool };
+      }
+      if (!input.use_case) return errResult("use_case: required");
+      // Succeeds, but the payload is a scalar — not a DiscoverResult.
+      return okResult(42);
+    });
+    const results = await runSuiteAndCollect("codespar_discover");
+    const happyPath = results.find((r) => r.name.includes("DiscoverResult"));
+    expect(happyPath?.passed).toBe(false);
+    expect(happyPath?.error).toContain("wire-shape");
+    expect(happyPath?.error).toContain("expected an object");
+    // The two error legs still pass — only the wire-shape teeth bite.
+    const otherFailures = results.filter(
+      (r) => !r.passed && !r.name.includes("DiscoverResult"),
+    );
+    expect(otherFailures, JSON.stringify(otherFailures, null, 2)).toEqual([]);
   });
 });

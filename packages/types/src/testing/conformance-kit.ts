@@ -15,8 +15,9 @@ export interface ConformanceSuiteOptions {
   tool: ContractedToolName;
   /**
    * Server ids to post when opening the session. Defaults to `[]`, matching
-   * a consumer that brings no servers and relies on whatever the backend
-   * provisions by default.
+   * a self-hosted OSS runtime that accepts an empty server list. A managed
+   * backend requires at least one server, so a managed-side consumer MUST
+   * pass `[<seeded-server-id>]` here — see {@link runMetaToolConformanceSuite}.
    */
   servers?: string[];
 }
@@ -146,6 +147,38 @@ export function checkActionResult(
       {
         code: "action-state",
         detail: `${descriptor.toolName}.${action}: expected a success result, got error "${result.error ?? ""}"`,
+      },
+    ];
+  }
+  return checkWireShape(rule.result, result.data);
+}
+
+/**
+ * Verify a single-shot tool's happy-path result: the `ToolResult` reports
+ * success and its `data` conforms to the descriptor's `singleShot` result
+ * wire shape. This gives a no-state-machine tool (e.g. `codespar_discover`)
+ * the same wire-shape teeth the action path has — a wrong-shaped result
+ * fails with a precise `[wire-shape]` violation rather than passing on
+ * `success: true` alone.
+ */
+export function checkSingleShotResult(
+  descriptor: MetaToolContractDescriptor,
+  result: ToolResult,
+): Violation[] {
+  const rule = descriptor.singleShot;
+  if (!rule) {
+    return [
+      {
+        code: "wire-shape",
+        detail: `${descriptor.toolName}: no single-shot rule on the descriptor`,
+      },
+    ];
+  }
+  if (!result.success) {
+    return [
+      {
+        code: "wire-shape",
+        detail: `${descriptor.toolName}: expected a success result, got error "${result.error ?? ""}"`,
       },
     ];
   }
@@ -309,6 +342,18 @@ function actionInput(action: string, sample: Record<string, unknown>): Record<st
  * asserts the runtime's fall-through behavior without depending on any
  * tool being absent.
  *
+ * Backend prerequisites:
+ * - **Route prefix.** The kit drives `POST /v1/sessions`,
+ *   `POST /v1/sessions/:id/execute`, and `DELETE /v1/sessions/:id` — the
+ *   backend (or test harness) must mount the session routes under the `/v1`
+ *   prefix.
+ * - **`servers` option.** `opts.servers` defaults to `[]`. A self-hosted
+ *   OSS runtime accepts an empty server list on session create, but a
+ *   managed backend requires at least one server — so a managed-side
+ *   consumer MUST pass `opts.servers: [<seeded-server-id>]` (a server whose
+ *   meta-tool implementation is registered), or session create will be
+ *   rejected before any conformance case runs.
+ *
  * @param baseUrl - API base URL (e.g. "https://your-runtime.example" or "http://localhost:3000")
  * @param apiKey  - Bearer token for session creation
  * @param opts    - The tool to assert and optional servers list (see {@link ConformanceSuiteOptions})
@@ -350,15 +395,16 @@ export function runMetaToolConformanceSuite(
           expect(violations, formatViolations(violations)).toEqual([]);
         });
       }
-    } else {
-      it(`${descriptor.toolName} returns a conforming ${descriptor.resultType}`, async () => {
+    } else if (descriptor.singleShot) {
+      const singleShot = descriptor.singleShot;
+      it(`${descriptor.toolName} returns a conforming ${singleShot.result.name}`, async () => {
         session = await openSession(baseUrl, apiKey, servers);
-        // A single-shot tool: drive it with a non-malformed input. The
-        // discover contract's required field is `use_case`.
-        const result = await session.execute(descriptor.toolName, {
-          use_case: "test conformance probe",
-        });
-        expect(result.success, result.error ?? "").toBe(true);
+        const result = await session.execute(
+          descriptor.toolName,
+          singleShot.sampleInput,
+        );
+        const violations = checkSingleShotResult(descriptor, result);
+        expect(violations, formatViolations(violations)).toEqual([]);
       });
     }
 
