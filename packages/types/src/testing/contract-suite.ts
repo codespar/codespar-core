@@ -1,6 +1,50 @@
 import { describe, it, expect, afterEach } from "vitest";
 import type { SessionBase, StreamEvent, ToolResult, SendResult, BaseConnection } from "../index.js";
 
+/** One leg of the session contract suite. */
+export type ContractLeg = "execute" | "send" | "sendStream" | "connections" | "close";
+
+/** Options for {@link runContractSuite}. */
+export interface ContractSuiteOptions {
+  /**
+   * Server ids to post when opening the session. Defaults to `[]`, matching a
+   * consumer that brings no servers and relies on whatever the backend
+   * provisions by default.
+   */
+  servers?: string[];
+  /**
+   * Which legs to register. Defaults to all five legs in declaration order.
+   * Pass a subset to run only those legs (e.g. a consumer whose backend does
+   * not implement streaming can omit `"sendStream"`).
+   */
+  legs?: ContractLeg[];
+}
+
+/** Every leg, in the order they are registered for a default run. */
+const ALL_LEGS: readonly ContractLeg[] = [
+  "execute",
+  "send",
+  "sendStream",
+  "connections",
+  "close",
+];
+
+/**
+ * Resolve which legs to run from the options. Returns all five legs (in
+ * declaration order) when `legs` is unset, otherwise the provided subset.
+ */
+export function selectLegs(opts?: ContractSuiteOptions): ContractLeg[] {
+  return opts?.legs ? [...opts.legs] : [...ALL_LEGS];
+}
+
+/** Build the session-create request body, defaulting `servers` to `[]`. */
+export function buildSessionCreateBody(opts?: ContractSuiteOptions): {
+  servers: string[];
+  user_id: string;
+} {
+  return { servers: opts?.servers ?? [], user_id: "contract-suite" };
+}
+
 export class InvalidBaseUrlError extends Error {
   constructor(url: string) {
     super(
@@ -87,7 +131,11 @@ async function* parseSse(body: ReadableStream<Uint8Array>): AsyncIterable<Stream
 
 // Builds a minimal SessionBase from raw fetch calls so the contract suite
 // can run against any backend that implements the codespar session API.
-async function openSession(baseUrl: string, apiKey: string): Promise<SessionBase> {
+async function openSession(
+  baseUrl: string,
+  apiKey: string,
+  opts?: ContractSuiteOptions,
+): Promise<SessionBase> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${apiKey}`,
@@ -96,7 +144,7 @@ async function openSession(baseUrl: string, apiKey: string): Promise<SessionBase
   const res = await fetch(`${baseUrl}/v1/sessions`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ servers: [], user_id: "contract-suite" }),
+    body: JSON.stringify(buildSessionCreateBody(opts)),
   });
   if (!res.ok) {
     const text = await res.text();
@@ -179,11 +227,23 @@ async function openSession(baseUrl: string, apiKey: string): Promise<SessionBase
  * invalid URLs so misconfigured CI environments fail early rather than
  * leaking the apiKey to an arbitrary host.
  *
+ * The optional `opts` argument lets a consumer choose which servers to post on
+ * session open and which subset of legs to run. With no `opts` (or with neither
+ * field set) the suite behaves exactly as before: it posts `servers: []` and
+ * registers all five legs in declaration order.
+ *
  * @param baseUrl - API base URL (e.g. "https://your-runtime.example" or "http://localhost:3000")
  * @param apiKey  - Bearer token for session creation
+ * @param opts    - Optional servers list and leg selection (see {@link ContractSuiteOptions})
  */
-export function runContractSuite(baseUrl: string, apiKey: string): void {
+export function runContractSuite(
+  baseUrl: string,
+  apiKey: string,
+  opts?: ContractSuiteOptions,
+): void {
   validateBaseUrl(baseUrl);
+
+  const legs = new Set(selectLegs(opts));
 
   describe("session contract suite", () => {
     let session: SessionBase | null = null;
@@ -196,68 +256,78 @@ export function runContractSuite(baseUrl: string, apiKey: string): void {
       }
     });
 
-    it("execute() calls a registered tool and returns a ToolResult", async () => {
-      session = await openSession(baseUrl, apiKey);
-      const result = await session.execute("codespar_list_tools", {});
-      expect(result).toMatchObject({
-        success: expect.any(Boolean),
-        data: expect.anything(),
-        error: expect.anything(),
-        duration: expect.any(Number),
-        server: expect.any(String),
-        tool: expect.any(String),
+    if (legs.has("execute")) {
+      it("execute() calls a registered tool and returns a ToolResult", async () => {
+        session = await openSession(baseUrl, apiKey, opts);
+        const result = await session.execute("codespar_list_tools", {});
+        expect(result).toMatchObject({
+          success: expect.any(Boolean),
+          data: expect.anything(),
+          error: expect.anything(),
+          duration: expect.any(Number),
+          server: expect.any(String),
+          tool: expect.any(String),
+        });
       });
-    });
+    }
 
-    it("send() returns a SendResult with a message field", async () => {
-      session = await openSession(baseUrl, apiKey);
-      const result = await session.send("hello");
-      expect(result).toMatchObject({
-        message: expect.any(String),
-        tool_calls: expect.any(Array),
-        iterations: expect.any(Number),
+    if (legs.has("send")) {
+      it("send() returns a SendResult with a message field", async () => {
+        session = await openSession(baseUrl, apiKey, opts);
+        const result = await session.send("hello");
+        expect(result).toMatchObject({
+          message: expect.any(String),
+          tool_calls: expect.any(Array),
+          iterations: expect.any(Number),
+        });
       });
-    });
+    }
 
-    it("sendStream() yields well-typed StreamEvents including done", async () => {
-      session = await openSession(baseUrl, apiKey);
-      const events: StreamEvent[] = [];
-      for await (const ev of session.sendStream("hello")) {
-        events.push(ev);
-        if (ev.type === "done" || ev.type === "error") break;
-      }
-      expect(events.length).toBeGreaterThan(0);
-      const types = new Set(events.map((e) => e.type));
-      // Every event type must be one of the six discriminated variants.
-      const valid = new Set([
-        "user_message",
-        "assistant_text",
-        "tool_use",
-        "tool_result",
-        "done",
-        "error",
-      ]);
-      for (const t of types) {
-        expect(valid.has(t)).toBe(true);
-      }
-    });
+    if (legs.has("sendStream")) {
+      it("sendStream() yields well-typed StreamEvents including done", async () => {
+        session = await openSession(baseUrl, apiKey, opts);
+        const events: StreamEvent[] = [];
+        for await (const ev of session.sendStream("hello")) {
+          events.push(ev);
+          if (ev.type === "done" || ev.type === "error") break;
+        }
+        expect(events.length).toBeGreaterThan(0);
+        const types = new Set(events.map((e) => e.type));
+        // Every event type must be one of the six discriminated variants.
+        const valid = new Set([
+          "user_message",
+          "assistant_text",
+          "tool_use",
+          "tool_result",
+          "done",
+          "error",
+        ]);
+        for (const t of types) {
+          expect(valid.has(t)).toBe(true);
+        }
+      });
+    }
 
-    it("connections() returns entries with id and connected fields", async () => {
-      session = await openSession(baseUrl, apiKey);
-      const conns = await session.connections();
-      expect(Array.isArray(conns)).toBe(true);
-      for (const c of conns) {
-        expect(typeof c.id).toBe("string");
-        expect(typeof c.connected).toBe("boolean");
-      }
-    });
+    if (legs.has("connections")) {
+      it("connections() returns entries with id and connected fields", async () => {
+        session = await openSession(baseUrl, apiKey, opts);
+        const conns = await session.connections();
+        expect(Array.isArray(conns)).toBe(true);
+        for (const c of conns) {
+          expect(typeof c.id).toBe("string");
+          expect(typeof c.connected).toBe("boolean");
+        }
+      });
+    }
 
-    it("close() transitions session.status to closed", async () => {
-      session = await openSession(baseUrl, apiKey);
-      expect(session.status).toBe("active");
-      await session.close();
-      expect(session.status).toBe("closed");
-      session = null; // afterEach guard — already closed
-    });
+    if (legs.has("close")) {
+      it("close() transitions session.status to closed", async () => {
+        session = await openSession(baseUrl, apiKey, opts);
+        expect(session.status).toBe("active");
+        await session.close();
+        expect(session.status).toBe("closed");
+        session = null; // afterEach guard — already closed
+      });
+    }
   });
 }
