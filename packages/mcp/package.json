@@ -40,11 +40,11 @@
     "directory": "packages/mcp"
   },
   "dependencies": {
-    "@codespar/sdk": "^0.10.0",
+    "@codespar/sdk": "^0.10.1",
     "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "peerDependencies": {
-    "@codespar/sdk": "^0.10.0"
+    "@codespar/sdk": "^0.10.1"
   },
   "devDependencies": {
     "@codespar/sdk": "*",
