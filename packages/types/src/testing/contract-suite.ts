@@ -266,10 +266,17 @@ export function runContractSuite(
       it("execute() calls a registered tool and returns a ToolResult", async () => {
         session = await openSession(baseUrl, apiKey, opts);
         const result = await session.execute("codespar_list_tools", {});
+        // codespar_list_tools is a built-in that always succeeds, so this is
+        // a no-error result: error is the canonical `null` (matching the
+        // published `error: string | null` wire type), not `""`. Asserting
+        // `null` pins both runtimes to the same no-error value — an earlier
+        // `expect.anything()` here both read backwards (it demanded a
+        // non-null error on a success) and masked an OSS/managed divergence,
+        // since `expect.anything()` rejects `null`.
         expect(result).toMatchObject({
-          success: expect.any(Boolean),
+          success: true,
           data: expect.anything(),
-          error: expect.anything(),
+          error: null,
           duration: expect.any(Number),
           server: expect.any(String),
           tool: expect.any(String),

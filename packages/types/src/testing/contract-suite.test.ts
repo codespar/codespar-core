@@ -9,7 +9,8 @@
  * `it` registrations through a mocked `vitest` module.
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import type { ToolResult } from "../index.js";
 import {
   selectLegs,
   buildSessionCreateBody,
@@ -108,5 +109,126 @@ describe("runContractSuite leg registration", () => {
     expect(names.some((n) => n.startsWith("close()"))).toBe(true);
     expect(names.some((n) => n.startsWith("send()"))).toBe(false);
     expect(names.some((n) => n.startsWith("sendStream()"))).toBe(false);
+  });
+});
+
+/* ── Execute-leg assertion against a FAKE backend ────────────────
+ *
+ * The execute leg drives `codespar_list_tools` (a built-in that always
+ * succeeds) and asserts the canonical no-error result: `error: null`. Prove
+ * that assertion bites without a real server by running the registered leg
+ * body against a stubbed `fetch` that plays a configurable backend, and
+ * capturing pass/fail via a mocked Vitest that runs the `it` body with the
+ * real `expect`.
+ *
+ * A backend that returns `error: null` on the success passes; a backend
+ * that returns a non-null error on the success (e.g. the `error: ""` an OSS
+ * runtime used to return — the divergence the old `expect.anything()`
+ * masked) fails the leg.
+ * ─────────────────────────────────────────────────────────────── */
+
+/** The ToolResult a fake backend returns for the execute call. */
+type FakeExecuteResult = ToolResult;
+
+function jsonResponse(body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+/** Stub `fetch`: session-create returns an active session, execute returns
+ *  the given result, DELETE closes. Returns a teardown. */
+function installFakeBackend(executeResult: FakeExecuteResult): () => void {
+  const stub = vi.fn(async (url: string | URL, init?: RequestInit) => {
+    const u = String(url);
+    if (u.endsWith("/v1/sessions") && init?.method === "POST") {
+      return jsonResponse({ id: "sess_fake", status: "active" });
+    }
+    if (u.includes("/execute")) {
+      return jsonResponse(executeResult);
+    }
+    return jsonResponse({});
+  });
+  const original = globalThis.fetch;
+  globalThis.fetch = stub as unknown as typeof fetch;
+  return () => {
+    globalThis.fetch = original;
+  };
+}
+
+/** Run only the execute leg under a mocked Vitest that executes the `it`
+ *  body with the real `expect`, recording whether it passed. */
+async function runExecuteLeg(): Promise<{ passed: boolean; error?: string }> {
+  vi.resetModules();
+  const cases: Array<() => Promise<void>> = [];
+  const afterEachFns: Array<() => unknown> = [];
+  const realExpect = (
+    await vi.importActual<typeof import("vitest")>("vitest")
+  ).expect;
+
+  vi.doMock("vitest", () => ({
+    describe: (_name: string, fn: () => void) => fn(),
+    it: (_name: string, fn: () => unknown) => {
+      cases.push(async () => {
+        await fn();
+      });
+    },
+    afterEach: (fn: () => unknown) => {
+      afterEachFns.push(fn);
+    },
+    expect: realExpect,
+  }));
+
+  const mod = await import("./contract-suite.js");
+  mod.runContractSuite("http://localhost:9999", "csk_test", {
+    legs: ["execute"],
+  });
+  try {
+    for (const c of cases) await c();
+    return { passed: true };
+  } catch (err) {
+    return { passed: false, error: err instanceof Error ? err.message : String(err) };
+  } finally {
+    for (const a of afterEachFns) await a();
+    vi.doUnmock("vitest");
+  }
+}
+
+describe("runContractSuite execute leg against a fake backend", () => {
+  let teardown: (() => void) | null = null;
+  afterEach(() => {
+    teardown?.();
+    teardown = null;
+  });
+
+  const base: Omit<ToolResult, "error"> = {
+    success: true,
+    data: { tools: [] },
+    duration: 3,
+    server: "fake-runtime",
+    tool: "codespar_list_tools",
+  };
+
+  it("passes when a success result carries the canonical error: null", async () => {
+    teardown = installFakeBackend({ ...base, error: null });
+    const outcome = await runExecuteLeg();
+    expect(outcome.error ?? "", outcome.error ?? "").toBe("");
+    expect(outcome.passed).toBe(true);
+  });
+
+  it("fails when a success result carries a non-null error (the masked divergence)", async () => {
+    // An OSS runtime used to return `error: ""` on a success — non-null, so
+    // it must now fail the pinned `error: null` assertion.
+    teardown = installFakeBackend({ ...base, error: "" });
+    const outcome = await runExecuteLeg();
+    expect(outcome.passed).toBe(false);
+  });
+
+  it("fails when a no-error result reports success: false", async () => {
+    // `success: true` is now pinned too — list_tools always succeeds.
+    teardown = installFakeBackend({ ...base, success: false, error: null });
+    const outcome = await runExecuteLeg();
+    expect(outcome.passed).toBe(false);
   });
 });
