@@ -1,6 +1,6 @@
 {
   "name": "@codespar/mcp",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "MCP server for CodeSpar — give Claude, Codex, Cursor & ChatGPT a commerce agent (pay, charge, wallet, mandates, Pomelo card) over MCP",
   "type": "module",
   "main": "./dist/index.js",
