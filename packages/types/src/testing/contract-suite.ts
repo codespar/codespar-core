@@ -54,7 +54,13 @@ export class InvalidBaseUrlError extends Error {
   }
 }
 
-function validateBaseUrl(rawUrl: string): void {
+/**
+ * Validate a backend base URL before any request is issued: only https://
+ * URLs and localhost are accepted, so a misconfigured environment fails
+ * early rather than leaking the apiKey to an arbitrary host. Shared by the
+ * meta-tool conformance kit.
+ */
+export function validateBaseUrl(rawUrl: string): void {
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);

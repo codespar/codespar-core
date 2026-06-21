@@ -12,8 +12,20 @@
     },
     "./testing": {
       "development": {
+        "import": "./dist/testing/index.js",
+        "types": "./dist/testing/index.d.ts"
+      }
+    },
+    "./testing/contract-suite": {
+      "development": {
         "import": "./dist/testing/contract-suite.js",
         "types": "./dist/testing/contract-suite.d.ts"
+      }
+    },
+    "./testing/conformance-kit": {
+      "development": {
+        "import": "./dist/testing/conformance-kit.js",
+        "types": "./dist/testing/conformance-kit.d.ts"
       }
     },
     "./testing/shop-fixtures": {
