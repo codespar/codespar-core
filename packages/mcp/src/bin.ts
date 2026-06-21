@@ -11,7 +11,9 @@
  * mandates, ...) today.
  *
  * Config (env or flags):
- *   CODESPAR_API_KEY   (required)  csk_ / csk_live_ key
+ *   CODESPAR_API_KEY   csk_ / csk_live_ key. Missing or rejected → the server
+ *                      still starts (setup mode) and hands the agent the steps
+ *                      to get a free key, instead of crashing at boot.
  *   CODESPAR_PROJECT   --project   prj_… to scope to one project
  *   CODESPAR_PRESET    --preset    brazilian|mexican|argentinian|colombian|all (default: brazilian)
  *   CODESPAR_SERVERS   --servers   comma list (overrides preset's server set)
@@ -27,8 +29,16 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { CodeSpar, tools as listTools } from "@codespar/sdk";
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import {
+  SETUP_TOOL,
+  SETUP_TOOL_DESCRIPTION,
+  isAuthError,
+  setupMessage,
+} from "./setup.js";
 
 type Preset = "brazilian" | "mexican" | "argentinian" | "colombian" | "all";
+
+const VERSION = "0.5.2";
 
 function flag(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -37,6 +47,36 @@ function flag(name: string): string | undefined {
 
 function log(msg: string): void {
   process.stderr.write(`[codespar-mcp] ${msg}\n`);
+}
+
+/**
+ * First-run / bad-key path. Instead of exiting (which leaves the MCP client
+ * showing only "server failed to start" and the agent with nothing to act on),
+ * boot a working server that exposes a single onboarding tool. The agent reads
+ * its description on `tools/list` and gets the exact setup steps to relay to the
+ * user — turning a dead end into activation.
+ */
+async function runSetupServer(reason: "no-key" | "bad-key"): Promise<void> {
+  const message = setupMessage(reason);
+  const server = new Server(
+    { name: "codespar", version: VERSION },
+    { capabilities: { tools: {} } },
+  );
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    tools: [
+      {
+        name: SETUP_TOOL,
+        description: SETUP_TOOL_DESCRIPTION,
+        inputSchema: { type: "object" },
+      },
+    ],
+  }));
+  server.setRequestHandler(CallToolRequestSchema, async () => ({
+    content: [{ type: "text", text: message }],
+    isError: false,
+  }));
+  await server.connect(new StdioServerTransport());
+  log(`setup mode (${reason}) — exposing ${SETUP_TOOL}; set CODESPAR_API_KEY to activate`);
 }
 
 async function main(): Promise<void> {
@@ -57,8 +97,8 @@ async function main(): Promise<void> {
 
   const apiKey = process.env.CODESPAR_API_KEY;
   if (!apiKey) {
-    log("CODESPAR_API_KEY is required. Get one at https://codespar.dev/dashboard/settings?tab=api-keys");
-    process.exit(1);
+    log("no CODESPAR_API_KEY — starting in setup mode. Free key: https://codespar.dev/dashboard/settings?tab=api-keys");
+    return runSetupServer("no-key");
   }
 
   const projectId = flag("project") ?? process.env.CODESPAR_PROJECT ?? undefined;
@@ -71,14 +111,25 @@ async function main(): Promise<void> {
   // `servers` (when given) wins over `preset`; otherwise the preset selects
   // the buyer/commerce server set. This is what makes the session "Curb":
   // a buy-side preset surfaces search / cart / checkout / wallet / mandate.
-  const session: Session = await cs.create(userId, servers ? { servers, projectId } : { preset, projectId });
+  let session: Session;
+  let toolList: Tool[];
+  try {
+    session = await cs.create(userId, servers ? { servers, projectId } : { preset, projectId });
+    toolList = await listTools(session);
+  } catch (err) {
+    // A rejected key is the other dead end — surface setup guidance instead of
+    // crashing. Real outages (network, 5xx) still fail loudly.
+    if (isAuthError(err)) {
+      log(`API key rejected (${(err as { status?: number }).status}) — starting in setup mode`);
+      return runSetupServer("bad-key");
+    }
+    throw err;
+  }
   log(`session ${session.id} (preset=${servers ? "custom" : preset}) ready`);
-
-  const toolList: Tool[] = await listTools(session);
   log(`exposing ${toolList.length} tool(s): ${toolList.map((t) => t.name).join(", ") || "(none — check connections)"}`);
 
   const server = new Server(
-    { name: "codespar", version: "0.5.1" },
+    { name: "codespar", version: VERSION },
     { capabilities: { tools: {} } },
   );
 
