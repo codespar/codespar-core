@@ -1,5 +1,7 @@
 export * from "./contract-suite.js";
 export * from "./conformance-kit.js";
+export * from "./demo-scenario.js";
+export { SERVICE_INVOICE_SCENARIO } from "./demo-scenarios/service-invoice.js";
 
 // Re-export the contract descriptors from the testing entrypoint too, so a
 // conformance-test author imports the suite and the descriptors it drives
