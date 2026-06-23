@@ -39,8 +39,8 @@ runDemoScenario(CODESPAR_BASE_URL, INSTALLMENT_NEGOTIATION_SCENARIO, { apiKey })
 ```
 
 The **same** `INSTALLMENT_NEGOTIATION_SCENARIO` object and aimock fixture set are
-consumed unchanged by the managed-runtime integration test in
-`codespar-enterprise`. `runDemoScenario` drives the three turns and asserts, via
+consumed unchanged by the managed-runtime integration test.
+`runDemoScenario` drives the three turns and asserts, via
 `assertMetaToolTrace`, that every tool the agent called was a meta-tool
 (`codespar_*`) with `status: "success"`, and that no raw `serverId__tool` name
 appears.

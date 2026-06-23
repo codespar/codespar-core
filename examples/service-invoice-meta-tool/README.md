@@ -37,7 +37,7 @@ runDemoScenario(CODESPAR_BASE_URL, SERVICE_INVOICE_SCENARIO, { apiKey });
 
 The **same** `SERVICE_INVOICE_SCENARIO` object and the **same** aimock
 fixture set are consumed unchanged by the managed-runtime integration
-test in `codespar-enterprise`. One scenario definition, one fixture set,
+test. One scenario definition, one fixture set,
 run green against both runtimes over the `session.send()` path — that is
 what makes the "seamless OSS → managed upgrade" claim empirically true
 and CI-enforceable. `runDemoScenario` drives the conversation and
