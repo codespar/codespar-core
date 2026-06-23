@@ -1,0 +1,45 @@
+{
+  "fixtures": [
+    {
+      "match": { "userMessage": "melhor forma de pagar", "turnIndex": 0, "hasToolResult": false },
+      "response": {
+        "content": "Oba! O sofá de R$4.800 sai super bem em duas opções: (a) Pix com 8% de desconto, fechando em R$4.416,00 à vista; ou (b) 12x no cartão de crédito em parcelas iguais de R$400,00, sem entrada. Qual prefere?",
+        "finishReason": "stop"
+      }
+    },
+    {
+      "match": { "userMessage": "6x", "turnIndex": 0, "hasToolResult": false },
+      "response": {
+        "content": "Em 6x no cartão fica R$800,00 por mês, sem entrada e sem juros. Posso fechar nessa condição?",
+        "finishReason": "stop"
+      }
+    },
+    {
+      "match": { "userMessage": "Confirma", "turnIndex": 0, "hasToolResult": false },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_pay",
+            "arguments": { "amount": 480000, "currency": "BRL", "method": "card", "description": "Sofá 3 lugares — 6x no cartão, sem juros" }
+          },
+          {
+            "name": "codespar_invoice",
+            "arguments": { "type": "nfe", "recipient": { "name": "Cliente Demo", "document": "00000000000" }, "items": [{ "description": "Sofá 3 lugares", "amount": 4800.0 }] }
+          },
+          {
+            "name": "codespar_notify",
+            "arguments": { "channel": "whatsapp", "to": "+5511987654321", "message": "Pedido fechado em 6x de R$800,00. NF-e emitida: https://example.test/nfe_demo_001.pdf" }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": { "userMessage": "Confirma", "turnIndex": 1, "hasToolResult": true },
+      "response": {
+        "content": "Pedido fechado em 6x de R$800,00. NF-e emitida e enviada no WhatsApp. Bem-vindo à casa nova!",
+        "finishReason": "stop"
+      }
+    }
+  ]
+}
