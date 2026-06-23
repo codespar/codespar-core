@@ -1,0 +1,19 @@
+{
+  "name": "service-invoice-meta-tool",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Service invoice from a natural-language message at the commerce meta-tool abstraction \u2014 one session.send() scenario run against the OSS runtime, shared unchanged with the managed-runtime integration test.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "skeleton": "vitest run --reporter=verbose",
+    "validate": "./scripts/validate.sh"
+  },
+  "devDependencies": {
+    "@copilotkit/aimock": "^1.24.1",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^3.2.0",
+    "@codespar/types": "^0.10.10"
+  }
+}

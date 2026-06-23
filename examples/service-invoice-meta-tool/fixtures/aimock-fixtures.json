@@ -1,0 +1,27 @@
+{
+  "fixtures": [
+    {
+      "match": { "userMessage": "NFS-e", "turnIndex": 0, "hasToolResult": false },
+      "response": {
+        "toolCalls": [
+          { "name": "codespar_invoice", "arguments": { "type": "nfse", "recipient": { "name": "Cliente Demo", "document": "00000000000" }, "items": [{ "description": "Plataforma SaaS - acesso mensal", "amount": 2800.0 }] } },
+          { "name": "codespar_invoice", "arguments": { "type": "nfse", "recipient": { "name": "Cliente Demo", "document": "00000000000" }, "items": [{ "description": "Consultoria de onboarding", "amount": 1200.0 }] } }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": { "userMessage": "NFS-e", "turnIndex": 1, "hasToolResult": true },
+      "response": {
+        "toolCalls": [
+          { "name": "codespar_notify", "arguments": { "channel": "whatsapp", "to": "+5511987654321", "message": "Suas notas estao prontas: https://example.test/nfse_demo_001.pdf https://example.test/nfse_demo_002.pdf" } }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": { "userMessage": "NFS-e", "turnIndex": 2, "hasToolResult": true },
+      "response": { "content": "Duas NFS-e emitidas (nfse_demo_001 e nfse_demo_002) e os PDFs enviados no WhatsApp.", "finishReason": "stop" }
+    }
+  ]
+}
