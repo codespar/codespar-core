@@ -1,116 +1,129 @@
-# Service invoice from a natural-language message
+# Service invoice at the meta-tool abstraction
 
 A SaaS company's agent receives a WhatsApp message from a customer:
 
-> *"Need invoice for the platform access fee plus the onboarding
-> consulting — R$2.800 platform, R$1.200 consulting."*
+> *"Preciso de duas NFS-e: taxa de acesso à plataforma R$2.800 e
+> consultoria de onboarding R$1.200. Envia os PDFs no WhatsApp."*
 
 One call to `session.send(message)` later, the agent has:
 
-1. Picked the correct LC 116/2003 service code for each line item
-   (Item 1.05 "informação e meios eletrônicos" for the SaaS access
-   fee, Item 17.01 "assessoria ou consultoria" for the onboarding
-   work), because the right ISS rate depends on which line each item
-   sits on and a script cannot infer that from "platform access fee."
-2. Issued two distinct NFS-e via
-   [`@codespar/mcp-nuvem-fiscal`](https://www.npmjs.com/package/@codespar/mcp-nuvem-fiscal),
-   one per service line.
-3. Sent one WhatsApp message back via
-   [`@codespar/mcp-z-api`](https://www.npmjs.com/package/@codespar/mcp-z-api)
-   carrying both NFS-e PDF URLs.
+1. Split the request into two distinct service lines (platform access
+   and onboarding consulting) rather than one combined charge.
+2. Issued two fiscal documents by calling the **`codespar_invoice`**
+   meta-tool once per line.
+3. Sent one WhatsApp message back by calling the **`codespar_notify`**
+   meta-tool, carrying both NFS-e PDF URLs.
 
-This example is the **agent-thesis end-to-end**: a natural-language
-prompt drives the tool-use loop inside `session.send()` against the
-OSS MCP bridge. The walking skeleton at
-[`../pix-nfse-skeleton/`](../pix-nfse-skeleton/) wires the same bridge
-with a 4-step deterministic `loop()`; this example replaces the
-deterministic loop with the runtime's Claude tool-use loop and uses
-[`@copilotkit/aimock`](https://www.npmjs.com/package/@copilotkit/aimock)
-in place of Anthropic so the whole test runs offline with no real
-keys.
+The agent works at the **commerce meta-tool abstraction**: it calls
+`codespar_invoice` and `codespar_notify`, never a raw
+`nuvem-fiscal__create_nfse` or `z-api__send_text`. That is the whole
+point of this example. The meta-tool is the façade; how it routes to a
+fiscal provider (Nuvem Fiscal) and a messaging provider (Z-API) is the
+runtime's concern, not the agent's — and it is exactly the layer that
+differs between the OSS runtime and the managed runtime. The agent code
+above it is identical on both.
 
-## Why this requires an agent
+## One scenario, both runtimes
 
-The sharpest single-sentence differentiator for B2B service
-invoicing: **a customer's natural-language description of "platform
-access plus onboarding consulting" cannot be mapped to LC 116/2003
-service codes by any fixed (description → code) lookup, because the
-right bracket depends on what the line item *means* in context, not
-on which keywords appear.** A flow-builder that stamps a single
-service code per request gets it wrong every time a customer
-combines multiple service types in one message.
+This is the OSS half of a dual-runtime proof. The scenario and its
+assertion are not defined here — they are imported from
+[`@codespar/types/testing`](https://www.npmjs.com/package/@codespar/types):
 
-The judgment points compound inside this one short message:
+```ts
+import { runDemoScenario, SERVICE_INVOICE_SCENARIO } from "@codespar/types/testing";
 
-- **Splitting the line items.** "Platform access fee plus onboarding
-  consulting" is two services, not one — the agent has to recognise
-  the conjunction and issue two distinct NFS-e. A line-counting
-  heuristic over commas or "plus" tokens misroutes whenever the
-  customer phrases two services in a single noun phrase.
-- **Picking the right bracket per line.** LC 116/2003 enumerates
-  service categories that map 1:1 to ISS-rate brackets — Item 1.01
-  (software development), 1.03 (data processing), 1.05 (information
-  and electronic-media services), 17.01 (advice / consulting). A
-  SaaS access fee is 1.05; consulting on top of that SaaS is 17.01.
-  São Paulo municipal ISS runs 2.9 % – 5 % depending on the bracket;
-  stamping the wrong code is the tax-authority equivalent of
-  charging the wrong currency.
-- **Delivering the artefacts back on the same channel.** Once both
-  NFS-e are issued, the agent has to send both PDF URLs back via
-  WhatsApp — not just the first, not bundled into a "talk to
-  support" link. Knowing the customer expects both invoices in the
-  same reply is a judgment call a fixed flow cannot make.
+runDemoScenario(CODESPAR_BASE_URL, SERVICE_INVOICE_SCENARIO, { apiKey });
+```
 
-That is the agent thesis in one paragraph for B2B service
-invoicing. The walking skeleton proves the OSS bridge runs the
-4-step happy path; this example proves the runtime carries an LLM
-through a fiscal-taxonomy decision a flow-builder cannot.
+The **same** `SERVICE_INVOICE_SCENARIO` object and the **same** aimock
+fixture set are consumed unchanged by the managed-runtime integration
+test in `codespar-enterprise`. One scenario definition, one fixture set,
+run green against both runtimes over the `session.send()` path — that is
+what makes the "seamless OSS → managed upgrade" claim empirically true
+and CI-enforceable. `runDemoScenario` drives the conversation and
+asserts, via `assertMetaToolTrace`, that every tool the agent called was
+a meta-tool (`codespar_*`) with `status: "success"` — and that no raw
+`serverId__tool` name appears in the trace.
+
+## OSS core ships no built-in meta-tools — the demo opts in
+
+The managed runtime ships the commerce meta-tools pre-installed. The OSS
+runtime does not: `@codespar/core` exposes the `MetaToolHook` seam but
+registers nothing by default. So this example brings its own. The
+`demo-plugin.mjs` file registers `codespar_invoice` and `codespar_notify`
+(using the shared definitions published from `@codespar/types`) through
+that seam, and the runtime loads it at startup via the `CODESPAR_PLUGINS`
+environment variable:
+
+```js
+import { INVOICE_DEFINITION, NOTIFY_DEFINITION } from "@codespar/types";
+
+const hook = {
+  id: "demo-service-invoice",
+  handles: ["codespar_invoice", "codespar_notify"],
+  definitions: () => [INVOICE_DEFINITION, NOTIFY_DEFINITION],
+  async execute(name) {
+    throw new Error(`meta-tool "${name}" reached the live path; this demo runs in test mode`);
+  },
+};
+
+export default function register(registry) {
+  registry.registerMetaTool(hook);
+}
+```
+
+In test mode the session `mocks` (keyed on the meta-tool name) answer the
+call before `execute()` ever runs, so this demo's `execute()` is a
+deliberate tripwire — if it throws, the mock interception didn't fire. A
+real OSS deployment would implement `execute()` to route the meta-tool to
+its providers; that live path is intentionally out of scope here (it is
+the per-runtime implementation the dual-runtime convention leaves free to
+differ).
 
 ## What ships here
 
 | File | Purpose |
 |---|---|
-| `skeleton.test.ts` | Vitest spec — calls `session.send(naturalLanguagePrompt)`, asserts two `nuvem-fiscal__create_nfse` calls plus at least one `z-api__send_text` call whose message body carries both PDF URLs |
-| `package.json` | Pins `@codespar/mcp-nuvem-fiscal@^0.3.0`, `@codespar/mcp-z-api@^0.2.1`, and `@copilotkit/aimock@^1.24.1` |
-| `mcp-servers.json` | Server registry consumed by the bridge — same shape as the walking skeleton, two stdio servers. Tool responses come from the `mocks` field on `cs.create()`, not from the servers themselves |
-| `fixtures/aimock-fixtures.json` | Three-turn aimock fixture: turn 0 emits two `nuvem-fiscal__create_nfse` tool_use blocks; turn 1 emits one `z-api__send_text` tool_use; turn 2 emits the final text summary |
-| `scripts/validate.sh` | Boots aimock first, then resolves a runtime (already-running / local clone / docker) with test mode enabled, polls `/health`, runs vitest, kills both on exit |
-| `tsconfig.json` | Minimal TS config (NodeNext, strict, vitest globals) |
-| `vitest.config.ts` | 60s test timeout (LLM-driven loops are slower than the deterministic skeleton) |
-| `.gitignore` | `node_modules/`, runtime + aimock log/pid files |
+| `skeleton.test.ts` | Three lines: import `runDemoScenario` + `SERVICE_INVOICE_SCENARIO` from `@codespar/types/testing` and run them against `CODESPAR_BASE_URL`. The scenario and assertion live in the shared package, not here |
+| `demo-plugin.mjs` | Registers `codespar_invoice` + `codespar_notify` as meta-tools via the `MetaToolHook` seam, using the shared `@codespar/types` definitions. Loaded by the runtime through `CODESPAR_PLUGINS` |
+| `fixtures/aimock-fixtures.json` | Three-turn aimock fixture: turn 0 emits two `codespar_invoice` tool_use blocks; turn 1 emits one `codespar_notify` tool_use; turn 2 emits the final text summary |
+| `scripts/validate.sh` | Boots aimock first, then resolves a runtime (already-running / local clone / docker) with test mode + the plugin loaded, polls `/health`, runs vitest, kills everything on exit |
+| `package.json` | Pins `@codespar/types@^0.10.10` (scenario + definitions) and `@copilotkit/aimock` |
+| `tsconfig.json` / `vitest.config.ts` | Minimal TS config + a 60s timeout (LLM-driven loops are slower than a deterministic skeleton) |
+| `.gitignore` | `node_modules/`, runtime + aimock log/pid files, `.codespar/` |
+
+There is no `mcp-servers.json` here. That file is the spawn recipe for
+the **raw**-tool bridge; a meta-tool agent never touches it. The
+underlying providers are reached (in production) by the meta-tool's own
+`execute()`, not by the runtime spawning MCP servers the agent calls
+directly.
 
 ## Run paths
 
 ```bash
-cd examples/nfse-from-natural-language
+cd examples/service-invoice-meta-tool
 npm install
 npm run validate
 ```
 
-`validate.sh` always boots aimock on port 4010 first (the LLM
-stand-in), then picks one of three runtime sources, first match wins:
+`validate.sh` always boots aimock on port 4010 first (the LLM stand-in),
+then picks one of three runtime sources, first match wins:
 
-1. **`CODESPAR_BASE_URL` is set** — uses the already-running runtime
-   at that URL. The script does NOT manage the runtime's lifecycle,
-   and that runtime must already be configured with
-   `ANTHROPIC_BASE_URL=http://localhost:4010` (or its `session.send()`
-   call will hit the real Anthropic API instead of the local aimock)
-   and `CODESPAR_TEST_MODE_ENABLED=true` (or session create rejects the
-   `mocks` field with HTTP 501 `mocks_not_permitted`).
-2. **`CODESPAR_RUNTIME_DIR` is set** — boots `node server/start.mjs`
-   from that directory on port 3000 with
-   `ANTHROPIC_BASE_URL=http://localhost:4010`,
-   `ANTHROPIC_API_KEY=placeholder`, and `CODESPAR_TEST_MODE_ENABLED=true`
-   exported, polls `/health` for up to 20s, runs vitest, then kills the
-   runtime + aimock on exit. The clone must include the runtime's
-   session-mocks support (commit `5830dc4` / PR #113 or later on `main`).
-3. **`docker` is on PATH** — pulls and runs
-   `ghcr.io/codespar/codespar:latest` with the example dir mounted at
-   `/example`, `--add-host=host.docker.internal:host-gateway` so the
-   container can reach the host's aimock at `host.docker.internal:4010`,
-   and `CODESPAR_TEST_MODE_ENABLED=true` wired in. This is the default
-   path; no env vars required. The image must include session-mocks
-   support (commit `5830dc4` / PR #113 or later).
+1. **`CODESPAR_BASE_URL` is set** — uses the already-running runtime at
+   that URL. The script does NOT manage its lifecycle, and that runtime
+   must already be configured with `ANTHROPIC_BASE_URL=http://localhost:4010`,
+   `CODESPAR_TEST_MODE_ENABLED=true`, and the demo plugin loaded via
+   `CODESPAR_PLUGINS`.
+2. **`CODESPAR_RUNTIME_DIR` is set** — boots `node server/start.mjs` from
+   that directory on port 3000, with `ANTHROPIC_BASE_URL` pointed at the
+   local aimock, `CODESPAR_TEST_MODE_ENABLED=true`, and
+   `CODESPAR_PLUGINS` pointed at this dir's `demo-plugin.mjs`. Polls
+   `/health`, runs vitest, tears down on exit.
+3. **`docker` is on PATH** — runs the published image with the example
+   dir mounted at `/example`, `--add-host=host.docker.internal:host-gateway`
+   so the container reaches the host's aimock, `CODESPAR_TEST_MODE_ENABLED=true`,
+   and `CODESPAR_PLUGINS=/example/demo-plugin.mjs`. This is the default
+   path; no env vars required.
 
 If none is available, the script prints setup instructions and exits
 non-zero.
@@ -119,155 +132,83 @@ non-zero.
 # Option A (recommended) — install Docker, then just run:
 npm run validate
 
-# Option B — point at a running runtime (you manage its lifecycle AND
-# make sure its ANTHROPIC_BASE_URL points at the local aimock AND it
-# runs with CODESPAR_TEST_MODE_ENABLED=true).
+# Option B — point at a running runtime (you manage its lifecycle AND its
+# ANTHROPIC_BASE_URL / CODESPAR_TEST_MODE_ENABLED / CODESPAR_PLUGINS):
 export CODESPAR_BASE_URL=http://localhost:3000
 npm run validate
 
 # Option C — point at a local clone of codespar/codespar (the script
-# manages it, in test mode):
+# manages it, in test mode, with the plugin loaded):
 git clone https://github.com/codespar/codespar.git /tmp/codespar
 (cd /tmp/codespar && git checkout main && npm install && npx turbo run build)
 export CODESPAR_RUNTIME_DIR=/tmp/codespar
 npm run validate
+```
 
-# Pin a specific runtime image instead of :latest:
-export CODESPAR_RUNTIME_IMAGE=ghcr.io/codespar/codespar:latest
-npm run validate
+### Image channel — use `:main` until the next runtime release
 
-# Move aimock off port 4010 if it conflicts with something else on
-# your machine:
-export AIMOCK_PORT=4020
+The meta-tool mock seam and the `CODESPAR_PLUGINS` startup loader reach
+the `:latest` image only on a runtime release tag. Until that release
+lands, point the Docker mode at the bleeding-edge tag built on every main
+merge:
+
+```bash
+export CODESPAR_RUNTIME_IMAGE=ghcr.io/codespar/codespar:main
 npm run validate
 ```
 
-> `:latest` is republished on each `v*` tag of `codespar/codespar`; the structural fix to also publish from `main` on every push is tracked in [codespar/codespar#117](https://github.com/codespar/codespar/issues/117).
+## How the mocking layers compose
 
-## Three mockability layers
+Two independently swappable layers sit between "fully offline test" and
+"live production." Neither the test nor the runtime branches on demo
+mode — each layer toggles by changing one configuration surface.
 
-The example pins three independently swappable layers between "fully
-offline test" and "live production." Each one toggles by changing a
-single configuration surface; nothing in the test or runtime code
-branches on demo mode.
-
-**Layer 1 — tool responses (`mocks` API on `cs.create()`).**
-The test declares a fixture per tool on `cs.create({ servers, mocks })`.
-With the runtime in test mode (`CODESPAR_TEST_MODE_ENABLED=true`), every
-external tool dispatch is intercepted by the mocks engine before it
-reaches the MCP bridge — a matching entry returns its scripted output,
-and a dispatch with no matching entry fails with `tool_not_mocked`
-rather than falling through to a real provider. The
-`nuvem-fiscal/create_nfse` fixture is a stateful array, so the two
-`create_nfse` calls the agent splits into return distinct ids
-`nfse_demo_001` / `nfse_demo_002` — the per-call output is pinned in the
-test itself, not inferred from an MCP server's demo handler. To swap to
-live: drop the `mocks` field, run the runtime without test mode, and
-export the real `NUVEM_FISCAL_CLIENT_ID` / `NUVEM_FISCAL_CLIENT_SECRET`
-(OAuth client credentials) plus a `Z_API_*` instance + token.
+**Layer 1 — tool responses (session `mocks`).** The shared scenario
+declares a fixture per meta-tool, posted on session create. With the
+runtime in test mode (`CODESPAR_TEST_MODE_ENABLED=true`), a meta-tool
+call is answered by its mock before the plugin's `execute()` runs; a call
+with no matching entry fails with `tool_not_mocked` rather than reaching a
+real provider. `codespar_invoice` is a stateful array, so the two calls
+return distinct ids `nfse_demo_001` / `nfse_demo_002`.
 
 **Layer 2 — LLM responses (`ANTHROPIC_BASE_URL` → aimock).**
-`@copilotkit/aimock` listens on port 4010 and serves the Anthropic
-Messages API shape. The runtime's Anthropic SDK honours
-`ANTHROPIC_BASE_URL`, so pointing it at aimock means every
-`session.send()` call lands on a pre-scripted fixture instead of a
-real model. The fixture file at `fixtures/aimock-fixtures.json` encodes the
-three-turn dance: tool_use × 2 → tool_use × 1 → final text. To swap to
-live: unset `ANTHROPIC_BASE_URL` and set a real `ANTHROPIC_API_KEY`.
-
-**Layer 3 — live everything.** Drop the `mocks` field and run the
-runtime without test mode, set real Nuvem Fiscal + Z-API credentials,
-unset `ANTHROPIC_BASE_URL`, and the same test code runs against real
-fiscal-authority endpoints, real WhatsApp delivery, and a real Claude
-model. The test code does not change. The fixtures become dead weight,
-which is the point: fixtures are the on-ramp, not the destination.
+`@copilotkit/aimock` serves the Anthropic Messages API shape on port
+4010. The runtime's Anthropic SDK defaults `baseURL` to
+`ANTHROPIC_BASE_URL`, so pointing it at aimock means every `session.send()`
+lands on a scripted fixture instead of a real model. The fixture encodes
+the three-turn dance: two `codespar_invoice` tool_uses → one
+`codespar_notify` tool_use → final text.
 
 ## WhatsApp inbound: where this fits in production
 
-The test calls `session.send(naturalLanguageMessage)` directly. In
-production, the same `session.send()` call is invoked by the
-WhatsApp-inbound webhook bridge after the runtime receives a message
-from Z-API and resolves which session it belongs to. The agent
-reasoning is identical in both cases — `session.send()` is the single
-entry point the LLM tool-use loop runs inside, whether the message
-arrives via direct API call, webhook, or any other channel. This
-example exercises the loop from the test runner; swap the entry point
-and the rest is unchanged.
+The test calls `session.send(message)` directly. In production the same
+call is invoked by the WhatsApp-inbound webhook bridge after the runtime
+receives a message from the channel and resolves which session it belongs
+to. The agent reasoning is identical either way — `session.send()` is the
+single entry point the tool-use loop runs inside, whether the message
+arrives via direct API call, webhook, or any other channel.
 
-## Acceptance criteria
+## Known gaps
 
-The vitest spec asserts these invariants inside the single
-`session.send()` call:
+Flagged here so they survive as latent debt rather than getting lost in
+review comments:
 
-1. **Two distinct `nuvem-fiscal__create_nfse` calls**, one per line
-   item, both with `status === "success"`. The two calls must split on
-   the LC 116/2003 service code — exactly one carries
-   `input.servico.codigo === "1.05"` with `input.valor === 2800`, and
-   exactly one carries `input.servico.codigo === "17.01"` with
-   `input.valor === 1200`. A regression that flattens both line items
-   to a single bracket trips here.
-2. **Both NFS-e outputs carry demo-fixture shape.** Each call's
-   `output.id` matches `/^nfse_demo_/`, `output.status === "autorizada"`,
-   and `output.pdf_url` is a non-empty string.
-3. **At least one `z-api__send_text` call** with `status === "success"`
-   and `input.message` matching both `/nfse_demo_001/` and
-   `/nfse_demo_002/` — proving the WhatsApp outbound references both
-   PDFs, not just the first.
-4. **`result.iterations >= 3`** — three completion requests inside one
-   send (NFS-e tool-uses → z-api tool-use → final text), proving the
-   tool loop actually iterated rather than collapsing into a single
-   response.
-5. **Every dispatched tool call records `status === "success"`** — no
-   swallowed failures across the turn.
-
-## Live LLM smoke (`npm run validate:live`)
-
-`validate.sh` is fully mocked — aimock stands in for Anthropic, and tool responses come from the `mocks` API on `cs.create()` (runtime in test mode). That gets the example green deterministically and cheaply, but it cannot catch regressions that only surface against real `api.anthropic.com`: tool-name regex violations, invalid model ids, system-prompt issues that change Claude's behaviour. To verify those too, run:
-
-```bash
-ANTHROPIC_API_KEY=sk-ant-... npm run validate:live
-```
-
-That boots a runtime with your `ANTHROPIC_API_KEY` (no aimock), runs `live.test.ts`, and tears down. The live path points the runtime at a separate `mcp-servers.live.json` (via `CODESPAR_MCP_SERVERS_PATH`) that re-injects the MCP `--demo` flag, so no Nuvem-Fiscal / Z-API credentials are needed; the test-mode path uses the default `mcp-servers.json` and stubs at the runtime layer via `cs.create({ mocks })`. Two paths, two configs, one cleanly-split dependency surface. The live test carries a much richer prompt than the aimock test — it includes prestador/tomador hints, LC 116 codes, environment, and an explicit "don't ask for clarifying details" instruction — because real Claude is appropriately cautious on under-specified fiscal prompts and will ask for missing fields rather than issuing documents blindly. The aimock fixture gets away with a terser prompt because it's scripted, not reasoned. The assertions stay coarse (at-least-one NFS-e issuance dispatched, every dispatched call succeeds) because real Claude is probabilistic.
-
-This is **not in CI** — it costs real Anthropic spend (a few cents per run) and is probabilistic enough that flakes would be noise. Run it locally before pushing changes that touch the OSS chat loop, the tool catalog, the SDK's `session.send()`, the LATAM-commerce system prompt, or this example's MCP fixtures. The aimock-mode tests can't catch tool-name regex violations or invalid model ids; only this can.
-
-## Known platform gaps
-
-Flagged here so they survive as latent debt rather than getting lost
-in review comments:
-
-1. **Fiscal edge cases now pin per-test via the mocks API.** The
-   happy-path fixture here models stateful id generation and
-   `status: "autorizada"`, but the mocks API resolves what used to be a
-   coverage gap: a test can declare any `create_nfse` output it needs
-   per-test — a rejection status, a cancellation NFS-e, an amendment
-   response — by pinning that exact payload on `cs.create({ mocks })`
-   rather than relying on a single demo-handler implementation to model
-   it. SEFAZ amendment windows (NFS-e issued within 24h can usually be
-   amended, beyond that you cut a cancellation NFS-e), municipal
-   ISS-rate differentials for cross-municipality work, contested-cart
-   fiscal blocks (when a payment dispute opens, the NFS-e must be
-   withheld or reversed), and LGPD / PCI considerations for the
-   customer-data payload all matter in production; with the mocks API
-   each can now get its own deterministic test fixture instead of
-   waiting on demo-handler math.
-2. **aimock fixture is positional, not semantic.** The fixture
-   matches on `turnIndex` and `hasToolResult`, not on the actual
-   content of the user's message or the runtime's tool-use shape. A
-   regression in the runtime that, say, started sending the tool
-   results in a different order would still pass this fixture as long
-   as the turn count is right. A more rigorous fixture would gate on
-   the model + tools[] schema as well.
-3. **The aimock layer is a stand-in, not a model.** This example
-   does NOT exercise real Claude reasoning. A regression in Anthropic
-   tool-use protocol (block ordering, stop_reason semantics) won't
-   surface here — only in a separate live-model test that is gated
-   on a real `ANTHROPIC_API_KEY`. Mocked tests catch wiring bugs;
-   live tests catch protocol bugs.
-4. **No streaming variant.** The runtime also exposes
-   `session.sendStream()` (Server-Sent Events for incremental
-   assistant_text / tool_use / tool_result events). This example
-   exercises only the unary `session.send()` shape. A streaming
+1. **This demo does not exercise the live meta-tool routing.** The
+   session mocks intercept at the meta-tool boundary, so the path that
+   actually issues an NFS-e (`execute()` → Nuvem Fiscal) and sends the
+   WhatsApp message (`execute()` → Z-API) never runs. That path is
+   per-runtime by design; covering it end-to-end is a separate live test
+   against provider sandboxes, not part of this deterministic proof.
+2. **aimock fixtures are positional, not semantic.** They match on
+   `turnIndex` and `hasToolResult`, not on the actual message content or
+   tool-use shape. A runtime regression that changed tool-result ordering
+   could still pass as long as the turn count holds.
+3. **The aimock layer is a stand-in, not a model.** This example does not
+   exercise real Claude reasoning. A regression in Anthropic's tool-use
+   protocol (block ordering, stop_reason semantics) surfaces only in a
+   live-model test gated on a real `ANTHROPIC_API_KEY`. Mocked tests catch
+   wiring bugs; live tests catch protocol bugs.
+4. **No streaming variant.** This example exercises only the unary
+   `session.send()` shape, not `session.sendStream()` (SSE). A streaming
    variant would prove the SSE wire shape end-to-end and is a natural
    follow-up.

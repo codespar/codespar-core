@@ -4,10 +4,11 @@
 # stand-in Anthropic API, verifies a runtime is reachable, then runs
 # the vitest spec against it.
 #
-# The spec declares per-tool fixtures via the `mocks` field on
-# `cs.create()`. That only works against a runtime started in test mode
-# (`CODESPAR_TEST_MODE_ENABLED=true`); without it, `POST /sessions`
-# rejects the mocks payload with HTTP 501 `mocks_not_permitted`.
+# The shared SERVICE_INVOICE_SCENARIO declares per-meta-tool fixtures in
+# its `mocks` map, posted on session create. That only works against a
+# runtime started in test mode (`CODESPAR_TEST_MODE_ENABLED=true`);
+# without it, `POST /sessions` rejects the mocks payload with HTTP 501
+# `mocks_not_permitted`.
 #
 # Runtime resolution (first match wins):
 #   1. CODESPAR_BASE_URL is set       → use it, do NOT manage its lifecycle.
@@ -38,12 +39,13 @@
 #                                       (the bleeding-edge tag built on every main merge).
 #   4. none of the above              → print instructions and exit non-zero
 #
-# Tool responses come from the per-tool `mocks` map declared inline on
-# `cs.create()` in `skeleton.test.ts`; the MCP servers spawn plain (no
-# demo flag) — in test mode the dispatch seam intercepts before the
-# bridge, so they are never actually invoked, but they must still spawn
-# so the runtime registers their tool schemas. ANTHROPIC_API_KEY is a
-# placeholder — the SDK requires a value, aimock ignores it.
+# Meta-tool responses come from the scenario's `mocks` map (keyed on the
+# meta-tool name, e.g. codespar_invoice). The demo runs at the meta-tool
+# abstraction: the plugin loaded via CODESPAR_PLUGINS registers the
+# meta-tools, and in test mode the dispatch seam answers them from the
+# mocks before the plugin's live execute() runs — so no MCP servers are
+# spawned or invoked. ANTHROPIC_API_KEY is a placeholder — the SDK
+# requires a value, aimock ignores it.
 
 set -euo pipefail
 
@@ -128,10 +130,13 @@ if [ -n "${CODESPAR_BASE_URL:-}" ]; then
   exit 0
 fi
 
-# Mode 2: explicit clone path. Boot the runtime from this directory
-# (so the bridge reads `./mcp-servers.json`), export ANTHROPIC_BASE_URL
-# so its Anthropic SDK calls aimock, and turn on test mode so the
-# `mocks` field on cs.create() is honoured.
+# Mode 2: explicit clone path. Boot the runtime from this directory,
+# export ANTHROPIC_BASE_URL so its Anthropic SDK calls aimock, load the
+# demo meta-tool plugin via CODESPAR_PLUGINS, and turn on test mode so the
+# session `mocks` are honoured. The demo runs at the meta-tool abstraction,
+# so no MCP server registry is needed — the agent calls codespar_invoice /
+# codespar_notify (registered by the plugin), and the mocks answer them
+# before the plugin's live execute() runs.
 if [ -n "${CODESPAR_RUNTIME_DIR:-}" ]; then
   if [ ! -d "$CODESPAR_RUNTIME_DIR" ]; then
     echo "validate.sh: CODESPAR_RUNTIME_DIR=$CODESPAR_RUNTIME_DIR does not exist" >&2
@@ -192,13 +197,15 @@ if [ -n "${CODESPAR_RUNTIME_DIR:-}" ]; then
   exit 0
 fi
 
-# Mode 3: published Docker image. The container's cwd is set to this
-# example directory so the bridge reads `./mcp-servers.json` from a
-# mounted volume. ANTHROPIC_BASE_URL points at the host's aimock via
-# host.docker.internal (made resolvable via --add-host).
-# CODESPAR_TEST_MODE_ENABLED=true is passed in so the runtime honours
-# the mocks the spec declares on cs.create(). The image MUST include
-# session-mocks support (commit 5830dc4 / PR #113 or later).
+# Mode 3: published Docker image. The example directory is mounted at
+# /example and set as cwd so the runtime resolves the demo plugin
+# (/example/demo-plugin.mjs, wired via CODESPAR_PLUGINS below) and its
+# @codespar/types import from the mounted node_modules. ANTHROPIC_BASE_URL
+# points at the host's aimock via host.docker.internal (made resolvable
+# via --add-host). CODESPAR_TEST_MODE_ENABLED=true is passed in so the
+# runtime honours the session mocks the scenario declares. The image MUST
+# include session-mocks support, the meta-tool mock seam, and the
+# CODESPAR_PLUGINS startup loader (see the image-channel note at the top).
 if command -v docker >/dev/null 2>&1; then
   start_aimock
 
@@ -269,12 +276,14 @@ validate.sh: no runtime configured. Pick one:
   manage that runtime's lifecycle. Make sure it is already configured
   with ANTHROPIC_BASE_URL=http://localhost:4010 so its session.send()
   call lands on the aimock this script boots (NOT the real Anthropic
-  API), and with CODESPAR_TEST_MODE_ENABLED=true so the mocks declared
-  on cs.create() are honoured (otherwise session create fails with
-  HTTP 501 mocks_not_permitted):
+  API), with CODESPAR_TEST_MODE_ENABLED=true so the scenario's session
+  mocks are honoured (otherwise session create fails with HTTP 501
+  mocks_not_permitted), and with CODESPAR_PLUGINS pointed at this dir's
+  demo-plugin.mjs so the codespar_invoice / codespar_notify meta-tools
+  are registered:
     export CODESPAR_BASE_URL=http://localhost:3000
-    # ensure that runtime was started with ANTHROPIC_BASE_URL=http://localhost:4010
-    # and CODESPAR_TEST_MODE_ENABLED=true
+    # ensure that runtime was started with ANTHROPIC_BASE_URL=http://localhost:4010,
+    # CODESPAR_TEST_MODE_ENABLED=true, and CODESPAR_PLUGINS=<this dir>/demo-plugin.mjs
     npm run validate
 
   Option C — point at a local clone of codespar/codespar (this script
