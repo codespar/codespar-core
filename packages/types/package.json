@@ -1,6 +1,6 @@
 {
   "name": "@codespar/types",
-  "version": "0.10.10",
+  "version": "0.10.11",
   "description": "Shared session interface contract for codespar runtimes",
   "type": "module",
   "main": "./dist/index.js",
