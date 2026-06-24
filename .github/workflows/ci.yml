@@ -106,3 +106,74 @@ jobs:
       - name: Run the installment-negotiation example end-to-end
         working-directory: examples/whatsapp-installment-negotiation
         run: npm run validate
+
+  # Meta-tool example demos. Each runs an example end-to-end against the codespar
+  # runtime + aimock, replaying a fixed conversation so the meta-tool flow
+  # (codespar_pay / codespar_invoice / codespar_notify) is exercised
+  # deterministically. The image is pinned to :main because the meta-tool mock
+  # seam + CODESPAR_PLUGINS startup loader reach :latest only on a tagged runtime
+  # release; switch back to :latest once a release ships them. A fast fixtures-sync
+  # step first catches any drift between the checked-in aimock fixtures and the
+  # canonical scenario in @codespar/types/testing, without booting a runtime.
+  validate-example-service-invoice-meta-tool:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: examples/service-invoice-meta-tool/package-lock.json
+      - name: Install example dependencies
+        working-directory: examples/service-invoice-meta-tool
+        run: npm ci
+      - name: Fixtures stay in sync with the published scenario
+        working-directory: examples/service-invoice-meta-tool
+        run: npx vitest run fixtures-sync
+      - name: Run the service-invoice meta-tool demo end-to-end
+        working-directory: examples/service-invoice-meta-tool
+        env:
+          CODESPAR_RUNTIME_IMAGE: ghcr.io/codespar/codespar:main
+        run: npm run validate
+
+  validate-example-installment-negotiation-meta-tool:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: examples/installment-negotiation-meta-tool/package-lock.json
+      - name: Install example dependencies
+        working-directory: examples/installment-negotiation-meta-tool
+        run: npm ci
+      - name: Fixtures stay in sync with the published scenario
+        working-directory: examples/installment-negotiation-meta-tool
+        run: npx vitest run fixtures-sync
+      - name: Run the installment-negotiation meta-tool demo end-to-end
+        working-directory: examples/installment-negotiation-meta-tool
+        env:
+          CODESPAR_RUNTIME_IMAGE: ghcr.io/codespar/codespar:main
+        run: npm run validate
+
+  validate-example-payment-rejection-meta-tool:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: examples/payment-rejection-meta-tool/package-lock.json
+      - name: Install example dependencies
+        working-directory: examples/payment-rejection-meta-tool
+        run: npm ci
+      - name: Fixtures stay in sync with the published scenario
+        working-directory: examples/payment-rejection-meta-tool
+        run: npx vitest run fixtures-sync
+      - name: Run the payment-rejection meta-tool demo end-to-end
+        working-directory: examples/payment-rejection-meta-tool
+        env:
+          CODESPAR_RUNTIME_IMAGE: ghcr.io/codespar/codespar:main
+        run: npm run validate
