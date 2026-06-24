@@ -21,6 +21,7 @@ import { initCommand } from "./commands/init.js";
 import { discoverCommand } from "./commands/discover.js";
 import { chargeCommand } from "./commands/charge.js";
 import { spendCommand } from "./commands/spend.js";
+import { mandateCreateCommand } from "./commands/mandate.js";
 import { shipCommand } from "./commands/ship.js";
 import { paymentStatusCommand } from "./commands/payment-status.js";
 import { verificationStatusCommand } from "./commands/verification-status.js";
@@ -260,6 +261,43 @@ program
         ...auth,
         json: rootJsonFlag(),
       });
+    },
+  );
+
+const mandate = program
+  .command("mandate")
+  .description("Create and manage consumer mandates (the agent's allowance / wallet)");
+
+mandate
+  .command("create")
+  .description("Create a consumer mandate via the directed-pay consent flow")
+  .requiredOption("-c, --consumer <id>", "Consumer id (its derived wallet funds usdc-onchain spends)")
+  .requiredOption("--agent <id>", "Agent id the mandate authorizes")
+  .requiredOption("--purpose <text>", "Human purpose, signed into the mandate")
+  .requiredOption("-p, --payee <list>", "Allowlisted payee(s): x402 URL / EVM address / Pix key (comma-separated)")
+  .requiredOption("--cap <minor>", "Total cap in minor units (cents)")
+  .requiredOption("--per-tx-cap <minor>", "Per-transaction cap in minor units (cents)")
+  .option("--currency <code>", "Mandate currency (USDC, BRL, USD, MXN, ...)", "USDC")
+  .option("--rail <rail>", "Funding rail (usdc-onchain, pix-consent, card-token, ...)", "usdc-onchain")
+  .option("--ttl <seconds>", "Mandate lifetime in seconds", "86400")
+  .option("--pin-kind <kind>", "Allowlist entry kind: merchant-id, pix-key, mcc", "merchant-id")
+  .option("--provider-token <token>", "Rail provider token (defaults to a placeholder for usdc-onchain)")
+  .action(
+    async (opts: {
+      consumer: string;
+      agent: string;
+      purpose: string;
+      payee: string;
+      cap: string;
+      perTxCap: string;
+      currency: string;
+      rail: string;
+      ttl: string;
+      pinKind: string;
+      providerToken?: string;
+    }) => {
+      const auth = await resolveAuth();
+      await mandateCreateCommand({ ...opts, ...auth, json: rootJsonFlag() });
     },
   );
 
