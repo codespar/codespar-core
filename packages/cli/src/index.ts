@@ -20,6 +20,7 @@ import { tailLogsCommand } from "./commands/logs.js";
 import { initCommand } from "./commands/init.js";
 import { discoverCommand } from "./commands/discover.js";
 import { chargeCommand } from "./commands/charge.js";
+import { spendCommand } from "./commands/spend.js";
 import { shipCommand } from "./commands/ship.js";
 import { paymentStatusCommand } from "./commands/payment-status.js";
 import { verificationStatusCommand } from "./commands/verification-status.js";
@@ -255,6 +256,24 @@ program
     async (opts: { input?: string; inputFile?: string; user?: string }) => {
       const auth = await resolveAuth();
       await chargeCommand({
+        ...opts,
+        ...auth,
+        json: rootJsonFlag(),
+      });
+    },
+  );
+
+program
+  .command("spend")
+  .description("Execute an agentic spend against a consumer mandate (Pix / USDC / x402 by payee)")
+  .requiredOption("-m, --mandate <id>", "Consumer mandate id")
+  .requiredOption("-p, --payee <payee>", "Pix key, EVM address, or x402 resource URL")
+  .requiredOption("-a, --amount <minor>", "Amount in minor units (cents)")
+  .requiredOption("--agent <id>", "Agent id making the spend")
+  .action(
+    async (opts: { mandate: string; payee: string; amount: string; agent: string }) => {
+      const auth = await resolveAuth();
+      await spendCommand({
         ...opts,
         ...auth,
         json: rootJsonFlag(),
