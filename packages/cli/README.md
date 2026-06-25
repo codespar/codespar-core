@@ -23,6 +23,13 @@ codespar execute codespar_pay \
   --server asaas \
   --input '{"method":"pix","amount":15000,"currency":"BRL"}'
 
+# Give an agent a wallet with a mandate, then let it pay a 402-protected API
+# (x402 micropayment in USDC on Base, gated by the per-tx cap)
+codespar mandate create --consumer shopper --agent buyer \
+  --payee https://x402.codespar.dev/api/market-data --cap 1000 --per-tx-cap 100
+codespar spend --mandate <id> --amount 1 --agent buyer \
+  --payee https://x402.codespar.dev/api/market-data
+
 # Manage sessions and logs
 codespar sessions list
 codespar logs tail --server stripe
@@ -44,6 +51,8 @@ codespar init my-agent
 | `tools show <name>` | Show a tool's full input/output schema |
 | `execute <tool>` | Run a single tool call in a throwaway session |
 | `discover <query>` | Search the catalog for tools matching a use case |
+| `mandate create` | Create a consumer mandate — the agent's allowance / spending limit |
+| `spend` | Execute an agentic spend against a mandate (x402 / USDC / Pix, routed by payee) |
 | `charge` | Issue an inbound charge via `codespar_charge` |
 | `ship` | Generate label / quote rates / track via `codespar_ship` |
 | `ledger` | Post entries / read balances / create accounts via `codespar_ledger` |
