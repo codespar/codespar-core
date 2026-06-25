@@ -159,9 +159,8 @@ failover, idempotency, and per-tenant connection config:
 Use `session.execute("codespar_pay", { amount, currency, recipient })`
 or the typed wrappers (`session.discover`, `session.connectionWizard`).
 The router picks the best provider per call based on the tenant's
-connections + cost/latency telemetry. See
-[`codespar-enterprise/docs/operations/meta-tool-runbook.md`](../codespar-enterprise/docs/operations/meta-tool-runbook.md)
-for the full operator guide.
+connections + cost/latency telemetry. See [`docs/tool-router.md`](docs/tool-router.md)
+for how the router selects a provider per call.
 
 ## Framework Adapters
 
