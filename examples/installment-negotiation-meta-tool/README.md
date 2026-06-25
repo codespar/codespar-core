@@ -11,9 +11,9 @@ On the final turn it calls three commerce **meta-tools** — `codespar_pay`
 (create the installment payment), `codespar_invoice` (issue the NF-e), and
 `codespar_notify` (confirm over WhatsApp) — never a raw `serverId__tool`.
 
-This is the **multi-turn** dual-runtime demo: unlike the single-shot
-service-invoice demo, it exercises a three-message `session.send()` negotiation
-where only the commit touches commerce.
+This is the **multi-turn** demo: unlike the single-shot service-invoice demo, it
+exercises a three-message `session.send()` negotiation where only the commit
+touches commerce.
 
 ## Why the negotiation is text, not tool calls
 
@@ -21,16 +21,16 @@ At the meta-tool abstraction there is no quote/preview tool, and `codespar_pay`
 *executes* a payment — it doesn't price one. So the agent reasons about the
 no-interest installment math itself (R$4.800 / 6 = R$800) and answers in text;
 only the buyer's confirmation triggers a meta-tool call. That is the cleaner
-meta-tool shape — and the same on both runtimes. The raw-tool original called a
-PSP preview tool (`asaas/get_installments`) for the same step; the meta-tool
-version pushes that into the agent's reasoning (for the simple no-interest case)
-or into `codespar_pay`'s implementation (for interest-bearing plans).
+meta-tool shape. The raw-tool original called a PSP preview tool
+(`asaas/get_installments`) for the same step; the meta-tool version pushes that
+into the agent's reasoning (for the simple no-interest case) or into
+`codespar_pay`'s implementation (for interest-bearing plans).
 
-## One scenario, both runtimes
+## The canonical scenario
 
 The scenario and its assertion live in
-[`@codespar/types/testing`](https://www.npmjs.com/package/@codespar/types), not
-here:
+[`@codespar/types/testing`](https://www.npmjs.com/package/@codespar/types), the
+single source of truth this example consumes, not here:
 
 ```ts
 import { runDemoScenario, INSTALLMENT_NEGOTIATION_SCENARIO } from "@codespar/types/testing";
@@ -38,18 +38,18 @@ import { runDemoScenario, INSTALLMENT_NEGOTIATION_SCENARIO } from "@codespar/typ
 runDemoScenario(CODESPAR_BASE_URL, INSTALLMENT_NEGOTIATION_SCENARIO, { apiKey });
 ```
 
-The **same** `INSTALLMENT_NEGOTIATION_SCENARIO` object and aimock fixture set are
-consumed unchanged by the managed-runtime integration test.
+`INSTALLMENT_NEGOTIATION_SCENARIO` is the canonical scenario published in
+`@codespar/types/testing`, paired with its aimock fixture set.
 `runDemoScenario` drives the three turns and asserts, via
 `assertMetaToolTrace`, that every tool the agent called was a meta-tool
 (`codespar_*`) with `status: "success"`, and that no raw `serverId__tool` name
 appears.
 
-## OSS core ships no built-in meta-tools — the demo opts in
+## The core ships no built-in meta-tools — the demo opts in
 
-The managed runtime ships the commerce meta-tools pre-installed; OSS core does
-not. `demo-plugin.mjs` registers `codespar_invoice`, `codespar_notify`, and
-`codespar_pay` through the `MetaToolHook` seam (using the shared `@codespar/types`
+`@codespar/core` exposes the `MetaToolHook` seam but registers nothing by
+default. `demo-plugin.mjs` registers `codespar_invoice`, `codespar_notify`, and
+`codespar_pay` through that seam (using the shared `@codespar/types`
 definitions), and the runtime loads it at startup via `CODESPAR_PLUGINS`. In test
 mode the session `mocks` (keyed on the meta-tool name) answer the call before the
 plugin's `execute()` runs, so `execute()` here is a deliberate tripwire — a real

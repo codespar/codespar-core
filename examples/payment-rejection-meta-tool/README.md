@@ -18,7 +18,7 @@ calls two raw PSPs — it calls `codespar_pay`, which owns provider routing
 internally. The reject-then-retry **judgment** lives in the agent (interpret
 `INVALID_PIX_KEY` as a customer-data problem → ask for a correction, not blindly
 retry another PSP), and the **routing** lives in the meta-tool. One meta-tool,
-one stateful fixture sequence, both runtimes.
+one stateful fixture sequence.
 
 The first `codespar_pay` mock is a **successful dispatch whose business outcome
 is a decline** (`status: "rejected"`, `error_code: "INVALID_PIX_KEY"`) — a
@@ -26,11 +26,11 @@ rejected payment is a successful API call that returns a declined result, so the
 meta-tool call still reports `status: "success"` at the trace level. The agent
 reads the declined output and drives the correction.
 
-## One scenario, both runtimes
+## The canonical scenario
 
 The scenario and its assertion live in
-[`@codespar/types/testing`](https://www.npmjs.com/package/@codespar/types), not
-here:
+[`@codespar/types/testing`](https://www.npmjs.com/package/@codespar/types), the
+single source of truth this example consumes, not here:
 
 ```ts
 import { runDemoScenario, PAYMENT_REJECTION_SCENARIO } from "@codespar/types/testing";
@@ -38,19 +38,19 @@ import { runDemoScenario, PAYMENT_REJECTION_SCENARIO } from "@codespar/types/tes
 runDemoScenario(CODESPAR_BASE_URL, PAYMENT_REJECTION_SCENARIO, { apiKey });
 ```
 
-The **same** `PAYMENT_REJECTION_SCENARIO` object and aimock fixture set are
-consumed unchanged by the managed-runtime integration test.
+`PAYMENT_REJECTION_SCENARIO` is the canonical scenario published in
+`@codespar/types/testing`, paired with its aimock fixture set.
 `runDemoScenario` drives the turns and asserts, via
 `assertMetaToolTrace`, that every tool the agent called was a meta-tool
 (`codespar_*`) with `status: "success"`, and that no raw `serverId__tool` name
 appears. `codespar_pay`'s mock is a stateful array — the first call returns the
 decline, the second returns success.
 
-## OSS core ships no built-in meta-tools — the demo opts in
+## The core ships no built-in meta-tools — the demo opts in
 
-The managed runtime ships the commerce meta-tools pre-installed; OSS core does
-not. `demo-plugin.mjs` registers `codespar_invoice`, `codespar_notify`, and
-`codespar_pay` through the `MetaToolHook` seam (using the shared `@codespar/types`
+`@codespar/core` exposes the `MetaToolHook` seam but registers nothing by
+default. `demo-plugin.mjs` registers `codespar_invoice`, `codespar_notify`, and
+`codespar_pay` through that seam (using the shared `@codespar/types`
 definitions), and the runtime loads it at startup via `CODESPAR_PLUGINS`. In test
 mode the session `mocks` answer each call before the plugin's `execute()` runs,
 so `execute()` here is a deliberate tripwire — a real deployment would implement

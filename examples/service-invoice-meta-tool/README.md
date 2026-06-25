@@ -19,15 +19,15 @@ The agent works at the **commerce meta-tool abstraction**: it calls
 `nuvem-fiscal__create_nfse` or `z-api__send_text`. That is the whole
 point of this example. The meta-tool is the façade; how it routes to a
 fiscal provider (Nuvem Fiscal) and a messaging provider (Z-API) is the
-runtime's concern, not the agent's — and it is exactly the layer that
-differs between the OSS runtime and the managed runtime. The agent code
-above it is identical on both.
+runtime's concern, not the agent's. The agent code stays at the meta-tool
+layer, decoupled from any specific provider.
 
-## One scenario, both runtimes
+## The canonical scenario
 
-This is the OSS half of a dual-runtime proof. The scenario and its
-assertion are not defined here — they are imported from
-[`@codespar/types/testing`](https://www.npmjs.com/package/@codespar/types):
+The scenario and its assertion are not defined here — they are imported
+from
+[`@codespar/types/testing`](https://www.npmjs.com/package/@codespar/types),
+the single source of truth this example consumes:
 
 ```ts
 import { runDemoScenario, SERVICE_INVOICE_SCENARIO } from "@codespar/types/testing";
@@ -35,25 +35,21 @@ import { runDemoScenario, SERVICE_INVOICE_SCENARIO } from "@codespar/types/testi
 runDemoScenario(CODESPAR_BASE_URL, SERVICE_INVOICE_SCENARIO, { apiKey });
 ```
 
-The **same** `SERVICE_INVOICE_SCENARIO` object and the **same** aimock
-fixture set are consumed unchanged by the managed-runtime integration
-test. One scenario definition, one fixture set,
-run green against both runtimes over the `session.send()` path — that is
-what makes the "seamless OSS → managed upgrade" claim empirically true
-and CI-enforceable. `runDemoScenario` drives the conversation and
-asserts, via `assertMetaToolTrace`, that every tool the agent called was
-a meta-tool (`codespar_*`) with `status: "success"` — and that no raw
+`SERVICE_INVOICE_SCENARIO` is the canonical scenario published in
+`@codespar/types/testing`, paired with its aimock fixture set.
+`runDemoScenario` drives the conversation over the `session.send()` path
+and asserts, via `assertMetaToolTrace`, that every tool the agent called
+was a meta-tool (`codespar_*`) with `status: "success"` — and that no raw
 `serverId__tool` name appears in the trace.
 
-## OSS core ships no built-in meta-tools — the demo opts in
+## The core ships no built-in meta-tools — the demo opts in
 
-The managed runtime ships the commerce meta-tools pre-installed. The OSS
-runtime does not: `@codespar/core` exposes the `MetaToolHook` seam but
-registers nothing by default. So this example brings its own. The
-`demo-plugin.mjs` file registers `codespar_invoice` and `codespar_notify`
-(using the shared definitions published from `@codespar/types`) through
-that seam, and the runtime loads it at startup via the `CODESPAR_PLUGINS`
-environment variable:
+`@codespar/core` exposes the `MetaToolHook` seam but registers nothing by
+default, so this example brings its own. The `demo-plugin.mjs` file
+registers `codespar_invoice` and `codespar_notify` (using the shared
+definitions published from `@codespar/types`) through that seam, and the
+runtime loads it at startup via the `CODESPAR_PLUGINS` environment
+variable:
 
 ```js
 import { INVOICE_DEFINITION, NOTIFY_DEFINITION } from "@codespar/types";
@@ -75,10 +71,8 @@ export default function register(registry) {
 In test mode the session `mocks` (keyed on the meta-tool name) answer the
 call before `execute()` ever runs, so this demo's `execute()` is a
 deliberate tripwire — if it throws, the mock interception didn't fire. A
-real OSS deployment would implement `execute()` to route the meta-tool to
-its providers; that live path is intentionally out of scope here (it is
-the per-runtime implementation the dual-runtime convention leaves free to
-differ).
+real deployment would implement `execute()` to route the meta-tool to its
+providers; that live path is intentionally out of scope here.
 
 ## What ships here
 
