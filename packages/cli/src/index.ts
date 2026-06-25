@@ -20,6 +20,9 @@ import { tailLogsCommand } from "./commands/logs.js";
 import { initCommand } from "./commands/init.js";
 import { discoverCommand } from "./commands/discover.js";
 import { chargeCommand } from "./commands/charge.js";
+import { spendCommand } from "./commands/spend.js";
+import { mandateCreateCommand } from "./commands/mandate.js";
+import { walletCommand } from "./commands/wallet.js";
 import { shipCommand } from "./commands/ship.js";
 import { paymentStatusCommand } from "./commands/payment-status.js";
 import { verificationStatusCommand } from "./commands/verification-status.js";
@@ -63,6 +66,11 @@ async function authedClient(): Promise<ApiClient> {
 
 function rootJsonFlag(): boolean {
   return Boolean(program.opts<{ json?: boolean }>().json);
+}
+
+/** Accumulator for repeatable Commander options (e.g. `--slot` given N times). */
+function collect(value: string, previous: string[]): string[] {
+  return [...previous, value];
 }
 
 // ============ auth ============
@@ -261,6 +269,76 @@ program
       });
     },
   );
+
+const mandate = program
+  .command("mandate")
+  .description("Create and manage consumer mandates (the agent's allowance / wallet)");
+
+mandate
+  .command("create")
+  .description("Create a consumer mandate via the directed-pay consent flow")
+  .requiredOption("-c, --consumer <id>", "Consumer id (its derived wallet funds usdc-onchain spends)")
+  .requiredOption("--agent <id>", "Agent id the mandate authorizes")
+  .requiredOption("--purpose <text>", "Human purpose, signed into the mandate")
+  .requiredOption("-p, --payee <list>", "Allowlisted payee(s): x402 URL / EVM address / Pix key (comma-separated)")
+  .option("--cap <minor>", "Total cap in minor units (legacy single-currency; omit when using --slot)")
+  .option("--per-tx-cap <minor>", "Per-transaction cap in minor units (legacy single-currency; omit when using --slot)")
+  .option(
+    "--slot <spec>",
+    "Wallet slot CURRENCY:RAIL:CAP:PER_TX_CAP (repeatable) — builds a multi-currency mandate, caps per-currency (no FX)",
+    collect,
+    [],
+  )
+  .option("--currency <code>", "Mandate currency for the legacy single-currency path", "USDC")
+  .option("--rail <rail>", "Funding rail (usdc-onchain, pix-consent, card-token, ...)", "usdc-onchain")
+  .option("--ttl <seconds>", "Mandate lifetime in seconds", "86400")
+  .option("--pin-kind <kind>", "Allowlist entry kind: merchant-id, pix-key, mcc", "merchant-id")
+  .option("--provider-token <token>", "Rail provider token (defaults to a placeholder for usdc-onchain)")
+  .action(
+    async (opts: {
+      consumer: string;
+      agent: string;
+      purpose: string;
+      payee: string;
+      cap?: string;
+      perTxCap?: string;
+      slot?: string[];
+      currency: string;
+      rail: string;
+      ttl: string;
+      pinKind: string;
+      providerToken?: string;
+    }) => {
+      const auth = await resolveAuth();
+      await mandateCreateCommand({ ...opts, ...auth, json: rootJsonFlag() });
+    },
+  );
+
+program
+  .command("spend")
+  .description("Execute an agentic spend against a consumer mandate (Pix / USDC / x402 by payee)")
+  .requiredOption("-m, --mandate <id>", "Consumer mandate id")
+  .requiredOption("-p, --payee <payee>", "Pix key, EVM address, or x402 resource URL")
+  .requiredOption("-a, --amount <minor>", "Amount in minor units (cents)")
+  .requiredOption("--agent <id>", "Agent id making the spend")
+  .action(
+    async (opts: { mandate: string; payee: string; amount: string; agent: string }) => {
+      const auth = await resolveAuth();
+      await spendCommand({
+        ...opts,
+        ...auth,
+        json: rootJsonFlag(),
+      });
+    },
+  );
+
+program
+  .command("wallet <consumer>")
+  .description("Show a consumer's unified wallet, rolled up per currency (multi-slot mandate balances)")
+  .action(async (consumer: string) => {
+    const auth = await resolveAuth();
+    await walletCommand(consumer, { ...auth, json: rootJsonFlag() });
+  });
 
 program
   .command("ship")

@@ -4,4 +4,4 @@
  * can never drift. Keep in sync with package.json on release (prepublishOnly
  * could assert equality if drift ever recurs).
  */
-export const VERSION = "0.4.0";
+export const VERSION = "0.5.2";
