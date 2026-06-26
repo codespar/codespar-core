@@ -24,6 +24,17 @@ describe("CodeSpar constructor", () => {
     expect(cs).toBeDefined();
   });
 
+  it("rejects an api key without the csk_ prefix", () => {
+    expect(() => new CodeSpar({ apiKey: "sk_live_abc" })).toThrow(
+      /must start with 'csk_'/,
+    );
+  });
+
+  it("accepts a staging csk_ prefixed key", () => {
+    const cs = new CodeSpar({ apiKey: "csk_staging_abc" });
+    expect(cs).toBeDefined();
+  });
+
   it("accepts apiKey via env var", () => {
     process.env.CODESPAR_API_KEY = "csk_live_envtest";
     try {
