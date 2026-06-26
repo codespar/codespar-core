@@ -462,7 +462,7 @@ class ShipResult:
 # ── codespar_ledger wire shape ─────────────────────────────────────
 
 
-LedgerAction = Literal["entry", "balance", "account"]
+LedgerAction = Literal["entry", "balance", "account", "receipt", "receipts"]
 
 
 @dataclass(slots=True)
@@ -499,6 +499,9 @@ class LedgerArgs:
     alias: str | None = None
     name: str | None = None
     type: str | None = None
+    receipt_id: str | None = None
+    consumer_id: str | None = None
+    limit: int | None = None
     metadata: dict[str, Any] | None = None
 
 
@@ -510,6 +513,100 @@ class LedgerResult:
     alias: str | None = None
     balances: Any = None
     raw: Any = None
+
+
+# ── Agentic receipt (the Control Record) ───────────────────────────
+
+
+@dataclass(slots=True)
+class ReceiptException:
+    """A settle-time policy divergence recorded on a receipt (OBSERVE mode) —
+    e.g. the settled amount/payee diverging from the bound quote."""
+
+    code: str
+    detail: str
+    at: str
+
+
+@dataclass(slots=True)
+class ReceiptMandate:
+    id: str
+    nonce: str
+    scope: str
+    currency: str
+    sig: str
+
+
+@dataclass(slots=True)
+class ReceiptQuote:
+    seller: str | None = None
+    resource: str | None = None
+    price_minor: int | None = None
+    payee: str | None = None
+    session_id: str | None = None
+    sig: str | None = None
+    at: str | None = None
+
+
+@dataclass(slots=True)
+class ReceiptPayment:
+    rail: str
+    amount_minor: int
+    attempt_id: str
+    money_moved: bool
+    provider: str | None = None
+    tx_id: str | None = None
+    at: str | None = None
+
+
+@dataclass(slots=True)
+class ReceiptDelivery:
+    result: str | None = None
+    proof: str | None = None
+    kind: str | None = None
+    nfe_chave: str | None = None
+    at: str | None = None
+
+
+@dataclass(slots=True)
+class AgenticReceipt:
+    """The canonical agentic receipt — the Control Record of one spend.
+
+    Binds mandate -> quote -> payment -> delivery into a tamper-evident
+    chain (SHA-256 over the RFC 8785 canonical JSON of the records
+    present); ``receipt_sig`` is the consumer HMAC over ``chain``. The
+    structure is rail-agnostic; only the delivery proof artifact differs
+    (NF-e + Pix endToEndId for the fiscal path, the x402 resource
+    response for crypto). Returned by ``codespar_ledger`` action=receipt.
+    """
+
+    receipt_id: str
+    state: Literal["paid", "exception", "delivered", "voided"]
+    mandate: ReceiptMandate
+    payment: ReceiptPayment
+    chain: str
+    receipt_sig: str
+    quote: ReceiptQuote | None = None
+    delivery: ReceiptDelivery | None = None
+    exceptions: list[ReceiptException] = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class LedgerReceiptResult:
+    """Result of ``codespar_ledger`` action=receipt. A missing receipt
+    returns ``found=False`` (not an error)."""
+
+    found: bool
+    receipt: AgenticReceipt | None = None
+    receipt_id: str | None = None
+
+
+@dataclass(slots=True)
+class LedgerReceiptsResult:
+    """Result of ``codespar_ledger`` action=receipts."""
+
+    receipts: list[AgenticReceipt] = field(default_factory=list)
+    count: int = 0
 
 
 # ── codespar_issue wire shape ──────────────────────────────────────

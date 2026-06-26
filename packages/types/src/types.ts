@@ -371,8 +371,8 @@ export interface LedgerLeg {
 }
 
 export interface LedgerArgs {
-  /** entry | balance | account. */
-  action: "entry" | "balance" | "account";
+  /** entry | balance | account | receipt | receipts. */
+  action: "entry" | "balance" | "account" | "receipt" | "receipts";
   /** Asset / currency code for entry + account (BRL, USD, USDC, ...). */
   asset?: string;
   /** Decimal places for the asset. Default 2 (fiat); JPY=0, most
@@ -393,6 +393,12 @@ export interface LedgerArgs {
   /** Midaz account type (deposit, savings, external). Default deposit.
    *  action=account only. */
   type?: string;
+  /** The agentic receipt id (rcpt_...) to read. Required for action=receipt. */
+  receipt_id?: string;
+  /** Whose receipts to list. Defaults to the session user. action=receipts. */
+  consumer_id?: string;
+  /** Max receipts to list (action=receipts, default 50). */
+  limit?: number;
   /** Free-form metadata stored on the entry / account. */
   metadata?: Record<string, unknown>;
 }
@@ -407,6 +413,101 @@ export interface LedgerResult {
   /** Per-asset available + on-hold amounts (action=balance). */
   balances?: unknown;
   raw?: unknown;
+}
+
+/* ── Agentic receipt (the Control Record) ────────────────────── */
+
+/** One settle-time policy divergence recorded on a receipt (OBSERVE mode) —
+ *  e.g. the settled amount/payee diverging from the bound quote. */
+export interface ReceiptException {
+  code: string;
+  detail: string;
+  at: string;
+}
+
+/**
+ * The canonical agentic receipt — the Control Record of one agentic spend.
+ * Binds four linked records into a tamper-evident chain so the spend proves
+ * not just that money moved, but that the agent APPROVED X, PAID X, and the
+ * order/resource was DELIVERED. Returned by codespar_ledger action=receipt.
+ * The receipt STRUCTURE is rail-agnostic; only the delivery proof artifact
+ * differs (NF-e + Pix endToEndId for the fiscal path, the x402 resource
+ * response + on-chain finality for crypto). `chain` is SHA-256 over the RFC
+ * 8785 canonical JSON of the records present; `receipt_sig` is the consumer
+ * HMAC over `chain` (the same trust root that signed the mandate).
+ */
+export interface AgenticReceipt {
+  receipt_id: string;
+  /** paid: payment sealed, no delivery yet. exception: a settle-time quote
+   *  divergence was observed (still settled). delivered: a delivery record was
+   *  folded in. voided: reversed. */
+  state: "paid" | "exception" | "delivered" | "voided";
+  mandate: {
+    id: string;
+    nonce: string;
+    /** The mandate purpose the spend was bound to. */
+    scope: string;
+    currency: string;
+    /** The consumer HMAC that signed the mandate. */
+    sig: string;
+  };
+  /** The offer the agent approved (seller / resource / price), bound + signed
+   *  into the receipt. Null when no quote was provided. */
+  quote: {
+    seller: string | null;
+    resource: string | null;
+    price_minor: number | null;
+    payee: string | null;
+    session_id: string | null;
+    sig: string | null;
+    at: string | null;
+  } | null;
+  payment: {
+    /** pix | card | usdc-onchain | ... */
+    rail: string;
+    provider: string | null;
+    /** PSP tx id / Pix endToEndId / on-chain hash. */
+    tx_id: string | null;
+    amount_minor: number;
+    attempt_id: string;
+    /** True when real money moved (e.g. a Celcoin cash-out); false for a
+     *  pending charge (e.g. a Mercado Pago QR). */
+    money_moved: boolean;
+    at: string | null;
+  };
+  /** Proof of what was received. Rail-specific: an order confirmation / NF-e
+   *  for the fiscal (Pix) path, the x402 resource response for crypto. Null
+   *  until a delivery record is folded in. */
+  delivery: {
+    /** confirmed | pending | failed. */
+    result: string | null;
+    proof: string | null;
+    /** order_confirmation | nfe | nfse | tracking | resource. */
+    kind: string | null;
+    nfe_chave: string | null;
+    at: string | null;
+  } | null;
+  /** SHA-256 over the canonical JSON of the records present:
+   *  hash(mandate -> quote -> payment -> delivery). */
+  chain: string;
+  /** Consumer HMAC over `chain`. */
+  receipt_sig: string;
+  exceptions: ReceiptException[];
+}
+
+/** Result of codespar_ledger action=receipt (read one by receipt_id). A
+ *  missing receipt returns found:false (not an error). */
+export interface LedgerReceiptResult {
+  found: boolean;
+  receipt?: AgenticReceipt;
+  /** Echoed back when found is false. */
+  receipt_id?: string;
+}
+
+/** Result of codespar_ledger action=receipts (list a consumer's receipts). */
+export interface LedgerReceiptsResult {
+  receipts: AgenticReceipt[];
+  count: number;
 }
 
 /* ── codespar_issue wire shape ───────────────────────────────── */
