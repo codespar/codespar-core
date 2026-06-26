@@ -23,12 +23,23 @@ codespar execute codespar_pay \
   --server asaas \
   --input '{"method":"pix","amount":15000,"currency":"BRL"}'
 
-# Give an agent a wallet with a mandate, then let it pay a 402-protected API
-# (x402 micropayment in USDC on Base, gated by the per-tx cap)
+# Give an agent a unified multi-currency wallet under ONE signed mandate:
+# a Pix (BRL) slot and a USDC slot, each with its own per-currency cap. No FX.
 codespar mandate create --consumer shopper --agent buyer \
-  --payee https://x402.codespar.dev/api/market-data --cap 1000 --per-tx-cap 100
+  --payee https://x402.codespar.dev/api/market-data,11144477735 \
+  --slot BRL:pix:50000:1500 \
+  --slot USDC:usdc:100:100
+
+# See the wallet, rolled up per currency
+codespar wallet shopper
+
+# The same mandate pays a 402-protected API in USDC (gated by the USDC per-tx cap)
 codespar spend --mandate <id> --amount 1 --agent buyer \
   --payee https://x402.codespar.dev/api/market-data
+
+# Move value between slots (per-currency, no FX — a cross-currency move is a real
+# ramp trade at the real rate). Omit --execute to just plan it.
+codespar transfer shopper --from BRL --to USDC --amount 15000
 
 # Manage sessions and logs
 codespar sessions list
@@ -51,7 +62,9 @@ codespar init my-agent
 | `tools show <name>` | Show a tool's full input/output schema |
 | `execute <tool>` | Run a single tool call in a throwaway session |
 | `discover <query>` | Search the catalog for tools matching a use case |
-| `mandate create` | Create a consumer mandate — the agent's allowance / spending limit |
+| `mandate create` | Create a consumer mandate — the agent's allowance. `--slot CURRENCY:METHOD:CAP:PER_TX` (repeatable, e.g. `BRL:pix:50000:1500`) for a unified multi-currency wallet; per-currency caps, no FX |
+| `wallet <consumer>` | Show the consumer's unified wallet, rolled up per currency |
+| `transfer <consumer>` | Move value between wallet slots (`--from --to --amount [--execute]`); a cross-currency move is a real ramp trade at the real rate, no FX |
 | `spend` | Execute an agentic spend against a mandate (x402 / USDC / Pix, routed by payee) |
 | `charge` | Issue an inbound charge via `codespar_charge` |
 | `ship` | Generate label / quote rates / track via `codespar_ship` |
