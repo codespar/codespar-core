@@ -87,14 +87,14 @@ async def test_session_level_project_id_wins(httpx_mock: HTTPXMock) -> None:
     )
 
     async with AsyncCodeSpar(
-        api_key="csk_test_x", project_id="prj_clientlevel000000"
+        api_key="csk_test_x", project_id="prj_clientlevel00000"
     ) as cs:
-        await cs.create("user_123", preset="brazilian", project_id="prj_sessionlevel00000")
+        await cs.create("user_123", preset="brazilian", project_id="prj_sessionlevel0000")
 
     request = httpx_mock.get_request()
     assert request is not None
     # session override wins
-    assert request.headers["x-codespar-project"] == "prj_sessionlevel00000"
+    assert request.headers["x-codespar-project"] == "prj_sessionlevel0000"
 
 
 async def test_send_returns_tool_calls(httpx_mock: HTTPXMock) -> None:
