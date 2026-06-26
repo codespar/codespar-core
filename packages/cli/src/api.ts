@@ -84,8 +84,20 @@ export class ApiClient {
     if (!res.ok) {
       let detail = "";
       try {
-        const errBody = (await res.json()) as { message?: string; error?: string };
-        detail = errBody.message ?? errBody.error ?? "";
+        // The API returns either `{ message }` or the nested envelope
+        // `{ error: { code, message } }` (newer routes). Handle both so the
+        // human-readable message surfaces instead of "[object Object]".
+        const errBody = (await res.json()) as {
+          message?: string;
+          error?: string | { code?: string; message?: string };
+        };
+        const nested =
+          typeof errBody.error === "object" && errBody.error ? errBody.error : null;
+        detail =
+          errBody.message ??
+          nested?.message ??
+          (typeof errBody.error === "string" ? errBody.error : "") ??
+          "";
       } catch {
         detail = await res.text().catch(() => "");
       }

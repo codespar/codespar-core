@@ -23,6 +23,7 @@ import { chargeCommand } from "./commands/charge.js";
 import { spendCommand } from "./commands/spend.js";
 import { mandateCreateCommand } from "./commands/mandate.js";
 import { walletCommand } from "./commands/wallet.js";
+import { transferCommand } from "./commands/transfer.js";
 import { shipCommand } from "./commands/ship.js";
 import { paymentStatusCommand } from "./commands/payment-status.js";
 import { verificationStatusCommand } from "./commands/verification-status.js";
@@ -339,6 +340,25 @@ program
     const auth = await resolveAuth();
     await walletCommand(consumer, { ...auth, json: rootJsonFlag() });
   });
+
+program
+  .command("transfer <consumer>")
+  .description("Move value between wallet slots (per-currency, no FX — a cross-currency move is a real ramp trade)")
+  .requiredOption("--from <currency>", "Source slot currency (e.g. BRL)")
+  .requiredOption("--to <currency>", "Destination slot currency (e.g. USDC)")
+  .requiredOption("--amount <minor>", "Amount in the source currency's minor units")
+  .option("--execute", "Actually run the ramp legs (real money). Omit to just plan the move.")
+  .option("--agent <id>", "Agent id attributed for audit")
+  .option("--purpose <text>", "Human purpose for the transfer")
+  .action(
+    async (
+      consumer: string,
+      opts: { from: string; to: string; amount: string; execute?: boolean; agent?: string; purpose?: string },
+    ) => {
+      const auth = await resolveAuth();
+      await transferCommand(consumer, { ...opts, ...auth, json: rootJsonFlag() });
+    },
+  );
 
 program
   .command("ship")
