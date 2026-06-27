@@ -4,9 +4,9 @@
  * description, and the input schema the language model is shown — published
  * once here so every runtime presents the identical tool to the agent.
  *
- * A runtime registers an implementation behind a definition (the OSS runtime
- * via a `MetaToolHook`, a managed runtime via its built-in routing); the
- * implementations differ, but the definition the agent reasons over does not.
+ * An implementation registers behind a definition (e.g. on the OSS runtime
+ * via a `MetaToolHook`); implementations differ, but the definition the agent
+ * reasons over does not.
  * The `contract` field carries the conformance surface — the property names
  * and the required subset a conforming implementation must expose — so a
  * conformance test can assert any runtime's tool matches this definition
@@ -36,7 +36,8 @@ export interface MetaToolInputSchema {
  * The conformance surface of a definition: the property names a conforming
  * implementation must expose and the subset that is required. A conformance
  * test compares a live runtime's tool against this — structural, not prose —
- * so two runtimes prove they present the same agent-facing tool.
+ * so an implementation can be checked to present the same agent-facing tool as
+ * this shared definition.
  */
 export interface MetaToolConformanceContract {
   /** Every property name the agent-facing tool exposes. */

@@ -13,8 +13,8 @@ import type { DemoScenario } from "../demo-scenario.js";
  * agent reasons about the no-interest installment math itself (R$4.800 / 6 =
  * R$800) rather than calling a raw PSP preview tool. The meta-tool layer owns
  * *execution*, not quoting — so the negotiation is text, and only the commit is
- * a tool call. That is the cleaner meta-tool shape, and it is the same on both
- * runtimes: one scenario, both chat loops.
+ * a tool call. That is the cleaner meta-tool shape. Consume the scenario by
+ * importing `INSTALLMENT_NEGOTIATION_SCENARIO`.
  *
  * `mocks` is keyed on the meta-tool name so the fixture is returned regardless
  * of how a runtime routes the meta-tool to underlying providers (Asaas for the
