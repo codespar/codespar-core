@@ -1,0 +1,24 @@
+name: gitleaks
+
+# Secret scanning. Scans only the commits introduced by a pull request so the
+# gate blocks NEW secrets without failing on legacy fixtures already in history.
+# Uses the gitleaks container directly (the official action requires a paid
+# license for organizations); config + allowlist live in .gitleaks.toml.
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan pull-request commits for secrets
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest detect \
+            --source /repo --redact --no-banner \
+            --log-opts="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}" \
+            --exit-code 1

@@ -1,0 +1,25 @@
+# CodeSpar gitleaks configuration.
+# Extends the default gitleaks ruleset and allowlists known test/sandbox token
+# formats and example/documentation material, so the CI gate blocks real
+# secrets while tolerating fixtures. CI scans only the commits introduced by a
+# pull request (see .github/workflows/gitleaks.yml).
+
+title = "CodeSpar gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow test/sandbox token formats and example/doc material"
+regexes = [
+  '''sk_test_[A-Za-z0-9]{8,}''',
+  '''pk_test_[A-Za-z0-9]{8,}''',
+  '''rk_test_[A-Za-z0-9]{8,}''',
+  '''csk_test_[A-Za-z0-9]{8,}''',
+  '''(?i)(example|placeholder|dummy|redacted|changeme)''',
+]
+paths = [
+  '''(^|/)(docs|examples?|__tests__|fixtures?|mocks?|sandbox)/''',
+  '''\.(md|mdx)$''',
+  '''\.(test|spec)\.[tj]sx?$''',
+]
