@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Payment rejection / cross-provider retry — boots @copilotkit/aimock as a
-# stand-in Anthropic API, verifies a runtime is reachable, then runs
+# Payment-failure triage — boots @copilotkit/aimock as a stand-in Anthropic
+# API, verifies a runtime is reachable, then runs
 # the vitest spec against it.
 #
 # The shared demo scenario declares per-meta-tool fixtures in its
@@ -209,7 +209,7 @@ fi
 if command -v docker >/dev/null 2>&1; then
   start_aimock
 
-  CONTAINER_NAME="codespar-example-payment-rejection-$$"
+  CONTAINER_NAME="codespar-example-payment-failure-triage-$$"
   RUNTIME_LOG="$SKELETON_DIR/.runtime.log"
 
   echo "validate.sh: starting runtime from $RUNTIME_IMAGE (port $RUNTIME_PORT)…"

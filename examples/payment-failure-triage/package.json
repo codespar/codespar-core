@@ -1,0 +1,20 @@
+{
+  "name": "payment-failure-triage",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Payment-failure triage at the commerce meta-tool abstraction — the agent reads a payment failure's category and routes the remediation (ask the customer vs. escalate to a human). Two shared session.send() scenarios from @codespar/types/testing, driven against the runtime.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "skeleton": "vitest run --reporter=verbose",
+    "validate": "./scripts/validate.sh",
+    "validate:live": "./scripts/validate-live.sh"
+  },
+  "devDependencies": {
+    "@copilotkit/aimock": "^1.24.1",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^3.2.0",
+    "@codespar/types": "0.10.13"
+  }
+}
