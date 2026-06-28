@@ -19,6 +19,8 @@ import type { DemoScenario } from "./demo-scenario.js";
 import { SERVICE_INVOICE_SCENARIO } from "./demo-scenarios/service-invoice.js";
 import { INSTALLMENT_NEGOTIATION_SCENARIO } from "./demo-scenarios/installment-negotiation.js";
 import { PAYMENT_REJECTION_SCENARIO } from "./demo-scenarios/payment-rejection.js";
+import { CUSTOMER_DATA_REJECTION_SCENARIO } from "./demo-scenarios/customer-data-rejection.js";
+import { MERCHANT_BLOCKED_SCENARIO } from "./demo-scenarios/merchant-blocked.js";
 import { SHARED_META_TOOL_DEFINITIONS } from "../meta-tool-definitions.js";
 import type { SharedMetaToolDefinition } from "../meta-tool-definitions.js";
 
@@ -28,6 +30,8 @@ const ALL_SCENARIOS: DemoScenario[] = [
   SERVICE_INVOICE_SCENARIO,
   INSTALLMENT_NEGOTIATION_SCENARIO,
   PAYMENT_REJECTION_SCENARIO,
+  CUSTOMER_DATA_REJECTION_SCENARIO,
+  MERCHANT_BLOCKED_SCENARIO,
 ];
 
 const META_TOOL_NAME = /^codespar_[a-z_]+$/;
