@@ -157,7 +157,7 @@ jobs:
           CODESPAR_RUNTIME_IMAGE: ghcr.io/codespar/codespar:main
         run: npm run validate
 
-  validate-example-payment-rejection-meta-tool:
+  validate-example-payment-failure-triage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -165,15 +165,18 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: examples/payment-rejection-meta-tool/package-lock.json
+          cache-dependency-path: examples/payment-failure-triage/package-lock.json
       - name: Install example dependencies
-        working-directory: examples/payment-rejection-meta-tool
+        working-directory: examples/payment-failure-triage
         run: npm ci
-      - name: Fixtures stay in sync with the published scenario
-        working-directory: examples/payment-rejection-meta-tool
+      - name: Fixtures stay in sync with the published scenarios
+        working-directory: examples/payment-failure-triage
         run: npx vitest run fixtures-sync
-      - name: Run the payment-rejection meta-tool demo end-to-end
-        working-directory: examples/payment-rejection-meta-tool
+      - name: Dual-runtime divergence gate (OSS side — completeness + version-alignment)
+        working-directory: examples/payment-failure-triage
+        run: npx vitest run manifest-parity
+      - name: Run the payment-failure-triage demo end-to-end
+        working-directory: examples/payment-failure-triage
         env:
           CODESPAR_RUNTIME_IMAGE: ghcr.io/codespar/codespar:main
         run: npm run validate

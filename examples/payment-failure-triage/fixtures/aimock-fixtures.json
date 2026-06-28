@@ -1,0 +1,170 @@
+{
+  "fixtures": [
+    {
+      "match": {
+        "userMessage": "R$ 2.500",
+        "turnIndex": 0,
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_pay",
+            "arguments": {
+              "amount": 250000,
+              "currency": "BRL",
+              "method": "pix",
+              "description": "Pagamento do pedido via Pix",
+              "consumer_id": "111.111.111-11"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "R$ 2.500",
+        "turnIndex": 1,
+        "hasToolResult": true
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_notify",
+            "arguments": {
+              "channel": "whatsapp",
+              "to": "+5511987654321",
+              "message": "O CPF informado é inválido, então não consegui concluir o pagamento. Pode me enviar o CPF correto que eu refaço a cobrança?"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "R$ 2.500",
+        "turnIndex": 2,
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "O CPF informado não passou na validação. Me envia o CPF correto que eu refaço o pagamento na hora.",
+        "finishReason": "stop"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "CPF correto",
+        "turnIndex": 0,
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_pay",
+            "arguments": {
+              "amount": 250000,
+              "currency": "BRL",
+              "method": "pix",
+              "description": "Pagamento do pedido via Pix (CPF corrigido)",
+              "consumer_id": "390.533.447-05"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "CPF correto",
+        "turnIndex": 1,
+        "hasToolResult": true
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_invoice",
+            "arguments": {
+              "type": "nfe",
+              "recipient": {
+                "name": "Cliente Demo",
+                "document": "39053344705"
+              },
+              "items": [
+                {
+                  "description": "Pedido pago via Pix",
+                  "amount": 2500
+                }
+              ]
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "CPF correto",
+        "turnIndex": 2,
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "Prontinho! Pagamento aprovado com o CPF corrigido e NF-e emitida. Qualquer coisa é só chamar.",
+        "finishReason": "stop"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "pedido #4471",
+        "turnIndex": 0,
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_pay",
+            "arguments": {
+              "amount": 80000,
+              "currency": "BRL",
+              "method": "pix",
+              "description": "Pagamento do pedido #4471 via Pix"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "pedido #4471",
+        "turnIndex": 1,
+        "hasToolResult": true
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_notify",
+            "arguments": {
+              "channel": "slack",
+              "to": "#payments-ops",
+              "message": "Pagamento do pedido #4471 bloqueado: conta do lojista MERCHANT_BLOCKED no adquirente. Não é recuperável pelo cliente — escalando para o time resolver."
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "pedido #4471",
+        "turnIndex": 2,
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "Não consegui concluir esse pagamento: a conta do lojista está bloqueada no adquirente, o que não dá para resolver pelo seu lado. Já escalei para o time de pagamentos cuidar disso.",
+        "finishReason": "stop"
+      }
+    }
+  ]
+}
