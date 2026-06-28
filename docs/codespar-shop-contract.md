@@ -313,6 +313,30 @@ The types are hand-written (no Zod, no codegen), consistent with the rest of the
 meta-tool surface. Any wire-shape change is a 3-way edit (TS types, Python types,
 backend route).
 
+## codespar_pay correlation (issued↔paid)
+
+`codespar_pay`'s `PayResult` carries an optional `checkout_session_id` — the join
+key that ties a payment back to the checkout session it settled. When an agent
+drives a purchase as two steps (`codespar_shop` to reach `ready_for_payment`, then
+the payment tool to settle the `pix_copia_e_cola`), the returned `PayResult` echoes
+the `checkout_session_id` it paid, so a caller can correlate the two calls without
+server-internal state.
+
+| Field | Type | Notes |
+|---|---|---|
+| `checkout_session_id` | string? | the checkout this payment settled; unset for a direct payment with no originating checkout |
+
+The field is **additive and optional** under the v0 rule above: existing consumers
+that ignore it are unaffected, and a direct payment leaves it unset. The merchant
+`pix_copia_e_cola` the checkout carried is **not** echoed on `PayResult` — it is a
+payable bearer instrument and is kept out of results and logs (see PII / Pix
+log-redaction).
+
+Scope note on the 3-way edit: `PayResult` is currently a TypeScript-only shape (no
+Python dataclass mirror in `types.py`), so this addition is a TS-types +
+backend-route edit. Bringing `codespar_pay`'s types to the TS/Python parity the
+shop types already have is tracked as separate follow-up work.
+
 ## Usage example
 
 ```ts
