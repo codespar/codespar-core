@@ -245,6 +245,13 @@ export interface PayResult {
   recipient: string;
   pix_qr_code?: string;
   pix_copy_paste?: string;
+  /** When this payment settled a checkout session, the id of that checkout —
+   *  the join key that ties an issued checkout to the payment that settled it.
+   *  Additive and optional: a direct payment with no originating checkout
+   *  leaves it unset, and consumers that ignore it are unaffected. The merchant
+   *  copy-paste the checkout carried is deliberately NOT echoed here — it is a
+   *  payable instrument and is kept out of results and logs. */
+  checkout_session_id?: string;
   raw?: unknown;
 }
 
