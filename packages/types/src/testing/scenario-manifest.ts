@@ -22,7 +22,7 @@
  *  names a consumer of these scenarios must drive completely. */
 export const DEMO_SCENARIO_MANIFEST = {
   /** Must equal this package's published version (see the lockstep test). */
-  version: "0.10.12",
+  version: "0.10.13",
   /** Scenario `name`s a consumer must drive, exactly. */
   scenarios: ["customer-data-rejection", "merchant-blocked"],
 } as const;
