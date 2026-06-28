@@ -4,6 +4,10 @@ export * from "./demo-scenario.js";
 export { SERVICE_INVOICE_SCENARIO } from "./demo-scenarios/service-invoice.js";
 export { INSTALLMENT_NEGOTIATION_SCENARIO } from "./demo-scenarios/installment-negotiation.js";
 export { PAYMENT_REJECTION_SCENARIO } from "./demo-scenarios/payment-rejection.js";
+export { CUSTOMER_DATA_REJECTION_SCENARIO } from "./demo-scenarios/customer-data-rejection.js";
+export { MERCHANT_BLOCKED_SCENARIO } from "./demo-scenarios/merchant-blocked.js";
+export { DEMO_SCENARIO_MANIFEST } from "./scenario-manifest.js";
+export type { DemoScenarioName } from "./scenario-manifest.js";
 
 // Re-export the contract descriptors from the testing entrypoint too, so a
 // conformance-test author imports the suite and the descriptors it drives
