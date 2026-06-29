@@ -62,6 +62,7 @@ export const CUSTOMER_DATA_REJECTION_SCENARIO: DemoScenario = {
             {
               name: "codespar_pay",
               arguments: {
+                action: "pay",
                 amount: 250000,
                 currency: "BRL",
                 method: "pix",
@@ -105,6 +106,7 @@ export const CUSTOMER_DATA_REJECTION_SCENARIO: DemoScenario = {
             {
               name: "codespar_pay",
               arguments: {
+                action: "pay",
                 amount: 250000,
                 currency: "BRL",
                 method: "pix",

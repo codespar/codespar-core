@@ -102,33 +102,31 @@ const NOTIFY_INPUT: MetaToolInputSchema = {
   required: ["channel", "to"],
 };
 
-const PAYMENT_STATUS_INPUT: MetaToolInputSchema = {
-  type: "object",
-  properties: {
-    payment_id: {
-      type: "string",
-      description:
-        "The payment/charge/boleto id to query (e.g. a charge id returned by codespar_pay or codespar_charge)",
-    },
-  },
-  required: ["payment_id"],
-};
-
 const PAY_INPUT: MetaToolInputSchema = {
   type: "object",
   properties: {
-    amount: { type: "number", description: "Amount to pay, in minor units (centavos for BRL)" },
-    currency: { type: "string", description: "Currency code (BRL, USD, EUR)" },
+    action: {
+      type: "string",
+      description:
+        "What to do: pay (execute a payment/transfer — the default) or status (read an existing payment/charge/boleto's current status by id). Defaults to pay, so existing callers that omit action are unaffected.",
+    },
+    amount: { type: "number", description: "Amount to pay, in minor units (centavos for BRL). Required for action=pay." },
+    currency: { type: "string", description: "Currency code (BRL, USD, EUR). Required for action=pay." },
     country: { type: "string", description: "ISO-3166-1 alpha-2 country code for the eligibility rail" },
     method: { type: "string", description: "Payment method: pix, card, usdc, boleto, sepa, wire" },
     recipient: { type: "string", description: "Recipient identifier (e.g. a Pix key)" },
     copia_e_cola: { type: "string", description: "A Pix copia-e-cola / BR Code to pay" },
     consumer_id: { type: "string", description: "Which buyer's governed wallet pays" },
     checkout_session_id: { type: "string", description: "A store checkout session to settle" },
-    description: { type: "string", description: "Payment description" },
+    description: { type: "string", description: "Payment description. Required for action=pay." },
     mandateId: { type: "string", description: "Pre-authorized mandate id" },
+    payment_id: { type: "string", description: "The payment/charge/boleto id to read (action=status); status returns the provider status, e.g. OVERDUE for an expired/unpaid boleto" },
   },
-  required: ["amount", "currency", "description"],
+  // Only `action` is required across both actions (it defaults to pay): a pay
+  // call needs amount/currency/description, a status call needs payment_id, so
+  // those are per-action (described above), not part of the shared required set.
+  // This matches the codespar_shop / codespar_ledger discriminator convention.
+  required: ["action"],
 };
 
 /** Issue, read, or amend invoices and fiscal documents (NF-e / NFS-e / invoice). */
@@ -138,15 +136,6 @@ export const INVOICE_DEFINITION: SharedMetaToolDefinition = {
     "Issue, read, or amend invoices and Brazilian fiscal documents (NF-e, NFS-e). action=issue emits a new document (default); action=status reads an existing document's fiscal state (autorizada / cancelada / ...); action=amend corrects an existing document — a correction letter (CC-e) in place while the SEFAZ amendment window is open, or a cancel and reissue as a substitute once it is not (the result indicates which mechanism applied).",
   input_schema: INVOICE_INPUT,
   contract: contractOf(INVOICE_INPUT),
-};
-
-/** Query a payment / charge / boleto's current status by id. */
-export const PAYMENT_STATUS_DEFINITION: SharedMetaToolDefinition = {
-  name: "codespar_payment_status",
-  description:
-    "Look up the current status of a payment, charge, or boleto by id. Returns the provider status (e.g. PENDING, RECEIVED, OVERDUE for an expired/unpaid boleto), so an agent can discover post-purchase state — like a boleto that expired unpaid — before deciding what to do next.",
-  input_schema: PAYMENT_STATUS_INPUT,
-  contract: contractOf(PAYMENT_STATUS_INPUT),
 };
 
 /** Send a notification over a messaging channel (WhatsApp / email / SMS). */
@@ -162,7 +151,7 @@ export const NOTIFY_DEFINITION: SharedMetaToolDefinition = {
 export const PAY_DEFINITION: SharedMetaToolDefinition = {
   name: "codespar_pay",
   description:
-    "Execute a payment or transfer under governance. Supports Pix, card, USDC, boleto, SEPA, and wire; can pay a Pix copia-e-cola or settle a store checkout.",
+    "Execute a payment or transfer, or read a payment's status. action=pay (default) executes a payment/transfer under governance — Pix, card, USDC, boleto, SEPA, wire; can pay a Pix copia-e-cola or settle a store checkout. action=status reads an existing payment/charge/boleto's current status by id (e.g. OVERDUE for an expired/unpaid boleto), so an agent can discover post-purchase state before deciding what to do next.",
   input_schema: PAY_INPUT,
   contract: contractOf(PAY_INPUT),
 };
@@ -172,7 +161,6 @@ export const SHARED_META_TOOL_DEFINITIONS = {
   codespar_invoice: INVOICE_DEFINITION,
   codespar_notify: NOTIFY_DEFINITION,
   codespar_pay: PAY_DEFINITION,
-  codespar_payment_status: PAYMENT_STATUS_DEFINITION,
 } as const;
 
 /** Wire names that have a published shared definition. */
