@@ -8,7 +8,7 @@
  *
  * Beyond the shared `assertMetaToolTrace` parity check, this test pins the
  * post-purchase judgment itself: from the SAME discovered boleto state (a
- * `codespar_payment_status` query returning OVERDUE), the agent reads the NF-e's
+ * `codespar_pay` action=status query returning OVERDUE), the agent reads the NF-e's
  * fiscal state and routes opposite remediations — a correction (CC-e) in place
  * when the amendment window is open (the NF-e is never cancelled), or a cancel +
  * reissue as a substitute when it is closed. Both branches break the news to the
@@ -31,11 +31,13 @@ const CODESPAR_API_KEY = process.env.CODESPAR_API_KEY ?? "demo";
 const callsNamed = (name: string, trace: ToolCallRecord[]) =>
   trace.filter((c) => c.tool_name === name);
 
-/** The `action` field on a `codespar_invoice` call's input. */
-function invoiceAction(c: ToolCallRecord): string {
+/** The `action` field on a call's input, with a per-tool default. */
+function actionOf(c: ToolCallRecord, dflt: string): string {
   const input = (c.input ?? {}) as { action?: unknown };
-  return typeof input.action === "string" ? input.action : "issue";
+  return typeof input.action === "string" ? input.action : dflt;
 }
+const invoiceAction = (c: ToolCallRecord) => actionOf(c, "issue");
+const payAction = (c: ToolCallRecord) => actionOf(c, "pay");
 
 /** A customer-facing `codespar_notify` (a phone/WhatsApp recipient). */
 function customerMessages(trace: ToolCallRecord[]): string[] {
@@ -88,17 +90,17 @@ describe("boleto-expiry fiscal remediation: amendment window open (correct in pl
     // Shared parity: every call is a successful meta-tool covering each turn.
     assertMetaToolTrace(trace, BOLETO_EXPIRED_NFE_CORRECTION_SCENARIO);
 
-    // Discovery: the agent queried the payment status.
-    expect(callsNamed("codespar_payment_status", trace)).toHaveLength(1);
+    // codespar_pay is the owning tool for both the discovery read and the fresh
+    // charge: action=status discovers the boleto, action=pay issues the Pix.
+    const payActions = callsNamed("codespar_pay", trace).map(payAction);
+    expect(payActions).toContain("status");
+    expect(payActions).toContain("pay");
 
     // Fiscal judgment: invoice is read (status) then corrected (amend) — never
     // an issue-from-scratch, and never a cancel.
     const invoiceActions = callsNamed("codespar_invoice", trace).map(invoiceAction);
     expect(invoiceActions).toContain("status");
     expect(invoiceActions).toContain("amend");
-
-    // A fresh Pix is offered for the same order.
-    expect(callsNamed("codespar_pay", trace)).toHaveLength(1);
 
     // The customer message is collaborative, not accusatory.
     assertCollaborativeNotAccusatory(customerMessages(trace));
@@ -113,14 +115,15 @@ describe("boleto-expiry fiscal remediation: amendment window closed (cancel + re
 
     assertMetaToolTrace(trace, BOLETO_EXPIRED_NFE_REISSUE_SCENARIO);
 
-    expect(callsNamed("codespar_payment_status", trace)).toHaveLength(1);
+    // Same discovery shape: codespar_pay action=status, then action=pay.
+    const payActions = callsNamed("codespar_pay", trace).map(payAction);
+    expect(payActions).toContain("status");
+    expect(payActions).toContain("pay");
 
     // Fiscal judgment: same status read, but the amend cancels + reissues.
     const invoiceActions = callsNamed("codespar_invoice", trace).map(invoiceAction);
     expect(invoiceActions).toContain("status");
     expect(invoiceActions).toContain("amend");
-
-    expect(callsNamed("codespar_pay", trace)).toHaveLength(1);
 
     // Same collaborative, non-accusatory communication standard.
     assertCollaborativeNotAccusatory(customerMessages(trace));

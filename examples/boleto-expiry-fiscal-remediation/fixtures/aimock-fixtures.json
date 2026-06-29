@@ -9,8 +9,9 @@
       "response": {
         "toolCalls": [
           {
-            "name": "codespar_payment_status",
+            "name": "codespar_pay",
             "arguments": {
+              "action": "status",
               "payment_id": "pay_demo_boleto_7788"
             }
           }
@@ -91,6 +92,7 @@
           {
             "name": "codespar_pay",
             "arguments": {
+              "action": "pay",
               "amount": 18900,
               "currency": "BRL",
               "method": "pix",
@@ -121,8 +123,9 @@
       "response": {
         "toolCalls": [
           {
-            "name": "codespar_payment_status",
+            "name": "codespar_pay",
             "arguments": {
+              "action": "status",
               "payment_id": "pay_demo_boleto_9911"
             }
           }
@@ -202,6 +205,7 @@
           {
             "name": "codespar_pay",
             "arguments": {
+              "action": "pay",
               "amount": 42500,
               "currency": "BRL",
               "method": "pix",

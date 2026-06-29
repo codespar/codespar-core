@@ -17,25 +17,25 @@ of them wrong; only reading the NF-e's amendment-window state gets both right.
 ### Amendment window OPEN — correct the NF-e in place
 
 ```
-codespar_payment_status  → { status: "OVERDUE", billing_type: "BOLETO" }
+codespar_pay[status]     → { status: "OVERDUE", billing_type: "BOLETO" }
 codespar_invoice[status] → { status: "autorizada", amendable: true }
 codespar_invoice[amend]  → { mechanism: "correction_letter", cce_protocol: ... }
 ```
 
 The SEFAZ correction window is still open, so the agent:
 
-1. `codespar_payment_status` — discovers the boleto expired unpaid,
+1. `codespar_pay` with `action: status` — discovers the boleto expired unpaid,
 2. `codespar_notify`s the **customer** collaboratively (never accusing them),
 3. `codespar_invoice` with `action: status` — reads the NF-e (still amendable),
 4. `codespar_invoice` with `action: amend` — issues a correction letter (CC-e) **in place**,
-5. `codespar_pay` — offers a fresh Pix for the same order.
+5. `codespar_pay` with `action: pay` — offers a fresh Pix for the same order.
 
 The original NF-e is never cancelled.
 
 ### Amendment window CLOSED — cancel + reissue as a substitute
 
 ```
-codespar_payment_status  → { status: "OVERDUE", billing_type: "BOLETO" }
+codespar_pay[status]     → { status: "OVERDUE", billing_type: "BOLETO" }
 codespar_invoice[status] → { status: "autorizada", amendable: false }
 codespar_invoice[amend]  → { mechanism: "cancel_and_reissue",
                              substitute: { tipo: 3, status: "autorizada" } }
@@ -67,10 +67,10 @@ the mocked result fields mirror the real provider responses:
 
 | Meta-tool (operation) | Real backing MCP tool(s) | Note |
 |---|---|---|
-| `codespar_payment_status` | `asaas get_payment` | status enum includes `OVERDUE` = expired/unpaid boleto |
+| `codespar_pay` [status] | `asaas get_payment` | status enum includes `OVERDUE` = expired/unpaid boleto |
 | `codespar_invoice` [status] | `nuvem_fiscal get_nfe` (+ `get_nfe_events`) | `autorizada` / `cancelada` / ... |
 | `codespar_invoice` [amend] | `nuvem_fiscal send_correction_letter_nfe` (CC-e) OR `cancel_nfe` + `create_nfe` (tipo 3, Substituto) | which one is legal depends on what changed + the SEFAZ window |
-| `codespar_pay` (new Pix) | `asaas create_payment` (PIX) + `get_pix_qrcode` | the fresh charge for the same order |
+| `codespar_pay` [pay] (new Pix) | `asaas create_payment` (PIX) + `get_pix_qrcode` | the fresh charge for the same order |
 | `codespar_notify` | (existing) | the collaborative customer message |
 
 The meta-tool to MCP routing layer that would run this live is not built yet (true
@@ -80,8 +80,13 @@ runs mocked now and graduates to live when the router lands.
 
 ## The new surface this demo introduces
 
-- **`codespar_payment_status`** — query a payment/charge/boleto by id; returns the
-  provider status. New shared definition.
+Both reads are an `action` on the tool that owns the lifecycle — the platform's
+status-query convention (as on `codespar_kyc` / `codespar_shop` / `codespar_ship`
+/ `codespar_ledger`) — not a standalone status tool.
+
+- **`codespar_pay` `action` discriminator** — `pay | status`, defaulting to `pay`
+  so existing callers are unaffected. `status` takes a `payment_id` and returns
+  the payment/charge/boleto's provider status (e.g. `OVERDUE`).
 - **`codespar_invoice` `action` discriminator** — `issue | status | amend`,
   defaulting to `issue` so existing issue-only callers are unaffected. `status`
   reads a document's fiscal state; `amend` corrects it (CC-e in place, or cancel +
@@ -129,7 +134,7 @@ dual-runtime demos.
 ## The core ships no built-in meta-tools — the demo opts in
 
 `@codespar/core` exposes the `MetaToolHook` seam but registers nothing by default.
-`demo-plugin.mjs` registers `codespar_payment_status`, `codespar_invoice`,
+`demo-plugin.mjs` registers `codespar_invoice`,
 `codespar_notify`, and `codespar_pay` through that seam (using the shared
 `@codespar/types` definitions), and the runtime loads it at startup via
 `CODESPAR_PLUGINS`. In test mode the session `mocks` answer each call before the
@@ -143,7 +148,7 @@ plugin's `execute()` runs, so no provider credentials are needed.
 | `live.test.ts` | Optional real-Claude smoke (gated on `CODESPAR_LIVE_SMOKE`); mocked tools, no provider credentials |
 | `manifest-parity.test.ts` | Keeps the example in sync with its published scenario group: per-group completeness + version-alignment against `DEMO_SCENARIO_MANIFEST` |
 | `fixtures-sync.test.ts` | Guards the checked-in aimock fixtures against drift from the published scenarios |
-| `demo-plugin.mjs` | Registers the four meta-tools via the `MetaToolHook` seam |
+| `demo-plugin.mjs` | Registers the three meta-tools via the `MetaToolHook` seam (the status reads are `action`s on them) |
 | `fixtures/aimock-fixtures.json` | The two scenarios' aimock fixtures, concatenated (disjoint match keys, one aimock serves both) |
 | `scripts/validate.sh` | Boots aimock + a runtime (already-running / local clone / docker) in test mode with the plugin loaded, runs vitest |
 | `scripts/validate-live.sh` | Boots a runtime against real Claude (test-mode mocks, no provider credentials) and runs `live.test.ts` |
