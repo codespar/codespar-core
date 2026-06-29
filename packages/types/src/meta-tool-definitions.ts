@@ -85,9 +85,12 @@ const INVOICE_INPUT: MetaToolInputSchema = {
     correction: { type: "string", description: "Correction text for an in-window correction letter (CC-e) amendment (action=amend)" },
     reason: { type: "string", description: "Why the document is being amended — drives correction-letter vs cancel-and-reissue (action=amend)" },
   },
-  // Only `type` is required across all actions; recipient/items are issue-only
-  // and the status/amend actions reference an existing document by id, so they
-  // are not part of the shared required set. Issue callers still supply them.
+  // `type` is required across all actions; recipient/items are issue-only and
+  // the status/amend actions reference an existing document by id, so they are
+  // not part of the shared required set. Issue callers still supply them.
+  // `action` is OPTIONAL here (defaults to issue), so existing issue-only
+  // callers are genuinely unaffected — unlike codespar_pay, which has no field
+  // common to both actions and therefore makes `action` required.
   required: ["type"],
 };
 
@@ -109,7 +112,7 @@ const PAY_INPUT: MetaToolInputSchema = {
     action: {
       type: "string",
       description:
-        "What to do: pay (execute a payment/transfer — the default) or status (read an existing payment/charge/boleto's current status by id). Defaults to pay, so existing callers that omit action are unaffected.",
+        "What to do: pay (execute a payment/transfer) or status (read an existing payment/charge/boleto's current status by id). Required — pass it explicitly on every call.",
     },
     amount: { type: "number", description: "Amount to pay, in minor units (centavos for BRL). Required for action=pay." },
     currency: { type: "string", description: "Currency code (BRL, USD, EUR). Required for action=pay." },
@@ -123,10 +126,17 @@ const PAY_INPUT: MetaToolInputSchema = {
     mandateId: { type: "string", description: "Pre-authorized mandate id" },
     payment_id: { type: "string", description: "The payment/charge/boleto id to read (action=status); status returns the provider status, e.g. OVERDUE for an expired/unpaid boleto" },
   },
-  // Only `action` is required across both actions (it defaults to pay): a pay
-  // call needs amount/currency/description, a status call needs payment_id, so
-  // those are per-action (described above), not part of the shared required set.
-  // This matches the codespar_shop / codespar_ledger discriminator convention.
+  // `action` is the only field required across both actions: a pay call needs
+  // amount/currency/description, a status call needs payment_id, so those are
+  // per-action (described above), not part of the shared required set. Making
+  // `action` required (rather than defaulted) matches codespar_kyc's required
+  // discriminator and keeps the destructive `pay` from being the implicit
+  // fallback of an under-specified call. NOTE: requiring `action` means a
+  // pre-existing action-less caller must now pass it — a deliberate, small
+  // contract change, NOT backward-compatible the way codespar_invoice's
+  // optional `action` is (see INVOICE_INPUT). The flat schema cannot express
+  // "amount required only when action=pay"; that per-action guard is enforced
+  // by the runtime + governance rails below the tool, not here.
   required: ["action"],
 };
 
@@ -152,7 +162,7 @@ export const NOTIFY_DEFINITION: SharedMetaToolDefinition = {
 export const PAY_DEFINITION: SharedMetaToolDefinition = {
   name: "codespar_pay",
   description:
-    "Execute a payment or transfer, or read a payment's status. action=pay (default) executes a payment/transfer under governance — Pix, card, USDC, boleto, SEPA, wire; can pay a Pix copia-e-cola or settle a store checkout. action=status reads an existing payment/charge/boleto's current status by id (e.g. OVERDUE for an expired/unpaid boleto), so an agent can discover post-purchase state before deciding what to do next.",
+    "Execute a payment or transfer, or read a payment's status. Pass action on every call. action=pay executes a payment/transfer under governance — Pix, card, USDC, boleto, SEPA, wire; can pay a Pix copia-e-cola or settle a store checkout. action=status reads an existing payment/charge/boleto's current status by id (e.g. OVERDUE for an expired/unpaid boleto), so an agent can discover post-purchase state before deciding what to do next.",
   input_schema: PAY_INPUT,
   contract: contractOf(PAY_INPUT),
 };
