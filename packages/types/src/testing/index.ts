@@ -6,6 +6,8 @@ export { INSTALLMENT_NEGOTIATION_SCENARIO } from "./demo-scenarios/installment-n
 export { PAYMENT_REJECTION_SCENARIO } from "./demo-scenarios/payment-rejection.js";
 export { CUSTOMER_DATA_REJECTION_SCENARIO } from "./demo-scenarios/customer-data-rejection.js";
 export { MERCHANT_BLOCKED_SCENARIO } from "./demo-scenarios/merchant-blocked.js";
+export { BOLETO_EXPIRED_NFE_CORRECTION_SCENARIO } from "./demo-scenarios/boleto-expired-nfe-correction.js";
+export { BOLETO_EXPIRED_NFE_REISSUE_SCENARIO } from "./demo-scenarios/boleto-expired-nfe-reissue.js";
 export { DEMO_SCENARIO_MANIFEST } from "./scenario-manifest.js";
 export type { DemoScenarioName } from "./scenario-manifest.js";
 
