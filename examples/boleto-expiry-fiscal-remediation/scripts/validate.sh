@@ -279,7 +279,7 @@ validate.sh: no runtime configured. Pick one:
   API), with CODESPAR_TEST_MODE_ENABLED=true so the scenario's session
   mocks are honoured (otherwise session create fails with HTTP 501
   mocks_not_permitted), and with CODESPAR_PLUGINS pointed at this dir's
-  demo-plugin.mjs so the codespar_payment_status / codespar_invoice meta-tools
+  demo-plugin.mjs so the codespar_pay / codespar_invoice meta-tools
   are registered:
     export CODESPAR_BASE_URL=http://localhost:3000
     # ensure that runtime was started with ANTHROPIC_BASE_URL=http://localhost:4010,

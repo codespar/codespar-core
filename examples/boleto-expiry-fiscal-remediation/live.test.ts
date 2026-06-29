@@ -5,7 +5,7 @@
  * "Real Claude, no provider credentials": the runtime still runs in test mode
  * (`CODESPAR_TEST_MODE_ENABLED=true`), so the session `mocks` answer each
  * meta-tool — no Asaas / Nuvem-Fiscal / WhatsApp credentials are needed. What is
- * real is the model: Claude actually reads the `codespar_payment_status` OVERDUE
+ * real is the model: Claude actually reads the `codespar_pay` action=status OVERDUE
  * result and the NF-e's amendment-window state and decides the fiscal remediation
  * (correct in place vs cancel + reissue). That is what the aimock-based
  * `skeleton.test.ts` cannot exercise — Anthropic tool-name regex violations,
