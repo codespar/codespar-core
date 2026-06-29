@@ -1,0 +1,231 @@
+{
+  "fixtures": [
+    {
+      "match": {
+        "userMessage": "#7788",
+        "turnIndex": 0,
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_pay",
+            "arguments": {
+              "action": "status",
+              "payment_id": "pay_demo_boleto_7788"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "#7788",
+        "turnIndex": 1,
+        "hasToolResult": true
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_notify",
+            "arguments": {
+              "channel": "whatsapp",
+              "to": "+5511987654321",
+              "message": "Verifiquei aqui pra você: o boleto do pedido #7788 acabou vencendo antes de a gente receber o pagamento, então ele não foi compensado. Sem problema — já vou organizar tudo e te mando um Pix novo pra concluir o pedido agora mesmo."
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "#7788",
+        "turnIndex": 2,
+        "hasToolResult": true
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_invoice",
+            "arguments": {
+              "action": "status",
+              "type": "nfe",
+              "invoice_id": "nfe_demo_boleto_7788"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "#7788",
+        "turnIndex": 3,
+        "hasToolResult": true
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_invoice",
+            "arguments": {
+              "action": "amend",
+              "type": "nfe",
+              "invoice_id": "nfe_demo_boleto_7788",
+              "correction": "Ajuste da forma de pagamento do pedido #7788 de boleto para Pix; valores e itens inalterados.",
+              "reason": "Boleto vencido sem pagamento; cobrança refeita via Pix."
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "#7788",
+        "turnIndex": 4,
+        "hasToolResult": true
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_pay",
+            "arguments": {
+              "action": "pay",
+              "amount": 18900,
+              "currency": "BRL",
+              "method": "pix",
+              "description": "Pagamento via Pix do pedido #7788 (boleto vencido)"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "#7788",
+        "turnIndex": 5,
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "Resolvido! O boleto tinha vencido, então corrigi a nota fiscal do pedido #7788 com uma carta de correção e gerei um Pix novo pra você concluir agora. Assim que o pagamento cair, o pedido segue normalmente. Qualquer coisa, é só chamar!",
+        "finishReason": "stop"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "#9911",
+        "turnIndex": 0,
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_pay",
+            "arguments": {
+              "action": "status",
+              "payment_id": "pay_demo_boleto_9911"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "#9911",
+        "turnIndex": 1,
+        "hasToolResult": true
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_notify",
+            "arguments": {
+              "channel": "whatsapp",
+              "to": "+5511912345678",
+              "message": "Acabei de checar pra você: o boleto do pedido #9911 venceu antes de o pagamento ser compensado, por isso o pedido ficou parado. Tranquilo — eu cuido de tudo aqui e já te envio um Pix novo pra finalizar agora."
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "#9911",
+        "turnIndex": 2,
+        "hasToolResult": true
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_invoice",
+            "arguments": {
+              "action": "status",
+              "type": "nfe",
+              "invoice_id": "nfe_demo_boleto_9911"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "#9911",
+        "turnIndex": 3,
+        "hasToolResult": true
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_invoice",
+            "arguments": {
+              "action": "amend",
+              "type": "nfe",
+              "invoice_id": "nfe_demo_boleto_9911",
+              "reason": "Janela de correção encerrada; cancelar e reemitir como substituto antes do novo Pix."
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "#9911",
+        "turnIndex": 4,
+        "hasToolResult": true
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "codespar_pay",
+            "arguments": {
+              "action": "pay",
+              "amount": 42500,
+              "currency": "BRL",
+              "method": "pix",
+              "description": "Pagamento via Pix do pedido #9911 (boleto vencido)"
+            }
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "#9911",
+        "turnIndex": 5,
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "Tudo certo! Como a janela de correção da nota já tinha fechado, cancelei a nota antiga do pedido #9911 e emiti uma nota substituta, e gerei um Pix novo pra você concluir. Assim que o pagamento cair, seguimos com o envio. Qualquer dúvida, estou por aqui!",
+        "finishReason": "stop"
+      }
+    }
+  ]
+}

@@ -11,6 +11,7 @@
           {
             "name": "codespar_pay",
             "arguments": {
+              "action": "pay",
               "amount": 250000,
               "currency": "BRL",
               "method": "pix",
@@ -64,6 +65,7 @@
           {
             "name": "codespar_pay",
             "arguments": {
+              "action": "pay",
               "amount": 250000,
               "currency": "BRL",
               "method": "pix",
@@ -125,6 +127,7 @@
           {
             "name": "codespar_pay",
             "arguments": {
+              "action": "pay",
               "amount": 80000,
               "currency": "BRL",
               "method": "pix",
