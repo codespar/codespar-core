@@ -50,14 +50,25 @@ reissue it as a substitute** (`tipo: 3`, Substituto), then offer the fresh Pix.
 A fixed "always correct in place" flow attempts a CC-e the SEFAZ window no longer
 permits — an invalid fiscal action. A fixed "always cancel + reissue" flow throws
 away a perfectly amendable document. Reading the amendment-window state and
-choosing the legal mechanism (correction letter vs cancel + reissue) is the
-irreplaceable fiscal judgment. Discovering the boleto state mid-conversation, and
-breaking the news collaboratively rather than accusatorially, are the other two.
+routing the remediation accordingly — supplying a `correction` for an in-window
+CC-e, or requesting a cancel + reissue when the window has closed — is the
+irreplaceable fiscal judgment. (The specific legal mechanism *label* is determined
+below the tool and surfaced in the amend result; the agent's decision is
+observable in whether it supplies a `correction`.) Discovering the boleto state
+mid-conversation, and breaking the news collaboratively rather than accusatorially,
+are the other two judgments.
 
 A status read is a **successful tool result whose payload carries business state**
 (`status: "OVERDUE"`, an `amendable` flag), not a transport error — so the
 meta-tool call still reports `status: "success"` at the trace level. The agent
 reads the state and decides.
+
+> **What the tests actually bind.** The default (aimock) tests replay canned
+> fixtures, so `skeleton.test.ts` asserts the *shape* of the decision (window-open
+> supplies a `correction`; window-closed does not). The genuine real-model
+> judgment — Claude reading `amendable` and choosing — binds only in the optional
+> live smoke (`CODESPAR_LIVE_SMOKE`). The aimock path proves wiring + trace shape,
+> not that the model decides correctly on its own.
 
 ## This is live-graduatable — the live-backing map
 

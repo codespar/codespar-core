@@ -22,6 +22,9 @@ import {
   MERCHANT_BLOCKED_SCENARIO,
 } from "@codespar/types/testing";
 
+// This example's group in the published (now grouped) manifest.
+const GROUP = "payment-failure-triage";
+
 // Scenarios this example drives end-to-end in skeleton.test.ts.
 const DRIVEN = [CUSTOMER_DATA_REJECTION_SCENARIO.name, MERCHANT_BLOCKED_SCENARIO.name];
 
@@ -30,8 +33,9 @@ const pkg = JSON.parse(
 ) as { devDependencies: Record<string, string> };
 
 describe("published scenario contract", () => {
-  it("drives exactly the manifest's scenarios (completeness)", () => {
-    expect([...DRIVEN].sort()).toEqual([...DEMO_SCENARIO_MANIFEST.scenarios].sort());
+  it("drives exactly this example's manifest group (per-group completeness)", () => {
+    const group = DEMO_SCENARIO_MANIFEST.groups[GROUP];
+    expect([...DRIVEN].sort()).toEqual([...group].sort());
   });
 
   it("pins @codespar/types to an exact version equal to the manifest (version-alignment)", () => {
