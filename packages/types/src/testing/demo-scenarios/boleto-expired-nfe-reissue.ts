@@ -3,7 +3,7 @@ import type { DemoScenario } from "../demo-scenario.js";
 /* Post-purchase fiscal remediation — boleto expired, NF-e amendment window CLOSED.
  *
  * The discriminating half of the pair. The discovered state is identical to the
- * open-window scenario — the agent queries `codespar_payment_status` and finds
+ * open-window scenario — the agent queries `codespar_pay` action=status and finds
  * the boleto OVERDUE (expired unpaid), and communicates it collaboratively — but
  * the original NF-e's fiscal state is different: `codespar_invoice` [status]
  * reports it is NO LONGER amendable (the SEFAZ correction-letter window has
@@ -25,14 +25,27 @@ export const BOLETO_EXPIRED_NFE_REISSUE_SCENARIO: DemoScenario = {
   name: "boleto-expired-nfe-reissue",
   servers: ["asaas", "nuvem-fiscal", "z-api"],
   mocks: {
-    codespar_payment_status: {
-      id: "pay_demo_boleto_9911",
-      status: "OVERDUE",
-      billing_type: "BOLETO",
-      value: 42500,
-      due_date: "2026-05-20",
-      reason: "Boleto vencido e não pago",
-    },
+    // codespar_pay is a stateful array: action=status reads the OVERDUE boleto,
+    // then action=pay issues the fresh Pix charge.
+    codespar_pay: [
+      {
+        id: "pay_demo_boleto_9911",
+        status: "OVERDUE",
+        billing_type: "BOLETO",
+        value: 42500,
+        due_date: "2026-05-20",
+        reason: "Boleto vencido e não pago",
+      },
+      {
+        id: "pay_demo_pix_9911",
+        status: "PENDING",
+        method: "pix",
+        amount: 42500,
+        currency: "BRL",
+        pix_copy_paste:
+          "00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540542.505802BR5913MERCHANT NAME6009SAO PAULO62070503***6304DCBA",
+      },
+    ],
     codespar_notify: { messageId: "msg_demo_boleto_9911", sent: true },
     // Stateful array: status read reports NOT amendable; the amend therefore
     // cancels the original and reissues it as a substitute (tipo 3).
@@ -60,25 +73,15 @@ export const BOLETO_EXPIRED_NFE_REISSUE_SCENARIO: DemoScenario = {
         },
       },
     ],
-    codespar_pay: {
-      id: "pay_demo_pix_9911",
-      status: "PENDING",
-      method: "pix",
-      amount: 42500,
-      currency: "BRL",
-      pix_copy_paste:
-        "00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540542.505802BR5913MERCHANT NAME6009SAO PAULO62070503***6304DCBA",
-    },
   },
   turns: [
     {
       message:
         "Boa tarde, paguei o boleto do pedido #9911 faz um tempão e o pedido não chegou. O que aconteceu?",
       expectMetaTools: [
-        "codespar_payment_status",
+        "codespar_pay",
         "codespar_notify",
         "codespar_invoice",
-        "codespar_pay",
       ],
     },
   ],
@@ -89,8 +92,8 @@ export const BOLETO_EXPIRED_NFE_REISSUE_SCENARIO: DemoScenario = {
         response: {
           toolCalls: [
             {
-              name: "codespar_payment_status",
-              arguments: { payment_id: "pay_demo_boleto_9911" },
+              name: "codespar_pay",
+              arguments: { action: "status", payment_id: "pay_demo_boleto_9911" },
             },
           ],
           finishReason: "tool_calls",
@@ -154,6 +157,7 @@ export const BOLETO_EXPIRED_NFE_REISSUE_SCENARIO: DemoScenario = {
             {
               name: "codespar_pay",
               arguments: {
+                action: "pay",
                 amount: 42500,
                 currency: "BRL",
                 method: "pix",

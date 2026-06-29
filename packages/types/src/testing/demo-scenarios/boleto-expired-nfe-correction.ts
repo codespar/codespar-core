@@ -3,7 +3,7 @@ import type { DemoScenario } from "../demo-scenario.js";
 /* Post-purchase fiscal remediation — boleto expired, NF-e amendment window OPEN.
  *
  * A customer messages "I paid the boleto but didn't get my order." The agent
- * queries the payment status (`codespar_payment_status`) and discovers the boleto
+ * queries the payment status (`codespar_pay` action=status) and discovers the boleto
  * is OVERDUE — expired unpaid. The irreplaceable judgment is what comes next:
  * the agent breaks the news collaboratively (`codespar_notify`, never accusing
  * the customer), reads the original NF-e's fiscal state (`codespar_invoice`
@@ -29,15 +29,29 @@ export const BOLETO_EXPIRED_NFE_CORRECTION_SCENARIO: DemoScenario = {
   name: "boleto-expired-nfe-correction",
   servers: ["asaas", "nuvem-fiscal", "z-api"],
   mocks: {
-    // Expired/unpaid boleto — Asaas `OVERDUE` status.
-    codespar_payment_status: {
-      id: "pay_demo_boleto_7788",
-      status: "OVERDUE",
-      billing_type: "BOLETO",
-      value: 18900,
-      due_date: "2026-06-26",
-      reason: "Boleto vencido e não pago",
-    },
+    // codespar_pay is a stateful array: the first call (action=status) reads the
+    // expired/unpaid boleto — Asaas `OVERDUE` status; the second call
+    // (action=pay) is the fresh Pix charge for the same order — Asaas PENDING +
+    // copia-e-cola.
+    codespar_pay: [
+      {
+        id: "pay_demo_boleto_7788",
+        status: "OVERDUE",
+        billing_type: "BOLETO",
+        value: 18900,
+        due_date: "2026-06-26",
+        reason: "Boleto vencido e não pago",
+      },
+      {
+        id: "pay_demo_pix_7788",
+        status: "PENDING",
+        method: "pix",
+        amount: 18900,
+        currency: "BRL",
+        pix_copy_paste:
+          "00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540518.905802BR5913MERCHANT NAME6009SAO PAULO62070503***6304ABCD",
+      },
+    ],
     codespar_notify: { messageId: "msg_demo_boleto_7788", sent: true },
     // Stateful array: first call is the status read (amendable), second is the
     // amend, which returns a correction-letter (CC-e) result because the window
@@ -60,26 +74,15 @@ export const BOLETO_EXPIRED_NFE_CORRECTION_SCENARIO: DemoScenario = {
         sequencia_evento: 1,
       },
     ],
-    // Fresh Pix charge for the same order — Asaas PENDING + copia-e-cola.
-    codespar_pay: {
-      id: "pay_demo_pix_7788",
-      status: "PENDING",
-      method: "pix",
-      amount: 18900,
-      currency: "BRL",
-      pix_copy_paste:
-        "00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540518.905802BR5913MERCHANT NAME6009SAO PAULO62070503***6304ABCD",
-    },
   },
   turns: [
     {
       message:
         "Oi! Paguei o boleto do pedido #7788 semana passada mas até agora não recebi nada. Pode verificar?",
       expectMetaTools: [
-        "codespar_payment_status",
+        "codespar_pay",
         "codespar_notify",
         "codespar_invoice",
-        "codespar_pay",
       ],
     },
   ],
@@ -90,8 +93,8 @@ export const BOLETO_EXPIRED_NFE_CORRECTION_SCENARIO: DemoScenario = {
         response: {
           toolCalls: [
             {
-              name: "codespar_payment_status",
-              arguments: { payment_id: "pay_demo_boleto_7788" },
+              name: "codespar_pay",
+              arguments: { action: "status", payment_id: "pay_demo_boleto_7788" },
             },
           ],
           finishReason: "tool_calls",
@@ -156,6 +159,7 @@ export const BOLETO_EXPIRED_NFE_CORRECTION_SCENARIO: DemoScenario = {
             {
               name: "codespar_pay",
               arguments: {
+                action: "pay",
                 amount: 18900,
                 currency: "BRL",
                 method: "pix",

@@ -44,6 +44,7 @@ export const MERCHANT_BLOCKED_SCENARIO: DemoScenario = {
             {
               name: "codespar_pay",
               arguments: {
+                action: "pay",
                 amount: 80000,
                 currency: "BRL",
                 method: "pix",
