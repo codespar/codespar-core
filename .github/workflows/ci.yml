@@ -180,3 +180,29 @@ jobs:
         env:
           CODESPAR_RUNTIME_IMAGE: ghcr.io/codespar/codespar:main
         run: npm run validate
+
+  validate-example-boleto-expiry-fiscal-remediation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # This example exact-pins @codespar/types, which is published from the same
+      # coordinated effort. `npm install` (not `npm ci`) is used so no committed
+      # lockfile is required ahead of that publish; once the pinned version is on
+      # the registry, install resolves it deterministically from the exact pin.
+      - name: Install example dependencies
+        working-directory: examples/boleto-expiry-fiscal-remediation
+        run: npm install --no-audit --no-fund
+      - name: Fixtures stay in sync with the published scenarios
+        working-directory: examples/boleto-expiry-fiscal-remediation
+        run: npx vitest run fixtures-sync
+      - name: Dual-runtime divergence gate (OSS side — completeness + version-alignment)
+        working-directory: examples/boleto-expiry-fiscal-remediation
+        run: npx vitest run manifest-parity
+      - name: Run the boleto-expiry fiscal-remediation demo end-to-end
+        working-directory: examples/boleto-expiry-fiscal-remediation
+        env:
+          CODESPAR_RUNTIME_IMAGE: ghcr.io/codespar/codespar:main
+        run: npm run validate
