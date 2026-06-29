@@ -21,6 +21,8 @@ import { INSTALLMENT_NEGOTIATION_SCENARIO } from "./demo-scenarios/installment-n
 import { PAYMENT_REJECTION_SCENARIO } from "./demo-scenarios/payment-rejection.js";
 import { CUSTOMER_DATA_REJECTION_SCENARIO } from "./demo-scenarios/customer-data-rejection.js";
 import { MERCHANT_BLOCKED_SCENARIO } from "./demo-scenarios/merchant-blocked.js";
+import { BOLETO_EXPIRED_NFE_CORRECTION_SCENARIO } from "./demo-scenarios/boleto-expired-nfe-correction.js";
+import { BOLETO_EXPIRED_NFE_REISSUE_SCENARIO } from "./demo-scenarios/boleto-expired-nfe-reissue.js";
 import { SHARED_META_TOOL_DEFINITIONS } from "../meta-tool-definitions.js";
 import type { SharedMetaToolDefinition } from "../meta-tool-definitions.js";
 
@@ -32,6 +34,8 @@ const ALL_SCENARIOS: DemoScenario[] = [
   PAYMENT_REJECTION_SCENARIO,
   CUSTOMER_DATA_REJECTION_SCENARIO,
   MERCHANT_BLOCKED_SCENARIO,
+  BOLETO_EXPIRED_NFE_CORRECTION_SCENARIO,
+  BOLETO_EXPIRED_NFE_REISSUE_SCENARIO,
 ];
 
 const META_TOOL_NAME = /^codespar_[a-z_]+$/;

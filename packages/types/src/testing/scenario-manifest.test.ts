@@ -18,6 +18,8 @@ import { readFileSync } from "node:fs";
 import { DEMO_SCENARIO_MANIFEST } from "./scenario-manifest.js";
 import { CUSTOMER_DATA_REJECTION_SCENARIO } from "./demo-scenarios/customer-data-rejection.js";
 import { MERCHANT_BLOCKED_SCENARIO } from "./demo-scenarios/merchant-blocked.js";
+import { BOLETO_EXPIRED_NFE_CORRECTION_SCENARIO } from "./demo-scenarios/boleto-expired-nfe-correction.js";
+import { BOLETO_EXPIRED_NFE_REISSUE_SCENARIO } from "./demo-scenarios/boleto-expired-nfe-reissue.js";
 
 const pkg = JSON.parse(
   readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
@@ -28,11 +30,20 @@ describe("demo scenario manifest", () => {
     expect(DEMO_SCENARIO_MANIFEST.version).toBe(pkg.version);
   });
 
-  it("names exactly the shipped triage scenarios", () => {
+  it("names exactly the shipped scenarios", () => {
     const shipped = [
       CUSTOMER_DATA_REJECTION_SCENARIO.name,
       MERCHANT_BLOCKED_SCENARIO.name,
+      BOLETO_EXPIRED_NFE_CORRECTION_SCENARIO.name,
+      BOLETO_EXPIRED_NFE_REISSUE_SCENARIO.name,
     ].sort();
     expect([...DEMO_SCENARIO_MANIFEST.scenarios].sort()).toEqual(shipped);
+  });
+
+  it("the flat scenarios list is exactly the union of the groups (no orphans, no duplicates)", () => {
+    const fromGroups = Object.values(DEMO_SCENARIO_MANIFEST.groups).flat().sort();
+    // Groups are disjoint: a set round-trip equals the sorted union.
+    expect([...new Set(fromGroups)]).toEqual(fromGroups);
+    expect([...DEMO_SCENARIO_MANIFEST.scenarios].sort()).toEqual(fromGroups);
   });
 });

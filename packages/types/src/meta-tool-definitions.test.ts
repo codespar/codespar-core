@@ -7,16 +7,17 @@ import {
 const ALL = Object.values(SHARED_META_TOOL_DEFINITIONS) as SharedMetaToolDefinition[];
 
 describe("shared meta-tool definitions", () => {
-  it("publishes the three demo actions keyed by wire name", () => {
+  it("publishes the demo actions keyed by wire name", () => {
     expect(Object.keys(SHARED_META_TOOL_DEFINITIONS).sort()).toEqual([
       "codespar_invoice",
       "codespar_notify",
       "codespar_pay",
+      "codespar_payment_status",
     ]);
   });
 
   it.each(ALL)("$name carries name, description, input_schema, and contract — all non-empty", (def) => {
-    expect(def.name).toMatch(/^codespar_[a-z]+$/);
+    expect(def.name).toMatch(/^codespar_[a-z_]+$/);
     expect(def.description.length).toBeGreaterThan(0);
     expect(def.input_schema.type).toBe("object");
     expect(Object.keys(def.input_schema.properties).length).toBeGreaterThan(0);

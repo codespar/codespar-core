@@ -71,12 +71,23 @@ function contractOf(schema: MetaToolInputSchema): MetaToolConformanceContract {
 const INVOICE_INPUT: MetaToolInputSchema = {
   type: "object",
   properties: {
+    action: {
+      type: "string",
+      description:
+        "What to do: issue (emit a new document — the default), status (read an existing document's fiscal state), or amend (correct an existing document). Defaults to issue, so existing issue-only callers are unaffected.",
+    },
     type: { type: "string", description: "Invoice type: nfe, nfse, invoice" },
-    recipient: { type: "object", description: "Recipient details (name, document, email)" },
-    items: { type: "array", description: "Line items" },
+    recipient: { type: "object", description: "Recipient details (name, document, email). Required for action=issue." },
+    items: { type: "array", description: "Line items. Required for action=issue." },
     dueDate: { type: "string", description: "Due date (ISO 8601)" },
+    invoice_id: { type: "string", description: "The existing document's id to read or amend (action=status, action=amend)" },
+    correction: { type: "string", description: "Correction text for an in-window correction letter (CC-e) amendment (action=amend)" },
+    reason: { type: "string", description: "Why the document is being amended — drives correction-letter vs cancel-and-reissue (action=amend)" },
   },
-  required: ["type", "recipient", "items"],
+  // Only `type` is required across all actions; recipient/items are issue-only
+  // and the status/amend actions reference an existing document by id, so they
+  // are not part of the shared required set. Issue callers still supply them.
+  required: ["type"],
 };
 
 const NOTIFY_INPUT: MetaToolInputSchema = {
@@ -89,6 +100,18 @@ const NOTIFY_INPUT: MetaToolInputSchema = {
     variables: { type: "object", description: "Template variables" },
   },
   required: ["channel", "to"],
+};
+
+const PAYMENT_STATUS_INPUT: MetaToolInputSchema = {
+  type: "object",
+  properties: {
+    payment_id: {
+      type: "string",
+      description:
+        "The payment/charge/boleto id to query (e.g. a charge id returned by codespar_pay or codespar_charge)",
+    },
+  },
+  required: ["payment_id"],
 };
 
 const PAY_INPUT: MetaToolInputSchema = {
@@ -108,13 +131,22 @@ const PAY_INPUT: MetaToolInputSchema = {
   required: ["amount", "currency", "description"],
 };
 
-/** Issue invoices and fiscal documents (NF-e / NFS-e / invoice). */
+/** Issue, read, or amend invoices and fiscal documents (NF-e / NFS-e / invoice). */
 export const INVOICE_DEFINITION: SharedMetaToolDefinition = {
   name: "codespar_invoice",
   description:
-    "Issue invoices or Brazilian fiscal documents (NF-e, NFS-e). Selects the document type and recipient and emits the document.",
+    "Issue, read, or amend invoices and Brazilian fiscal documents (NF-e, NFS-e). action=issue emits a new document (default); action=status reads an existing document's fiscal state (autorizada / cancelada / ...); action=amend corrects an existing document — a correction letter (CC-e) in place while the SEFAZ amendment window is open, or a cancel and reissue as a substitute once it is not (the result indicates which mechanism applied).",
   input_schema: INVOICE_INPUT,
   contract: contractOf(INVOICE_INPUT),
+};
+
+/** Query a payment / charge / boleto's current status by id. */
+export const PAYMENT_STATUS_DEFINITION: SharedMetaToolDefinition = {
+  name: "codespar_payment_status",
+  description:
+    "Look up the current status of a payment, charge, or boleto by id. Returns the provider status (e.g. PENDING, RECEIVED, OVERDUE for an expired/unpaid boleto), so an agent can discover post-purchase state — like a boleto that expired unpaid — before deciding what to do next.",
+  input_schema: PAYMENT_STATUS_INPUT,
+  contract: contractOf(PAYMENT_STATUS_INPUT),
 };
 
 /** Send a notification over a messaging channel (WhatsApp / email / SMS). */
@@ -140,6 +172,7 @@ export const SHARED_META_TOOL_DEFINITIONS = {
   codespar_invoice: INVOICE_DEFINITION,
   codespar_notify: NOTIFY_DEFINITION,
   codespar_pay: PAY_DEFINITION,
+  codespar_payment_status: PAYMENT_STATUS_DEFINITION,
 } as const;
 
 /** Wire names that have a published shared definition. */
