@@ -11,10 +11,10 @@
     "validate:live": "./scripts/validate-live.sh"
   },
   "devDependencies": {
-    "@copilotkit/aimock": "^1.24.1",
+    "@copilotkit/aimock": "^1.32.0",
     "@types/node": "^20.0.0",
     "typescript": "^5.4.0",
     "vitest": "^3.2.0",
-    "@codespar/types": "0.10.13"
+    "@codespar/types": "0.10.14"
   }
 }

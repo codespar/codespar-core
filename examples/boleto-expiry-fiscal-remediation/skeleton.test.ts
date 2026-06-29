@@ -39,6 +39,14 @@ function actionOf(c: ToolCallRecord, dflt: string): string {
 const invoiceAction = (c: ToolCallRecord) => actionOf(c, "issue");
 const payAction = (c: ToolCallRecord) => actionOf(c, "pay");
 
+/** The `codespar_invoice` amend call's input, or undefined if none. */
+function amendInput(trace: ToolCallRecord[]): { correction?: unknown } | undefined {
+  const amend = trace.find(
+    (c) => c.tool_name === "codespar_invoice" && invoiceAction(c) === "amend",
+  );
+  return amend ? ((amend.input ?? {}) as { correction?: unknown }) : undefined;
+}
+
 /** A customer-facing `codespar_notify` (a phone/WhatsApp recipient). */
 function customerMessages(trace: ToolCallRecord[]): string[] {
   return trace
@@ -96,11 +104,17 @@ describe("boleto-expiry fiscal remediation: amendment window open (correct in pl
     expect(payActions).toContain("status");
     expect(payActions).toContain("pay");
 
-    // Fiscal judgment: invoice is read (status) then corrected (amend) — never
-    // an issue-from-scratch, and never a cancel.
+    // Fiscal judgment: invoice is read (status) then corrected (amend).
     const invoiceActions = callsNamed("codespar_invoice", trace).map(invoiceAction);
     expect(invoiceActions).toContain("status");
     expect(invoiceActions).toContain("amend");
+
+    // Branch-distinguishing decision: window OPEN -> the agent supplies a
+    // `correction` on amend (an in-window CC-e), which the window-closed scenario
+    // does NOT. This is the agent decision that differs between the two branches
+    // (in the live smoke the real model makes it off the `amendable` flag; here
+    // the fixtures pin it).
+    expect(amendInput(trace)?.correction, "window-open amend should carry a CC-e correction").toBeTruthy();
 
     // The customer message is collaborative, not accusatory.
     assertCollaborativeNotAccusatory(customerMessages(trace));
@@ -124,6 +138,12 @@ describe("boleto-expiry fiscal remediation: amendment window closed (cancel + re
     const invoiceActions = callsNamed("codespar_invoice", trace).map(invoiceAction);
     expect(invoiceActions).toContain("status");
     expect(invoiceActions).toContain("amend");
+
+    // Branch-distinguishing decision: window CLOSED -> the agent does NOT supply a
+    // `correction` (a CC-e is no longer legal); it requests cancel + reissue. This
+    // is the opposite of the window-open branch, proving the two scenarios route
+    // differently from the same discovered boleto state.
+    expect(amendInput(trace)?.correction, "window-closed amend must not carry a CC-e correction").toBeFalsy();
 
     // Same collaborative, non-accusatory communication standard.
     assertCollaborativeNotAccusatory(customerMessages(trace));
