@@ -266,6 +266,28 @@ describe("close() while operation in flight", () => {
     // close resolved after or at the same tick as execute
     expect(closedAt).toBeGreaterThanOrEqual(executedAt);
   });
+
+  it("does not dispatch a tool after close() when execute() was still in policyHook", async () => {
+    let allowPolicy!: () => void;
+    const policyGate = new Promise<void>((r) => { allowPolicy = r; });
+    const runtime = runtimeWithToolResult();
+    const session = await openSession(runtime, {
+      policyHook: {
+        evaluate: async () => {
+          await policyGate;
+          return { allowed: true };
+        },
+      },
+    });
+
+    const exec = session.execute("tool", {}).catch((e) => e);
+    await new Promise((r) => setTimeout(r, 20)); // ensure we're inside policyHook
+    await session.close();
+    expect(session.status).toBe("closed");
+    allowPolicy(); // policy now resolves — execute must NOT dispatch
+    await exec;
+    expect((runtime.sendMessage as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
+  }, 5000);
 });
 
 describe("DrainTimeoutError", () => {
@@ -366,6 +388,17 @@ describe("sendStream()", () => {
     // only the "done" event should be present; the unknown type was dropped
     expect(events.map((e) => e.type)).toEqual(["done"]);
   });
+
+  it.each([0, -5, NaN])(
+    "createManagedAgentsSession rejects invalid drainTimeoutMs (%p) before creating a remote session",
+    async (bad) => {
+      const runtime = makeRuntime();
+      await expect(
+        openSession(runtime, { drainTimeoutMs: bad }),
+      ).rejects.toThrow(/timeout/i);
+      expect(runtime.createSession as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("connections()", () => {
@@ -389,4 +422,214 @@ describe("close()", () => {
     await session.close();
     expect(session.status).toBe("closed");
   });
+});
+
+describe("per-call CallOptions (signal/timeout)", () => {
+  function neverTerminatingRuntime(): AgentRuntime {
+    return makeRuntime({
+      streamEvents: vi.fn().mockImplementation(async function* (): AsyncGenerator<AgentEvent> {
+        // Healthy chatter, but never a tool_result/done — drains forever.
+        for (;;) {
+          yield { type: "assistant_text", content: "...", iteration: 0 };
+          await new Promise((r) => setTimeout(r, 10));
+        }
+      }),
+    });
+  }
+
+  it("execute() throws the caller's abort reason immediately when the signal is already aborted", async () => {
+    const session = await openSession(runtimeWithToolResult());
+    const reason = new DOMException("already cancelled", "AbortError");
+    const ac = new AbortController();
+    ac.abort(reason);
+    await expect(session.execute("t", {}, { signal: ac.signal })).rejects.toBe(reason);
+  });
+
+  it("execute() rejects with the caller's abort reason when the signal aborts mid-drain", async () => {
+    const session = await openSession(neverTerminatingRuntime());
+    const ac = new AbortController();
+    const reason = new DOMException("user cancelled", "AbortError");
+    const p = session.execute("t", {}, { signal: ac.signal });
+    setTimeout(() => ac.abort(reason), 30);
+    await expect(p).rejects.toBe(reason);
+  }, 5000);
+
+  it("sendStream() stops with the caller's abort reason when the signal aborts mid-stream", async () => {
+    const session = await openSession(
+      makeRuntime({
+        streamEvents: vi.fn().mockImplementation(async function* (): AsyncGenerator<AgentEvent> {
+          for (;;) {
+            yield { type: "assistant_text", content: "x", iteration: 0 };
+            await new Promise((r) => setTimeout(r, 10));
+          }
+        }),
+      }),
+    );
+    const ac = new AbortController();
+    const reason = new DOMException("user cancelled", "AbortError");
+    const drain = (async () => {
+      for await (const _ of session.sendStream("hi", { signal: ac.signal })) { /* drain */ }
+    })();
+    setTimeout(() => ac.abort(reason), 30);
+    await expect(drain).rejects.toBe(reason);
+  }, 5000);
+
+  it("send() enforces a per-call timeout on a non-terminal stream", async () => {
+    // Stream keeps producing events but never emits `done`.
+    const session = await openSession(neverTerminatingRuntime());
+    await expect(session.send("hi", { timeout: 60 })).rejects.toBeInstanceOf(
+      DrainTimeoutError,
+    );
+  }, 5000);
+
+  it("sendStream() enforces a per-call timeout on a non-terminal stream", async () => {
+    const session = await openSession(neverTerminatingRuntime());
+    await expect(async () => {
+      for await (const _ of session.sendStream("hi", { timeout: 60 })) { /* drain */ }
+    }).rejects.toBeInstanceOf(DrainTimeoutError);
+  }, 5000);
+
+  it("execute() abort releases even when the runtime stalls before yielding", async () => {
+    // Runtime accepts the message but its stream never yields anything.
+    const session = await openSession(
+      makeRuntime({
+        streamEvents: vi.fn().mockImplementation(
+          // eslint-disable-next-line require-yield
+          async function* (): AsyncGenerator<AgentEvent> {
+            await new Promise(() => {}); // hangs forever, never yields
+          },
+        ),
+      }),
+    );
+    const ac = new AbortController();
+    const reason = new DOMException("user cancelled", "AbortError");
+    const p = session.execute("t", {}, { signal: ac.signal });
+    setTimeout(() => ac.abort(reason), 30);
+    await expect(p).rejects.toBe(reason);
+  }, 5000);
+
+  it("execute() timeout releases even when the runtime stalls before yielding", async () => {
+    const session = await openSession(
+      makeRuntime({
+        streamEvents: vi.fn().mockImplementation(
+          // eslint-disable-next-line require-yield
+          async function* (): AsyncGenerator<AgentEvent> {
+            await new Promise(() => {});
+          },
+        ),
+      }),
+    );
+    await expect(session.execute("t", {}, { timeout: 60 })).rejects.toBeInstanceOf(
+      DrainTimeoutError,
+    );
+  }, 5000);
+
+  function stalledSendMessageRuntime(): AgentRuntime {
+    return makeRuntime({
+      // Accepts the message but the promise never resolves.
+      sendMessage: vi.fn().mockImplementation(() => new Promise<void>(() => {})),
+    });
+  }
+
+  it("execute() timeout releases when sendMessage never resolves", async () => {
+    const session = await openSession(stalledSendMessageRuntime());
+    await expect(session.execute("t", {}, { timeout: 60 })).rejects.toBeInstanceOf(
+      DrainTimeoutError,
+    );
+  }, 5000);
+
+  it("execute() abort releases when sendMessage never resolves", async () => {
+    const session = await openSession(stalledSendMessageRuntime());
+    const ac = new AbortController();
+    const reason = new DOMException("user cancelled", "AbortError");
+    const p = session.execute("t", {}, { signal: ac.signal });
+    setTimeout(() => ac.abort(reason), 30);
+    await expect(p).rejects.toBe(reason);
+  }, 5000);
+
+  it("send() timeout releases when sendMessage never resolves", async () => {
+    const session = await openSession(stalledSendMessageRuntime());
+    await expect(session.send("hi", { timeout: 60 })).rejects.toBeInstanceOf(
+      DrainTimeoutError,
+    );
+  }, 5000);
+
+  it("execute() timeout releases when the policy hook never resolves", async () => {
+    const session = await openSession(runtimeWithToolResult(), {
+      policyHook: { evaluate: () => new Promise(() => {}) },
+    });
+    await expect(session.execute("t", {}, { timeout: 60 })).rejects.toBeInstanceOf(
+      DrainTimeoutError,
+    );
+  }, 5000);
+
+  it("execute() abort releases when the policy hook never resolves", async () => {
+    const session = await openSession(runtimeWithToolResult(), {
+      policyHook: { evaluate: () => new Promise(() => {}) },
+    });
+    const ac = new AbortController();
+    const reason = new DOMException("user cancelled", "AbortError");
+    const p = session.execute("t", {}, { signal: ac.signal });
+    setTimeout(() => ac.abort(reason), 30);
+    await expect(p).rejects.toBe(reason);
+  }, 5000);
+
+  it("connections() timeout releases when getStatus never resolves", async () => {
+    const session = await openSession(
+      makeRuntime({ getStatus: vi.fn().mockImplementation(() => new Promise(() => {})) }),
+    );
+    await expect(session.connections({ timeout: 60 })).rejects.toBeInstanceOf(
+      DrainTimeoutError,
+    );
+  }, 5000);
+
+  it("close({ timeout }) returns even when the in-flight op never resolves (no signal)", async () => {
+    const session = await openSession(
+      makeRuntime({
+        streamEvents: vi.fn().mockImplementation(async function* (): AsyncGenerator<AgentEvent> {
+          for (;;) {
+            yield { type: "assistant_text", content: "x", iteration: 0 };
+            await new Promise((r) => setTimeout(r, 10));
+          }
+        }),
+      }),
+    );
+    // Start a long-running op (no per-call timeout) so _activeMutex is held.
+    const running = session.send("hi").catch(() => {});
+    await new Promise((r) => setTimeout(r, 20));
+    // close() with only a timeout (no signal) must not hang on the mutex.
+    await session.close({ timeout: 50 });
+    expect(session.status).toBe("closed");
+    void running;
+  }, 5000);
+
+  it.each([0, -5, NaN, Infinity, "30" as unknown as number, true as unknown as number])(
+    "execute() rejects an invalid timeout (%p) WITHOUT dispatching to the runtime",
+    async (bad) => {
+      const runtime = runtimeWithToolResult();
+      const session = await openSession(runtime);
+      await expect(session.execute("t", {}, { timeout: bad })).rejects.toThrow(
+        /timeout/i,
+      );
+      expect(runtime.sendMessage as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+    },
+  );
+
+  it("close() rejects an invalid timeout WITHOUT marking the session closed", async () => {
+    const session = await openSession(makeRuntime());
+    await expect(session.close({ timeout: 0 })).rejects.toThrow(/timeout/i);
+    expect(session.status).toBe("active");
+  });
+
+  it.each([0, -5, NaN])(
+    "send()/connections() reject an invalid timeout (%p) before any runtime call",
+    async (bad) => {
+      const runtime = makeRuntime();
+      const session = await openSession(runtime);
+      await expect(session.send("hi", { timeout: bad })).rejects.toThrow(/timeout/i);
+      await expect(session.connections({ timeout: bad })).rejects.toThrow(/timeout/i);
+      expect(runtime.sendMessage as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+      expect(runtime.getStatus as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+    },
+  );
 });
