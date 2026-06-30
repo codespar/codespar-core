@@ -628,7 +628,7 @@ class AsyncSession:
             raise ApiError("ship: malformed response", status=0, body=result.data)
         return _parse_ship_result(result.data)
 
-    async def ledger(self, args: LedgerArgs) -> LedgerResult:
+    async def ledger(self, args: LedgerArgs, *, timeout: float | None = None) -> LedgerResult:
         """
         Post a double-entry journal entry, read an account's balances,
         or create an account on the tenant's self-hosted Lerian Midaz
@@ -668,7 +668,7 @@ class AsyncSession:
             params["type"] = args.type
         if args.metadata is not None:
             params["metadata"] = args.metadata
-        result = await self.execute("codespar_ledger", params)
+        result = await self.execute("codespar_ledger", params, timeout=timeout)
         if not result.success:
             raise ApiError(
                 f"ledger failed: {result.error or 'unknown'}",
@@ -679,7 +679,7 @@ class AsyncSession:
             raise ApiError("ledger: malformed response", status=0, body=result.data)
         return _parse_ledger_result(result.data)
 
-    async def issue(self, args: IssueArgs) -> IssueResult:
+    async def issue(self, args: IssueArgs, *, timeout: float | None = None) -> IssueResult:
         """
         Issue a virtual/physical card, control (freeze/unfreeze/cancel)
         one, or read its status on the tenant's Pomelo card-issuing
@@ -705,7 +705,7 @@ class AsyncSession:
             params["shipping_address"] = args.shipping_address
         if args.metadata is not None:
             params["metadata"] = args.metadata
-        result = await self.execute("codespar_issue", params)
+        result = await self.execute("codespar_issue", params, timeout=timeout)
         if not result.success:
             raise ApiError(
                 f"issue failed: {result.error or 'unknown'}",
@@ -716,7 +716,7 @@ class AsyncSession:
             raise ApiError("issue: malformed response", status=0, body=result.data)
         return _parse_issue_result(result.data)
 
-    async def shop(self, args: ShopArgs) -> ShopResult:
+    async def shop(self, args: ShopArgs, *, timeout: float | None = None) -> ShopResult:
         """
         Buy-side shopping: catalog search → async checkout → Pix mint.
         Typed wrapper around ``execute("codespar_shop", {...})``. The
@@ -789,7 +789,7 @@ class AsyncSession:
         else:  # checkout_status
             if args.checkout_session_id is not None:
                 params["checkout_session_id"] = args.checkout_session_id
-        result = await self.execute("codespar_shop", params)
+        result = await self.execute("codespar_shop", params, timeout=timeout)
         if not result.success:
             raise ApiError(
                 f"shop failed: {result.error or 'unknown'}",

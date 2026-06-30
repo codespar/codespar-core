@@ -206,17 +206,17 @@ class Session:
         """Sync wrapper around ``AsyncSession.ship``. See that for docs."""
         return self._runner.run(self._async.ship(args, timeout=timeout))
 
-    def ledger(self, args: LedgerArgs) -> LedgerResult:
+    def ledger(self, args: LedgerArgs, *, timeout: float | None = None) -> LedgerResult:
         """Sync wrapper around ``AsyncSession.ledger``. See that for docs."""
-        return self._runner.run(self._async.ledger(args))
+        return self._runner.run(self._async.ledger(args, timeout=timeout))
 
-    def issue(self, args: IssueArgs) -> IssueResult:
+    def issue(self, args: IssueArgs, *, timeout: float | None = None) -> IssueResult:
         """Sync wrapper around ``AsyncSession.issue``. See that for docs."""
-        return self._runner.run(self._async.issue(args))
+        return self._runner.run(self._async.issue(args, timeout=timeout))
 
-    def shop(self, args: ShopArgs) -> ShopResult:
+    def shop(self, args: ShopArgs, *, timeout: float | None = None) -> ShopResult:
         """Sync wrapper around ``AsyncSession.shop``. See that for docs."""
-        return self._runner.run(self._async.shop(args))
+        return self._runner.run(self._async.shop(args, timeout=timeout))
 
     def proxy_execute(
         self,
