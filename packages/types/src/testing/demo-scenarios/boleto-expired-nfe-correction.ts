@@ -22,12 +22,14 @@ import type { DemoScenario } from "../demo-scenario.js";
  * (status: "OVERDUE"; an amendable authorized NF-e; a CC-e protocol) — a boleto
  * that expired unpaid is still a successful status read, so the meta-tool trace
  * reports `status: "success"`. Result fields mirror the real provider vocabulary
- * (Asaas `OVERDUE`; Nuvem Fiscal `autorizada`; a correction-letter protocol) so
- * the demo proves it is live-graduatable.
+ * (Asaas `OVERDUE`; the NF-e status in canonical BR-fiscal terms — `autorizada`,
+ * which the platform normalizes from the provider's own status, e.g. nfe.io
+ * `Issued`; a correction-letter protocol) so the demo proves it is
+ * live-graduatable.
  */
 export const BOLETO_EXPIRED_NFE_CORRECTION_SCENARIO: DemoScenario = {
   name: "boleto-expired-nfe-correction",
-  servers: ["asaas", "nuvem-fiscal", "z-api"],
+  servers: ["asaas", "nfe-io", "z-api"],
   mocks: {
     // codespar_pay is a stateful array: the first call (action=status) reads the
     // expired/unpaid boleto — Asaas `OVERDUE` status; the second call

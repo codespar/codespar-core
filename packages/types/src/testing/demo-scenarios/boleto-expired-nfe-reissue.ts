@@ -17,13 +17,13 @@ import type { DemoScenario } from "../demo-scenario.js";
  * Reading the amendment-window state and choosing the legal mechanism (CC-e vs
  * cancel + reissue) is the irreplaceable fiscal judgment.
  *
- * Result fields mirror the real Nuvem Fiscal vocabulary (`autorizada` ->
- * `cancelada`; a substitute document with `tipo: 3`, Substituto) so the demo is
- * live-graduatable.
+ * Result fields use the canonical BR-fiscal vocabulary the platform normalizes
+ * provider statuses into (`autorizada` -> `cancelada`; a substitute document
+ * with `tipo: 3`, Substituto) so the demo is live-graduatable.
  */
 export const BOLETO_EXPIRED_NFE_REISSUE_SCENARIO: DemoScenario = {
   name: "boleto-expired-nfe-reissue",
-  servers: ["asaas", "nuvem-fiscal", "z-api"],
+  servers: ["asaas", "nfe-io", "z-api"],
   mocks: {
     // codespar_pay is a stateful array: action=status reads the OVERDUE boleto,
     // then action=pay issues the fresh Pix charge.
