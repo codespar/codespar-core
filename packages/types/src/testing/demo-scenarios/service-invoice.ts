@@ -4,14 +4,13 @@ import type { DemoScenario } from "../demo-scenario.js";
  *
  * One natural-language request issues two fiscal documents and sends the links
  * back over WhatsApp. The agent calls `codespar_invoice` twice then
- * `codespar_notify` once — never a raw `serverId__tool`. The same object drives
- * the OSS example and the managed integration test; each runtime serves
- * `aimockFixtures` at its own canned-LLM endpoint.
+ * `codespar_notify` once — never a raw `serverId__tool`. Consume it by
+ * importing `SERVICE_INVOICE_SCENARIO`: a consumer boots a runtime and serves
+ * `aimockFixtures` at its canned-LLM endpoint.
  *
  * `mocks` is keyed on the meta-tool name so the fixture is returned regardless
- * of how a runtime routes the meta-tool to underlying tools — the demo build
- * (the example + the managed test) validates that meta-tool-level mock
- * interception holds on both runtimes.
+ * of how a runtime routes the meta-tool to underlying tools — which validates
+ * that meta-tool-level mock interception holds.
  */
 export const SERVICE_INVOICE_SCENARIO: DemoScenario = {
   name: "service-invoice",

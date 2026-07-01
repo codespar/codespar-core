@@ -2,16 +2,16 @@ import { describe, it, expect } from "vitest";
 import type { SendResult, ToolCallRecord } from "../types.js";
 import { validateBaseUrl } from "./contract-suite.js";
 
-/* ── Dual-runtime demo scenario harness ──────────────────────────
+/* ── Demo scenario harness ────────────────────────────────────────
  *
  * A demo scenario is one `session.send()` conversation expressed at the
  * commerce meta-tool abstraction, plus the canned-LLM fixtures that drive it.
- * The same scenario object runs unchanged against both the OSS runtime and a
- * managed runtime: each runtime's harness boots the canned-LLM server with the
- * scenario's `aimockFixtures`, then calls {@link runDemoScenario} with its own
- * base URL. Because both runtimes expose the same meta-tools to the agent, one
- * fixture set drives both — and the assertion is identical: every tool the
- * agent called is a meta-tool (`codespar_*`), never a raw `serverId__tool`.
+ * The scenario object is base-URL-parameterized: a consumer boots a runtime,
+ * serves the scenario's `aimockFixtures` at the canned-LLM endpoint, then calls
+ * {@link runDemoScenario} with that runtime's base URL. The scenario object and
+ * its fixtures are the single source of truth a consumer imports — one fixture
+ * set drives the conversation, and the assertion is fixed: every tool the agent
+ * called is a meta-tool (`codespar_*`), never a raw `serverId__tool`.
  * ─────────────────────────────────────────────────────────────── */
 
 /** One conversational turn: a user message and the meta-tools it should drive. */
@@ -141,8 +141,8 @@ export async function driveDemoScenario(
 
 /**
  * Register a vitest test that runs the scenario against `baseUrl` and asserts
- * the meta-tool trace. Both the OSS example and the managed integration test
- * call this with the same scenario object and their own base URL.
+ * the meta-tool trace. A consumer calls this with the shared scenario object
+ * and the base URL of the runtime it has booted.
  */
 export function runDemoScenario(
   baseUrl: string,

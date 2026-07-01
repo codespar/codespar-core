@@ -2,8 +2,8 @@
  * Internal-consistency checks over every shipped demo scenario.
  *
  * These run with no live runtime — they catch the authoring bugs that would
- * otherwise only surface when a consumer (an OSS example or a managed
- * integration test) runs the scenario against a real chat loop:
+ * otherwise only surface when a consumer that runs the scenario against a
+ * runtime exercises it:
  *
  *   - a fixture emits a tool the scenario never mocks (would be tool_not_mocked),
  *   - a fixture emits a raw `serverId__tool` instead of a meta-tool,
