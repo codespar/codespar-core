@@ -31,7 +31,7 @@ export function printBanner(version: string): void {
   out.write("\n");
   for (const line of LOGO) out.write(c.blue(line) + "\n");
   out.write(
-    `\n  ${c.bold("Commerce infrastructure for AI agents in Latin America")}\n`,
+    `\n  ${c.bold("The agentic OS for money movement in Latin America")}\n`,
   );
   out.write(
     `  ${c.gray(`v${version}  ·  codespar.dev/docs/cli  ·  MIT`)}\n\n`,
