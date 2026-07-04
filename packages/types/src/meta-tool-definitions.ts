@@ -117,7 +117,7 @@ const PAY_INPUT: MetaToolInputSchema = {
     amount: { type: "number", description: "Amount to pay, in minor units (centavos for BRL). Required for action=pay." },
     currency: { type: "string", description: "Currency code (BRL, USD, EUR). Required for action=pay." },
     country: { type: "string", description: "ISO-3166-1 alpha-2 country code for the eligibility rail" },
-    method: { type: "string", description: "Payment method: pix, card, usdc, boleto, sepa, wire" },
+    method: { type: "string", description: "Payment method: pix, card, usdc, boleto, sepa, wire. method=boleto pays/settles an EXISTING boleto (provide linha_digitavel); it does not issue new boleto charges." },
     recipient: { type: "string", description: "Recipient identifier (e.g. a Pix key)" },
     copia_e_cola: { type: "string", description: "A Pix copia-e-cola / BR Code to pay" },
     consumer_id: { type: "string", description: "Which buyer's governed wallet pays" },
@@ -125,6 +125,7 @@ const PAY_INPUT: MetaToolInputSchema = {
     description: { type: "string", description: "Payment description. Required for action=pay." },
     mandateId: { type: "string", description: "Pre-authorized mandate id" },
     payment_id: { type: "string", description: "The payment/charge/boleto id to read (action=status); status returns the provider status, e.g. OVERDUE for an expired/unpaid boleto" },
+    linha_digitavel: { type: "string", description: "The 47/48-digit linha digitavel (or barcode) of an existing boleto to pay (action=pay, method=boleto)" },
   },
   // `action` is the only field required across both actions: a pay call needs
   // amount/currency/description, a status call needs payment_id, so those are
@@ -162,7 +163,7 @@ export const NOTIFY_DEFINITION: SharedMetaToolDefinition = {
 export const PAY_DEFINITION: SharedMetaToolDefinition = {
   name: "codespar_pay",
   description:
-    "Execute a payment or transfer, or read a payment's status. Pass action on every call. action=pay executes a payment/transfer under governance — Pix, card, USDC, boleto, SEPA, wire; can pay a Pix copia-e-cola or settle a store checkout. action=status reads an existing payment/charge/boleto's current status by id (e.g. OVERDUE for an expired/unpaid boleto), so an agent can discover post-purchase state before deciding what to do next.",
+    "Execute a payment or transfer, or read a payment's status. Pass action on every call. action=pay executes a payment/transfer under governance — Pix, card, USDC, boleto, SEPA, wire; can pay a Pix copia-e-cola, settle a store checkout, or pay an existing boleto by its linha digitavel. action=status reads an existing payment/charge/boleto's current status by id (e.g. OVERDUE for an expired/unpaid boleto), so an agent can discover post-purchase state before deciding what to do next.",
   input_schema: PAY_INPUT,
   contract: contractOf(PAY_INPUT),
 };
