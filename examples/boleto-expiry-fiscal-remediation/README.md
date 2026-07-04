@@ -100,6 +100,13 @@ status-query convention (as on `codespar_kyc` / `codespar_shop` / `codespar_ship
   no field in common with `status`, so there is no safe implicit default —
   unlike `codespar_invoice` below). `status` takes a `payment_id` and returns
   the payment/charge/boleto's provider status (e.g. `OVERDUE`).
+- **`codespar_pay` `method: boleto` means settle, not issue** — `action: pay`
+  with `method: boleto` pays an existing boleto by its `linha_digitavel` (the
+  47/48-digit line, or barcode); it does not issue a new boleto charge. The
+  executor that carries out that settlement is tracked on the roadmap and lands
+  separately. This demo never calls `codespar_pay` with `method: boleto` — it
+  discovers the `OVERDUE` state via `action: status`, then remediates with a
+  fresh Pix (`action: pay`, no `boleto` method involved).
 - **`codespar_invoice` `action` discriminator** — `issue | status | amend`,
   defaulting to `issue` so existing issue-only callers are unaffected. `status`
   reads a document's fiscal state; `amend` corrects it (CC-e in place, or cancel +
