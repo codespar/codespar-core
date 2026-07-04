@@ -1,0 +1,20 @@
+{
+  "name": "boleto-expiry-fiscal-remediation",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Post-purchase boleto-expiry fiscal remediation at the commerce meta-tool abstraction — the agent discovers an expired-unpaid boleto, communicates it collaboratively, makes the NF-e amend-vs-reissue fiscal-state judgment (correction in place vs cancel + reissue), and offers a fresh Pix. Two shared session.send() scenarios from @codespar/types/testing, driven against the runtime.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "skeleton": "vitest run --reporter=verbose",
+    "validate": "./scripts/validate.sh",
+    "validate:live": "./scripts/validate-live.sh"
+  },
+  "devDependencies": {
+    "@copilotkit/aimock": "^1.32.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^3.2.0",
+    "@codespar/types": "0.10.14"
+  }
+}
