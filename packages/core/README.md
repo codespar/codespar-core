@@ -2,7 +2,9 @@
 
 Commerce SDK for AI agents — sessions, managed auth, Complete Loop orchestration for Latin American commercial APIs.
 
-## What's new in 0.9.0
+## What shipped in 0.9
+
+The current release line is 0.10; the notes below are the 0.9 changelog, kept for reference.
 
 Eight new typed methods on `Session`, grouped by capability:
 
