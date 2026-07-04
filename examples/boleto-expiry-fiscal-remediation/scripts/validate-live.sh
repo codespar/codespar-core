@@ -4,7 +4,7 @@
 # hits real api.anthropic.com instead of @copilotkit/aimock. The runtime still
 # runs in test mode (CODESPAR_TEST_MODE_ENABLED=true) with the demo meta-tool
 # plugin loaded, so the session `mocks` answer each meta-tool — no Asaas /
-# Nuvem-Fiscal / WhatsApp credentials are needed. What is real is the model:
+# nfe.io / WhatsApp credentials are needed. What is real is the model:
 # Claude actually reads the OVERDUE boleto + the NF-e amendment-window state and decides the
 # remediation.
 #

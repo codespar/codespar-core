@@ -79,8 +79,8 @@ the mocked result fields mirror the real provider responses:
 | Meta-tool (operation) | Real backing MCP tool(s) | Note |
 |---|---|---|
 | `codespar_pay` [status] | `asaas get_payment` | status enum includes `OVERDUE` = expired/unpaid boleto |
-| `codespar_invoice` [status] | `nuvem_fiscal get_nfe` (+ `get_nfe_events`) | `autorizada` / `cancelada` / ... |
-| `codespar_invoice` [amend] | `nuvem_fiscal send_correction_letter_nfe` (CC-e) OR `cancel_nfe` + `create_nfe` (tipo 3, Substituto) | which one is legal depends on what changed + the SEFAZ window |
+| `codespar_invoice` [status] | `nfe-io get_nfe` | `autorizada` / `cancelada` / ... (normalized from the provider's own status, e.g. nfe.io `Issued`) |
+| `codespar_invoice` [amend] | `nfe-io correct_nfe` (CC-e) OR `cancel_nfe` + `create_nfe` (tipo 3, Substituto) | which one is legal depends on what changed + the SEFAZ window |
 | `codespar_pay` [pay] (new Pix) | `asaas create_payment` (PIX) + `get_pix_qrcode` | the fresh charge for the same order |
 | `codespar_notify` | (existing) | the collaborative customer message |
 
@@ -95,8 +95,10 @@ Both reads are an `action` on the tool that owns the lifecycle — the platform'
 status-query convention (as on `codespar_kyc` / `codespar_shop` / `codespar_ship`
 / `codespar_ledger`) — not a standalone status tool.
 
-- **`codespar_pay` `action` discriminator** — `pay | status`, defaulting to `pay`
-  so existing callers are unaffected. `status` takes a `payment_id` and returns
+- **`codespar_pay` `action` discriminator** — `pay | status`, and `action` is
+  **required** on every call (a breaking change for existing callers: `pay` has
+  no field in common with `status`, so there is no safe implicit default —
+  unlike `codespar_invoice` below). `status` takes a `payment_id` and returns
   the payment/charge/boleto's provider status (e.g. `OVERDUE`).
 - **`codespar_invoice` `action` discriminator** — `issue | status | amend`,
   defaulting to `issue` so existing issue-only callers are unaffected. `status`
