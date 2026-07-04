@@ -14,7 +14,7 @@ LATAM-first by design: Pix + NF-e + WhatsApp + PSP routing are first-class, with
 | [`codespar` (PyPI)](packages/python) | Python SDK — same surface as `@codespar/sdk`, sync + async |
 | [`@codespar/types`](packages/types) | Zero-dependency `SessionBase`/`Session` interface hierarchy and conformance test suite |
 | [`@codespar/api-types`](packages/api-types) | Shared REST wire contract — Zod schemas + inferred TypeScript types for `api.codespar.dev` |
-| [`@codespar/managed-agents-adapter`](packages/managed-agents-adapter) | Anthropic Managed Agents adapter — runs `SessionBase` tools against Managed Agents sessions |
+| [`@codespar/managed-agents-adapter`](packages/managed-agents-adapter) | Anthropic Managed Agents adapter — runs `SessionBase` tools against Managed Agents sessions (private package, source-only, not installable from npm) |
 | [`@codespar/cli`](packages/cli) | Command-line interface — auth, execute, sessions, scaffolding |
 | [`@codespar/mcp`](packages/mcp) | MCP transport for Claude Desktop, Cursor, VS Code |
 
@@ -33,12 +33,12 @@ LATAM-first by design: Pix + NF-e + WhatsApp + PSP routing are first-class, with
 | [`@codespar/autogen`](packages/autogen) | Microsoft AutoGen |
 | [`@codespar/camel`](packages/camel) | CAMEL-AI |
 | [`@codespar/letta`](packages/letta) | Letta (MemGPT) |
-| [`@codespar/hermes`](packages/hermes) | Hermes Agent (Nous Research) |
+| [`@codespar/hermes`](packages/hermes) | Hermes Agent (Nous Research) (coming soon, not yet on npm) |
 
 ## Quick Start
 
 ```bash
-npm install @codespar/sdk   # currently 0.9.0
+npm install @codespar/sdk   # 0.10 line
 ```
 
 ```typescript
@@ -140,27 +140,61 @@ const result = await loop(session, {
 
 ### Meta-tools
 
-Beyond direct canonical-tool calls, the SDK exposes commerce-grade
-**meta-tools** that route to the best provider per request, with
-failover, idempotency, and per-tenant connection config:
+Beyond direct canonical-tool calls, the platform registers 14
+commerce-grade **meta-tools** that route to the best provider per
+request, with failover, idempotency, and per-tenant connection config.
+They split into a buy side (the agent spends), a sell side (the agent
+sells), and shared infrastructure:
+
+**Buy side**
 
 | Meta-tool | What it does |
 |---|---|
-| `codespar_pay` | Outbound transfers / payouts (Asaas, Mercado Pago). |
-| `codespar_charge` | INBOUND charges — buyer pays merchant. Pix BRL via Asaas / MP / iugu / Stone; card USD via Stripe. |
-| `codespar_invoice` | Fiscal invoices. Defaults to NFS-e (services); pass `rail: "nfe"` for product NF-e via NFe.io. Also `nfci` (CFDI MX, Facturapi) and Factura AR (AFIP). |
-| `codespar_notify` | Messaging — WhatsApp via Z-API / Twilio, SMS via Twilio, email via SendGrid. |
-| `codespar_ship` | Melhor Envio with 3 rails (`action: "label" \| "quote" \| "track"`). |
-| `codespar_crypto_pay` | Crypto payments via Coinbase Commerce + Bitso. |
-| `codespar_kyc` | Identity / risk verification — Persona, Sift, Konduto, Truora. |
-| `codespar_discover` | Find a tool for a free-form use case (`session.discover("...")`). |
-| `codespar_manage_connections` | Surface the connection wizard (`session.connectionWizard({...})`). |
+| `codespar_shop` | Search and buy from real stores; async checkout session to the store's payable Pix |
+| `codespar_wallet` | The agent's governed funds: balance, statement, top-up; per-currency slots |
+| `codespar_pay` | Outbound spend: money leaves the wallet the agent governs |
+| `codespar_crypto_pay` | On-chain spend and cross-border ramps (testnet today) |
+| `codespar_issue` | Spend cards bound to the same mandate governance |
+
+**Sell side**
+
+| Meta-tool | What it does |
+|---|---|
+| `codespar_checkout` | Assemble a cart and dispatch it as a charge with a hosted payment page |
+| `codespar_charge` | Inbound charges: the buyer pays you |
+| `codespar_invoice` | Fiscal documents (NFS-e default; NF-e, CFDI, Factura AR) |
+| `codespar_ship` | Quote, label, and track shipments |
+| `codespar_notify` | Messages via WhatsApp, SMS, email |
+| `codespar_kyc` | Verify counterparties before money moves |
+
+**Shared**
+
+| Meta-tool | What it does |
+|---|---|
+| `codespar_ledger` | Double-entry books plus the signed agentic receipts |
+| `codespar_discover` | Semantic search across the catalog (`session.discover("...")`) |
+| `codespar_manage_connections` | Providers, credentials, and shopper identity (`session.connectionWizard({...})`) |
 
 Use `session.execute("codespar_pay", { amount, currency, recipient })`
 or the typed wrappers (`session.discover`, `session.connectionWizard`).
 The router picks the best provider per call based on the tenant's
 connections + cost/latency telemetry. See [`docs/tool-router.md`](docs/tool-router.md)
 for how the router selects a provider per call.
+
+### Mandates and the consumer wallet
+
+Buy-side spending is governed by a signed mandate that backs a unified
+multi-currency wallet: one signature mints per-currency slots (for
+example BRL via Pix plus USDC), each with its own total cap and per-tx
+cap. There is no FX inside the wallet; the payee routes the spend to the
+matching currency slot, and a cross-currency move is a real ramp trade
+at the real rate. From [`@codespar/cli`](packages/cli):
+
+```bash
+codespar mandate create --slot BRL:pix:50000:10000 --slot USDC:usdc:100:25
+codespar wallet <consumer>     # rolled up per currency
+codespar transfer <consumer> --from BRL --to USDC --amount 15000
+```
 
 ## Framework Adapters
 

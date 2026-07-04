@@ -1,5 +1,7 @@
 # @codespar/hermes
 
+> **Not yet published to npm.** This package builds from source in this repo; the install command below will not resolve until the first npm release lands.
+
 Hermes Agent (Nous Research) adapter for CodeSpar — convert session tools to Hermes's MCP/plugin tool format.
 
 Hermes agents ship with a Privy-secured embedded wallet and credit billing but **no commerce rail**. This adapter gives them LATAM commerce (pay / charge / invoice / ship / notify) routed through a CodeSpar session for billing and audit.
