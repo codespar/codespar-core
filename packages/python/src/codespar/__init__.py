@@ -58,6 +58,7 @@ from .tool_result_codes import (
     is_tool_not_mocked,
 )
 from .types import (
+    AgenticReceipt,
     AssistantTextEvent,
     AuthConfig,
     AuthResult,
@@ -84,6 +85,8 @@ from .types import (
     LedgerAction,
     LedgerArgs,
     LedgerLeg,
+    LedgerReceiptResult,
+    LedgerReceiptsResult,
     LedgerResult,
     ManageConnections,
     MockObject,
@@ -94,6 +97,11 @@ from .types import (
     Preset,
     ProxyRequest,
     ProxyResult,
+    ReceiptDelivery,
+    ReceiptException,
+    ReceiptMandate,
+    ReceiptPayment,
+    ReceiptQuote,
     RequiredSecret,
     SearchStrategy,
     SendResult,
@@ -141,6 +149,8 @@ __all__ = [
     "POLICY_DENIED",
     "TOOL_NOT_MOCKED",
     "TOOL_RESULT_CODES",
+    # Agentic receipt (the Control Record)
+    "AgenticReceipt",
     "ApiError",
     "ApprovalRequiredOutput",
     "AssistantTextEvent",
@@ -182,6 +192,8 @@ __all__ = [
     "LedgerAction",
     "LedgerArgs",
     "LedgerLeg",
+    "LedgerReceiptResult",
+    "LedgerReceiptsResult",
     "LedgerResult",
     "ManageConnections",
     # Test-mode mocks
@@ -199,6 +211,11 @@ __all__ = [
     # Proxy
     "ProxyRequest",
     "ProxyResult",
+    "ReceiptDelivery",
+    "ReceiptException",
+    "ReceiptMandate",
+    "ReceiptPayment",
+    "ReceiptQuote",
     "RequiredSecret",
     "SearchStrategy",
     "SendResult",
