@@ -74,6 +74,7 @@ export const INSTALLMENT_NEGOTIATION_SCENARIO: DemoScenario = {
             {
               name: "codespar_pay",
               arguments: {
+                action: "pay",
                 amount: 480000,
                 currency: "BRL",
                 method: "card",

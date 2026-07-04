@@ -7,7 +7,7 @@ import {
 const ALL = Object.values(SHARED_META_TOOL_DEFINITIONS) as SharedMetaToolDefinition[];
 
 describe("shared meta-tool definitions", () => {
-  it("publishes the three demo actions keyed by wire name", () => {
+  it("publishes the three demo tools keyed by wire name", () => {
     expect(Object.keys(SHARED_META_TOOL_DEFINITIONS).sort()).toEqual([
       "codespar_invoice",
       "codespar_notify",
