@@ -1,5 +1,22 @@
 # codespar (Python SDK) — CHANGELOG
 
+## 0.11.0
+
+Offline V3 mandate verification lands as the `codespar.mandate`
+submodule, in parity with `@codespar/sdk/mandate` and the CLI. See
+[codespar/codespar-core#114](https://github.com/codespar/codespar-core/pull/114).
+
+### Added
+
+- `codespar.mandate`: `decode_mandate_token` and
+  `reconstruct_signing_string` are pure stdlib; `verify_ed25519` and
+  `verify_mandate_token` verify the V3 dual Ed25519 signatures and
+  lazily import `cryptography`, raising a clear install hint when it is
+  absent. New optional extra: `pip install codespar[verify]`. The base
+  package keeps its single runtime dependency (httpx).
+- The canonical signing string is byte-locked against the platform's
+  frozen fixture, shared with the TS SDK and CLI tests.
+
 ## 0.10.0
 
 The hosted test-mode SDK surface lands across the `codespar` Python

@@ -1,5 +1,20 @@
 # @codespar/cli — changelog
 
+## 0.6.0 — 2026-07-05
+
+Offline V3 mandate verification from the terminal. See
+[codespar/codespar-core#114](https://github.com/codespar/codespar-core/pull/114).
+
+### Added
+
+- `codespar mandate verify <token>` — decodes a V3 presentation token,
+  reconstructs the canonical signing string, and verifies the agent and
+  issuer Ed25519 signatures. Pure-offline mode with `--agent-pubkey` /
+  `--issuer-pubkey` (no network, no API key); default network mode
+  resolves public keys via the agent's did:web document
+  (id.codespar.dev), still with no API key. `--json` supported; the
+  exit code tracks signature verification.
+
 ## 0.4.0 — 2026-05-04
 
 Sugar commands wrapping the SDK 0.9.0 typed meta-tool methods. None
