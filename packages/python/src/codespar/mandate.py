@@ -182,7 +182,7 @@ def reconstruct_signing_string(fields: dict[str, Any]) -> str:
         return member.replace("\\", "\\\\").replace(",", "\\,")
 
     purposes = ",".join(esc(p) for p in sorted(fields.get("purposes") or []))
-    version = int(fields.get("format_version"))
+    version = int(fields.get("format_version") or 0)
     parts = [
         str(fields.get("format_version")),
         _s(fields.get("id")),
