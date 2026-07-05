@@ -1,6 +1,6 @@
 {
   "name": "@codespar/cli",
-  "version": "0.5.5",
+  "version": "0.6.0",
   "description": "CodeSpar CLI. The agentic OS for money movement in Latin America, from your terminal: authenticate, browse servers, mint mandates, execute tools, manage sessions, stream logs.",
   "type": "module",
   "bin": {
@@ -46,7 +46,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@codespar/sdk": "^0.10.1",
+    "@codespar/sdk": "^0.11.0",
     "commander": "^13.0.0"
   },
   "devDependencies": {
