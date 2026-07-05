@@ -1,6 +1,6 @@
 {
   "name": "@codespar/mcp",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "MCP server for CodeSpar — give Claude, Codex, Cursor & ChatGPT a commerce agent (pay, charge, wallet, mandates, Pomelo card) over MCP",
   "type": "module",
   "main": "./dist/index.js",
@@ -40,11 +40,11 @@
     "directory": "packages/mcp"
   },
   "dependencies": {
-    "@codespar/sdk": "^0.10.1",
+    "@codespar/sdk": "^0.10.1 || ^0.11.0",
     "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "peerDependencies": {
-    "@codespar/sdk": "^0.10.1"
+    "@codespar/sdk": "^0.10.1 || ^0.11.0"
   },
   "devDependencies": {
     "@codespar/sdk": "*",

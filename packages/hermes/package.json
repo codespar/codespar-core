@@ -1,6 +1,6 @@
 {
   "name": "@codespar/hermes",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Hermes Agent adapter for CodeSpar — convert session tools to Hermes MCP/plugin tool format",
   "type": "module",
   "main": "./dist/index.js",
@@ -39,7 +39,7 @@
     "directory": "packages/hermes"
   },
   "peerDependencies": {
-    "@codespar/sdk": "^0.10.0"
+    "@codespar/sdk": "^0.10.0 || ^0.11.0"
   },
   "devDependencies": {
     "@codespar/sdk": "*",
