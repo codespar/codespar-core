@@ -27,15 +27,15 @@ from dataclasses import dataclass
 from typing import Any
 
 __all__ = [
-    "MandateDecodeError",
     "DecodedMandateToken",
-    "SignatureCheck",
+    "MandateDecodeError",
     "MandateVerification",
+    "SignatureCheck",
+    "agent_did_from_kid",
     "decode_mandate_token",
     "reconstruct_signing_string",
     "verify_ed25519",
     "verify_mandate_token",
-    "agent_did_from_kid",
 ]
 
 
