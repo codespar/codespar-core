@@ -1,0 +1,28 @@
+{
+  "_comment": "Build 2 V3 byte-frozen fixture. DO NOT CHANGE. Mirrors canonical.fixture.json for V3 (14 fields, 13 separators = V2's 12 + principal_kyc_ref + agent_kid). HMAC key is the same test key; Ed25519 seeds are sha256('codespar-build2-agent-key-fixture') and sha256('codespar-build2-issuer-key-fixture'). Ed25519 is deterministic (RFC 8032) so agent_sig/issuer_sig are frozen. agent_kid intentionally contains colons (did:web) to pin the colon-in-final-field behaviour.",
+  "key": "test-fixture-key-do-not-use-in-prod-0123456789abcdef",
+  "input": {
+    "format_version": 3,
+    "id": "mnd_v3_abc...",
+    "agent_id": "a1",
+    "type": "delegation",
+    "amount": "5000",
+    "currency": "BRL",
+    "purposes": ["refund", "utility"],
+    "expires_at": 1735689600,
+    "max_amount": null,
+    "parent_id": null,
+    "denomination": null,
+    "secret_version": 1,
+    "principal_kyc_ref": "kyc_celcoin_11144477735",
+    "agent_kid": "did:web:id.codespar.dev:org_demo:a1#1"
+  },
+  "canonical_string": "3:mnd_v3_abc...:a1:delegation:5000:BRL:refund,utility:1735689600::::1:kyc_celcoin_11144477735:did:web:id.codespar.dev:org_demo:a1#1",
+  "hmac_sha256_hex": "4e627ac1074f1c15684cb10d63b1d4481fbeda8f82450f26c04b7860210fc3e4",
+  "agent_seed_hex": "1050a34bae067327e59c1ac43f3a25190a582448219521d35d000650d714ec9a",
+  "agent_pubkey_hex": "70940e2c00698a520339c07332ff35c05cad7b39d024a4f4737310e740b2ecc3",
+  "issuer_seed_hex": "23dddf5e3a0038f1a81cda29dbbd5d1c97d434a6610a814d3d628f7b269d031f",
+  "issuer_pubkey_hex": "41826edefd6d40fd7c32dd63ebcc0476e4324cd6a424881c53f170fee9865b14",
+  "agent_sig_b64url": "F9V0rSsfT1IjeF_4_9pciIV7w2ERdLN5r-UMkCdQWjce9ouYYY2awrrjFw5cENKbTEw0l61HitYPO5ZocfQ7Bg",
+  "issuer_sig_b64url": "ClsA7hWq1fBAG-qrhYAahDPm0xMdPl5lOJ6X0KxSzruJ2kD6NCzH-baSbxcwTxTCkWd1eBpJVke3onUR6mH1Ag"
+}

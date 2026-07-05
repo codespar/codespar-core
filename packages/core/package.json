@@ -13,6 +13,10 @@
     "./testing": {
       "import": "./dist/testing/index.js",
       "types": "./dist/testing/index.d.ts"
+    },
+    "./mandate": {
+      "import": "./dist/mandate/index.js",
+      "types": "./dist/mandate/index.d.ts"
     }
   },
   "files": [

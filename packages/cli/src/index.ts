@@ -22,6 +22,7 @@ import { discoverCommand } from "./commands/discover.js";
 import { chargeCommand } from "./commands/charge.js";
 import { spendCommand } from "./commands/spend.js";
 import { mandateCreateCommand } from "./commands/mandate.js";
+import { mandateVerifyCommand } from "./commands/mandate-verify.js";
 import { walletCommand } from "./commands/wallet.js";
 import { transferCommand } from "./commands/transfer.js";
 import { shipCommand } from "./commands/ship.js";
@@ -312,6 +313,35 @@ mandate
     }) => {
       const auth = await resolveAuth();
       await mandateCreateCommand({ ...opts, ...auth, json: rootJsonFlag() });
+    },
+  );
+
+mandate
+  .command("verify <token>")
+  .description("Verify a V3 mandate presentation token offline (agent + issuer Ed25519 signatures)")
+  .option(
+    "--agent-pubkey <hex>",
+    "Raw 32-byte Ed25519 agent public key (hex). Forces pure-offline verification (no network).",
+  )
+  .option(
+    "--issuer-pubkey <hex>",
+    "Raw 32-byte Ed25519 issuer public key (hex). Forces pure-offline verification (no network).",
+  )
+  .option(
+    "--issuer-did <did>",
+    "Issuer DID for network mode (default: did:web derived from the agent DID host)",
+  )
+  .action(
+    async (
+      token: string,
+      opts: { agentPubkey?: string; issuerPubkey?: string; issuerDid?: string },
+    ) => {
+      // Offline verification needs no API key — resolve the base URL (for the
+      // network fallback) from flags/env/config without requiring auth.
+      const config = await loadConfig();
+      const root = program.opts<{ baseUrl?: string }>();
+      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      await mandateVerifyCommand(token, { ...opts, baseUrl, json: rootJsonFlag() });
     },
   );
 

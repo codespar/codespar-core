@@ -30,10 +30,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Offline V3 mandate verification (codespar.mandate) needs Ed25519, which is
+# not in the stdlib. Opt in with `pip install codespar[verify]`; the base
+# package keeps its single runtime dependency (httpx).
+verify = [
+    "cryptography>=42",
+]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "pytest-httpx>=0.30",
+    "cryptography>=42",
     "ruff>=0.6",
     "mypy>=1.11",
 ]
