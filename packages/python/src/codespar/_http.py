@@ -11,14 +11,37 @@ this file changes.
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
 
-from .errors import ApiError, StreamError
+from .errors import ApiError, ConfigError, StreamError, TimeoutError
 
 DEFAULT_BASE_URL = "https://api.codespar.dev"
+
+
+def normalize_timeout(timeout: float | None) -> float | None:
+    """Fail-fast validation for every per-call timeout (seconds).
+
+    Centralized here so EVERY request path — create() and every session
+    method, unary or streaming — rejects the same bad inputs before a
+    request starts, rather than letting httpx misinterpret them or fail
+    late with a non-CodeSpar error around a commerce side effect.
+    ``None`` means "use the client default".
+    """
+    if timeout is None:
+        return None
+    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
+        raise ConfigError(
+            f"timeout must be a number of seconds, got {type(timeout).__name__}"
+        )
+    if math.isnan(timeout) or math.isinf(timeout) or timeout <= 0:
+        raise ConfigError(
+            f"timeout must be a positive, finite number of seconds, got {timeout!r}"
+        )
+    return float(timeout)
 
 
 def build_headers(
@@ -47,8 +70,10 @@ async def request_json(
     api_key: str,
     project_id: str | None,
     body: Any = None,
+    timeout: float | None = None,
 ) -> Any:
     """Do an authenticated JSON request, return parsed body or raise ApiError."""
+    timeout = normalize_timeout(timeout)
     headers = build_headers(api_key, project_id)
     try:
         response = await client.request(
@@ -56,7 +81,10 @@ async def request_json(
             path,
             headers=headers,
             json=body if body is not None else None,
+            timeout=timeout,
         )
+    except httpx.TimeoutException as exc:
+        raise TimeoutError(str(exc), cause=exc) from exc
     except httpx.HTTPError as exc:  # network, timeout, connect failure
         raise ApiError(f"{method} {path} failed: {exc}", status=0) from exc
 
@@ -104,6 +132,7 @@ async def stream_sse(
     api_key: str,
     project_id: str | None,
     body: Any,
+    timeout: float | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
     """
     POST a JSON body and yield parsed SSE data frames from the response.
@@ -112,7 +141,17 @@ async def stream_sse(
     comment lines (``: keep-alive``) are swallowed. Each yielded dict
     is the JSON payload from a single SSE frame. Callers interpret
     the ``type`` field themselves.
+
+    IDLE SEMANTICS (intentional TS divergence): ``timeout`` is the
+    httpx read timeout — ANY incoming byte resets it, so a degraded
+    peer that dribbles partial bytes without ever completing a
+    ``\\n\\n`` frame keeps the stream alive. The TypeScript SDK uses a
+    stricter SDK-level idle that only resets on a COMPLETE SSE frame
+    (incomplete trickles time out there). This is a deliberate model
+    choice — httpx's "any network activity = liveness" is kept here;
+    do not assume the TS trickle-timeout behaviour in Python.
     """
+    timeout = normalize_timeout(timeout)
     headers = build_headers(api_key, project_id, accept_sse=True)
     try:
         async with client.stream(
@@ -120,6 +159,7 @@ async def stream_sse(
             path,
             headers=headers,
             json=body,
+            timeout=timeout,
         ) as response:
             if not response.is_success:
                 raw = await response.aread()
@@ -146,6 +186,8 @@ async def stream_sse(
                         yield json.loads(payload)
                     except json.JSONDecodeError as exc:
                         raise StreamError(f"malformed SSE payload: {payload[:120]}") from exc
+    except httpx.TimeoutException as exc:
+        raise TimeoutError(str(exc), cause=exc) from exc
     except httpx.HTTPError as exc:
         raise StreamError(f"POST {path} (stream) transport error: {exc}") from exc
 
@@ -156,6 +198,7 @@ async def stream_sse_get(
     *,
     api_key: str,
     project_id: str | None,
+    timeout: float | None = None,
 ) -> AsyncIterator[tuple[str, dict[str, Any]]]:
     """
     GET an SSE endpoint and yield ``(event_name, data)`` pairs as
@@ -165,10 +208,16 @@ async def stream_sse_get(
     (``snapshot`` / ``update`` / ``done``) rather than the
     chat-loop's anonymous JSON frames. Heartbeat comment frames
     (``: heartbeat 12345``) are filtered.
+
+    IDLE SEMANTICS (intentional TS divergence): same as ``stream_sse``
+    — ``timeout`` is the httpx read timeout (any byte resets it), not
+    the TS SDK's complete-frame idle. An incomplete-frame trickle does
+    NOT time out here by design.
     """
+    timeout = normalize_timeout(timeout)
     headers = build_headers(api_key, project_id, accept_sse=True)
     try:
-        async with client.stream("GET", path, headers=headers) as response:
+        async with client.stream("GET", path, headers=headers, timeout=timeout) as response:
             if not response.is_success:
                 raw = await response.aread()
                 text = raw.decode("utf-8", errors="replace")
@@ -200,5 +249,7 @@ async def stream_sse_get(
                         raise StreamError(
                             f"malformed SSE payload: {payload[:120]}"
                         ) from exc
+    except httpx.TimeoutException as exc:
+        raise TimeoutError(str(exc), cause=exc) from exc
     except httpx.HTTPError as exc:
         raise StreamError(f"GET {path} (stream) transport error: {exc}") from exc

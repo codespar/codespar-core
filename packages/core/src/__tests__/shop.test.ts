@@ -90,7 +90,7 @@ async function sessionReturning(over: Partial<ToolResult>): Promise<{
   const session = await createSession(
     "consumer_123",
     { servers: ["cobasi"] },
-    { baseUrl: "https://api.example.com", apiKey: "csk_live_test" },
+    { baseUrl: "https://api.example.com", apiKey: "csk_live_test", timeout: 60000 },
   );
   return { session, calls };
 }

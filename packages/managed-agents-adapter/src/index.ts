@@ -14,4 +14,5 @@ export {
   ApprovalRequiredError,
   ConcurrentOperationError,
   DrainTimeoutError,
+  SessionClosedError,
 } from "./errors.js";

@@ -21,7 +21,7 @@ from ._async_session import (
     build_session_info,
     wait_for_connections,
 )
-from ._http import DEFAULT_BASE_URL, request_json
+from ._http import DEFAULT_BASE_URL, normalize_timeout, request_json
 from ._presets import preset_to_servers
 from .errors import ApiError, ConfigError
 from .types import SessionConfig
@@ -57,6 +57,18 @@ class AsyncCodeSpar:
             session = await cs.create("user_123", preset="brazilian")
             result = await session.send("charge R$500 via Pix")
             print(result.message)
+
+    Timeout UNIT: every ``timeout`` here is in **seconds** (httpx
+    convention) — e.g. ``timeout=30`` is 30 seconds. The TypeScript SDK
+    (``@codespar/sdk``) uses **milliseconds** for the equivalent option.
+    Do not copy a numeric timeout between the two SDKs without
+    converting (30s in Python == ``timeout: 30000`` in TS).
+
+    Cancellation: there is no AbortSignal in Python. Cancel an in-flight
+    call by cancelling the awaiting asyncio task (e.g. asyncio.timeout()
+    or task.cancel()); httpx tears the connection down. Note this only
+    closes the connection — it does not undo an upstream side effect the
+    backend already dispatched.
     """
 
     def __init__(
@@ -77,6 +89,9 @@ class AsyncCodeSpar:
             raise ConfigError(
                 "project_id must match ^prj_[A-Za-z0-9]{16}$ (e.g. 'prj_...')."
             )
+        # Fail fast on a misconfigured client-default timeout, same
+        # rule the per-call paths use (parity with TS validateTimeout).
+        timeout = normalize_timeout(timeout) or 60.0
         self._api_key = api_key
         self._base_url = _resolve_base_url(base_url).rstrip("/")
         self._project_id = project_id
@@ -112,6 +127,18 @@ class AsyncCodeSpar:
             await cs.create("user_123", preset="brazilian")
             await cs.create("user_123", SessionConfig(preset="brazilian"))
         """
+        # Extract before _resolve_config so it doesn't reach the allowed-kwarg check.
+        raw_timeout = kwargs.pop("timeout", None)
+        timeout: float | None
+        if raw_timeout is None:
+            timeout = None
+        elif isinstance(raw_timeout, bool) or not isinstance(raw_timeout, (int, float)):
+            raise ConfigError(
+                f"create(): 'timeout' must be a number of seconds, got {type(raw_timeout).__name__}"
+            )
+        else:
+            timeout = float(raw_timeout)
+
         resolved = self._resolve_config(config, kwargs)
         servers = resolved.servers or preset_to_servers(resolved.preset)
         project_id = resolved.project_id or self._project_id
@@ -133,6 +160,7 @@ class AsyncCodeSpar:
             api_key=self._api_key,
             project_id=project_id,
             body=body,
+            timeout=timeout,
         )
         if not isinstance(data, dict):
             raise ApiError("create: malformed response", status=0, body=data)

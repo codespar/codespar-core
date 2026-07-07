@@ -47,3 +47,7 @@ class NotConnectedError(CodeSparError):
 
 class StreamError(CodeSparError):
     """Raised when the SSE stream itself fails (parse / transport)."""
+
+
+class TimeoutError(CodeSparError):
+    """Raised when a request exceeds its timeout (unary or stream idle)."""
