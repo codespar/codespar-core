@@ -2,7 +2,7 @@
 
 Shared REST wire contract for the CodeSpar managed-tier API at `api.codespar.dev`.
 
-Every request body and response shape is defined once, as a Zod schema, and the matching TypeScript type is inferred from it. Both the backend (`codespar-enterprise`) and the dashboard (`codespar-web`) import from here — no more hand-rolled mirror types.
+Every request body and response shape is defined once, as a Zod schema, and the matching TypeScript type is inferred from it. Both the backend and the dashboard import from here — no more hand-rolled mirror types.
 
 ## Why
 

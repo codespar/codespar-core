@@ -5,24 +5,23 @@
 The public, MIT-licensed SDK layer of CodeSpar: the TypeScript
 `@codespar/sdk` npm package, the `codespar` Python package on PyPI,
 and the framework adapters that wrap them (Vercel AI SDK, Claude Agent
-SDK, OpenAI Agents SDK, MCP, CLI). Everything here is a client-side
-adapter over the managed-tier backend at `api.codespar.dev`; the
-backend lives in `codespar-enterprise` (private).
+SDK, OpenAI Agents SDK, MCP, CLI). Everything here is a client over
+the CodeSpar API (default endpoint `api.codespar.dev`); the same SDK
+also runs against a self-hosted runtime — `baseUrl` is a configuration
+change.
 
 Post-pivot (April 2026), CodeSpar is **commerce infrastructure for AI
 agents in Latin America**. These SDKs encode the wire contract that
 lets developers ship commerce agents (Pix + NF-e + WhatsApp + PSPs)
-without rebuilding the plumbing. See
-[`VISION-codespar.md`](https://github.com/codespar/codespar-web/blob/main/docs/visions/VISION-codespar.md)
-for the strategic context.
+without rebuilding the plumbing. Read the project VISION for the
+strategic context.
 
 ## Authoritative context
 
-- **Strategy**: VISION-codespar.md (in `codespar-web`, Accepted
-  2026-04-19). Read it before making strategic decisions.
-- **Wire contract**: every SDK method here maps 1:1 to a Fastify route
-  in `codespar-enterprise/packages/api/src/routes/`. Do not edit the
-  TS types without updating the Python package and backend together —
+- **Strategy**: read the project VISION before making strategic
+  decisions.
+- **Wire contract**: every SDK method here maps 1:1 to a backend route.
+  Keep the TS types, the Python package, and the backend in lockstep —
   drift between SDKs is the loudest way to break trust.
 - **Current SDK shape**: `CodeSpar.create(userId, { preset, servers,
   manageConnections, projectId, metadata })` returns a `Session`
@@ -40,8 +39,8 @@ for the strategic context.
 | **`codespar-core`** (this repo, public MIT) | SDK + adapters (TS + Python) |
 | `codespar/codespar` (public, MIT) | Self-hostable runtime + channel adapters |
 | `codespar/mcp-dev-latam` (public, MIT) | LATAM MCP server catalog |
-| `codespar/codespar-enterprise` (private) | Managed-tier backend + governance |
-| `codespar/codespar-web` (private) | Marketing site + dashboard UI |
+
+A private managed tier serves the same session contract.
 
 ## Package Inventory (monorepo under `packages/`)
 
@@ -52,7 +51,8 @@ for the strategic context.
   using PyPI trusted publishing (OIDC).
 - **`types/`** → `@codespar/types`. Zero-dependency
   `SessionBase`/`Session` interface hierarchy + conformance tests.
-  Shared contract between opensource runtime and managed-tier adapter.
+  Shared contract between the open-source runtime and the managed
+  backend.
 - **`managed-agents-adapter/`** → `@codespar/managed-agents-adapter`.
   Runs `SessionBase` tools against Anthropic Managed Agents sessions.
 - **`vercel/` / `claude/` / `openai/`** — framework adapters.
@@ -102,8 +102,7 @@ schema in `packages/core/src/types.ts` validates on create.
 - Public types in `packages/core/src/types.ts` are the source of truth
   for wire shapes. Adding a new field requires matching updates in:
   (1) TS `types.ts`, (2) Python `src/codespar/types.py`, (3) Zod
-  schema if the field is validated on client, (4) backend Fastify
-  route in `codespar-enterprise`.
+  schema if the field is validated on client, (4) the backend route.
 - File names: kebab-case. Classes / types: PascalCase. Functions:
   camelCase in TS, snake_case in Python.
 - No comments explaining WHAT the code does; reserve for non-obvious
@@ -146,7 +145,6 @@ schema in `packages/core/src/types.ts` validates on create.
 
 - `docs/tool-router.md` — Tool Router concept (public).
 - `docs/custom-session-runtime.md` — `SessionBase` implementation guide (public).
-- `docs/daniel-onboarding.md` (if present) — co-dev onboarding.
 - `docs/repo-map.md` — cross-repo architecture.
 
 ## What NOT to do
