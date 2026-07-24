@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
@@ -520,3 +521,86 @@ async def test_session_discover_raises_on_error_envelope(httpx_mock: HTTPXMock) 
         with pytest.raises(ApiError, match="no_eligible_providers"):
             await session.discover("anything")
         await session.close()
+
+
+# ── connections: best-effort cache fallback ───────────────────────
+
+
+def _connections_json() -> dict[str, Any]:
+    return {
+        "servers": [
+            {
+                "id": "srv_1",
+                "name": "zoop",
+                "category": "payments",
+                "country": "BR",
+                "auth_type": "none",
+                "connected": True,
+            }
+        ],
+        "tools": [],
+    }
+
+
+async def test_connections_timeout_returns_cached_list(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        url="https://api.codespar.dev/v1/sessions",
+        method="POST",
+        json=_session_json(),
+    )
+    httpx_mock.add_response(
+        url="https://api.codespar.dev/v1/sessions/ses_abc123/connections",
+        method="GET",
+        json=_connections_json(),
+    )
+    httpx_mock.add_exception(
+        httpx.ReadTimeout("read timed out"),
+        url="https://api.codespar.dev/v1/sessions/ses_abc123/connections",
+        method="GET",
+    )
+
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        session = await cs.create("user_123", preset="brazilian")
+        warm = await session.connections()
+        assert [s.name for s in warm] == ["zoop"]
+        # Timeout on the refresh — best-effort, the cached list comes back.
+        assert await session.connections() == warm
+
+
+async def test_connections_timeout_with_empty_cache_returns_empty(
+    httpx_mock: HTTPXMock,
+) -> None:
+    httpx_mock.add_response(
+        url="https://api.codespar.dev/v1/sessions",
+        method="POST",
+        json=_session_json(),
+    )
+    httpx_mock.add_exception(
+        httpx.ReadTimeout("read timed out"),
+        url="https://api.codespar.dev/v1/sessions/ses_abc123/connections",
+        method="GET",
+    )
+
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        session = await cs.create("user_123", preset="brazilian")
+        assert await session.connections() == []
+
+
+async def test_connections_unrelated_error_still_propagates(
+    httpx_mock: HTTPXMock,
+) -> None:
+    httpx_mock.add_response(
+        url="https://api.codespar.dev/v1/sessions",
+        method="POST",
+        json=_session_json(),
+    )
+    httpx_mock.add_exception(
+        ValueError("boom"),
+        url="https://api.codespar.dev/v1/sessions/ses_abc123/connections",
+        method="GET",
+    )
+
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        session = await cs.create("user_123", preset="brazilian")
+        with pytest.raises(ValueError, match="boom"):
+            await session.connections()
