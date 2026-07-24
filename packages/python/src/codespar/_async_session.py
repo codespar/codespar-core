@@ -1182,7 +1182,7 @@ class AsyncSession:
                 project_id=self._project_id,
                 timeout=timeout,
             )
-        except ApiError:
+        except (ApiError, TimeoutError):
             return list(self._cached_connections or [])
         if not isinstance(data, dict):
             return list(self._cached_connections or [])

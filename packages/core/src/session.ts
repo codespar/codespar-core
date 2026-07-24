@@ -580,6 +580,12 @@ export async function createSession(
     },
 
     async connections(opts?: CallOptions): Promise<ServerConnection[]> {
+      // Caller misconfiguration is NOT best-effort — validate the
+      // effective timeout before the swallow (parity with close()), so
+      // an invalid value surfaces instead of silently returning the
+      // cached list.
+      const resolved = callOpts(opts);
+      validateTimeout(resolved.timeout);
       // Best-effort — both transport failures (CodesparApiError from
       // safeFetch) and non-2xx responses fall back to the cached
       // payload so a transient blip doesn't crater the session.
@@ -588,7 +594,7 @@ export async function createSession(
           `${baseUrl}/v1/sessions/${data.id}/connections`,
           { headers },
           "connections",
-          callOpts(opts),
+          resolved,
           async (r) => {
             if (!r.ok) return cachedConnections ?? [];
             const payload = (await r.json()) as BackendConnectionsResponse;
