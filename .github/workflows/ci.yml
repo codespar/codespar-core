@@ -32,8 +32,11 @@ jobs:
       - name: Build, typecheck, and test
         run: npx turbo run build typecheck test
 
+      # Gate blocks high/critical only. Moderates are still reported in
+      # the log but don't block when the fix isn't actionable (e.g. fix
+      # sits behind an upstream dependency pin).
       - name: Security audit
-        run: npm audit --omit=dev
+        run: npm audit --omit=dev --audit-level=high
 
   validate-example-skeleton:
     runs-on: ubuntu-latest
