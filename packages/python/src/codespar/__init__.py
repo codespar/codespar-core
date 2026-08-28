@@ -141,7 +141,7 @@ from .types import (
     WizardAction,
 )
 
-__version__ = "0.10.2"
+from ._version import __version__
 
 __all__ = [
     "APPROVAL_REQUIRED",
