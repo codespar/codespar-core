@@ -212,8 +212,9 @@ export interface ChargeArgs {
   amount: number;
   /** ISO-4217 currency code (BRL, USD, EUR). */
   currency: string;
-  /** Payment method: pix, boleto, card. */
-  method: "pix" | "boleto" | "card";
+  /** Payment method: pix, boleto, card, wallet (digital-wallet redirect).
+   *  Mirrors the codespar_charge definition's `method` enum. */
+  method: "pix" | "boleto" | "card" | "wallet";
   /** Charge description shown to the buyer. */
   description: string;
   /** Buyer details (always required — charges are merchant-issued). */
@@ -241,14 +242,19 @@ export interface ChargeResult {
 /**
  * Outbound payment — the runtime pays a recipient (a transfer/payout).
  * Distinct from `codespar_charge`, which is inbound (a buyer pays the
- * merchant). The discriminator is the `recipient` (a Pix key, account,
- * or email) versus charge's `buyer` object.
+ * merchant). The discriminator is the payee address (`recipient`,
+ * `copia_e_cola`, or `linha_digitavel`) versus charge's `buyer` object.
  *
- * A payee can be addressed two ways:
- *   - `recipient` — a Pix key / account / email the rail resolves to a payee.
+ * A payee can be addressed three ways:
+ *   - `recipient` — a Pix key the rail resolves to a payee, or a
+ *     {@link PayBankAccountRecipient} object for a destination with no
+ *     registered Pix key (Pix cash-out via initiationType MANUAL).
  *   - `copia_e_cola` — a Pix copia-e-cola / BR Code that already encodes the
  *     payee. When present it identifies the payee server-side and takes
- *     precedence over `recipient`; at least one of the two must be given.
+ *     precedence over `recipient`.
+ *   - `linha_digitavel` — the digitable line of an EXISTING boleto to settle
+ *     (`method: "boleto"`).
+ * At least one of the three must be given.
  *
  * `amount` is in MINOR currency units (centavos: R$ 1.25 → 125). This
  * differs from `ChargeArgs.amount`, which is MAJOR units — pay settles a
@@ -260,18 +266,48 @@ export interface PayArgs {
   amount: number;
   /** ISO-4217 currency code (BRL, USD, ...). */
   currency: string;
-  /** Payee address — a Pix key, account number, or email. Required unless
-   *  `copia_e_cola` is given. */
-  recipient?: string;
+  /** Payee address — a Pix key (email, phone, CPF/CNPJ, EVP) or a
+   *  bank-account object for a destination with no registered Pix key.
+   *  Required unless `copia_e_cola` or `linha_digitavel` is given. */
+  recipient?: string | PayBankAccountRecipient;
   /** A Pix copia-e-cola / BR Code that encodes the payee. Takes precedence
-   *  over `recipient` when present. Required unless `recipient` is given. */
+   *  over `recipient` when present. */
   copia_e_cola?: string;
+  /** The 47/48-digit linha digitável (or barcode) of an existing boleto to
+   *  settle (`method: "boleto"`). */
+  linha_digitavel?: string;
   /** Payment description. */
   description: string;
-  /** Payment method. Defaults to "pix" when omitted. */
-  method?: "pix" | "card" | "boleto" | "wallet";
+  /** Payment method. Defaults to "pix" when omitted. The vocabulary is the
+   *  codespar_pay definition's `method` enum (ent#932): no sepa/ted, and
+   *  for USDC or any on-chain settlement use codespar_crypto_pay. */
+  method?: "pix" | "card" | "boleto" | "wire";
+  /** Pre-authorized mandate id the spend runs under. */
+  mandateId?: string;
   /** Free-form metadata forwarded to the rail. */
   metadata?: Record<string, unknown>;
+}
+
+/**
+ * Bank-account destination for a Pix cash-out to a payee with no registered
+ * Pix key (initiationType MANUAL) — the object form of
+ * {@link PayArgs.recipient}. Mirrors the shape the runtime's `codespar_pay`
+ * accepts: `{bank, account, branch, tax_id, name, account_type?}`.
+ */
+export interface PayBankAccountRecipient {
+  /** Destination bank id (ISPB code). */
+  bank: string;
+  /** Account number, with check digit. */
+  account: string;
+  /** Branch (agência) number. */
+  branch: string;
+  /** Recipient CPF/CNPJ. */
+  tax_id: string;
+  /** Recipient full/legal name. */
+  name: string;
+  /** Account type code (e.g. CACC); the rail's default applies when
+   *  omitted. */
+  account_type?: string;
 }
 
 export interface PayResult {
@@ -310,20 +346,46 @@ export interface PayResult {
  * document, country); the rail plucks the fields it needs.
  *
  * `check_type` selects the verification rail:
- *   - identity    Full KYC (document + selfie + database)
- *   - document    Document-only verification
- *   - risk-score  Behavioral risk score (returns a numeric `score`)
- *   - sanctions   OFAC / PEP screening
+ *   - identity             Full KYC (document + selfie + database)
+ *   - document             Document-only verification
+ *   - risk-score           Behavioral risk score (returns a numeric `score`)
+ *   - sanctions            OFAC / PEP screening
+ *   - onboarding           Open a BR payment account (natural person, CPF):
+ *                          verifies AND provisions the consumer's funding
+ *                          source (codespar_wallet / codespar_pay)
+ *   - onboarding-business  Open a BR payment account (legal person, CNPJ —
+ *                          PJ/MEI); documentoscopia targets buyer.owner[0]
+ *   - status               Poll a prior verification by `verification_id`
  *
  * KYC is async: a returned result records that the verification was created
  * with the rail. The subject completes the hosted flow off-platform; poll
- * the disposition with the `verificationStatus` correlation method.
+ * the disposition with the `verificationStatus` correlation method, or with
+ * `check_type: "status"` (pass `verification_id` + `document_number`).
  */
 export interface KycArgs {
   /** Subject details the rail identifies the person from. */
   buyer: Record<string, unknown>;
-  /** identity | document | risk-score | sanctions. */
-  check_type: "identity" | "document" | "risk-score" | "sanctions";
+  /** The verification rail — the codespar_kyc definition's `check_type`
+   *  enum. */
+  check_type:
+    | "identity"
+    | "document"
+    | "risk-score"
+    | "sanctions"
+    | "onboarding"
+    | "onboarding-business"
+    | "status";
+  /** From a prior call — REQUIRED with `check_type: "status"`. It names the
+   *  proposal that verified the document and is the only thing that
+   *  provisions a payment account. */
+  verification_id?: string;
+  /** CPF (or CNPJ for an onboarding-business proposal) — required with
+   *  `check_type: "status"`; must match the document the
+   *  `verification_id`'s proposal verified. */
+  document_number?: string;
+  /** Whose account/verification — defaults to the session user id
+   *  (onboarding + status). */
+  consumer_id?: string;
   /** Free-form metadata forwarded to the rail. */
   metadata?: Record<string, unknown>;
 }
