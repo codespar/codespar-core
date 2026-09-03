@@ -10,6 +10,16 @@ import {
   sharedDefinitionConformanceReasons,
   type AgentFacingToolShape,
 } from "./meta-tool-definition-conformance.js";
+import type {
+  ChargeArgs,
+  IssueArgs,
+  KycArgs,
+  LedgerArgs,
+  PayArgs,
+  PayBankAccountRecipient,
+  ShipArgs,
+  ShopArgs,
+} from "./types.js";
 
 const ALL = Object.values(SHARED_META_TOOL_DEFINITIONS) as SharedMetaToolDefinition[];
 
@@ -336,5 +346,135 @@ describe("sharedDefinitionConformanceReasons (the cross-runtime comparator sees 
         r.includes('property "counterparty" is missing the embedded property "country"'),
       ),
     ).toBe(true);
+  });
+});
+
+describe("wire-shape arg unions match the published definition vocabularies (ent#933)", () => {
+  /**
+   * Two-sided pin. The `Record<Union, true>` literal fails to COMPILE (the
+   * typecheck task) when the TS union in types.ts gains or loses a value
+   * relative to the keys written here, and the runtime assertion fails when
+   * the published structured enum drifts from those same keys — so the
+   * union a TypeScript consumer types against and the enum an agent is
+   * shown cannot disagree silently in either direction. This is the check
+   * that would have caught PayArgs advertising "wallet" (charge's
+   * vocabulary) while hiding "wire", and KycArgs hiding the onboarding /
+   * onboarding-business / status rails.
+   */
+  function pinned<T extends string>(union: Record<T, true>): string[] {
+    return Object.keys(union).sort();
+  }
+
+  it("PayArgs.method == codespar_pay method enum (ent#932: pix/card/boleto/wire)", () => {
+    const union: Record<NonNullable<PayArgs["method"]>, true> = {
+      pix: true,
+      card: true,
+      boleto: true,
+      wire: true,
+    };
+    expect(pinned(union)).toEqual(
+      [...SHARED_META_TOOL_DEFINITIONS.codespar_pay.input_schema.properties.method!.enum!].sort(),
+    );
+  });
+
+  it("ChargeArgs.method == codespar_charge method enum (wallet included)", () => {
+    const union: Record<ChargeArgs["method"], true> = {
+      pix: true,
+      boleto: true,
+      card: true,
+      wallet: true,
+    };
+    expect(pinned(union)).toEqual(
+      [...SHARED_META_TOOL_DEFINITIONS.codespar_charge.input_schema.properties.method!.enum!].sort(),
+    );
+  });
+
+  it("KycArgs.check_type == codespar_kyc check_type enum (onboarding rails included)", () => {
+    const union: Record<KycArgs["check_type"], true> = {
+      identity: true,
+      document: true,
+      "risk-score": true,
+      sanctions: true,
+      onboarding: true,
+      "onboarding-business": true,
+      status: true,
+    };
+    expect(pinned(union)).toEqual(
+      [...SHARED_META_TOOL_DEFINITIONS.codespar_kyc.input_schema.properties.check_type!.enum!].sort(),
+    );
+  });
+
+  it("ShipArgs.action == codespar_ship action enum", () => {
+    const union: Record<ShipArgs["action"], true> = { label: true, track: true, quote: true };
+    expect(pinned(union)).toEqual(
+      [...SHARED_META_TOOL_DEFINITIONS.codespar_ship.input_schema.properties.action!.enum!].sort(),
+    );
+  });
+
+  it("LedgerArgs.action == codespar_ledger action enum", () => {
+    const union: Record<LedgerArgs["action"], true> = {
+      entry: true,
+      balance: true,
+      account: true,
+      receipt: true,
+      receipts: true,
+    };
+    expect(pinned(union)).toEqual(
+      [...SHARED_META_TOOL_DEFINITIONS.codespar_ledger.input_schema.properties.action!.enum!].sort(),
+    );
+  });
+
+  it("IssueArgs.action + IssueArgs.control == codespar_issue enums", () => {
+    const actions: Record<IssueArgs["action"], true> = {
+      "card-virtual": true,
+      "card-physical": true,
+      "card-control": true,
+      "card-get": true,
+    };
+    expect(pinned(actions)).toEqual(
+      [...SHARED_META_TOOL_DEFINITIONS.codespar_issue.input_schema.properties.action!.enum!].sort(),
+    );
+    const controls: Record<NonNullable<IssueArgs["control"]>, true> = {
+      freeze: true,
+      unfreeze: true,
+      cancel: true,
+    };
+    expect(pinned(controls)).toEqual(
+      [...SHARED_META_TOOL_DEFINITIONS.codespar_issue.input_schema.properties.control!.enum!].sort(),
+    );
+  });
+
+  it("ShopArgs.action == codespar_shop action enum", () => {
+    const union: Record<ShopArgs["action"], true> = {
+      search: true,
+      checkout: true,
+      checkout_status: true,
+    };
+    expect(pinned(union)).toEqual(
+      [...SHARED_META_TOOL_DEFINITIONS.codespar_shop.input_schema.properties.action!.enum!].sort(),
+    );
+  });
+
+  it("PayArgs.recipient accepts the bank-account object the definition publishes, field for field", () => {
+    const dest: PayBankAccountRecipient = {
+      bank: "13935893",
+      account: "41055351",
+      branch: "0001",
+      tax_id: "39588281164",
+      name: "Evidencia Homologacao Teste",
+      account_type: "CACC",
+    };
+    // Both payee forms are assignable — a Pix key string and the object.
+    const viaKey: PayArgs["recipient"] = "pix@example.com";
+    const viaAccount: PayArgs["recipient"] = dest;
+    expect(typeof viaKey).toBe("string");
+    expect(typeof viaAccount).toBe("object");
+    // Every field of the TS object form is visible in the published prose,
+    // so the type and the agent-facing description name the same shape.
+    const prose =
+      SHARED_META_TOOL_DEFINITIONS.codespar_pay.input_schema.properties.recipient!.description ?? "";
+    for (const field of Object.keys(dest)) {
+      expect(prose).toContain(field);
+    }
   });
 });

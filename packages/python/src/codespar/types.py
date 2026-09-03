@@ -342,7 +342,7 @@ class ConnectionWizardOptions:
 # ── codespar_charge wire shape ─────────────────────────────────────
 
 
-ChargeMethod = Literal["pix", "boleto", "card"]
+ChargeMethod = Literal["pix", "boleto", "card", "wallet"]
 
 
 @dataclass(slots=True)
