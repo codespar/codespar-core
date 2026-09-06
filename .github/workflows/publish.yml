@@ -45,6 +45,17 @@ jobs:
       - name: Test
         run: npx turbo run test
 
+      # Last chance before anything reaches the registry. The loop below
+      # treats "You cannot publish over the previously published versions"
+      # as a soft pass so re-running a tag is idempotent — which also means
+      # a tag pushed with unbumped versions reports "✓ already at this
+      # version" and ships nothing, green. That is how core#129 would have
+      # renewed itself on the next release. This step refuses to enter the
+      # loop while a package's content differs from what is already on the
+      # registry under its declared version.
+      - name: Publish drift guard
+        run: node scripts/check-publish-drift.mjs
+
       - name: Publish all packages
         run: |
           # Bash's "exit on error" is off for the loop body so one bad package

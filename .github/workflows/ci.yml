@@ -32,6 +32,24 @@ jobs:
       - name: Build, typecheck, and test
         run: npx turbo run build typecheck test
 
+      # The guard's own tests. They run separately from `turbo run test`
+      # because the script is repo-level, not a workspace package — and a
+      # guard whose tests never execute is the thing it exists to prevent.
+      - name: Publish drift guard — self-test
+        run: node --test scripts/check-publish-drift.test.mjs
+
+      # core#129: @codespar/types carried 15 meta-tool definitions in main
+      # while the published 0.10.15 tarball carried 3, for two months, with
+      # CI green throughout. npm versions are immutable, so that number can
+      # never be corrected. This compares every publishable package against
+      # what is actually on the registry under its declared version.
+      #
+      # Needs the build above (it compares `npm pack` output) and reaches
+      # registry.npmjs.org. A registry it cannot read exits 2 and fails the
+      # job on purpose: "could not check" must not read as "clean".
+      - name: Publish drift guard
+        run: node scripts/check-publish-drift.mjs
+
       # Gate blocks high/critical only. Moderates are still reported in
       # the log but don't block when the fix isn't actionable (e.g. fix
       # sits behind an upstream dependency pin).
