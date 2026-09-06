@@ -138,7 +138,10 @@ export function compareTrees(localDir, publishedDir) {
  * state it was written for and nothing else: bump the package, or let its
  * content move again, and the waiver stops matching and the guard fails.
  * A waiver on a package that is no longer drifting is itself a failure —
- * dead waivers get deleted, not accumulated.
+ * dead waivers get deleted, not accumulated. That failure is reported as
+ * `stale-waiver`, not `drift`: both stop the build, but a package that was
+ * correctly bumped must not be told it "changed without a version bump".
+ * The fix for one is a version, the fix for the other is a deleted line.
  */
 export function verdictFor({ name, version, localDir, publishedDir, waivers = [] }) {
   const waiver = waivers.find((w) => w.name === name);
@@ -148,7 +151,7 @@ export function verdictFor({ name, version, localDir, publishedDir, waivers = []
       return {
         name,
         version,
-        status: "drift",
+        status: "stale-waiver",
         reason: `${version} is not on the registry, so the waiver in ${BASELINE_BASENAME} (pinned to ${waiver.version}) is stale — delete it`,
       };
     }
@@ -167,7 +170,7 @@ export function verdictFor({ name, version, localDir, publishedDir, waivers = []
       return {
         name,
         version,
-        status: "drift",
+        status: "stale-waiver",
         reason: `no drift, but ${BASELINE_BASENAME} still waives this package — delete the stale waiver`,
         diff,
       };
@@ -317,7 +320,7 @@ async function main() {
     console.log(JSON.stringify(results, null, 2));
   } else {
     for (const r of results) {
-      const mark = { pass: "✓", waived: "!", drift: "✗" }[r.status];
+      const mark = { pass: "✓", waived: "!", drift: "✗", "stale-waiver": "✗" }[r.status];
       console.log(`${mark} ${r.name}@${r.version} — ${r.reason}`);
       if (r.diff?.drifted) {
         for (const c of r.diff.changed)
@@ -329,8 +332,12 @@ async function main() {
     }
   }
 
+  // Two different failures with two different fixes, reported separately so
+  // the annotation a reviewer sees matches what they actually have to do.
   const drifted = results.filter((r) => r.status === "drift");
+  const stale = results.filter((r) => r.status === "stale-waiver");
   const waived = results.filter((r) => r.status === "waived");
+
   if (drifted.length > 0) {
     console.error("");
     console.error(
@@ -338,8 +345,16 @@ async function main() {
         .map((r) => `${r.name}@${r.version}`)
         .join(", ")}. npm versions are immutable — republishing over them is impossible, so this content is unreachable to consumers until the version is bumped.`,
     );
-    process.exit(1);
   }
+  if (stale.length > 0) {
+    console.error("");
+    console.error(
+      `::error::${stale.length} stale waiver(s) in ${BASELINE_BASENAME}: ${stale
+        .map((r) => `${r.name}@${r.version}`)
+        .join(", ")}. These packages no longer match the state their waiver was written for — the fix is to delete the waiver entry, not to change a version.`,
+    );
+  }
+  if (drifted.length > 0 || stale.length > 0) process.exit(1);
   console.log(
     `\n${results.length} publishable package(s) checked, no new unbumped drift` +
       (waived.length > 0
