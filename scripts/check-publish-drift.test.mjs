@@ -175,7 +175,7 @@ describe("publish drift guard", () => {
         waivers: [waiver],
       });
 
-      assert.equal(verdict.status, "drift");
+      assert.equal(verdict.status, "stale-waiver");
       assert.match(verdict.reason, /stale/);
     });
 
@@ -188,8 +188,34 @@ describe("publish drift guard", () => {
         waivers: [waiver],
       });
 
-      assert.equal(verdict.status, "drift");
+      assert.equal(verdict.status, "stale-waiver");
       assert.match(verdict.reason, /stale waiver/);
+    });
+
+    it("does not tell a correctly bumped package that it forgot to bump", () => {
+      // A stale waiver and real drift both stop the build, but they are not
+      // the same finding and the fixes are opposites: one wants a version,
+      // the other wants a deleted line. Reporting a bumped package under
+      // "changed without a version bump" sends the reader to fix the one
+      // thing that is already correct.
+      const bumped = verdictFor({
+        name: "@codespar/types",
+        version: "0.10.16",
+        localDir,
+        publishedDir: null,
+        waivers: [waiver],
+      });
+      const unbumped = verdictFor({
+        name: "@codespar/types",
+        version: "0.10.15",
+        localDir,
+        publishedDir,
+      });
+
+      assert.notEqual(bumped.status, unbumped.status);
+      assert.equal(unbumped.status, "drift");
+      assert.doesNotMatch(bumped.reason, /bump the version/);
+      assert.match(bumped.reason, /delete it/);
     });
   });
 
