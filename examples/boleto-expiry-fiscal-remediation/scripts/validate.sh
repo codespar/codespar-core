@@ -213,7 +213,14 @@ if command -v docker >/dev/null 2>&1; then
   RUNTIME_LOG="$SKELETON_DIR/.runtime.log"
 
   echo "validate.sh: starting runtime from $RUNTIME_IMAGE (port $RUNTIME_PORT)…"
-  docker run -d --rm \
+  # Deliberately no --rm. A container that dies during startup takes its logs
+  # with it the moment Docker removes it, and the `docker logs` below then
+  # prints "No such container" instead of the reason it died — which is how
+  # four CI jobs stayed unexplained for three days (core#135). The runtime's
+  # own startup errors name the cause precisely, so the container is kept
+  # until cleanup_docker removes it explicitly.
+  docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+  docker run -d \
     --name "$CONTAINER_NAME" \
     --add-host=host.docker.internal:host-gateway \
     -p "$RUNTIME_PORT:3000" \
@@ -226,13 +233,17 @@ if command -v docker >/dev/null 2>&1; then
     "$RUNTIME_IMAGE" \
     node /app/server/start.mjs \
     > "$RUNTIME_LOG" 2>&1 || {
-      echo "validate.sh: docker run failed; check $RUNTIME_LOG" >&2
+      echo "validate.sh: docker run failed:" >&2
+      cat "$RUNTIME_LOG" >&2 || true
       stop_aimock
       exit 3
     }
 
   cleanup_docker() {
     docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    # Explicit, because --rm is gone: the container outlives its own death so
+    # the log dump above can read it, and this is what reaps it afterwards.
+    docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
     stop_aimock
   }
   trap cleanup_docker EXIT INT TERM
@@ -247,6 +258,11 @@ if command -v docker >/dev/null 2>&1; then
       echo "validate.sh: runtime did not become healthy in 30s" >&2
       echo "--- last 40 lines of container log ---" >&2
       docker logs "$CONTAINER_NAME" 2>&1 | tail -n 40 >&2 || true
+      echo "--- container state ---" >&2
+      docker inspect -f 'status={{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}}' \
+        "$CONTAINER_NAME" >&2 2>/dev/null || true
+      echo "--- docker run output ($RUNTIME_LOG) ---" >&2
+      cat "$RUNTIME_LOG" >&2 || true
       exit 3
     fi
     sleep 1
