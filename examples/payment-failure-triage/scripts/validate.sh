@@ -261,8 +261,10 @@ if command -v docker >/dev/null 2>&1; then
       echo "--- container state ---" >&2
       docker inspect -f 'status={{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}}' \
         "$CONTAINER_NAME" >&2 2>/dev/null || true
-      echo "--- docker run output ($RUNTIME_LOG) ---" >&2
-      cat "$RUNTIME_LOG" >&2 || true
+      # Tail, not cat: this file also captures `docker pull` layer progress,
+      # which is ~60 lines of noise. Docker-level errors land at the end.
+      echo "--- docker run output, last 20 lines ($RUNTIME_LOG) ---" >&2
+      tail -n 20 "$RUNTIME_LOG" >&2 || true
       exit 3
     fi
     sleep 1
