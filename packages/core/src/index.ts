@@ -51,6 +51,22 @@ export {
   isPolicyDenied,
   isToolNotMocked,
 } from "./tool-result-codes.js";
+export { ApiClient, createApiClient } from "./api/client.js";
+export type { ApiClientConfig } from "./api/client.js";
+export type {
+  ApiMethod,
+  ApiOperation,
+  ApiOperationRef,
+  ApiPath,
+  ApiPaths,
+  ApiPathsFor,
+  ApiRequestBody,
+  ApiRequestOptions,
+  ApiResponse,
+  ApiSuccess,
+} from "./api/types.js";
+export { API_OPERATIONS } from "./generated/operations.js";
+export type { components as ApiComponents } from "./generated/openapi.js";
 export type {
   ApprovalRequiredOutput,
   ApprovalRequiredToolCall,
@@ -69,12 +85,25 @@ import type { CodeSparConfig, SessionConfig, CallOptions } from "./types.js";
 import type { Session } from "@codespar/types";
 import { SessionConfigSchema, PROJECT_ID_REGEX } from "./types.js";
 import { createSession } from "./session.js";
+import { ApiClient } from "./api/client.js";
 import { validateTimeout } from "./internal/fetch.js";
 
 const DEFAULT_BASE_URL = "https://api.codespar.dev";
 
 export class CodeSpar {
   private readonly config: Required<CodeSparConfig>;
+
+  /**
+   * Typed REST client over every operation of the served OpenAPI
+   * document, generated from `openapi-snapshot.json`. Same credentials,
+   * base URL, project scope and default timeout as this client.
+   *
+   * @example
+   * ```ts
+   * const wallet = await cs.api.get("/v1/wallets/{id}", { path: { id: "wal_example" } });
+   * ```
+   */
+  readonly api: ApiClient;
 
   constructor(config: CodeSparConfig = {}) {
     this.config = {
@@ -113,6 +142,13 @@ export class CodeSpar {
         `CodeSpar projectId must match ${PROJECT_ID_REGEX.source} (e.g. 'prj_...').`,
       );
     }
+
+    this.api = new ApiClient({
+      baseUrl: this.config.baseUrl,
+      apiKey: this.config.apiKey,
+      projectId: this.config.projectId || undefined,
+      timeout: this.config.timeout,
+    });
   }
 
   /**

@@ -1,5 +1,11 @@
 # @codespar/cli — changelog
 
+## 0.6.1 — 2026-09-09
+
+Dependency range only: `@codespar/sdk` `^0.12.0` (the generated REST
+client, see [codespar/codespar-core#125](https://github.com/codespar/codespar-core/issues/125)).
+No command changed.
+
 ## 0.6.0 — 2026-07-05
 
 Offline V3 mandate verification from the terminal. See

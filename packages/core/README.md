@@ -158,6 +158,8 @@ const result = await loop(session, {
 | `session.mcp` | MCP transport URL and headers (when using managed runtime) |
 | `session.close()` | Close session |
 
+For everything the API exposes over REST beyond the session surface, see [REST client generated from the OpenAPI document](#rest-client-generated-from-the-openapi-document).
+
 ### Free functions
 
 `tools`, `findTools`, and `loop` are free functions that accept any `SessionBase` — they work with the managed runtime, Managed Agents sessions, and custom runtimes alike.
@@ -167,6 +169,73 @@ const result = await loop(session, {
 | `tools(session)` | Get all available tools from the session |
 | `findTools(session, query)` | Search tools by name or description |
 | `loop(session, config)` | Run a Complete Loop workflow |
+
+## REST client generated from the OpenAPI document
+
+`cs.api` reaches every operation the API publishes at
+[`https://api.codespar.dev/openapi.json`](https://api.codespar.dev/openapi.json):
+213 operations across 173 paths at the snapshot this version ships. No
+method is written by hand. The document is committed as
+`openapi-snapshot.json`, the types under `src/generated/` are produced
+from it with openapi-typescript, and the client is typed by path and
+method: a path that does not declare the method does not compile, a
+missing required path parameter or body field does not compile, and the
+result is the documented 2xx shape.
+
+```typescript
+import { CodeSpar } from "@codespar/sdk";
+
+const cs = new CodeSpar({ apiKey: process.env.CODESPAR_API_KEY });
+
+// 1. List wallets in the project the key is bound to.
+const wallets = await cs.api.get("/v1/wallets");
+
+// 2. Create a payment from a wallet. The gateway answers 200 (completed),
+//    402 (requires approval), 403 (denied) or 422 (failed) with the same
+//    body shape, so read it with response() and branch on status.
+const payment = await cs.api.response("post", "/v1/wallets/{id}/execute", {
+  path: { id: "wal_example" },
+  body: {
+    amount: 1,
+    currency: "BRL",
+    recipient: "recipient@example.com",
+    description: "Example payment",
+    mandate_id: "mnd_example",
+  },
+});
+if (payment.status === 402) {
+  console.log("approval needed", payment.data);
+}
+
+// 3. Read one agentic receipt by id.
+const receipt = await cs.api.get("/v1/consumers/receipts/{id}", {
+  path: { id: "rcpt_example" },
+});
+console.log(receipt.state); // "paid" | "delivered" | "exception" | "voided"
+```
+
+`get`/`post`/`put`/`patch`/`delete` and `request(method, path, options)`
+return the documented 2xx data and throw `CodesparApiError` on any other
+status (parsed body on `e.body`, same as the session methods).
+`response(method, path, options)` returns `{ status, ok, data, response }`
+for every status the document lists, discriminated on `status`. Options
+carry `path`, `query`, `header` and `body` exactly as the document
+declares them, plus the SDK-wide per-call `timeout` and `signal`.
+Operations documented as `text/event-stream` resolve to the raw
+`Response` once headers arrive.
+
+The client only knows what the document says. A parameter a route
+accepts but does not declare is not typed here; the fix is in the
+document, not in this package. `createApiClient(config)` builds the same
+client without a `CodeSpar` instance, and `ApiClient.operations()` lists
+what it reaches.
+
+Keeping it current: `npm run sdk:spec:refresh` (repo root) re-fetches
+the document and regenerates; `npm run sdk:spec:check` fails when the
+snapshot was edited by hand, when the generated files do not match the
+snapshot, or when the served document no longer matches the snapshot.
+The test suite pins the first two and dispatches all 213 operations
+through the client.
 
 ## Migrating from 0.2.x
 

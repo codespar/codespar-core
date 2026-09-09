@@ -1,5 +1,20 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.12.0
+
+A REST client generated from the served OpenAPI document lands next to the session API. Closes the "SDK covers 11 of 213 routes" half of [codespar/codespar-core#125](https://github.com/codespar/codespar-core/issues/125).
+
+### Added
+
+- `cs.api`: a client typed by path and method over every operation of `https://api.codespar.dev/openapi.json` (213 operations across 173 paths at the snapshot this version ships). `cs.api.get("/v1/wallets/{id}", { path: { id } })`, `cs.api.post("/v1/wallets", { body })`, plus `put`/`patch`/`delete`, `request(method, path, options)` and `response(method, path, options)`. Path, query and header parameters and the request body are typed from the document and required exactly where the document requires them; the return type is the documented 2xx shape. `response()` returns every documented status as `{ status, ok, data, response }` for routes where a 402/403/422 body is an outcome, not a failure. Non-2xx statuses from `request()` throw the existing `CodesparApiError` with the parsed body on `e.body`; network failures, timeouts and aborts behave as they do on `Session`.
+- `createApiClient(config)` and `ApiClient` for callers who want the REST client without a `CodeSpar` instance; `API_OPERATIONS` (the generated operation table) and `ApiClient.operations()` to enumerate what the client reaches; `ApiPaths`, `ApiComponents`, `ApiOperation`, `ApiRequestOptions`, `ApiResponse`, `ApiSuccess` and friends for typing wrappers.
+- `packages/core/openapi-snapshot.json`: the served document with its sha256, fetch time and source URL. `src/generated/openapi.ts` (openapi-typescript) and `src/generated/operations.ts` are generated from it and committed. `npm run sdk:spec:refresh` re-fetches and regenerates; `npm run sdk:spec:check` exits non-zero when the snapshot was edited by hand, when the generated files do not match the snapshot, or when the served document no longer matches the snapshot. The vitest suite pins the hermetic half and dispatches every operation of the table through the client (213 of 213).
+
+### Changed
+
+- The package now carries the generated declaration file for the whole document (about 1.1 MB of `.d.ts`); no runtime code was added beyond the thin client and the 213-row table. No runtime dependency was added: `openapi-typescript` is a devDependency used only by the generator.
+- Includes the changes that landed on `main` after the 0.11.0 tag and were waived in `scripts/publish-drift-baseline.json` (core#131): request timeout and cancellation (#49) and #120. Their entries are in the sections above where they were written; this bump is the release decision the waiver was waiting for.
+
 ## 0.11.0
 
 Offline V3 mandate verification lands on the SDK as a dedicated subpath. See [codespar/codespar-core#114](https://github.com/codespar/codespar-core/pull/114).
