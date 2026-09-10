@@ -478,7 +478,7 @@ export const PAY_DEFINITION: SharedMetaToolDefinition = {
 export const WALLET_DEFINITION: SharedMetaToolDefinition = {
   name: "codespar_wallet",
   description:
-    "Programmable wallet for the agent/consumer's governed funds. action=balance returns the wallet balance + Pix key (the spendable funds); action=statement returns the wallet ledger (funds, holds, debits, newest first); action=receive mints a Pix copia-e-cola — a QR a payer pays to TOP UP the wallet (settling credits the wallet via the inbound webhook). Scoped to the consumer (consumer_id defaults to the session user). Distinct from codespar_ledger (the double-entry books) and codespar_pay (spending OUT). Use receive to fund, then codespar_pay to spend.",
+    "Programmable wallet for the agent/consumer's governed funds. action=balance returns the wallet's canonical balance per currency (`balances[]`: balance_minor + available_minor, the ledger-fed figure every spend is validated against) + the Pix key; each funding source also carries `provider_balance_minor` (the provider's LIVE saldo, with `provider` and `as_of`), which is for reconciliation and NOT for deciding a spend — when the provider cannot be read it is null with `provider_error`, and the canonical balance is unaffected. action=statement returns the wallet ledger (funds, holds, debits, newest first); action=receive mints a Pix copia-e-cola — a QR a payer pays to TOP UP the wallet (settling credits the wallet via the inbound webhook). Scoped to the consumer (consumer_id defaults to the session user). Distinct from codespar_ledger (the double-entry books) and codespar_pay (spending OUT). Use receive to fund, then codespar_pay to spend.",
   input_schema: WALLET_INPUT,
   contract: contractOf(WALLET_INPUT),
 };

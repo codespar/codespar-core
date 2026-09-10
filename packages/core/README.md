@@ -174,7 +174,7 @@ For everything the API exposes over REST beyond the session surface, see [REST c
 
 `cs.api` reaches every operation the API publishes at
 [`https://api.codespar.dev/openapi.json`](https://api.codespar.dev/openapi.json):
-213 operations across 173 paths at the snapshot this version ships. No
+215 operations across 175 paths at the snapshot this version ships. No
 method is written by hand. The document is committed as
 `openapi-snapshot.json`, the types under `src/generated/` are produced
 from it with openapi-typescript, and the client is typed by path and
@@ -234,7 +234,7 @@ Keeping it current: `npm run sdk:spec:refresh` (repo root) re-fetches
 the document and regenerates; `npm run sdk:spec:check` fails when the
 snapshot was edited by hand, when the generated files do not match the
 snapshot, or when the served document no longer matches the snapshot.
-The test suite pins the first two and dispatches all 213 operations
+The test suite pins the first two and dispatches all 215 operations
 through the client.
 
 ## Migrating from 0.2.x

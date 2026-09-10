@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-09-09T23:32:36.468Z",
-    "sha256": "0b7723f4b42d49158b76834cc111c88ce3816071ea9f36a8e0193186ee308bb5",
+    "fetched_at": "2026-09-10T10:32:58.952Z",
+    "sha256": "35fddb5dbab7c5518b2e6a2cc7427a51c0da8366eed912ee36d802ece49fb69f",
     "etag": null,
     "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 173,
-    "operations": 213,
+    "paths": 175,
+    "operations": 215,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -747,21 +747,24 @@
                 "string",
                 "null"
               ],
-              "minLength": 1
+              "minLength": 1,
+              "default": null
             },
             "attempt_id": {
               "type": [
                 "string",
                 "null"
               ],
-              "minLength": 1
+              "minLength": 1,
+              "default": null
             },
             "external_ref": {
               "type": [
                 "string",
                 "null"
               ],
-              "minLength": 1
+              "minLength": 1,
+              "default": null
             },
             "metadata": {
               "type": "object",
@@ -774,10 +777,7 @@
             "org_id",
             "currency",
             "amount_minor",
-            "kind",
-            "mandate_id",
-            "attempt_id",
-            "external_ref"
+            "kind"
           ]
         },
         "WalletFundingSourceBind": {
@@ -7205,6 +7205,430 @@
                       "error",
                       "request_id"
                     ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/fees": {
+        "get": {
+          "summary": "Which rate-card lanes are measured and charged for this org",
+          "description": "The public rate card has four lanes, told apart by the direction of the money: MOVIMENTAR (money leaving under a mandate, 10 bps), FATURAR (money being born in the receiver's account, 1%), GOVERNAR (account governance, per governed account) and OPERAR (non-monetary outcomes). A published price is not the same thing as a measured one, and this answer keeps the two apart per lane so a client never shows a figure the platform is not computing.\n\n`computed` says whether this build measures the lane from the organization's own ledger; `charging` says whether the organization is actually invoiced for it; `latest` is the last computed period and is only ever non-null on a computed lane (its shape is the one `GET /v1/fees/movimentar` returns). Today MOVIMENTAR is the only computed lane. `period` is the current calendar month in Sao Paulo time.\n\nScope: `fees:read`.",
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "period": {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}$"
+                      },
+                      "lanes": {
+                        "type": "object",
+                        "properties": {
+                          "movimentar": {
+                            "type": "object",
+                            "properties": {
+                              "computed": {
+                                "type": "boolean"
+                              },
+                              "charging": {
+                                "type": "boolean"
+                              },
+                              "latest": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "period": {
+                                    "type": "string",
+                                    "pattern": "^\\d{4}-\\d{2}$"
+                                  },
+                                  "consumerCount": {
+                                    "type": "integer"
+                                  },
+                                  "movedMinor": {
+                                    "type": "integer"
+                                  },
+                                  "freeTierAppliedMinor": {
+                                    "type": "integer"
+                                  },
+                                  "billableMinor": {
+                                    "type": "integer"
+                                  },
+                                  "refundCreditMinor": {
+                                    "type": "integer"
+                                  },
+                                  "refundedCount": {
+                                    "type": "integer"
+                                  },
+                                  "feeMinor": {
+                                    "type": "integer"
+                                  },
+                                  "rateTier": {
+                                    "type": "string",
+                                    "enum": [
+                                      "self_serve",
+                                      "commit_8bps",
+                                      "commit_6bps"
+                                    ]
+                                  },
+                                  "computedAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "invoiced": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "period",
+                                  "consumerCount",
+                                  "movedMinor",
+                                  "freeTierAppliedMinor",
+                                  "billableMinor",
+                                  "refundCreditMinor",
+                                  "refundedCount",
+                                  "feeMinor",
+                                  "rateTier",
+                                  "computedAt",
+                                  "invoiced"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "computed",
+                              "charging",
+                              "latest"
+                            ]
+                          },
+                          "faturar": {
+                            "type": "object",
+                            "properties": {
+                              "computed": {
+                                "type": "boolean"
+                              },
+                              "charging": {
+                                "type": "boolean"
+                              },
+                              "latest": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "period": {
+                                    "type": "string",
+                                    "pattern": "^\\d{4}-\\d{2}$"
+                                  },
+                                  "consumerCount": {
+                                    "type": "integer"
+                                  },
+                                  "movedMinor": {
+                                    "type": "integer"
+                                  },
+                                  "freeTierAppliedMinor": {
+                                    "type": "integer"
+                                  },
+                                  "billableMinor": {
+                                    "type": "integer"
+                                  },
+                                  "refundCreditMinor": {
+                                    "type": "integer"
+                                  },
+                                  "refundedCount": {
+                                    "type": "integer"
+                                  },
+                                  "feeMinor": {
+                                    "type": "integer"
+                                  },
+                                  "rateTier": {
+                                    "type": "string",
+                                    "enum": [
+                                      "self_serve",
+                                      "commit_8bps",
+                                      "commit_6bps"
+                                    ]
+                                  },
+                                  "computedAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "invoiced": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "period",
+                                  "consumerCount",
+                                  "movedMinor",
+                                  "freeTierAppliedMinor",
+                                  "billableMinor",
+                                  "refundCreditMinor",
+                                  "refundedCount",
+                                  "feeMinor",
+                                  "rateTier",
+                                  "computedAt",
+                                  "invoiced"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "computed",
+                              "charging",
+                              "latest"
+                            ]
+                          },
+                          "governar": {
+                            "type": "object",
+                            "properties": {
+                              "computed": {
+                                "type": "boolean"
+                              },
+                              "charging": {
+                                "type": "boolean"
+                              },
+                              "latest": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "period": {
+                                    "type": "string",
+                                    "pattern": "^\\d{4}-\\d{2}$"
+                                  },
+                                  "consumerCount": {
+                                    "type": "integer"
+                                  },
+                                  "movedMinor": {
+                                    "type": "integer"
+                                  },
+                                  "freeTierAppliedMinor": {
+                                    "type": "integer"
+                                  },
+                                  "billableMinor": {
+                                    "type": "integer"
+                                  },
+                                  "refundCreditMinor": {
+                                    "type": "integer"
+                                  },
+                                  "refundedCount": {
+                                    "type": "integer"
+                                  },
+                                  "feeMinor": {
+                                    "type": "integer"
+                                  },
+                                  "rateTier": {
+                                    "type": "string",
+                                    "enum": [
+                                      "self_serve",
+                                      "commit_8bps",
+                                      "commit_6bps"
+                                    ]
+                                  },
+                                  "computedAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "invoiced": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "period",
+                                  "consumerCount",
+                                  "movedMinor",
+                                  "freeTierAppliedMinor",
+                                  "billableMinor",
+                                  "refundCreditMinor",
+                                  "refundedCount",
+                                  "feeMinor",
+                                  "rateTier",
+                                  "computedAt",
+                                  "invoiced"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "computed",
+                              "charging",
+                              "latest"
+                            ]
+                          },
+                          "operar": {
+                            "type": "object",
+                            "properties": {
+                              "computed": {
+                                "type": "boolean"
+                              },
+                              "charging": {
+                                "type": "boolean"
+                              },
+                              "latest": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "period": {
+                                    "type": "string",
+                                    "pattern": "^\\d{4}-\\d{2}$"
+                                  },
+                                  "consumerCount": {
+                                    "type": "integer"
+                                  },
+                                  "movedMinor": {
+                                    "type": "integer"
+                                  },
+                                  "freeTierAppliedMinor": {
+                                    "type": "integer"
+                                  },
+                                  "billableMinor": {
+                                    "type": "integer"
+                                  },
+                                  "refundCreditMinor": {
+                                    "type": "integer"
+                                  },
+                                  "refundedCount": {
+                                    "type": "integer"
+                                  },
+                                  "feeMinor": {
+                                    "type": "integer"
+                                  },
+                                  "rateTier": {
+                                    "type": "string",
+                                    "enum": [
+                                      "self_serve",
+                                      "commit_8bps",
+                                      "commit_6bps"
+                                    ]
+                                  },
+                                  "computedAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "invoiced": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "period",
+                                  "consumerCount",
+                                  "movedMinor",
+                                  "freeTierAppliedMinor",
+                                  "billableMinor",
+                                  "refundCreditMinor",
+                                  "refundedCount",
+                                  "feeMinor",
+                                  "rateTier",
+                                  "computedAt",
+                                  "invoiced"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "computed",
+                              "charging",
+                              "latest"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "movimentar",
+                          "faturar",
+                          "governar",
+                          "operar"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "period",
+                      "lanes"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/fees/movimentar": {
+        "get": {
+          "summary": "The org's latest MOVIMENTAR-lane fee period (rate card v1)",
+          "description": "What the calling credential's organization owes CodeSpar for the most recently computed calendar month (Sao Paulo time) under the MOVIMENTAR lane of the public rate card: money leaving under a consumer mandate is priced at 10 bps of the value executed, floor R$0,05 and cap R$2,00 per transaction, with the first R$1.000 moved in the month free per organization. Rail fees (Pix, boleto, card) are never in this figure; the rail is passed through at the partner's price on a separate line.\n\nHOW TO READ THE NUMBERS. Every amount is BRL in centavos. `movedMinor` is the value moved in the month; `freeTierAppliedMinor` is the part the monthly franchise absorbed; `billableMinor` is the difference; `refundCreditMinor` is fee handed back for full refunds within 7 days of last month's payments (the first refund per payer-receiver pair in 30 days); `feeMinor` is what is owed after that credit, never below zero. `rateTier` names the commit tier (`self_serve` 10 bps / R$2,00; `commit_8bps` R$1,50; `commit_6bps` R$1,00). `invoiced` says whether the period has been invoiced; a period is invoiced at most once.\n\n`null` (200) when no period has been computed for the organization yet. The period is computed by the platform, not on this read, so the figure can lag the ledger by up to a month; `computedAt` says when.\n\nScope: `fees:read`.",
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "period": {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}$"
+                      },
+                      "consumerCount": {
+                        "type": "integer"
+                      },
+                      "movedMinor": {
+                        "type": "integer"
+                      },
+                      "freeTierAppliedMinor": {
+                        "type": "integer"
+                      },
+                      "billableMinor": {
+                        "type": "integer"
+                      },
+                      "refundCreditMinor": {
+                        "type": "integer"
+                      },
+                      "refundedCount": {
+                        "type": "integer"
+                      },
+                      "feeMinor": {
+                        "type": "integer"
+                      },
+                      "rateTier": {
+                        "type": "string",
+                        "enum": [
+                          "self_serve",
+                          "commit_8bps",
+                          "commit_6bps"
+                        ]
+                      },
+                      "computedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "invoiced": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "period",
+                      "consumerCount",
+                      "movedMinor",
+                      "freeTierAppliedMinor",
+                      "billableMinor",
+                      "refundCreditMinor",
+                      "refundedCount",
+                      "feeMinor",
+                      "rateTier",
+                      "computedAt",
+                      "invoiced"
+                    ],
+                    "description": "The latest computed period, or null when none has been computed."
                   }
                 }
               }
@@ -21415,7 +21839,7 @@
       "/v1/consumers/{id}/wallet": {
         "get": {
           "summary": "The consumer's unified wallet, rolled up per currency",
-          "description": "One line per currency the consumer has spend authority in, each carrying what the agent is authorized to spend, what it has spent, and what is left.\n\nCaps are PER CURRENCY and no FX is ever applied. A BRL authorization and a USDC authorization are separate slots with separate ceilings, and nothing here converts one into the other. `available_minor` is authorized minus spent, floored at zero.\n\n`authorized_minor` is a CEILING, not a balance and not a charge: it is the sum of the slot caps across the consumer's active mandates, so it says what may be spent, not what exists. `spent_minor` counts settled debits only.\n\nLegacy single-currency mandates fold in as a one-currency wallet, so the shape is uniform. A consumer with no mandates answers 200 with an empty `currencies` array, not 404: this route asserts nothing about whether the consumer exists.",
+          "description": "One line per currency the consumer has spend authority in, each carrying what the agent is authorized to spend, what it has spent, and what is left.\n\nCaps are PER CURRENCY and no FX is ever applied. A BRL authorization and a USDC authorization are separate slots with separate ceilings, and nothing here converts one into the other. `available_minor` is authorized minus spent and is NOT floored at zero: an overrun is reported as a negative value with `overspent: true`, never erased.\n\n`authorized_minor` is a CEILING, not a balance and not a charge: it is the sum of the slot caps across the consumer's active mandates, so it says what may be spent, not what exists. `spent_minor` counts settled debits only.\n\nLegacy single-currency mandates fold in as a one-currency wallet, so the shape is uniform. A consumer with no mandates answers 200 with an empty `currencies` array, not 404: this route asserts nothing about whether the consumer exists.",
           "parameters": [
             {
               "schema": {
@@ -21462,7 +21886,11 @@
                             },
                             "available_minor": {
                               "type": "integer",
-                              "description": "authorized minus spent, floored at 0."
+                              "description": "authorized minus spent, NOT floored at zero: a mandate whose settled debits exceed its cap answers a negative value."
+                            },
+                            "overspent": {
+                              "type": "boolean",
+                              "description": "True exactly when `available_minor` is negative, so no sign has to be interpreted."
                             },
                             "funding_source_ids": {
                               "type": "array",
@@ -21483,6 +21911,7 @@
                             "authorized_minor",
                             "spent_minor",
                             "available_minor",
+                            "overspent",
                             "funding_source_ids",
                             "mandate_ids"
                           ]
@@ -35952,7 +36381,7 @@
               }
             },
             "403": {
-              "description": "Forbidden — either a policy rule refused the call, or the org's monthly tool-call allowance is spent. The two bodies are disjoint: the policy one is `{ reason, ruleType, ruleId }` and carries NO `error` key (plus `approval_id` and `expires_at` when the refusal opened a pending approval); the quota one is `{ error: \"quota_exceeded\", ... }`.",
+              "description": "Forbidden — either a policy rule refused the call, or the org's monthly tool-call allowance is spent. The two bodies are disjoint: the policy one is `{ reason, ruleType, ruleId }` and carries NO `error` key (plus `approval_id` and `expires_at` when the refusal opened a pending approval); the quota one is `{ error: \"quota_exceeded\", ... }`. The quota refusal is NOT produced by default: tool calls are free under the rate card, and the allowance only applies on a deployment that explicitly re-enables it.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -36328,7 +36757,7 @@
               }
             },
             "403": {
-              "description": "Forbidden — either a policy rule refused the call, or the org's monthly tool-call allowance is spent. The two bodies are disjoint: the policy one is `{ reason, ruleType, ruleId }` and carries NO `error` key (plus `approval_id` and `expires_at` when the refusal opened a pending approval); the quota one is `{ error: \"quota_exceeded\", ... }`.",
+              "description": "Forbidden — either a policy rule refused the call, or the org's monthly tool-call allowance is spent. The two bodies are disjoint: the policy one is `{ reason, ruleType, ruleId }` and carries NO `error` key (plus `approval_id` and `expires_at` when the refusal opened a pending approval); the quota one is `{ error: \"quota_exceeded\", ... }`. The quota refusal is NOT produced by default: tool calls are free under the rate card, and the allowance only applies on a deployment that explicitly re-enables it.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -36602,7 +37031,7 @@
       "/v1/sessions/{id}/send": {
         "post": {
           "summary": "Drive a model loop that may call tools",
-          "description": "Sends one user message into a tool-use loop over the CodeSpar meta-tools, up to ten model turns. Content-negotiated: `Accept: text/event-stream` streams the turns as they happen and this JSON body is never sent; anything else gets the whole transcript at the end. The schema below describes the JSON form.\n\nWHAT `tool_calls` IS. Every entry is a call the loop attempted and logged, in order. It is NOT a list of provider calls: a refusal never reached a provider and still appears here. `server_id` is what separates them — a refusal by deny-list, policy or approval is logged under `agentgate`, a strategy error under `unknown`, a consumed mock under `mock`, and a real dispatch under the server's own id. Read `server_id` before treating an entry as money moved.\n\n`aborted: true` means the client hung up and the loop stopped rather than buying another turn; the transcript is short because it was cut, not because the model finished.\n\nA 500 is NOT a rollback. The loop broke part-way and everything that already ran stands: the same `tool_calls` and `iterations` fields ride on the error body, so a payment that settled on turn one is still visible when turn two died.\n\nThis route carries no policy guard of its own, so it has no policy 403 and no policy 503; the meta-tool refusals above are how a denial surfaces here. Its only 403 is the quota.",
+          "description": "Sends one user message into a tool-use loop over the CodeSpar meta-tools, up to ten model turns. Content-negotiated: `Accept: text/event-stream` streams the turns as they happen and this JSON body is never sent; anything else gets the whole transcript at the end. The schema below describes the JSON form.\n\nWHAT `tool_calls` IS. Every entry is a call the loop attempted and logged, in order. It is NOT a list of provider calls: a refusal never reached a provider and still appears here. `server_id` is what separates them — a refusal by deny-list, policy or approval is logged under `agentgate`, a strategy error under `unknown`, a consumed mock under `mock`, and a real dispatch under the server's own id. Read `server_id` before treating an entry as money moved.\n\n`aborted: true` means the client hung up and the loop stopped rather than buying another turn; the transcript is short because it was cut, not because the model finished.\n\nA 500 is NOT a rollback. The loop broke part-way and everything that already ran stands: the same `tool_calls` and `iterations` fields ride on the error body, so a payment that settled on turn one is still visible when turn two died.\n\nThis route carries no policy guard of its own, so it has no policy 403 and no policy 503; the meta-tool refusals above are how a denial surfaces here. Its only 403 is the quota, which is off by default.",
           "parameters": [
             {
               "schema": {
@@ -36736,7 +37165,7 @@
               }
             },
             "403": {
-              "description": "Forbidden — the org's monthly tool-call allowance is spent.",
+              "description": "Forbidden — the org's monthly tool-call allowance is spent. NOT produced by default: tool calls are free under the rate card, and the allowance only applies on a deployment that explicitly re-enables it.",
               "content": {
                 "application/json": {
                   "schema": {

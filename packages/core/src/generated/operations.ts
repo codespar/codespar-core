@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 0b7723f4b42d49158b76834cc111c88ce3816071ea9f36a8e0193186ee308bb5, fetched 2026-09-09T23:32:36.468Z
+// Source: openapi-snapshot.json (sha256 35fddb5dbab7c5518b2e6a2cc7427a51c0da8366eed912ee36d802ece49fb69f, fetched 2026-09-10T10:32:58.952Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -73,6 +73,8 @@ export const API_OPERATIONS = [
   { method: "patch", path: "/v1/audit-events/config", body: "application/json", accept: "application/json" },
   { method: "get", path: "/v1/bank-consents/{id}", body: null, accept: "application/json" },
   { method: "get", path: "/v1/ofb/consents/{id}", body: null, accept: "application/json" },
+  { method: "get", path: "/v1/fees", body: null, accept: "application/json" },
+  { method: "get", path: "/v1/fees/movimentar", body: null, accept: "application/json" },
   { method: "post", path: "/v1/cart/meli/connect/start", body: null, accept: "application/json" },
   { method: "post", path: "/v1/cart/ifood/connect/start", body: null, accept: "application/json" },
   { method: "get", path: "/v1/cards/{id}", body: null, accept: "application/json" },
