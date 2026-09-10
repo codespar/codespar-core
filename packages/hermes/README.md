@@ -1,6 +1,6 @@
 # @codespar/hermes
 
-> **Not yet published to npm.** This package builds from source in this repo; the install command below will not resolve until the first npm release lands.
+> **Held from npm since 0.4.2, pending [codespar/codespar-core#138](https://github.com/codespar/codespar-core/issues/138); last published version is 0.4.0.** The package is marked `private` so release tags skip it. It still builds and tests from source in this repo; the install command below resolves to 0.4.0.
 
 Hermes Agent (Nous Research) adapter for CodeSpar — convert session tools to Hermes's MCP/plugin tool format.
 
