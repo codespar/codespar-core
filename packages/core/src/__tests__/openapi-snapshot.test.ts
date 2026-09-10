@@ -46,11 +46,18 @@ describe("openapi-snapshot.json", () => {
 });
 
 describe("src/generated/", () => {
-  it("equals what the snapshot generates (no hand edits, no stale output)", async () => {
-    const rendered = await renderGenerated(snapshot);
-    expect(fs.readFileSync(TYPES_PATH, "utf8")).toBe(rendered.types);
-    expect(fs.readFileSync(OPERATIONS_PATH, "utf8")).toBe(rendered.operations);
-  });
+  // Regenerates 1.1 MB of types in-process: ~250 ms on a laptop, but past
+  // vitest's 5 s default on a CI runner where turbo runs every package's
+  // suite at once (it timed out there once with the code unchanged).
+  it(
+    "equals what the snapshot generates (no hand edits, no stale output)",
+    async () => {
+      const rendered = await renderGenerated(snapshot);
+      expect(fs.readFileSync(TYPES_PATH, "utf8")).toBe(rendered.types);
+      expect(fs.readFileSync(OPERATIONS_PATH, "utf8")).toBe(rendered.operations);
+    },
+    60_000,
+  );
 
   it("carries every operation of the snapshot, once, in document order", () => {
     const fromSnapshot = operationTable(snapshot.document);
