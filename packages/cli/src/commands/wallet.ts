@@ -15,6 +15,8 @@ interface WalletCurrency {
   authorized_minor: number;
   spent_minor: number;
   available_minor: number;
+  /** True exactly when `available_minor` is negative (settled debits exceed the cap). */
+  overspent: boolean;
   funding_source_ids: string[];
   mandate_ids: string[];
 }
@@ -31,7 +33,9 @@ interface WalletResponse {
  * A multi-slot mandate is a wallet with one slot per (currency, rail). Caps are
  * per-currency, so each currency's spend authority is listed side by side with
  * no FX between them — a BRL Pix line and a USDC x402 line, each with its own
- * ceiling. `available = authorized - spent`.
+ * ceiling. `available = authorized - spent`, NOT floored at zero: a slot whose
+ * settled debits exceed its cap answers a negative value and `overspent: true`,
+ * which the table prints next to the amount so a minus sign is not the only signal.
  */
 export async function walletCommand(
   consumerId: string,
@@ -70,8 +74,10 @@ export async function walletCommand(
       cur.rail ?? "-",
       String(cur.authorized_minor),
       String(cur.spent_minor),
-      String(cur.available_minor),
+      cur.overspent ? `${cur.available_minor} (overspent)` : String(cur.available_minor),
     ]),
   );
-  info("Amounts are in minor units (cents / micro-USDC). Caps are per-currency, no FX.");
+  info(
+    "Amounts are in minor units (cents / micro-USDC). Caps are per-currency, no FX. A negative available marked (overspent) means settled debits exceed the cap.",
+  );
 }
