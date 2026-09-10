@@ -33,7 +33,7 @@ LATAM-first by design: Pix + NF-e + WhatsApp + PSP routing are first-class, with
 | [`@codespar/autogen`](packages/autogen) | Microsoft AutoGen |
 | [`@codespar/camel`](packages/camel) | CAMEL-AI |
 | [`@codespar/letta`](packages/letta) | Letta (MemGPT) |
-| [`@codespar/hermes`](packages/hermes) | Hermes Agent (Nous Research) (coming soon, not yet on npm) |
+| [`@codespar/hermes`](packages/hermes) | Hermes Agent (Nous Research) (npm has 0.4.0; held since 0.4.2 pending [#138](https://github.com/codespar/codespar-core/issues/138)) |
 
 ## Quick Start
 
