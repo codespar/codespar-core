@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 0b7723f4b42d49158b76834cc111c88ce3816071ea9f36a8e0193186ee308bb5, fetched 2026-09-09T23:32:36.468Z
+// Source: openapi-snapshot.json (sha256 35fddb5dbab7c5518b2e6a2cc7427a51c0da8366eed912ee36d802ece49fb69f, fetched 2026-09-10T10:32:58.952Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -3888,6 +3888,188 @@ export interface paths {
                             /** @description Echoes the `X-Request-Id` header when the request carried one. */
                             request_id: string | null;
                         };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/fees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Which rate-card lanes are measured and charged for this org
+         * @description The public rate card has four lanes, told apart by the direction of the money: MOVIMENTAR (money leaving under a mandate, 10 bps), FATURAR (money being born in the receiver's account, 1%), GOVERNAR (account governance, per governed account) and OPERAR (non-monetary outcomes). A published price is not the same thing as a measured one, and this answer keeps the two apart per lane so a client never shows a figure the platform is not computing.
+         *
+         *     `computed` says whether this build measures the lane from the organization's own ledger; `charging` says whether the organization is actually invoiced for it; `latest` is the last computed period and is only ever non-null on a computed lane (its shape is the one `GET /v1/fees/movimentar` returns). Today MOVIMENTAR is the only computed lane. `period` is the current calendar month in Sao Paulo time.
+         *
+         *     Scope: `fees:read`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            period: string;
+                            lanes: {
+                                movimentar: {
+                                    computed: boolean;
+                                    charging: boolean;
+                                    latest: {
+                                        period: string;
+                                        consumerCount: number;
+                                        movedMinor: number;
+                                        freeTierAppliedMinor: number;
+                                        billableMinor: number;
+                                        refundCreditMinor: number;
+                                        refundedCount: number;
+                                        feeMinor: number;
+                                        /** @enum {string} */
+                                        rateTier: "self_serve" | "commit_8bps" | "commit_6bps";
+                                        /** Format: date-time */
+                                        computedAt: string;
+                                        invoiced: boolean;
+                                    } | null;
+                                };
+                                faturar: {
+                                    computed: boolean;
+                                    charging: boolean;
+                                    latest: {
+                                        period: string;
+                                        consumerCount: number;
+                                        movedMinor: number;
+                                        freeTierAppliedMinor: number;
+                                        billableMinor: number;
+                                        refundCreditMinor: number;
+                                        refundedCount: number;
+                                        feeMinor: number;
+                                        /** @enum {string} */
+                                        rateTier: "self_serve" | "commit_8bps" | "commit_6bps";
+                                        /** Format: date-time */
+                                        computedAt: string;
+                                        invoiced: boolean;
+                                    } | null;
+                                };
+                                governar: {
+                                    computed: boolean;
+                                    charging: boolean;
+                                    latest: {
+                                        period: string;
+                                        consumerCount: number;
+                                        movedMinor: number;
+                                        freeTierAppliedMinor: number;
+                                        billableMinor: number;
+                                        refundCreditMinor: number;
+                                        refundedCount: number;
+                                        feeMinor: number;
+                                        /** @enum {string} */
+                                        rateTier: "self_serve" | "commit_8bps" | "commit_6bps";
+                                        /** Format: date-time */
+                                        computedAt: string;
+                                        invoiced: boolean;
+                                    } | null;
+                                };
+                                operar: {
+                                    computed: boolean;
+                                    charging: boolean;
+                                    latest: {
+                                        period: string;
+                                        consumerCount: number;
+                                        movedMinor: number;
+                                        freeTierAppliedMinor: number;
+                                        billableMinor: number;
+                                        refundCreditMinor: number;
+                                        refundedCount: number;
+                                        feeMinor: number;
+                                        /** @enum {string} */
+                                        rateTier: "self_serve" | "commit_8bps" | "commit_6bps";
+                                        /** Format: date-time */
+                                        computedAt: string;
+                                        invoiced: boolean;
+                                    } | null;
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/fees/movimentar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The org's latest MOVIMENTAR-lane fee period (rate card v1)
+         * @description What the calling credential's organization owes CodeSpar for the most recently computed calendar month (Sao Paulo time) under the MOVIMENTAR lane of the public rate card: money leaving under a consumer mandate is priced at 10 bps of the value executed, floor R$0,05 and cap R$2,00 per transaction, with the first R$1.000 moved in the month free per organization. Rail fees (Pix, boleto, card) are never in this figure; the rail is passed through at the partner's price on a separate line.
+         *
+         *     HOW TO READ THE NUMBERS. Every amount is BRL in centavos. `movedMinor` is the value moved in the month; `freeTierAppliedMinor` is the part the monthly franchise absorbed; `billableMinor` is the difference; `refundCreditMinor` is fee handed back for full refunds within 7 days of last month's payments (the first refund per payer-receiver pair in 30 days); `feeMinor` is what is owed after that credit, never below zero. `rateTier` names the commit tier (`self_serve` 10 bps / R$2,00; `commit_8bps` R$1,50; `commit_6bps` R$1,00). `invoiced` says whether the period has been invoiced; a period is invoiced at most once.
+         *
+         *     `null` (200) when no period has been computed for the organization yet. The period is computed by the platform, not on this read, so the figure can lag the ledger by up to a month; `computedAt` says when.
+         *
+         *     Scope: `fees:read`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            period: string;
+                            consumerCount: number;
+                            movedMinor: number;
+                            freeTierAppliedMinor: number;
+                            billableMinor: number;
+                            refundCreditMinor: number;
+                            refundedCount: number;
+                            feeMinor: number;
+                            /** @enum {string} */
+                            rateTier: "self_serve" | "commit_8bps" | "commit_6bps";
+                            /** Format: date-time */
+                            computedAt: string;
+                            invoiced: boolean;
+                        } | null;
                     };
                 };
             };
@@ -11686,7 +11868,7 @@ export interface paths {
          * The consumer's unified wallet, rolled up per currency
          * @description One line per currency the consumer has spend authority in, each carrying what the agent is authorized to spend, what it has spent, and what is left.
          *
-         *     Caps are PER CURRENCY and no FX is ever applied. A BRL authorization and a USDC authorization are separate slots with separate ceilings, and nothing here converts one into the other. `available_minor` is authorized minus spent, floored at zero.
+         *     Caps are PER CURRENCY and no FX is ever applied. A BRL authorization and a USDC authorization are separate slots with separate ceilings, and nothing here converts one into the other. `available_minor` is authorized minus spent and is NOT floored at zero: an overrun is reported as a negative value with `overspent: true`, never erased.
          *
          *     `authorized_minor` is a CEILING, not a balance and not a charge: it is the sum of the slot caps across the consumer's active mandates, so it says what may be spent, not what exists. `spent_minor` counts settled debits only.
          *
@@ -11719,8 +11901,10 @@ export interface paths {
                                 authorized_minor: number;
                                 /** @description Sum of settled debits in this currency. */
                                 spent_minor: number;
-                                /** @description authorized minus spent, floored at 0. */
+                                /** @description authorized minus spent, NOT floored at zero: a mandate whose settled debits exceed its cap answers a negative value. */
                                 available_minor: number;
+                                /** @description True exactly when `available_minor` is negative, so no sign has to be interpreted. */
+                                overspent: boolean;
                                 funding_source_ids: string[];
                                 mandate_ids: string[];
                             }[];
@@ -19265,7 +19449,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden — either a policy rule refused the call, or the org's monthly tool-call allowance is spent. The two bodies are disjoint: the policy one is `{ reason, ruleType, ruleId }` and carries NO `error` key (plus `approval_id` and `expires_at` when the refusal opened a pending approval); the quota one is `{ error: "quota_exceeded", ... }`. */
+                /** @description Forbidden — either a policy rule refused the call, or the org's monthly tool-call allowance is spent. The two bodies are disjoint: the policy one is `{ reason, ruleType, ruleId }` and carries NO `error` key (plus `approval_id` and `expires_at` when the refusal opened a pending approval); the quota one is `{ error: "quota_exceeded", ... }`. The quota refusal is NOT produced by default: tool calls are free under the rate card, and the allowance only applies on a deployment that explicitly re-enables it. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -19443,7 +19627,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden — either a policy rule refused the call, or the org's monthly tool-call allowance is spent. The two bodies are disjoint: the policy one is `{ reason, ruleType, ruleId }` and carries NO `error` key (plus `approval_id` and `expires_at` when the refusal opened a pending approval); the quota one is `{ error: "quota_exceeded", ... }`. */
+                /** @description Forbidden — either a policy rule refused the call, or the org's monthly tool-call allowance is spent. The two bodies are disjoint: the policy one is `{ reason, ruleType, ruleId }` and carries NO `error` key (plus `approval_id` and `expires_at` when the refusal opened a pending approval); the quota one is `{ error: "quota_exceeded", ... }`. The quota refusal is NOT produced by default: tool calls are free under the rate card, and the allowance only applies on a deployment that explicitly re-enables it. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -19589,7 +19773,7 @@ export interface paths {
          *
          *     A 500 is NOT a rollback. The loop broke part-way and everything that already ran stands: the same `tool_calls` and `iterations` fields ride on the error body, so a payment that settled on turn one is still visible when turn two died.
          *
-         *     This route carries no policy guard of its own, so it has no policy 403 and no policy 503; the meta-tool refusals above are how a denial surfaces here. Its only 403 is the quota.
+         *     This route carries no policy guard of its own, so it has no policy 403 and no policy 503; the meta-tool refusals above are how a denial surfaces here. Its only 403 is the quota, which is off by default.
          */
         post: {
             parameters: {
@@ -19650,7 +19834,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden — the org's monthly tool-call allowance is spent. */
+                /** @description Forbidden — the org's monthly tool-call allowance is spent. NOT produced by default: tool calls are free under the rate card, and the allowance only applies on a deployment that explicitly re-enables it. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -21665,8 +21849,11 @@ export interface components {
             amount_minor: string;
             /** @enum {string} */
             kind: "fund" | "hold" | "release" | "debit" | "reconcile" | "reverse" | "fee";
+            /** @default null */
             mandate_id: string | null;
+            /** @default null */
             attempt_id: string | null;
+            /** @default null */
             external_ref: string | null;
             /** @default {} */
             metadata: {

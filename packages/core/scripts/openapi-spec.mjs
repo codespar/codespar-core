@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // openapi-spec.mjs — the served OpenAPI document is the source of the
-// typed REST client in src/api/. Nothing about the 213 operations is
+// typed REST client in src/api/. Nothing about the operations is
 // written by hand: the snapshot is fetched from the API, the types are
 // generated from the snapshot, and the runtime operation table (method,
 // path, body and accept content types) is generated alongside them.

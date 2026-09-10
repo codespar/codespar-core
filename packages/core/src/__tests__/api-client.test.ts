@@ -95,9 +95,10 @@ describe("coverage: every operation in the generated table is dispatchable", () 
     }
 
     expect(reached).toBe(API_OPERATIONS.length);
-    // The number the PR claims. Stated here so a snapshot refresh that
-    // drops routes has to change this line on purpose.
-    expect(API_OPERATIONS.length).toBe(213);
+    // The number the snapshot carries. Stated here so a snapshot refresh that
+    // drops routes has to change this line on purpose. 213 at #139; 215 after
+    // the 2026-09-10 refresh (`/v1/fees`, `/v1/fees/movimentar`).
+    expect(API_OPERATIONS.length).toBe(215);
   });
 
   it("refuses a method/path pair the document does not declare, before any request", async () => {
