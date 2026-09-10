@@ -207,6 +207,15 @@ if command -v docker >/dev/null 2>&1; then
   # four sibling jobs stayed unexplained for three days (core#135). The
   # runtime's own startup errors name the cause precisely, so the container is
   # kept until cleanup_docker removes it explicitly.
+  # The runtime keeps its state in <cwd>/.codespar, and <cwd> is this
+  # directory bind-mounted at /example. In the image the process runs as
+  # `node` (uid 1000); on a GitHub runner the checkout is owned by uid 1001
+  # with mode 755, so the runtime's mkdir fails with EACCES and the server
+  # stops before /health ever answers (core#135: four jobs red since 03/09).
+  # CODESPAR_STATE_DIR does not redirect it (core#135, item 3), so the
+  # directory is created here, writable by any uid. It is gitignored.
+  mkdir -p "$SKELETON_DIR/.codespar"
+  chmod 0777 "$SKELETON_DIR/.codespar"
   docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
   docker run -d \
     --name "$CONTAINER_NAME" \
