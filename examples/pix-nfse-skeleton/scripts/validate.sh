@@ -126,6 +126,12 @@ if command -v docker >/dev/null 2>&1; then
   # stops before /health ever answers (core#135: four jobs red since 03/09).
   # CODESPAR_STATE_DIR does not redirect it (core#135, item 3), so the
   # directory is created here, writable by any uid. It is gitignored.
+  # The runtime requires a bearer token on every route. Left alone it mints
+  # one on first boot and writes it to the state directory, which the demo
+  # would then have to read back from the bind mount; supplying it makes the
+  # runtime mint nothing and lets the test send the same value. Defaults to
+  # what the test uses when CODESPAR_API_KEY is unset.
+  DEMO_API_TOKEN="${CODESPAR_API_KEY:-local}"
   mkdir -p "$SKELETON_DIR/.codespar"
   chmod 0777 "$SKELETON_DIR/.codespar"
   docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
@@ -134,6 +140,7 @@ if command -v docker >/dev/null 2>&1; then
     -p "$RUNTIME_PORT:3000" \
     -v "$SKELETON_DIR:/example" \
     -w /example \
+    -e ENGINE_API_TOKEN="$DEMO_API_TOKEN" \
     -e CODESPAR_TEST_MODE_ENABLED=true \
     "$RUNTIME_IMAGE" \
     node /app/server/start.mjs \
@@ -174,6 +181,7 @@ if command -v docker >/dev/null 2>&1; then
   done
 
   CODESPAR_BASE_URL="http://localhost:${RUNTIME_PORT}" \
+  CODESPAR_API_KEY="$DEMO_API_TOKEN" \
   npx vitest run
 
   echo "validate.sh: ok"
