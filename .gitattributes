@@ -1,0 +1,4 @@
+# Generated from the served OpenAPI document (packages/core/scripts/openapi-spec.mjs).
+# Collapsed in GitHub diffs; never edited by hand.
+packages/core/openapi-snapshot.json linguist-generated=true
+packages/core/src/generated/** linguist-generated=true

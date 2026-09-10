@@ -11,13 +11,6 @@
   ],
   "waivers": [
     {
-      "name": "@codespar/sdk",
-      "version": "0.11.0",
-      "fingerprint": "dff8acbde41ee08d8f45efafa1d6a71b1fde6143d8adc621bbdb76cf248b6193",
-      "issue": "core#131",
-      "note": "Request timeout + cancellation (#49, [behavior change]) and #120 landed after the v0.11.0 tag. 19 files differ, 28 exist only in main. Needs a release decision on 0.11.1 vs 0.12.0, which is why it is not bumped here."
-    },
-    {
       "name": "@codespar/api-types",
       "version": "0.5.0",
       "fingerprint": "d77dae43ecfca2fe5aa7fb188706fc9bc59b08b890180a9edd4ab4d2d1077c09",

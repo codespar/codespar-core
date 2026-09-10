@@ -37,3 +37,29 @@ jobs:
           CODESPAR_BASE_URL: https://api.codespar.dev
           CODESPAR_SDK_DIR: _smoke
         run: node scripts/hosted-smoke.mjs
+
+  # The generated REST client in @codespar/sdk describes the OpenAPI
+  # document committed as packages/core/openapi-snapshot.json. The hermetic
+  # half (snapshot -> src/generated/, table -> paths type) runs in the
+  # package's vitest suite on every PR. This half reaches the served
+  # document, which is why it lives here with the other job that talks to
+  # api.codespar.dev and not in the required `ci` job: a proxy serving a
+  # cached body, or the API having a bad minute, must not read as a broken
+  # PR. When it fails on a real change, the fix is a refresh commit
+  # (`npm run sdk:spec:refresh`), reviewed on its own. Exit 2 (could not
+  # fetch) fails the job too; "could not compare" is not "current".
+  spec-freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Snapshot equals the served OpenAPI document
+        run: npm run sdk:spec:check

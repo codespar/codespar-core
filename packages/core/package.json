@@ -1,6 +1,6 @@
 {
   "name": "@codespar/sdk",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Commerce SDK for AI agents — sessions, managed auth, Complete Loop orchestration for Latin American APIs",
   "type": "module",
   "main": "./dist/index.js",
@@ -29,6 +29,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
+    "spec:generate": "node scripts/openapi-spec.mjs generate",
+    "spec:refresh": "node scripts/openapi-spec.mjs refresh",
+    "spec:check": "node scripts/openapi-spec.mjs check",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -55,11 +58,12 @@
     "node": ">=20"
   },
   "dependencies": {
-    "zod": "^3.24.0",
-    "@codespar/types": "^0.10.1"
+    "@codespar/types": "^0.10.1",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
+    "openapi-typescript": "^7.13.0",
     "typescript": "^5.8.0",
     "vitest": "^3.1.0"
   }
