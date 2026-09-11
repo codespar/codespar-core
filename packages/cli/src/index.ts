@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { CodesparApiError, TimeoutError } from "@codespar/sdk";
 import { ApiClient } from "./api.js";
 import { CliError, loadConfig, requireApiKey } from "./config.js";
 import { loginCommand, whoamiCommand } from "./commands/login.js";
@@ -31,6 +32,13 @@ import { verificationStatusCommand } from "./commands/verification-status.js";
 import { wizardCommand } from "./commands/wizard.js";
 import { ledgerCommand } from "./commands/ledger.js";
 import { issueCommand } from "./commands/issue.js";
+import {
+  listMetaToolsCommand,
+  metaToolCommand,
+  showMetaToolCommand,
+} from "./commands/meta-tool.js";
+import { runResourceCommand } from "./commands/resource.js";
+import { derivedSurface, metaToolNames } from "./surface.js";
 import { c } from "./output.js";
 import { printBanner } from "./banner.js";
 import { VERSION } from "./version.js";
@@ -143,6 +151,107 @@ tools
     const client = await authedClient();
     await showToolCommand(client, name, { json: rootJsonFlag() });
   });
+
+tools
+  .command("meta [name]")
+  .description(
+    `Show the ${metaToolNames().length} published meta-tool definitions (name, actions, required input)`,
+  )
+  .action((name?: string) => {
+    if (name) showMetaToolCommand(name, { json: rootJsonFlag() });
+    else listMetaToolsCommand({ json: rootJsonFlag() });
+  });
+
+// ============ meta-tools ============
+// One command over every published definition. The names, the actions and
+// the required input come from `@codespar/types` via the SDK re-export, so
+// a tool added there is invocable here with no code change.
+program
+  .command("tool <name>")
+  .description(
+    `Invoke a published meta-tool by name (${metaToolNames().length} of them — see \`codespar tools meta\`)`,
+  )
+  .option("--action <action>", "Action to run, validated against the tool's published vocabulary")
+  .option("--arg <key=value>", "Single input property (repeatable); typed by the published schema", collect, [])
+  .option("-i, --input <json>", "Full input as a JSON string")
+  .option("-f, --input-file <path>", "Full input from a JSON file")
+  .option("-u, --user <id>", "User id for the session (default: cli-user)")
+  .action(
+    async (
+      name: string,
+      opts: { action?: string; arg: string[]; input?: string; inputFile?: string; user?: string },
+    ) => {
+      const auth = await resolveAuth();
+      await metaToolCommand(name, { ...opts, ...auth, json: rootJsonFlag() });
+    },
+  );
+
+// `pay` and `kyc` are the two money methods core#125 names by hand; both
+// are the same runner over the same published definition, given a shorter
+// spelling because they are the ones people reach for.
+for (const [alias, tool] of [
+  ["pay", "codespar_pay"],
+  ["kyc", "codespar_kyc"],
+] as const) {
+  program
+    .command(alias)
+    .description(`Invoke ${tool} (alias of \`codespar tool ${tool}\`)`)
+    .option("--action <action>", "Action to run, validated against the tool's published vocabulary")
+    .option("--arg <key=value>", "Single input property (repeatable); typed by the published schema", collect, [])
+    .option("-i, --input <json>", "Full input as a JSON string")
+    .option("-f, --input-file <path>", "Full input from a JSON file")
+    .option("-u, --user <id>", "User id for the session (default: cli-user)")
+    .action(
+      async (opts: {
+        action?: string;
+        arg: string[];
+        input?: string;
+        inputFile?: string;
+        user?: string;
+      }) => {
+        const auth = await resolveAuth();
+        await metaToolCommand(tool, { ...opts, ...auth, json: rootJsonFlag() });
+      },
+    );
+}
+
+// ============ resource groups (derived from the served OpenAPI document) ============
+// No per-route code: each subcommand below is one row of the SDK's
+// generated operation table, with its path parameters as positionals.
+for (const { spec, commands } of derivedSurface()) {
+  const group = program.command(spec.name).description(spec.description);
+  for (const command of commands) {
+    const sub = group
+      .command(command.name)
+      .description(`${command.method.toUpperCase()} ${command.path}`)
+      .option("-q, --query <key=value>", "Query parameter (repeatable)", collect, [])
+      .option("--timeout <ms>", "Per-request timeout in milliseconds");
+    for (const param of command.params) sub.argument(`<${param}>`);
+    if (command.acceptsBody) {
+      sub
+        .option("-i, --input <json>", "Request body as a JSON string")
+        .option("-f, --input-file <path>", "Request body from a JSON file");
+    }
+    sub.action(async (...actionArgs: unknown[]) => {
+      const opts = actionArgs[command.params.length] as {
+        query: string[];
+        input?: string;
+        inputFile?: string;
+        timeout?: string;
+      };
+      const auth = await resolveAuth();
+      await runResourceCommand(command, {
+        ...auth,
+        args: actionArgs.slice(0, command.params.length).map(String),
+        query: opts.query,
+        input: opts.input,
+        inputFile: opts.inputFile,
+        timeout: opts.timeout,
+        json: rootJsonFlag(),
+      });
+    });
+  }
+}
 
 // ============ execute ============
 program
@@ -552,6 +661,20 @@ async function main() {
     await program.parseAsync(process.argv);
   } catch (err) {
     if (err instanceof CliError) {
+      process.stderr.write(`${c.red("✗")} ${err.message}\n`);
+      process.exit(1);
+    }
+    // The generated REST client answers with its own error types. Print the
+    // API's message and body verbatim — an exit code plus a stack trace
+    // would hide the one thing the caller needs, which is what the API said.
+    if (err instanceof CodesparApiError) {
+      process.stderr.write(`${c.red("✗")} ${err.message}\n`);
+      if (err.body !== undefined) {
+        process.stderr.write(JSON.stringify(err.body, null, 2) + "\n");
+      }
+      process.exit(1);
+    }
+    if (err instanceof TimeoutError) {
       process.stderr.write(`${c.red("✗")} ${err.message}\n`);
       process.exit(1);
     }

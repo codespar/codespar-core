@@ -41,6 +41,19 @@ codespar spend --mandate <id> --amount 1 --agent buyer \
 # ramp trade at the real rate). Omit --execute to just plan it.
 codespar transfer shopper --from BRL --to USDC --amount 15000
 
+# Every published meta-tool is invocable by name; the actions come from the
+# published definition, so an unknown one is refused before anything is sent
+codespar tools meta
+codespar tool codespar_wallet --action balance --arg consumer_id=con_0000
+codespar pay --action status --arg reference=pay_0000
+
+# Resource groups are derived from the served OpenAPI document: each
+# subcommand is one operation, its path parameters are the positionals
+codespar sellers status slr_0000
+codespar wallets list --query status=active
+codespar triggers create --input '{"url":"https://example.test/hook","events":["payment.settled"]}'
+codespar boletos list con_0000
+
 # Manage sessions and logs
 codespar sessions list
 codespar logs tail --server stripe
@@ -60,6 +73,15 @@ codespar init my-agent
 | `servers show <id>` | Show a server's details and tools |
 | `tools list` | List tools (filter by `--server`) |
 | `tools show <name>` | Show a tool's full input/output schema |
+| `tools meta [name]` | The 15 published meta-tool definitions — actions, required input, vocabularies |
+| `tool <name>` | Invoke any published meta-tool: `--action`, `--arg key=value`, `--input` |
+| `pay` / `kyc` | Shorthand for `tool codespar_pay` / `tool codespar_kyc` |
+| `consumers <sub>` | Consumers: profile, Pix keys, Pix lookups, receipts, contact verification |
+| `boletos <sub>` | DDA: subscribe a document, list the boletos it receives |
+| `sellers <sub>` | Sellers: onboarding status, custody, pending settlement, ledger |
+| `mcp-servers <sub>` | Tenant MCP servers: register, validate, patch a tool, sweep platform fees |
+| `wallets <sub>` | Wallets: balances, ledger, funding sources, execute, transfer, custody |
+| `triggers <sub>` | Triggers (webhooks): endpoints, deliveries, DLQ, secret rotation, redelivery |
 | `execute <tool>` | Run a single tool call in a throwaway session |
 | `discover <query>` | Search the catalog for tools matching a use case |
 | `mandate create` | Create a consumer mandate — the agent's allowance. `--slot CURRENCY:METHOD:CAP:PER_TX` (repeatable, e.g. `BRL:pix:50000:1500`) for a unified multi-currency wallet; per-currency caps, no FX |
@@ -90,6 +112,24 @@ codespar init my-agent
 | `--api-key <key>` | Override the stored key |
 | `--base-url <url>` | Point at a custom API (staging, self-hosted) |
 | `--project <id>` | Scope requests to a project (multi-project orgs) |
+
+Resource-group subcommands also take `-q, --query key=value` (repeatable),
+`--timeout <ms>`, and — when the operation declares a request body —
+`-i, --input '<json>'` or `-f, --input-file <path>`.
+
+## Where the commands come from
+
+The resource groups and the meta-tool commands are not written one by one.
+`codespar sellers`, `consumers`, `boletos`, `mcp-servers`, `wallets` and
+`triggers` are derived from `API_OPERATIONS` — the operation table
+`@codespar/sdk` generates from the served OpenAPI document — so a
+subcommand is one operation, and the request behind it is the one the
+document declares. `codespar tool <name>` reads the 15 shared meta-tool
+definitions from `@codespar/types`: the names, the actions and the
+required input are the published ones, checked before anything is sent.
+
+A resource family with no command needs a written exception with a date
+(`src/surface.ts`), and the coverage test refuses to let that list grow.
 
 ## Configuration
 

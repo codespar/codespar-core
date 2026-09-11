@@ -35,3 +35,17 @@ export async function resolveMetaInput(
     throw new CliError(`${source} is not valid JSON: ${(err as Error).message}`);
   }
 }
+
+/**
+ * Same two flags, but the body is optional: a GET has nothing to send and
+ * a POST may take an empty body. Returns `undefined` when neither flag is
+ * given, and throws the same way as `resolveMetaInput` when one is given
+ * and does not parse.
+ */
+export async function resolveOptionalInput(
+  opts: { input?: string; inputFile?: string },
+  what: string,
+): Promise<Record<string, unknown> | undefined> {
+  if (opts.input === undefined && opts.inputFile === undefined) return undefined;
+  return resolveMetaInput(opts, what, "{}");
+}
