@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 35fddb5dbab7c5518b2e6a2cc7427a51c0da8366eed912ee36d802ece49fb69f, fetched 2026-09-10T10:32:58.952Z
+// Source: openapi-snapshot.json (sha256 97ee015c2ad4f74a9f922bf1d7a4e479c940336ead1b2770e1714758b9cb7f95, fetched 2026-09-11T10:51:22.760Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -2763,7 +2763,7 @@ export interface paths {
          *
          *     `tool_input` IS NOT THE CALL. It is what the lane that raised the hold recorded, and two things happen to it on the way in. A hold raised on the session execute path carries `{}`, because that path hands the policy engine no tool input at all and the engine stores an empty object when it gets none. A hold raised on the proxy path carries `{ server, method, endpoint, body, params, headers }`, with the `authorization` and `cookie` request headers removed before the row is written. So an empty object here means 'this lane records nothing', not 'the agent sent nothing'.
          *
-         *     `tool_name` HAS NO SINGLE FORMAT, because four lanes write it. The proxy path writes `<server>:<method>:<endpoint>` with the leading slash dropped and the remaining slashes turned into colons (`asaas`, `POST`, `/payments/create` becomes `asaas:post:payments:create`). The session execute path writes the caller's own `tool` string verbatim, which is any non-empty string that caller chose. The over-cap settlement lane writes `codespar_pay`. The operator account-status lane writes `admin:account_status_set`. Match on it only knowing which lane you are reading.
+         *     `tool_name` HAS NO SINGLE FORMAT, because four lanes write it. The proxy path writes `<server>:<method>:<endpoint>` with the leading slash dropped and the remaining slashes turned into colons (`asaas`, `POST`, `/payments/create` becomes `asaas:post:payments:create`). The session execute path writes the caller's own `tool` string verbatim, which is any non-empty string that caller chose. The over-cap settlement lane writes `codespar_pay`. The operator account-status lane writes `admin:account_status_set` and the operator withdrawal-resolution lane `admin:withdrawal_resolve`. Match on it only knowing which lane you are reading.
          *
          *     `expires_at` is the end of the hold, not a display hint: once it passes, the row stops being decidable and the expiry sweep moves it to `expired`.
          *
@@ -3911,7 +3911,7 @@ export interface paths {
          * Which rate-card lanes are measured and charged for this org
          * @description The public rate card has four lanes, told apart by the direction of the money: MOVIMENTAR (money leaving under a mandate, 10 bps), FATURAR (money being born in the receiver's account, 1%), GOVERNAR (account governance, per governed account) and OPERAR (non-monetary outcomes). A published price is not the same thing as a measured one, and this answer keeps the two apart per lane so a client never shows a figure the platform is not computing.
          *
-         *     `computed` says whether this build measures the lane from the organization's own ledger; `charging` says whether the organization is actually invoiced for it; `latest` is the last computed period and is only ever non-null on a computed lane (its shape is the one `GET /v1/fees/movimentar` returns). Today MOVIMENTAR is the only computed lane. `period` is the current calendar month in Sao Paulo time.
+         *     `computed` says whether this build measures the lane from the organization's own ledger; `charging` says whether the organization is actually invoiced for it; `latest` is the last computed period and is only ever non-null on a computed lane (its shape is the one the lane's own read returns: `GET /v1/fees/movimentar`, `GET /v1/fees/governar`). Today MOVIMENTAR and GOVERNAR are the computed lanes; FATURAR and OPERAR are not measured and always answer `latest: null`. `charging` is each lane's own switch: an organization can be charged for one lane and not the other. `period` is the current calendar month in Sao Paulo time.
          *
          *     Scope: `fees:read`.
          */
@@ -3955,36 +3955,16 @@ export interface paths {
                                 faturar: {
                                     computed: boolean;
                                     charging: boolean;
-                                    latest: {
-                                        period: string;
-                                        consumerCount: number;
-                                        movedMinor: number;
-                                        freeTierAppliedMinor: number;
-                                        billableMinor: number;
-                                        refundCreditMinor: number;
-                                        refundedCount: number;
-                                        feeMinor: number;
-                                        /** @enum {string} */
-                                        rateTier: "self_serve" | "commit_8bps" | "commit_6bps";
-                                        /** Format: date-time */
-                                        computedAt: string;
-                                        invoiced: boolean;
-                                    } | null;
+                                    latest: null;
                                 };
                                 governar: {
                                     computed: boolean;
                                     charging: boolean;
                                     latest: {
                                         period: string;
-                                        consumerCount: number;
-                                        movedMinor: number;
-                                        freeTierAppliedMinor: number;
-                                        billableMinor: number;
-                                        refundCreditMinor: number;
-                                        refundedCount: number;
+                                        governedAccountsCount: number;
+                                        consumerIdsSha256: string;
                                         feeMinor: number;
-                                        /** @enum {string} */
-                                        rateTier: "self_serve" | "commit_8bps" | "commit_6bps";
                                         /** Format: date-time */
                                         computedAt: string;
                                         invoiced: boolean;
@@ -3993,21 +3973,7 @@ export interface paths {
                                 operar: {
                                     computed: boolean;
                                     charging: boolean;
-                                    latest: {
-                                        period: string;
-                                        consumerCount: number;
-                                        movedMinor: number;
-                                        freeTierAppliedMinor: number;
-                                        billableMinor: number;
-                                        refundCreditMinor: number;
-                                        refundedCount: number;
-                                        feeMinor: number;
-                                        /** @enum {string} */
-                                        rateTier: "self_serve" | "commit_8bps" | "commit_6bps";
-                                        /** Format: date-time */
-                                        computedAt: string;
-                                        invoiced: boolean;
-                                    } | null;
+                                    latest: null;
                                 };
                             };
                         };
@@ -4066,6 +4032,61 @@ export interface paths {
                             feeMinor: number;
                             /** @enum {string} */
                             rateTier: "self_serve" | "commit_8bps" | "commit_6bps";
+                            /** Format: date-time */
+                            computedAt: string;
+                            invoiced: boolean;
+                        } | null;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/fees/governar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The org's latest GOVERNAR-lane fee period (rate card v1)
+         * @description What the calling credential's organization owes CodeSpar for the most recently computed calendar month (Sao Paulo time) under the GOVERNAR lane of the public rate card (Account governance): R$4,90 per governed account active in the month. A governed account active in the month is a holder that had a consumer mandate active at some instant of the month AND at least one outcome settled under one of their mandates in the month (a debit in the wallet ledger, or a receipt sealed). A holder with mandates and no settled outcome in the month costs nothing; a holder with three mandates is one account; the population resets every month.
+         *
+         *     This lane prices the ACCOUNT, not the outcome. The same debit that pays 10 bps under MOVIMENTAR is what shows the account was alive in the month; it is not priced twice, because the two lines price two different things.
+         *
+         *     HOW TO READ THE NUMBERS. `governedAccountsCount` is how many holders were counted; `feeMinor` is that count times R$4,90, in centavos; `consumerIdsSha256` is the SHA-256 (hex) of the counted consumer ids sorted and joined by a newline, so a client can verify its own list of accounts against the figure; the ids themselves stay on the platform's row for audit. `invoiced` says whether the period has been invoiced; a period is invoiced at most once.
+         *
+         *     `null` (200) when no period has been computed for the organization yet. The period is computed by the platform, not on this read; `computedAt` says when.
+         *
+         *     Scope: `fees:read`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            period: string;
+                            governedAccountsCount: number;
+                            consumerIdsSha256: string;
+                            feeMinor: number;
                             /** Format: date-time */
                             computedAt: string;
                             invoiced: boolean;
@@ -4506,6 +4527,7 @@ export interface paths {
         };
         /**
          * Read the credential form a provider needs, without reading any credential
+         * @deprecated
          * @description What to ask an operator for before connecting this provider, and where the request will go once connected. It NEVER returns a stored secret: the vault is write-only from this side, and `fields` describes inputs to collect, not values that exist.
          *
          *     AN EMPTY `fields` DOES NOT MEAN NOTHING TO DO, and four auth types produce one. `oauth` collects nothing here because the browser leg starts at `POST /v1/connections/start` instead. `none` needs no credential. And `jwt_ecdsa` and `cdp` reach no field-building branch at all, so they come back empty while still needing operator-issued material: read that pair as unsupported by this form rather than as ready to connect. The other five all return at least one field, `cert` included.
@@ -4668,6 +4690,7 @@ export interface paths {
         put?: never;
         /**
          * Ask the provider whether this project's stored credential still works
+         * @deprecated
          * @description Issues ONE safe read against the provider using the credential this project has stored for it, and reports what came back. POST because it leaves the process and spends a provider call, not because it changes anything here: no state of yours is altered by it. It takes NO REQUEST BODY, and anything sent is ignored.
          *
          *     WHICH READ depends on the provider. A handful ship a bespoke recipe, and those are the ones that can return an `account` summary. Everything else re-runs the provider's declared functional probe, the same authenticated read used to confirm a sandbox works when it is first set up; that path returns no `account`. A provider with neither answers 501.
@@ -4779,6 +4802,24 @@ export interface paths {
                             status: number;
                             /** @description Wall-clock milliseconds around the outbound call. */
                             latency_ms: number;
+                        };
+                    };
+                };
+                /** @description `test_venue_unavailable`. The project is in `environment="test"` and this provider cannot be exercised there: its catalog entry classifies `test_venue` as `none` (the provider runs no test environment, so a call would land on production with a real effect) or `unclassified` (nobody has established what it does in test). Not a verdict on the credential and not retryable — the identical request from a `live` project reaches the provider (ent#722). */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            ok: false;
+                            /** @description The provider id from the path. */
+                            provider: string;
+                            /** @enum {string} */
+                            error: "test_venue_unavailable";
+                            /** @description A CodeSpar-authored sentence naming the catalog file and the field to declare. Never provider text — no round trip was made. */
+                            detail: string;
                         };
                     };
                 };
@@ -5971,8 +6012,8 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing";
-                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. */
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
                             status?: number;
@@ -6004,8 +6045,8 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing";
-                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. */
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
                             status?: number;
@@ -6032,8 +6073,8 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing";
-                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. */
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
                             status?: number;
@@ -6060,8 +6101,8 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing";
-                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. */
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
                             status?: number;
@@ -6088,8 +6129,8 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing";
-                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. */
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
                             status?: number;
@@ -6116,8 +6157,8 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing";
-                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. */
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
                             status?: number;
@@ -6144,8 +6185,8 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing";
-                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. */
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
                             status?: number;
@@ -6876,6 +6917,23 @@ export interface paths {
                             /** @enum {string} */
                             error: "server_oauth_not_configured";
                             server_id: string;
+                        };
+                    };
+                };
+                /** @description The project is in `environment="test"` and this provider has no test venue, so the flow is refused BEFORE a state token is minted — a refused start leaves no half-begun link behind. Sending a test project to the provider's LIVE consent screen would have it authorise a real account and vault a real token under a project that is not supposed to hold one (ent#722). Not retryable; the same call from a `live` project succeeds. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "test_venue_unavailable";
+                            server_id: string;
+                            /** @enum {string} */
+                            environment: "live" | "test";
+                            /** @description Names the catalog file and the field to declare. */
+                            detail: string;
                         };
                     };
                 };
@@ -7972,6 +8030,7 @@ export interface paths {
         };
         /**
          * Browse the audit chain (alias path)
+         * @deprecated
          * @description A read-only page of the caller's own tamper-evident chain, newest first.
          *
          *     THIS IS AN ALIAS OF `GET /v1/audit-events`, NOT A SECOND RESOURCE. One handler serves both paths, so the query, the body and every refusal are identical and there is nothing to choose between them. It is described separately only because a generated client sees two operations; pick one spelling and stay on it. Note that the OTHER audit operations — the chain's health report, its incidents, its configuration — have no twin under this prefix and live only under `/v1/audit-events`.
@@ -8529,8 +8588,12 @@ export interface paths {
                                 counterparty_id: string;
                                 /** @enum {string} */
                                 kind: "quote" | "negotiation" | "order" | "invoice" | "payment" | "shipment" | "message" | "other";
-                                /** @description Minor units. Stored as a 64 bit integer and rendered as a JSON number. Null unless `currency` is also set. */
+                                /** @description Minor units (cents). The row is STORED in the currency's native unit, BRL centavos and USDC 10^-6 (ent#1203), and rendered here in cents rounded away from zero, so a USDC row of 0.001 reads as 1 and never as 0. `amount_native` carries the exact figure. Null unless `currency` is also set. */
                                 amount_minor: number | null;
+                                /** @description The stored figure, exact, in the currency's NATIVE unit as a decimal string: BRL centavos, USDC 10^-6. This is the unit the wallet ledger holds, so it joins to `wallet_ledger.amount_minor` without conversion. Null when `amount_minor` is. */
+                                amount_native: string | null;
+                                /** @description The same figure in major units as a decimal string (`"0.001"`, `"19.99"`), for display. */
+                                amount: string | null;
                                 currency: string | null;
                                 /** Format: date-time */
                                 occurred_at: string;
@@ -8594,7 +8657,7 @@ export interface paths {
                         counterparty_id: string;
                         /** @enum {string} */
                         kind: "quote" | "negotiation" | "order" | "invoice" | "payment" | "shipment" | "message" | "other";
-                        /** @description Minor units. Set it together with `currency` or omit both. */
+                        /** @description Minor units (cents). Stored in the currency's native unit (USDC x10^4, BRL as is), so this field cannot carry a sub-cent USDC figure. Set it together with `currency` or omit both. */
                         amount_minor?: number;
                         currency?: string;
                         /**
@@ -8632,8 +8695,12 @@ export interface paths {
                                 counterparty_id: string;
                                 /** @enum {string} */
                                 kind: "quote" | "negotiation" | "order" | "invoice" | "payment" | "shipment" | "message" | "other";
-                                /** @description Minor units. Stored as a 64 bit integer and rendered as a JSON number. Null unless `currency` is also set. */
+                                /** @description Minor units (cents). The row is STORED in the currency's native unit, BRL centavos and USDC 10^-6 (ent#1203), and rendered here in cents rounded away from zero, so a USDC row of 0.001 reads as 1 and never as 0. `amount_native` carries the exact figure. Null unless `currency` is also set. */
                                 amount_minor: number | null;
+                                /** @description The stored figure, exact, in the currency's NATIVE unit as a decimal string: BRL centavos, USDC 10^-6. This is the unit the wallet ledger holds, so it joins to `wallet_ledger.amount_minor` without conversion. Null when `amount_minor` is. */
+                                amount_native: string | null;
+                                /** @description The same figure in major units as a decimal string (`"0.001"`, `"19.99"`), for display. */
+                                amount: string | null;
                                 currency: string | null;
                                 /** Format: date-time */
                                 occurred_at: string;
@@ -8661,8 +8728,12 @@ export interface paths {
                             counterparty_id: string;
                             /** @enum {string} */
                             kind: "quote" | "negotiation" | "order" | "invoice" | "payment" | "shipment" | "message" | "other";
-                            /** @description Minor units. Stored as a 64 bit integer and rendered as a JSON number. Null unless `currency` is also set. */
+                            /** @description Minor units (cents). The row is STORED in the currency's native unit, BRL centavos and USDC 10^-6 (ent#1203), and rendered here in cents rounded away from zero, so a USDC row of 0.001 reads as 1 and never as 0. `amount_native` carries the exact figure. Null unless `currency` is also set. */
                             amount_minor: number | null;
+                            /** @description The stored figure, exact, in the currency's NATIVE unit as a decimal string: BRL centavos, USDC 10^-6. This is the unit the wallet ledger holds, so it joins to `wallet_ledger.amount_minor` without conversion. Null when `amount_minor` is. */
+                            amount_native: string | null;
+                            /** @description The same figure in major units as a decimal string (`"0.001"`, `"19.99"`), for display. */
+                            amount: string | null;
                             currency: string | null;
                             /** Format: date-time */
                             occurred_at: string;
@@ -9227,7 +9298,7 @@ export interface paths {
                                 interaction_count: number;
                                 /** @description Of those, the ones with `kind: payment`. */
                                 payment_count: number;
-                                /** @description Sum of `amount_minor` over the window's PAYMENT interactions only, ACROSS CURRENCIES. Read `currencies` before reading this as an amount. */
+                                /** @description Sum over the window's PAYMENT interactions only, ACROSS CURRENCIES, in cents: each row is converted from its currency's native unit before the sum and the total is rounded up once. Read `currencies` before reading this as an amount. */
                                 total_payment_minor: number;
                                 /** @description Distinct non null currencies over the window's interactions of EVERY kind, not only the payments the total is built from. It is therefore an UPPER BOUND on the currencies inside `total_payment_minor` and never a smaller set: an invoice priced in USD puts USD here while the total stays pure BRL. One entry (or none) does bound the total to a single currency; two or more do not prove it mixes. */
                                 currencies: string[];
@@ -9415,7 +9486,7 @@ export interface paths {
                                 /** @enum {string} */
                                 kind: "supplier" | "customer" | "agent_peer";
                                 payment_count: number;
-                                /** @description Sum of `amount_minor` over the window's payment interactions, ACROSS CURRENCIES. */
+                                /** @description Sum over the window's payment interactions, ACROSS CURRENCIES, in cents: each row converted from its currency's native unit before the sum, the total rounded up once. */
                                 total_payment_minor: number;
                                 /** @description The most frequent currency over ALL of this counterparty's payment interactions, ignoring `since` and `until`, so it can name a currency the window itself never saw. */
                                 dominant_currency: string | null;
@@ -10214,6 +10285,23 @@ export interface paths {
                         };
                     };
                 };
+                /** @description The project is in `environment="test"` and this provider has no test venue, so the flow is refused BEFORE a state token is minted — a refused start leaves no half-begun link behind. Sending a test project to the provider's LIVE consent screen would have it authorise a real account and vault a real token under a project that is not supposed to hold one (ent#722). Not retryable; the same call from a `live` project succeeds. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "test_venue_unavailable";
+                            server_id: string;
+                            /** @enum {string} */
+                            environment: "live" | "test";
+                            /** @description Names the catalog file and the field to declare. */
+                            detail: string;
+                        };
+                    };
+                };
                 /** @description The platform's OAuth client credential is not seeded for this provider. A configuration defect on our side. */
                 500: {
                     headers: {
@@ -10587,6 +10675,769 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start a hosted consent
+         * @description Starts a hosted consent for a consumer mandate. The partner's backend calls this with its API key and gets a one-shot token carrying the intent the consumer is about to authorize (purpose, total and per-transaction caps, currency, mandate TTL and the merchant, withdrawal and DDA allowlists that will be signed into the mandate). The partner composes the URL of the hosted consent page from the token and hands it to the consumer.
+         *
+         *     The consumer signs on the hosted page. The mandate is created server-side when the consumer submits there: the consumer's secret is provisioned, the mandate is signed with it, the funding source and the consent record are written and the token is consumed, in one transaction. The API key never signs, and the page's own calls are not operations of this document: nothing a partner can call with a key produces a signed mandate.
+         *
+         *     `intent.merchant_allowlist` defaults to `["*"]`, an explicit wildcard bounded by the caps, purpose and expiry; pass concrete Pix keys to narrow it. `intent.withdrawal_allowlist` and `intent.dda_allowlist` are deliberately NOT defaulted: absent means the mandate authorizes no cash-out and no DDA registration, which is a different thing from a wildcard, and `"*"` is refused in both. `callback_url`, when given, is returned to the hosted page at submit time so the partner's backend can receive the signed mandate.
+         *
+         *     The token is stamped with the credential's project, and that stamp is what scopes the funding source the consumer's submission later creates.
+         *
+         *     Requires the `consents:write` scope.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        agent_id: string;
+                        /** Format: email */
+                        consumer_email_hint?: string;
+                        intent: {
+                            purpose: string;
+                            cap_minor: number;
+                            per_tx_cap_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL" | "USD" | "MXN" | "COP" | "ARS" | "USDC" | "BRLA";
+                            mandate_ttl_seconds: number;
+                            /**
+                             * @default [
+                             *       "*"
+                             *     ]
+                             */
+                            merchant_allowlist?: string[];
+                            /**
+                             * @default pix-key
+                             * @enum {string}
+                             */
+                            merchant_pin_kind?: "pix-key" | "merchant-id" | "mcc";
+                            withdrawal_allowlist?: string[];
+                            dda_allowlist?: string[];
+                            slots?: {
+                                /** @enum {string} */
+                                currency: "BRL" | "USD" | "MXN" | "COP" | "ARS" | "USDC" | "BRLA";
+                                rail: string;
+                                cap_minor: number;
+                                per_tx_cap_minor: number;
+                            }[];
+                            display_name?: string;
+                            intent_note?: string;
+                            shipping?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                        /** Format: uri */
+                        callback_url?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created. The consent is pending until the consumer signs on the hosted page or the token expires. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description One-shot, `ctk_`-prefixed, unguessable. Put it in the URL of the hosted consent page and hand that URL to the consumer. It is consumed by the consumer's submission and cannot be replayed. */
+                            token: string;
+                            /** @description ISO 8601. The token expires 24 hours after this call; a consumer opening the link after that sees an expired consent and nothing is created. This is the TOKEN's TTL, not the mandate's: the mandate's own TTL is `intent.mandate_ttl_seconds`, counted from the moment the consumer signs. */
+                            expires_at: string;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. `details.issues` carries the Zod issues; the refusals with their own message are a `"*"` entry in `intent.withdrawal_allowlist` and a `intent.dda_allowlist` entry that is not a CPF (11 digits) or a CNPJ (14 digits). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consents/init": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start a hosted consent
+         * @deprecated
+         * @description DEPRECATED alias of `POST /v1/consents` (ent#979), kept for two releases. Same handler, same required scope, same request and same responses; switch the path and nothing else changes. The canonical path is described in this document too.
+         *
+         *     Starts a hosted consent for a consumer mandate. The partner's backend calls this with its API key and gets a one-shot token carrying the intent the consumer is about to authorize (purpose, total and per-transaction caps, currency, mandate TTL and the merchant, withdrawal and DDA allowlists that will be signed into the mandate). The partner composes the URL of the hosted consent page from the token and hands it to the consumer.
+         *
+         *     The consumer signs on the hosted page. The mandate is created server-side when the consumer submits there: the consumer's secret is provisioned, the mandate is signed with it, the funding source and the consent record are written and the token is consumed, in one transaction. The API key never signs, and the page's own calls are not operations of this document: nothing a partner can call with a key produces a signed mandate.
+         *
+         *     `intent.merchant_allowlist` defaults to `["*"]`, an explicit wildcard bounded by the caps, purpose and expiry; pass concrete Pix keys to narrow it. `intent.withdrawal_allowlist` and `intent.dda_allowlist` are deliberately NOT defaulted: absent means the mandate authorizes no cash-out and no DDA registration, which is a different thing from a wildcard, and `"*"` is refused in both. `callback_url`, when given, is returned to the hosted page at submit time so the partner's backend can receive the signed mandate.
+         *
+         *     The token is stamped with the credential's project, and that stamp is what scopes the funding source the consumer's submission later creates.
+         *
+         *     Requires the `consents:write` scope.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        agent_id: string;
+                        /** Format: email */
+                        consumer_email_hint?: string;
+                        intent: {
+                            purpose: string;
+                            cap_minor: number;
+                            per_tx_cap_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL" | "USD" | "MXN" | "COP" | "ARS" | "USDC" | "BRLA";
+                            mandate_ttl_seconds: number;
+                            /**
+                             * @default [
+                             *       "*"
+                             *     ]
+                             */
+                            merchant_allowlist?: string[];
+                            /**
+                             * @default pix-key
+                             * @enum {string}
+                             */
+                            merchant_pin_kind?: "pix-key" | "merchant-id" | "mcc";
+                            withdrawal_allowlist?: string[];
+                            dda_allowlist?: string[];
+                            slots?: {
+                                /** @enum {string} */
+                                currency: "BRL" | "USD" | "MXN" | "COP" | "ARS" | "USDC" | "BRLA";
+                                rail: string;
+                                cap_minor: number;
+                                per_tx_cap_minor: number;
+                            }[];
+                            display_name?: string;
+                            intent_note?: string;
+                            shipping?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                        /** Format: uri */
+                        callback_url?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created. The consent is pending until the consumer signs on the hosted page or the token expires. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description One-shot, `ctk_`-prefixed, unguessable. Put it in the URL of the hosted consent page and hand that URL to the consumer. It is consumed by the consumer's submission and cannot be replayed. */
+                            token: string;
+                            /** @description ISO 8601. The token expires 24 hours after this call; a consumer opening the link after that sees an expired consent and nothing is created. This is the TOKEN's TTL, not the mandate's: the mandate's own TTL is `intent.mandate_ttl_seconds`, counted from the moment the consumer signs. */
+                            expires_at: string;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. `details.issues` carries the Zod issues; the refusals with their own message are a `"*"` entry in `intent.withdrawal_allowlist` and a `intent.dda_allowlist` entry that is not a CPF (11 digits) or a CNPJ (14 digits). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumers/mandates/{id}/spend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gastar sob um mandato já projetado
+         * @description Executa uma saída de dinheiro sob um mandato que já está projetado nesta organização, identificado por id. É o caminho que o meta-tool `codespar_pay` usa por dentro, então o comportamento aqui é o mesmo que um agente obtém — esta rota existe para quem não usa o SDK chegar ao mesmo lugar.
+         *
+         *     Com `ted` presente, a perna do provedor é uma transferência bancária de verdade, debitada da sub-conta do próprio consumidor. Sem `ted`, `payee` é uma chave Pix ou um copia-e-cola.
+         *
+         *     **TED tem três exigências que as outras formas de pagamento não têm, e as três vinculam ANTES de qualquer passo de dinheiro:**
+         *
+         *     1. `attempt_id` é OBRIGATÓRIO. Uma TED não tem copia-e-cola nem nonce de onde derivar correlação, e duas TEDs sob o mesmo mandato nunca podem colidir num id derivado.
+         *     2. `payee` tem que ser IGUAL à string canônica do destino, `ted:<ispb>:<agência>:<conta>`, só alfanuméricos e em maiúsculas. A comparação normaliza apenas espaços em branco, então uma entrada com ponto ou hífen NÃO casa. Esta regra existe para o pin da lista assinada e o fio nomearem o MESMO destino: sem ela, um recebedor aprovado serviria de fachada para outra conta bancária.
+         *     3. O destino tem que estar na `withdrawal_allowlist` ASSINADA do mandato. Um curinga `"*"` de lista de comerciante NUNCA autoriza saída de dinheiro, nem no caminho legado.
+         *
+         *     O teto cumulativo é conferido e CONSUMIDO sob trava de advisory lock, e a reserva na carteira é tomada dentro da mesma trava. A trava é liberada antes da chamada ao provedor, então uma chamada lenta não serializa as outras.
+         *
+         *     **Não existe rota de leitura do desfecho.** Um `attempt_id` que respondeu `psp_dispatch_uncertain` não tem endpoint para consultar depois. Guarde o `attempt_id` e reapresente-o: o ciclo é idempotente por ele e responde o estado em que aquela tentativa parou, em vez de disparar uma segunda. NÃO reinicie a mesma intenção com um `attempt_id` novo — é assim que se paga duas vezes.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Id do mandato. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Valor em centavos. */
+                        amount_minor: number;
+                        /** @description Chave Pix, copia-e-cola, ou — para TED — a string canônica do destino. O limite de 1024 acomoda um copia-e-cola. */
+                        payee: string;
+                        agent_id?: string;
+                        /** @description Obrigatório quando `ted` está presente. Reapresente-o em toda retentativa. */
+                        attempt_id?: string;
+                        ted?: components["schemas"]["TedDestination"];
+                        quote?: components["schemas"]["SpendQuote"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SpendOutcome"];
+                    };
+                };
+                /** @description O corpo não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O destino não está na lista de saque assinada do mandato. Nada foi enviado ao provedor. A resposta traz o próximo passo de consentimento. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "withdrawal_pin";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Não existe mandato com esse id nesta organização. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "mandate_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O estado local impede. `psp_attempt_in_flight`: a mesma tentativa está em voo. `psp_attempt_uncertain`: uma tentativa anterior ficou com desfecho desconhecido e esta intenção está PINADA nela — reapresente o mesmo `attempt_id`, nunca um novo. `psp_attempt_conflict`: a tentativa anterior já foi compensada. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O mandato recusa. `mandate_verify`: assinatura, agente, propósito ou recebedor não conferem. `mandate_projection_mismatch`: a assinatura apresentada difere da armazenada, ou o mandato não está ativo. `no_funding_source`: o consumidor não tem fonte de recursos que sirva a este rail — para TED, exige conta bancária registrada. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O verificador respondeu sem resolver o teto cumulativo, então a recheca sob trava não teria limite com que comparar. Recusa deliberada: nada é debitado. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "mandate_cap_unresolved";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O provedor recusou ou não respondeu. `psp_dispatch_failed`: recusa conhecida, nada saiu. `psp_dispatch_uncertain`: NÃO se sabe se saiu — a reserva permanece e a tentativa fica pinada. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "psp_dispatch_failed" | "psp_dispatch_uncertain";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumer-payments/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gastar apresentando o mandato assinado
+         * @description O mesmo ciclo da rota por id, para quem carrega o envelope assinado em vez de um mandato já projetado. Use esta quando o mandato vem do consumidor no momento da chamada; use a `/consumers/mandates/{id}/spend` quando ele já está registrado aqui.
+         *
+         *     `signature` é o HMAC de 64 caracteres hexadecimais sobre o mandato canônico. O `agent_id` do corpo é conferido contra o ASSINADO: a atribuição do gasto pertence ao mandato, não a quem chama.
+         *
+         *     **TED tem três exigências que as outras formas de pagamento não têm, e as três vinculam ANTES de qualquer passo de dinheiro:**
+         *
+         *     1. `attempt_id` é OBRIGATÓRIO. Uma TED não tem copia-e-cola nem nonce de onde derivar correlação, e duas TEDs sob o mesmo mandato nunca podem colidir num id derivado.
+         *     2. `payee` tem que ser IGUAL à string canônica do destino, `ted:<ispb>:<agência>:<conta>`, só alfanuméricos e em maiúsculas. A comparação normaliza apenas espaços em branco, então uma entrada com ponto ou hífen NÃO casa. Esta regra existe para o pin da lista assinada e o fio nomearem o MESMO destino: sem ela, um recebedor aprovado serviria de fachada para outra conta bancária.
+         *     3. O destino tem que estar na `withdrawal_allowlist` ASSINADA do mandato. Um curinga `"*"` de lista de comerciante NUNCA autoriza saída de dinheiro, nem no caminho legado.
+         *
+         *     **Não existe rota de leitura do desfecho.** Um `attempt_id` que respondeu `psp_dispatch_uncertain` não tem endpoint para consultar depois. Guarde o `attempt_id` e reapresente-o: o ciclo é idempotente por ele e responde o estado em que aquela tentativa parou, em vez de disparar uma segunda. NÃO reinicie a mesma intenção com um `attempt_id` novo — é assim que se paga duas vezes.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description O mandato canônico, na forma em que foi assinado. */
+                        mandate?: unknown;
+                        /** @description HMAC em hexadecimal, 64 caracteres. */
+                        signature: string;
+                        amount_minor: number;
+                        purpose: string;
+                        agent_id: string;
+                        payee: string;
+                        attempt_id?: string;
+                        ted?: components["schemas"]["TedDestination"];
+                        quote?: components["schemas"]["SpendQuote"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SpendOutcome"];
+                    };
+                };
+                /** @description O corpo não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O destino não está na lista de saque assinada. Nada foi enviado ao provedor. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "withdrawal_pin";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O estado local impede — mesmas três condições da rota por id. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O mandato recusa, ou o consumidor não tem fonte de recursos para este rail. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O teto cumulativo não foi resolvido pelo verificador. Nada é debitado. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "mandate_cap_unresolved";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O provedor recusou, ou o desfecho é desconhecido. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "psp_dispatch_failed" | "psp_dispatch_uncertain";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumer-payments/execute-stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gastar apresentando o mandato, com os passos em streaming
+         * @description Mesmo corpo e mesmos gates da `/v1/consumer-payments/execute`. A diferença é só o transporte da resposta: os passos do ciclo (verificação do mandato, roteamento da fonte, reserva, débito no provedor, selo do recibo) chegam como eventos `text/event-stream` à medida que acontecem, em vez de um único JSON no fim.
+         *
+         *     O desfecho é o mesmo objeto da rota irmã, no último evento. Um cliente que não precisa acompanhar o progresso deve usar a `/execute`: streaming não torna a liquidação mais rápida, só a torna observável enquanto corre.
+         *
+         *     **Não existe rota de leitura do desfecho.** Um `attempt_id` que respondeu `psp_dispatch_uncertain` não tem endpoint para consultar depois. Guarde o `attempt_id` e reapresente-o: o ciclo é idempotente por ele e responde o estado em que aquela tentativa parou, em vez de disparar uma segunda. NÃO reinicie a mesma intenção com um `attempt_id` novo — é assim que se paga duas vezes.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        mandate?: unknown;
+                        signature: string;
+                        amount_minor: number;
+                        purpose: string;
+                        agent_id: string;
+                        payee: string;
+                        attempt_id?: string;
+                        ted?: components["schemas"]["TedDestination"];
+                        quote?: components["schemas"]["SpendQuote"];
+                    };
+                };
+            };
+            responses: {
+                /** @description Fluxo de eventos. Cada evento é um passo do ciclo; o último carrega o mesmo objeto de desfecho que a `/execute` devolve. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/event-stream": string;
+                    };
+                };
+                /** @description O corpo não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O destino não está na lista de saque assinada. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "withdrawal_pin";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O mandato recusa, ou não há fonte de recursos para este rail. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O provedor recusou, ou o desfecho é desconhecido. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "psp_dispatch_failed" | "psp_dispatch_uncertain";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -19689,6 +20540,23 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Unprocessable — the project is in `environment="test"` and this server cannot be exercised there. `reason` is the provider's `test_venue` classification: `none` means the provider runs no test environment at all, so the call would land on production with a real effect (a Z-API WhatsApp message goes to a real number); `unclassified` means nobody has established what it does in test. Answered whether or not `PROXY_REQUIRE_CONNECTION` is set, because it is about the environment and not about a missing connection, and not retryable — the same call from a `live` project reaches the provider (ent#722). */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "test_venue_unavailable";
+                            /** @enum {string} */
+                            reason: "none" | "unclassified" | "separate_host";
+                            server: string;
+                            /** @description Names the catalog file and the field to declare. */
+                            message: string;
+                        };
+                    };
+                };
                 /** @description Failed Dependency — no usable credential for this server. `reason` is the resolver's own outcome. */
                 424: {
                     headers: {
@@ -21995,6 +22863,76 @@ export interface components {
              * @enum {string}
              */
             engine_status: "none" | "available" | "quarantined";
+        };
+        SpendOutcome: {
+            /** @enum {string} */
+            status: "completed";
+            requestId: string;
+            mandate: {
+                consumer_id: string;
+                purpose: string;
+                currency: string;
+            };
+            payment: {
+                transactionId: string;
+                /** @description O endToEndId do Pix quando o rail produz um. Null para rails que não têm, TED incluída. */
+                endToEndId: string | null;
+                amountMinor: number;
+                rail: string;
+                provider: string;
+                /** @description False quando o adaptador é mock ou stub de staging. True quando dinheiro real saiu. */
+                moneyMoved: boolean;
+                adapter: string;
+            };
+            wallet: {
+                walletId: string;
+                holdEntryId: string;
+                fundEntryId: string | null;
+                debitEntryId: string | null;
+            };
+            /** @description O Control Record selado. Null quando não havia segredo do consumidor para assiná-lo. */
+            receipt: {
+                id: string;
+                /** @enum {string} */
+                state: "paid" | "exception" | "delivered";
+                chain: string;
+                exceptions: unknown[];
+            } | null;
+            /** @description Os passos do ciclo, em ordem, com carimbo de tempo e desfecho. */
+            audit: unknown[];
+        };
+        TedDestination: {
+            /** @description ISPB da instituição de destino, só dígitos. */
+            bank: string;
+            /** @description Agência, sem dígito verificador separado. */
+            branch: string;
+            /** @description Conta, incluindo o dígito. */
+            account: string;
+            /** @description CPF ou CNPJ do titular do destino. */
+            tax_id: string;
+            /** @description Nome do titular do destino. */
+            name: string;
+            /**
+             * @description Corrente, investimento, pagamento ou poupança. Enum do produto de TED, DIFERENTE do enum de conta do Pix (CACC|SLRY|SVGS|TRAN) — são endpoints e produtos distintos no provedor.
+             * @enum {string}
+             */
+            account_type?: "CC" | "CI" | "PG" | "PP";
+            /**
+             * @description Pessoa física ou jurídica.
+             * @enum {string}
+             */
+            person_type?: "F" | "J";
+            /** @description Código de finalidade do parceiro bancário. Default `1` (transferência genérica). */
+            client_finality?: string;
+        };
+        /** @description A oferta que o agente aprovou. Quando presente, é assinada dentro do recibo, e no fechamento o preço e o recebedor são comparados com o que de fato liquidou. Divergência é REGISTRADA no recibo; ela não aborta a liquidação. */
+        SpendQuote: {
+            seller: string;
+            resource: string;
+            price_minor: number;
+            payee: string;
+            session_id?: string;
+            at?: string;
         };
     };
     responses: never;
