@@ -122,6 +122,21 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     prefix: "/v1/triggers",
     description: "Triggers (webhooks): endpoints, deliveries, DLQ, secret rotation, redelivery",
   },
+  // Both families below arrived in the served document when packages/core
+  // refreshed openapi-snapshot.json to 221 operations (core#143). They are
+  // published, not excepted: the coverage gate reserves an exception for a
+  // family with no terminal use, and both of these end at a person.
+  {
+    name: "consents",
+    prefix: "/v1/consents",
+    description: "Consent tokens: mint the token whose URL the consumer opens to authorise an agent",
+  },
+  {
+    name: "consumer-payments",
+    prefix: "/v1/consumer-payments",
+    description:
+      "Consumer payments: execute a payment on a consumer's behalf, with the audit chain (execute-stream returns SSE)",
+  },
 ];
 
 /* ── Derivation ───────────────────────────────────────────────────── */

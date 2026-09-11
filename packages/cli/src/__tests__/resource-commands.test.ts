@@ -43,6 +43,7 @@ const PINNED_COMMANDS = [
   "consumers create → POST /v1/consumers",
   "consumers get → GET /v1/consumers/{id}",
   "consumers update → PATCH /v1/consumers/{id}",
+  "consumers mandates-spend → POST /v1/consumers/mandates/{id}/spend",
   "consumers list-pix-keys → GET /v1/consumers/{consumerId}/pix-keys",
   "consumers create-pix-keys → POST /v1/consumers/{consumerId}/pix-keys",
   "consumers delete-pix-keys → DELETE /v1/consumers/{consumerId}/pix-keys/{key}",
@@ -100,6 +101,10 @@ const PINNED_COMMANDS = [
   "triggers dlq → GET /v1/triggers/{id}/dlq",
   "triggers retry-pending → POST /v1/triggers/retry-pending",
   "triggers deliveries-redeliver → POST /v1/triggers/deliveries/{delivery_id}/redeliver",
+  "consents create → POST /v1/consents",
+  "consents init → POST /v1/consents/init",
+  "consumer-payments execute → POST /v1/consumer-payments/execute",
+  "consumer-payments execute-stream → POST /v1/consumer-payments/execute-stream",
 ];
 
 describe("derived resource commands", () => {

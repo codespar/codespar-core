@@ -202,9 +202,12 @@ describe("auditSurface controls", () => {
  * a new hand-written call.
  */
 const OFF_SPEC_PATHS = [
-  "/v1/consents/init",
+  // `/v1/consents/init` and `/v1/consumers/mandates/{}/spend` left this list
+  // when core#143 refreshed the snapshot to 221 operations: both are now
+  // declared by the served document, so the generated table checks them. The
+  // ratchet went DOWN, which is the only direction it is allowed to move
+  // without an argument.
   "/v1/consents/{}/submit",
-  "/v1/consumers/mandates/{}/spend",
   "/v1/consumers/{}/wallet/transfer",
   "/v1/logs/stream",
   "/v1/servers/{}",
