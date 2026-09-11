@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-09-10T10:32:58.952Z",
-    "sha256": "35fddb5dbab7c5518b2e6a2cc7427a51c0da8366eed912ee36d802ece49fb69f",
+    "fetched_at": "2026-09-11T10:51:22.760Z",
+    "sha256": "97ee015c2ad4f74a9f922bf1d7a4e479c940336ead1b2770e1714758b9cb7f95",
     "etag": null,
     "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 175,
-    "operations": 215,
+    "paths": 181,
+    "operations": 221,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -1312,6 +1312,262 @@
             "engine_provisionable",
             "engine_status"
           ]
+        },
+        "SpendOutcome": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "completed"
+              ]
+            },
+            "requestId": {
+              "type": "string"
+            },
+            "mandate": {
+              "type": "object",
+              "properties": {
+                "consumer_id": {
+                  "type": "string"
+                },
+                "purpose": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "consumer_id",
+                "purpose",
+                "currency"
+              ]
+            },
+            "payment": {
+              "type": "object",
+              "properties": {
+                "transactionId": {
+                  "type": "string"
+                },
+                "endToEndId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "O endToEndId do Pix quando o rail produz um. Null para rails que não têm, TED incluída."
+                },
+                "amountMinor": {
+                  "type": "integer"
+                },
+                "rail": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "moneyMoved": {
+                  "type": "boolean",
+                  "description": "False quando o adaptador é mock ou stub de staging. True quando dinheiro real saiu."
+                },
+                "adapter": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "transactionId",
+                "endToEndId",
+                "amountMinor",
+                "rail",
+                "provider",
+                "moneyMoved",
+                "adapter"
+              ]
+            },
+            "wallet": {
+              "type": "object",
+              "properties": {
+                "walletId": {
+                  "type": "string"
+                },
+                "holdEntryId": {
+                  "type": "string"
+                },
+                "fundEntryId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "debitEntryId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "walletId",
+                "holdEntryId",
+                "fundEntryId",
+                "debitEntryId"
+              ]
+            },
+            "receipt": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "paid",
+                    "exception",
+                    "delivered"
+                  ]
+                },
+                "chain": {
+                  "type": "string"
+                },
+                "exceptions": {
+                  "type": "array",
+                  "items": {}
+                }
+              },
+              "required": [
+                "id",
+                "state",
+                "chain",
+                "exceptions"
+              ],
+              "description": "O Control Record selado. Null quando não havia segredo do consumidor para assiná-lo."
+            },
+            "audit": {
+              "type": "array",
+              "items": {},
+              "description": "Os passos do ciclo, em ordem, com carimbo de tempo e desfecho."
+            }
+          },
+          "required": [
+            "status",
+            "requestId",
+            "mandate",
+            "payment",
+            "wallet",
+            "receipt",
+            "audit"
+          ]
+        },
+        "TedDestination": {
+          "type": "object",
+          "properties": {
+            "bank": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 20,
+              "description": "ISPB da instituição de destino, só dígitos."
+            },
+            "branch": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 10,
+              "description": "Agência, sem dígito verificador separado."
+            },
+            "account": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 20,
+              "description": "Conta, incluindo o dígito."
+            },
+            "tax_id": {
+              "type": "string",
+              "minLength": 11,
+              "maxLength": 18,
+              "description": "CPF ou CNPJ do titular do destino."
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120,
+              "description": "Nome do titular do destino."
+            },
+            "account_type": {
+              "type": "string",
+              "enum": [
+                "CC",
+                "CI",
+                "PG",
+                "PP"
+              ],
+              "description": "Corrente, investimento, pagamento ou poupança. Enum do produto de TED, DIFERENTE do enum de conta do Pix (CACC|SLRY|SVGS|TRAN) — são endpoints e produtos distintos no provedor."
+            },
+            "person_type": {
+              "type": "string",
+              "enum": [
+                "F",
+                "J"
+              ],
+              "description": "Pessoa física ou jurídica."
+            },
+            "client_finality": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 10,
+              "description": "Código de finalidade do parceiro bancário. Default `1` (transferência genérica)."
+            }
+          },
+          "required": [
+            "bank",
+            "branch",
+            "account",
+            "tax_id",
+            "name"
+          ]
+        },
+        "SpendQuote": {
+          "type": "object",
+          "properties": {
+            "seller": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "resource": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "price_minor": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "payee": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "session_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "at": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          "required": [
+            "seller",
+            "resource",
+            "price_minor",
+            "payee"
+          ],
+          "description": "A oferta que o agente aprovou. Quando presente, é assinada dentro do recibo, e no fechamento o preço e o recebedor são comparados com o que de fato liquidou. Divergência é REGISTRADA no recibo; ela não aborta a liquidação."
         }
       },
       "parameters": {}
@@ -5075,7 +5331,7 @@
       "/v1/approvals/{id}": {
         "get": {
           "summary": "Read one approval",
-          "description": "One held call, with the arguments recorded when it was held.\n\nSCOPE. The lookup matches the id AND the caller's organization, so an id from another organization answers 404 rather than 403: a 403 would confirm the id exists, which is what a caller sweeping ids is asking. Inside the organization this read is NOT project-scoped, and the agent-facing poll at `GET /v1/approvals/{id}/status` is: a key bound to one project reads holds raised under a sibling project here, and does not there.\n\n`tool_input` IS NOT THE CALL. It is what the lane that raised the hold recorded, and two things happen to it on the way in. A hold raised on the session execute path carries `{}`, because that path hands the policy engine no tool input at all and the engine stores an empty object when it gets none. A hold raised on the proxy path carries `{ server, method, endpoint, body, params, headers }`, with the `authorization` and `cookie` request headers removed before the row is written. So an empty object here means 'this lane records nothing', not 'the agent sent nothing'.\n\n`tool_name` HAS NO SINGLE FORMAT, because four lanes write it. The proxy path writes `<server>:<method>:<endpoint>` with the leading slash dropped and the remaining slashes turned into colons (`asaas`, `POST`, `/payments/create` becomes `asaas:post:payments:create`). The session execute path writes the caller's own `tool` string verbatim, which is any non-empty string that caller chose. The over-cap settlement lane writes `codespar_pay`. The operator account-status lane writes `admin:account_status_set`. Match on it only knowing which lane you are reading.\n\n`expires_at` is the end of the hold, not a display hint: once it passes, the row stops being decidable and the expiry sweep moves it to `expired`.\n\n`execution_result` stays null until an approved call has actually been replayed, which is the state of every `pending` row and of every `denied` one. The row's `decision_history` and `metadata` columns are deliberately not in this response.",
+          "description": "One held call, with the arguments recorded when it was held.\n\nSCOPE. The lookup matches the id AND the caller's organization, so an id from another organization answers 404 rather than 403: a 403 would confirm the id exists, which is what a caller sweeping ids is asking. Inside the organization this read is NOT project-scoped, and the agent-facing poll at `GET /v1/approvals/{id}/status` is: a key bound to one project reads holds raised under a sibling project here, and does not there.\n\n`tool_input` IS NOT THE CALL. It is what the lane that raised the hold recorded, and two things happen to it on the way in. A hold raised on the session execute path carries `{}`, because that path hands the policy engine no tool input at all and the engine stores an empty object when it gets none. A hold raised on the proxy path carries `{ server, method, endpoint, body, params, headers }`, with the `authorization` and `cookie` request headers removed before the row is written. So an empty object here means 'this lane records nothing', not 'the agent sent nothing'.\n\n`tool_name` HAS NO SINGLE FORMAT, because four lanes write it. The proxy path writes `<server>:<method>:<endpoint>` with the leading slash dropped and the remaining slashes turned into colons (`asaas`, `POST`, `/payments/create` becomes `asaas:post:payments:create`). The session execute path writes the caller's own `tool` string verbatim, which is any non-empty string that caller chose. The over-cap settlement lane writes `codespar_pay`. The operator account-status lane writes `admin:account_status_set` and the operator withdrawal-resolution lane `admin:withdrawal_resolve`. Match on it only knowing which lane you are reading.\n\n`expires_at` is the end of the hold, not a display hint: once it passes, the row stops being decidable and the expiry sweep moves it to `expired`.\n\n`execution_result` stays null until an approved call has actually been replayed, which is the state of every `pending` row and of every `denied` one. The row's `decision_history` and `metadata` columns are deliberately not in this response.",
           "parameters": [
             {
               "schema": {
@@ -7215,7 +7471,7 @@
       "/v1/fees": {
         "get": {
           "summary": "Which rate-card lanes are measured and charged for this org",
-          "description": "The public rate card has four lanes, told apart by the direction of the money: MOVIMENTAR (money leaving under a mandate, 10 bps), FATURAR (money being born in the receiver's account, 1%), GOVERNAR (account governance, per governed account) and OPERAR (non-monetary outcomes). A published price is not the same thing as a measured one, and this answer keeps the two apart per lane so a client never shows a figure the platform is not computing.\n\n`computed` says whether this build measures the lane from the organization's own ledger; `charging` says whether the organization is actually invoiced for it; `latest` is the last computed period and is only ever non-null on a computed lane (its shape is the one `GET /v1/fees/movimentar` returns). Today MOVIMENTAR is the only computed lane. `period` is the current calendar month in Sao Paulo time.\n\nScope: `fees:read`.",
+          "description": "The public rate card has four lanes, told apart by the direction of the money: MOVIMENTAR (money leaving under a mandate, 10 bps), FATURAR (money being born in the receiver's account, 1%), GOVERNAR (account governance, per governed account) and OPERAR (non-monetary outcomes). A published price is not the same thing as a measured one, and this answer keeps the two apart per lane so a client never shows a figure the platform is not computing.\n\n`computed` says whether this build measures the lane from the organization's own ledger; `charging` says whether the organization is actually invoiced for it; `latest` is the last computed period and is only ever non-null on a computed lane (its shape is the one the lane's own read returns: `GET /v1/fees/movimentar`, `GET /v1/fees/governar`). Today MOVIMENTAR and GOVERNAR are the computed lanes; FATURAR and OPERAR are not measured and always answer `latest: null`. `charging` is each lane's own switch: an organization can be charged for one lane and not the other. `period` is the current calendar month in Sao Paulo time.\n\nScope: `fees:read`.",
           "responses": {
             "200": {
               "description": "OK",
@@ -7318,65 +7574,7 @@
                                 "type": "boolean"
                               },
                               "latest": {
-                                "type": [
-                                  "object",
-                                  "null"
-                                ],
-                                "properties": {
-                                  "period": {
-                                    "type": "string",
-                                    "pattern": "^\\d{4}-\\d{2}$"
-                                  },
-                                  "consumerCount": {
-                                    "type": "integer"
-                                  },
-                                  "movedMinor": {
-                                    "type": "integer"
-                                  },
-                                  "freeTierAppliedMinor": {
-                                    "type": "integer"
-                                  },
-                                  "billableMinor": {
-                                    "type": "integer"
-                                  },
-                                  "refundCreditMinor": {
-                                    "type": "integer"
-                                  },
-                                  "refundedCount": {
-                                    "type": "integer"
-                                  },
-                                  "feeMinor": {
-                                    "type": "integer"
-                                  },
-                                  "rateTier": {
-                                    "type": "string",
-                                    "enum": [
-                                      "self_serve",
-                                      "commit_8bps",
-                                      "commit_6bps"
-                                    ]
-                                  },
-                                  "computedAt": {
-                                    "type": "string",
-                                    "format": "date-time"
-                                  },
-                                  "invoiced": {
-                                    "type": "boolean"
-                                  }
-                                },
-                                "required": [
-                                  "period",
-                                  "consumerCount",
-                                  "movedMinor",
-                                  "freeTierAppliedMinor",
-                                  "billableMinor",
-                                  "refundCreditMinor",
-                                  "refundedCount",
-                                  "feeMinor",
-                                  "rateTier",
-                                  "computedAt",
-                                  "invoiced"
-                                ]
+                                "type": "null"
                               }
                             },
                             "required": [
@@ -7404,34 +7602,15 @@
                                     "type": "string",
                                     "pattern": "^\\d{4}-\\d{2}$"
                                   },
-                                  "consumerCount": {
+                                  "governedAccountsCount": {
                                     "type": "integer"
                                   },
-                                  "movedMinor": {
-                                    "type": "integer"
-                                  },
-                                  "freeTierAppliedMinor": {
-                                    "type": "integer"
-                                  },
-                                  "billableMinor": {
-                                    "type": "integer"
-                                  },
-                                  "refundCreditMinor": {
-                                    "type": "integer"
-                                  },
-                                  "refundedCount": {
-                                    "type": "integer"
+                                  "consumerIdsSha256": {
+                                    "type": "string",
+                                    "pattern": "^[0-9a-f]{64}$"
                                   },
                                   "feeMinor": {
                                     "type": "integer"
-                                  },
-                                  "rateTier": {
-                                    "type": "string",
-                                    "enum": [
-                                      "self_serve",
-                                      "commit_8bps",
-                                      "commit_6bps"
-                                    ]
                                   },
                                   "computedAt": {
                                     "type": "string",
@@ -7443,14 +7622,9 @@
                                 },
                                 "required": [
                                   "period",
-                                  "consumerCount",
-                                  "movedMinor",
-                                  "freeTierAppliedMinor",
-                                  "billableMinor",
-                                  "refundCreditMinor",
-                                  "refundedCount",
+                                  "governedAccountsCount",
+                                  "consumerIdsSha256",
                                   "feeMinor",
-                                  "rateTier",
                                   "computedAt",
                                   "invoiced"
                                 ]
@@ -7472,65 +7646,7 @@
                                 "type": "boolean"
                               },
                               "latest": {
-                                "type": [
-                                  "object",
-                                  "null"
-                                ],
-                                "properties": {
-                                  "period": {
-                                    "type": "string",
-                                    "pattern": "^\\d{4}-\\d{2}$"
-                                  },
-                                  "consumerCount": {
-                                    "type": "integer"
-                                  },
-                                  "movedMinor": {
-                                    "type": "integer"
-                                  },
-                                  "freeTierAppliedMinor": {
-                                    "type": "integer"
-                                  },
-                                  "billableMinor": {
-                                    "type": "integer"
-                                  },
-                                  "refundCreditMinor": {
-                                    "type": "integer"
-                                  },
-                                  "refundedCount": {
-                                    "type": "integer"
-                                  },
-                                  "feeMinor": {
-                                    "type": "integer"
-                                  },
-                                  "rateTier": {
-                                    "type": "string",
-                                    "enum": [
-                                      "self_serve",
-                                      "commit_8bps",
-                                      "commit_6bps"
-                                    ]
-                                  },
-                                  "computedAt": {
-                                    "type": "string",
-                                    "format": "date-time"
-                                  },
-                                  "invoiced": {
-                                    "type": "boolean"
-                                  }
-                                },
-                                "required": [
-                                  "period",
-                                  "consumerCount",
-                                  "movedMinor",
-                                  "freeTierAppliedMinor",
-                                  "billableMinor",
-                                  "refundCreditMinor",
-                                  "refundedCount",
-                                  "feeMinor",
-                                  "rateTier",
-                                  "computedAt",
-                                  "invoiced"
-                                ]
+                                "type": "null"
                               }
                             },
                             "required": [
@@ -7625,6 +7741,59 @@
                       "refundedCount",
                       "feeMinor",
                       "rateTier",
+                      "computedAt",
+                      "invoiced"
+                    ],
+                    "description": "The latest computed period, or null when none has been computed."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/fees/governar": {
+        "get": {
+          "summary": "The org's latest GOVERNAR-lane fee period (rate card v1)",
+          "description": "What the calling credential's organization owes CodeSpar for the most recently computed calendar month (Sao Paulo time) under the GOVERNAR lane of the public rate card (Account governance): R$4,90 per governed account active in the month. A governed account active in the month is a holder that had a consumer mandate active at some instant of the month AND at least one outcome settled under one of their mandates in the month (a debit in the wallet ledger, or a receipt sealed). A holder with mandates and no settled outcome in the month costs nothing; a holder with three mandates is one account; the population resets every month.\n\nThis lane prices the ACCOUNT, not the outcome. The same debit that pays 10 bps under MOVIMENTAR is what shows the account was alive in the month; it is not priced twice, because the two lines price two different things.\n\nHOW TO READ THE NUMBERS. `governedAccountsCount` is how many holders were counted; `feeMinor` is that count times R$4,90, in centavos; `consumerIdsSha256` is the SHA-256 (hex) of the counted consumer ids sorted and joined by a newline, so a client can verify its own list of accounts against the figure; the ids themselves stay on the platform's row for audit. `invoiced` says whether the period has been invoiced; a period is invoiced at most once.\n\n`null` (200) when no period has been computed for the organization yet. The period is computed by the platform, not on this read; `computedAt` says when.\n\nScope: `fees:read`.",
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "period": {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}$"
+                      },
+                      "governedAccountsCount": {
+                        "type": "integer"
+                      },
+                      "consumerIdsSha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "feeMinor": {
+                        "type": "integer"
+                      },
+                      "computedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "invoiced": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "period",
+                      "governedAccountsCount",
+                      "consumerIdsSha256",
+                      "feeMinor",
                       "computedAt",
                       "invoiced"
                     ],
@@ -8248,6 +8417,7 @@
       },
       "/v1/servers/{id}/auth-schema": {
         "get": {
+          "deprecated": true,
           "externalDocs": {
             "url": "https://github.com/codespar/codespar-enterprise/issues/979",
             "description": "ent#979: canonical path and alias window"
@@ -8474,6 +8644,7 @@
       },
       "/v1/servers/{id}/verify-connection": {
         "post": {
+          "deprecated": true,
           "externalDocs": {
             "url": "https://github.com/codespar/codespar-enterprise/issues/979",
             "description": "ent#979: canonical path and alias window"
@@ -8682,6 +8853,44 @@
                       "error",
                       "status",
                       "latency_ms"
+                    ]
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "`test_venue_unavailable`. The project is in `environment=\"test\"` and this provider cannot be exercised there: its catalog entry classifies `test_venue` as `none` (the provider runs no test environment, so a call would land on production with a real effect) or `unclassified` (nobody has established what it does in test). Not a verdict on the credential and not retryable — the identical request from a `live` project reaches the provider (ent#722).",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "ok": {
+                        "type": "boolean",
+                        "enum": [
+                          false
+                        ]
+                      },
+                      "provider": {
+                        "type": "string",
+                        "description": "The provider id from the path."
+                      },
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "test_venue_unavailable"
+                        ]
+                      },
+                      "detail": {
+                        "type": "string",
+                        "description": "A CodeSpar-authored sentence naming the catalog file and the field to declare. Never provider text — no round trip was made."
+                      }
+                    },
+                    "required": [
+                      "ok",
+                      "provider",
+                      "error",
+                      "detail"
                     ]
                   }
                 }
@@ -10820,12 +11029,13 @@
                           "provider_rejected",
                           "provider_unreachable",
                           "redirect_not_followed",
-                          "endpoint_missing"
+                          "endpoint_missing",
+                          "test_venue_unavailable"
                         ]
                       },
                       "detail": {
                         "type": "string",
-                        "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code."
+                        "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider."
                       },
                       "status": {
                         "type": "integer",
@@ -10906,12 +11116,13 @@
                               "provider_rejected",
                               "provider_unreachable",
                               "redirect_not_followed",
-                              "endpoint_missing"
+                              "endpoint_missing",
+                              "test_venue_unavailable"
                             ]
                           },
                           "detail": {
                             "type": "string",
-                            "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code."
+                            "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider."
                           },
                           "status": {
                             "type": "integer",
@@ -10973,12 +11184,13 @@
                           "provider_rejected",
                           "provider_unreachable",
                           "redirect_not_followed",
-                          "endpoint_missing"
+                          "endpoint_missing",
+                          "test_venue_unavailable"
                         ]
                       },
                       "detail": {
                         "type": "string",
-                        "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code."
+                        "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider."
                       },
                       "status": {
                         "type": "integer",
@@ -11038,12 +11250,13 @@
                           "provider_rejected",
                           "provider_unreachable",
                           "redirect_not_followed",
-                          "endpoint_missing"
+                          "endpoint_missing",
+                          "test_venue_unavailable"
                         ]
                       },
                       "detail": {
                         "type": "string",
-                        "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code."
+                        "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider."
                       },
                       "status": {
                         "type": "integer",
@@ -11103,12 +11316,13 @@
                           "provider_rejected",
                           "provider_unreachable",
                           "redirect_not_followed",
-                          "endpoint_missing"
+                          "endpoint_missing",
+                          "test_venue_unavailable"
                         ]
                       },
                       "detail": {
                         "type": "string",
-                        "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code."
+                        "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider."
                       },
                       "status": {
                         "type": "integer",
@@ -11168,12 +11382,13 @@
                           "provider_rejected",
                           "provider_unreachable",
                           "redirect_not_followed",
-                          "endpoint_missing"
+                          "endpoint_missing",
+                          "test_venue_unavailable"
                         ]
                       },
                       "detail": {
                         "type": "string",
-                        "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code."
+                        "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider."
                       },
                       "status": {
                         "type": "integer",
@@ -11233,12 +11448,13 @@
                           "provider_rejected",
                           "provider_unreachable",
                           "redirect_not_followed",
-                          "endpoint_missing"
+                          "endpoint_missing",
+                          "test_venue_unavailable"
                         ]
                       },
                       "detail": {
                         "type": "string",
-                        "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code."
+                        "description": "Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider."
                       },
                       "status": {
                         "type": "integer",
@@ -12509,6 +12725,44 @@
                     "required": [
                       "error",
                       "server_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "The project is in `environment=\"test\"` and this provider has no test venue, so the flow is refused BEFORE a state token is minted — a refused start leaves no half-begun link behind. Sending a test project to the provider's LIVE consent screen would have it authorise a real account and vault a real token under a project that is not supposed to hold one (ent#722). Not retryable; the same call from a `live` project succeeds.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "test_venue_unavailable"
+                        ]
+                      },
+                      "server_id": {
+                        "type": "string"
+                      },
+                      "environment": {
+                        "type": "string",
+                        "enum": [
+                          "live",
+                          "test"
+                        ]
+                      },
+                      "detail": {
+                        "type": "string",
+                        "description": "Names the catalog file and the field to declare."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "server_id",
+                      "environment",
+                      "detail"
                     ]
                   }
                 }
@@ -14310,6 +14564,7 @@
       },
       "/v1/audit/events": {
         "get": {
+          "deprecated": true,
           "summary": "Browse the audit chain (alias path)",
           "description": "A read-only page of the caller's own tamper-evident chain, newest first.\n\nTHIS IS AN ALIAS OF `GET /v1/audit-events`, NOT A SECOND RESOURCE. One handler serves both paths, so the query, the body and every refusal are identical and there is nothing to choose between them. It is described separately only because a generated client sees two operations; pick one spelling and stay on it. Note that the OTHER audit operations — the chain's health report, its incidents, its configuration — have no twin under this prefix and live only under `/v1/audit-events`.\n\nBROWSE, NOT EXPORT. This emits no manifest, no signature and no chain entry of its own, so paging through it leaves no trace and proves nothing offline. It is for showing an operator what happened, not for handing an auditor evidence.\n\nScoped to the credential's organization with no way to widen it, and there is no cross-org refusal to handle because there is no organization segment in the path to disagree with.\n\n`event_type` IS AN EXACT MATCH UNLESS IT ENDS IN A DOT, in which case it is a prefix match — so `tool_call.` returns the succeeded and the failed variants in one pass without two queries. The default window is the last seven days.\n\nPAGINATION WALKS BACKWARDS. Pass the previous response's `next_before_sequence` as `before_sequence`. The cursor is null only when the page came back SHORTER than `limit`, so a full page that happens to end at the chain's floor still hands you a non-null cursor and the last call is the one that returns fewer rows. An out-of-range `limit` is clamped rather than refused.\n\nScope: `audit:read`.",
           "parameters": [
@@ -15359,7 +15614,7 @@
                     },
                     "amount_minor": {
                       "type": "integer",
-                      "description": "Minor units. Set it together with `currency` or omit both."
+                      "description": "Minor units (cents). Stored in the currency's native unit (USDC x10^4, BRL as is), so this field cannot carry a sub-cent USDC figure. Set it together with `currency` or omit both."
                     },
                     "currency": {
                       "type": "string",
@@ -15447,7 +15702,21 @@
                               "integer",
                               "null"
                             ],
-                            "description": "Minor units. Stored as a 64 bit integer and rendered as a JSON number. Null unless `currency` is also set."
+                            "description": "Minor units (cents). The row is STORED in the currency's native unit, BRL centavos and USDC 10^-6 (ent#1203), and rendered here in cents rounded away from zero, so a USDC row of 0.001 reads as 1 and never as 0. `amount_native` carries the exact figure. Null unless `currency` is also set."
+                          },
+                          "amount_native": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "The stored figure, exact, in the currency's NATIVE unit as a decimal string: BRL centavos, USDC 10^-6. This is the unit the wallet ledger holds, so it joins to `wallet_ledger.amount_minor` without conversion. Null when `amount_minor` is."
+                          },
+                          "amount": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "The same figure in major units as a decimal string (`\"0.001\"`, `\"19.99\"`), for display."
                           },
                           "currency": {
                             "type": [
@@ -15491,6 +15760,8 @@
                           "counterparty_id",
                           "kind",
                           "amount_minor",
+                          "amount_native",
+                          "amount",
                           "currency",
                           "occurred_at",
                           "source",
@@ -15540,7 +15811,21 @@
                           "integer",
                           "null"
                         ],
-                        "description": "Minor units. Stored as a 64 bit integer and rendered as a JSON number. Null unless `currency` is also set."
+                        "description": "Minor units (cents). The row is STORED in the currency's native unit, BRL centavos and USDC 10^-6 (ent#1203), and rendered here in cents rounded away from zero, so a USDC row of 0.001 reads as 1 and never as 0. `amount_native` carries the exact figure. Null unless `currency` is also set."
+                      },
+                      "amount_native": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "The stored figure, exact, in the currency's NATIVE unit as a decimal string: BRL centavos, USDC 10^-6. This is the unit the wallet ledger holds, so it joins to `wallet_ledger.amount_minor` without conversion. Null when `amount_minor` is."
+                      },
+                      "amount": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "The same figure in major units as a decimal string (`\"0.001\"`, `\"19.99\"`), for display."
                       },
                       "currency": {
                         "type": [
@@ -15584,6 +15869,8 @@
                       "counterparty_id",
                       "kind",
                       "amount_minor",
+                      "amount_native",
+                      "amount",
                       "currency",
                       "occurred_at",
                       "source",
@@ -15836,7 +16123,21 @@
                                 "integer",
                                 "null"
                               ],
-                              "description": "Minor units. Stored as a 64 bit integer and rendered as a JSON number. Null unless `currency` is also set."
+                              "description": "Minor units (cents). The row is STORED in the currency's native unit, BRL centavos and USDC 10^-6 (ent#1203), and rendered here in cents rounded away from zero, so a USDC row of 0.001 reads as 1 and never as 0. `amount_native` carries the exact figure. Null unless `currency` is also set."
+                            },
+                            "amount_native": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "The stored figure, exact, in the currency's NATIVE unit as a decimal string: BRL centavos, USDC 10^-6. This is the unit the wallet ledger holds, so it joins to `wallet_ledger.amount_minor` without conversion. Null when `amount_minor` is."
+                            },
+                            "amount": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "The same figure in major units as a decimal string (`\"0.001\"`, `\"19.99\"`), for display."
                             },
                             "currency": {
                               "type": [
@@ -15880,6 +16181,8 @@
                             "counterparty_id",
                             "kind",
                             "amount_minor",
+                            "amount_native",
+                            "amount",
                             "currency",
                             "occurred_at",
                             "source",
@@ -16966,7 +17269,7 @@
                             },
                             "total_payment_minor": {
                               "type": "integer",
-                              "description": "Sum of `amount_minor` over the window's PAYMENT interactions only, ACROSS CURRENCIES. Read `currencies` before reading this as an amount."
+                              "description": "Sum over the window's PAYMENT interactions only, ACROSS CURRENCIES, in cents: each row is converted from its currency's native unit before the sum and the total is rounded up once. Read `currencies` before reading this as an amount."
                             },
                             "currencies": {
                               "type": "array",
@@ -17363,7 +17666,7 @@
                             },
                             "total_payment_minor": {
                               "type": "integer",
-                              "description": "Sum of `amount_minor` over the window's payment interactions, ACROSS CURRENCIES."
+                              "description": "Sum over the window's payment interactions, ACROSS CURRENCIES, in cents: each row converted from its currency's native unit before the sum, the total rounded up once."
                             },
                             "dominant_currency": {
                               "type": [
@@ -18840,6 +19143,44 @@
                 }
               }
             },
+            "422": {
+              "description": "The project is in `environment=\"test\"` and this provider has no test venue, so the flow is refused BEFORE a state token is minted — a refused start leaves no half-begun link behind. Sending a test project to the provider's LIVE consent screen would have it authorise a real account and vault a real token under a project that is not supposed to hold one (ent#722). Not retryable; the same call from a `live` project succeeds.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "test_venue_unavailable"
+                        ]
+                      },
+                      "server_id": {
+                        "type": "string"
+                      },
+                      "environment": {
+                        "type": "string",
+                        "enum": [
+                          "live",
+                          "test"
+                        ]
+                      },
+                      "detail": {
+                        "type": "string",
+                        "description": "Names the catalog file and the field to declare."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "server_id",
+                      "environment",
+                      "detail"
+                    ]
+                  }
+                }
+              }
+            },
             "500": {
               "description": "The platform's OAuth client credential is not seeded for this provider. A configuration defect on our side.",
               "content": {
@@ -19419,6 +19760,1484 @@
                             "type": "string",
                             "enum": [
                               "status_failed"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/consents": {
+        "post": {
+          "summary": "Start a hosted consent",
+          "description": "Starts a hosted consent for a consumer mandate. The partner's backend calls this with its API key and gets a one-shot token carrying the intent the consumer is about to authorize (purpose, total and per-transaction caps, currency, mandate TTL and the merchant, withdrawal and DDA allowlists that will be signed into the mandate). The partner composes the URL of the hosted consent page from the token and hands it to the consumer.\n\nThe consumer signs on the hosted page. The mandate is created server-side when the consumer submits there: the consumer's secret is provisioned, the mandate is signed with it, the funding source and the consent record are written and the token is consumed, in one transaction. The API key never signs, and the page's own calls are not operations of this document: nothing a partner can call with a key produces a signed mandate.\n\n`intent.merchant_allowlist` defaults to `[\"*\"]`, an explicit wildcard bounded by the caps, purpose and expiry; pass concrete Pix keys to narrow it. `intent.withdrawal_allowlist` and `intent.dda_allowlist` are deliberately NOT defaulted: absent means the mandate authorizes no cash-out and no DDA registration, which is a different thing from a wildcard, and `\"*\"` is refused in both. `callback_url`, when given, is returned to the hosted page at submit time so the partner's backend can receive the signed mandate.\n\nThe token is stamped with the credential's project, and that stamp is what scopes the funding source the consumer's submission later creates.\n\nRequires the `consents:write` scope.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agent_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "consumer_email_hint": {
+                      "type": "string",
+                      "format": "email"
+                    },
+                    "intent": {
+                      "type": "object",
+                      "properties": {
+                        "purpose": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "cap_minor": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "per_tx_cap_minor": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "currency": {
+                          "type": "string",
+                          "enum": [
+                            "BRL",
+                            "USD",
+                            "MXN",
+                            "COP",
+                            "ARS",
+                            "USDC",
+                            "BRLA"
+                          ]
+                        },
+                        "mandate_ttl_seconds": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 31536000
+                        },
+                        "merchant_allowlist": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 140
+                          },
+                          "minItems": 1,
+                          "maxItems": 20,
+                          "default": [
+                            "*"
+                          ]
+                        },
+                        "merchant_pin_kind": {
+                          "type": "string",
+                          "enum": [
+                            "pix-key",
+                            "merchant-id",
+                            "mcc"
+                          ],
+                          "default": "pix-key"
+                        },
+                        "withdrawal_allowlist": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 140
+                          },
+                          "maxItems": 20
+                        },
+                        "dda_allowlist": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 40
+                          },
+                          "maxItems": 20
+                        },
+                        "slots": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "currency": {
+                                "type": "string",
+                                "enum": [
+                                  "BRL",
+                                  "USD",
+                                  "MXN",
+                                  "COP",
+                                  "ARS",
+                                  "USDC",
+                                  "BRLA"
+                                ]
+                              },
+                              "rail": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 40
+                              },
+                              "cap_minor": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              },
+                              "per_tx_cap_minor": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              }
+                            },
+                            "required": [
+                              "currency",
+                              "rail",
+                              "cap_minor",
+                              "per_tx_cap_minor"
+                            ]
+                          },
+                          "minItems": 1,
+                          "maxItems": 8
+                        },
+                        "display_name": {
+                          "type": "string",
+                          "maxLength": 80
+                        },
+                        "intent_note": {
+                          "type": "string",
+                          "maxLength": 280
+                        },
+                        "shipping": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "purpose",
+                        "cap_minor",
+                        "per_tx_cap_minor",
+                        "currency",
+                        "mandate_ttl_seconds"
+                      ]
+                    },
+                    "callback_url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "agent_id",
+                    "intent"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created. The consent is pending until the consumer signs on the hosted page or the token expires.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "token": {
+                        "type": "string",
+                        "description": "One-shot, `ctk_`-prefixed, unguessable. Put it in the URL of the hosted consent page and hand that URL to the consumer. It is consumed by the consumer's submission and cannot be replayed."
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "description": "ISO 8601. The token expires 24 hours after this call; a consumer opening the link after that sees an expired consent and nothing is created. This is the TOKEN's TTL, not the mandate's: the mandate's own TTL is `intent.mandate_ttl_seconds`, counted from the moment the consumer signs."
+                      }
+                    },
+                    "required": [
+                      "token",
+                      "expires_at"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "The body did not match the schema. `details.issues` carries the Zod issues; the refusals with their own message are a `\"*\"` entry in `intent.withdrawal_allowlist` and a `intent.dda_allowlist` entry that is not a CPF (11 digits) or a CNPJ (14 digits).",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/consents/init": {
+        "post": {
+          "deprecated": true,
+          "summary": "Start a hosted consent",
+          "externalDocs": {
+            "url": "https://github.com/codespar/codespar-enterprise/issues/979",
+            "description": "ent#979 - canonical path and alias window"
+          },
+          "description": "DEPRECATED alias of `POST /v1/consents` (ent#979), kept for two releases. Same handler, same required scope, same request and same responses; switch the path and nothing else changes. The canonical path is described in this document too.\n\nStarts a hosted consent for a consumer mandate. The partner's backend calls this with its API key and gets a one-shot token carrying the intent the consumer is about to authorize (purpose, total and per-transaction caps, currency, mandate TTL and the merchant, withdrawal and DDA allowlists that will be signed into the mandate). The partner composes the URL of the hosted consent page from the token and hands it to the consumer.\n\nThe consumer signs on the hosted page. The mandate is created server-side when the consumer submits there: the consumer's secret is provisioned, the mandate is signed with it, the funding source and the consent record are written and the token is consumed, in one transaction. The API key never signs, and the page's own calls are not operations of this document: nothing a partner can call with a key produces a signed mandate.\n\n`intent.merchant_allowlist` defaults to `[\"*\"]`, an explicit wildcard bounded by the caps, purpose and expiry; pass concrete Pix keys to narrow it. `intent.withdrawal_allowlist` and `intent.dda_allowlist` are deliberately NOT defaulted: absent means the mandate authorizes no cash-out and no DDA registration, which is a different thing from a wildcard, and `\"*\"` is refused in both. `callback_url`, when given, is returned to the hosted page at submit time so the partner's backend can receive the signed mandate.\n\nThe token is stamped with the credential's project, and that stamp is what scopes the funding source the consumer's submission later creates.\n\nRequires the `consents:write` scope.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agent_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "consumer_email_hint": {
+                      "type": "string",
+                      "format": "email"
+                    },
+                    "intent": {
+                      "type": "object",
+                      "properties": {
+                        "purpose": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "cap_minor": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "per_tx_cap_minor": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "currency": {
+                          "type": "string",
+                          "enum": [
+                            "BRL",
+                            "USD",
+                            "MXN",
+                            "COP",
+                            "ARS",
+                            "USDC",
+                            "BRLA"
+                          ]
+                        },
+                        "mandate_ttl_seconds": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 31536000
+                        },
+                        "merchant_allowlist": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 140
+                          },
+                          "minItems": 1,
+                          "maxItems": 20,
+                          "default": [
+                            "*"
+                          ]
+                        },
+                        "merchant_pin_kind": {
+                          "type": "string",
+                          "enum": [
+                            "pix-key",
+                            "merchant-id",
+                            "mcc"
+                          ],
+                          "default": "pix-key"
+                        },
+                        "withdrawal_allowlist": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 140
+                          },
+                          "maxItems": 20
+                        },
+                        "dda_allowlist": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 40
+                          },
+                          "maxItems": 20
+                        },
+                        "slots": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "currency": {
+                                "type": "string",
+                                "enum": [
+                                  "BRL",
+                                  "USD",
+                                  "MXN",
+                                  "COP",
+                                  "ARS",
+                                  "USDC",
+                                  "BRLA"
+                                ]
+                              },
+                              "rail": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 40
+                              },
+                              "cap_minor": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              },
+                              "per_tx_cap_minor": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              }
+                            },
+                            "required": [
+                              "currency",
+                              "rail",
+                              "cap_minor",
+                              "per_tx_cap_minor"
+                            ]
+                          },
+                          "minItems": 1,
+                          "maxItems": 8
+                        },
+                        "display_name": {
+                          "type": "string",
+                          "maxLength": 80
+                        },
+                        "intent_note": {
+                          "type": "string",
+                          "maxLength": 280
+                        },
+                        "shipping": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "purpose",
+                        "cap_minor",
+                        "per_tx_cap_minor",
+                        "currency",
+                        "mandate_ttl_seconds"
+                      ]
+                    },
+                    "callback_url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "agent_id",
+                    "intent"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created. The consent is pending until the consumer signs on the hosted page or the token expires.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "token": {
+                        "type": "string",
+                        "description": "One-shot, `ctk_`-prefixed, unguessable. Put it in the URL of the hosted consent page and hand that URL to the consumer. It is consumed by the consumer's submission and cannot be replayed."
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "description": "ISO 8601. The token expires 24 hours after this call; a consumer opening the link after that sees an expired consent and nothing is created. This is the TOKEN's TTL, not the mandate's: the mandate's own TTL is `intent.mandate_ttl_seconds`, counted from the moment the consumer signs."
+                      }
+                    },
+                    "required": [
+                      "token",
+                      "expires_at"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "The body did not match the schema. `details.issues` carries the Zod issues; the refusals with their own message are a `\"*\"` entry in `intent.withdrawal_allowlist` and a `intent.dda_allowlist` entry that is not a CPF (11 digits) or a CNPJ (14 digits).",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/consumers/mandates/{id}/spend": {
+        "post": {
+          "summary": "Gastar sob um mandato já projetado",
+          "description": "Executa uma saída de dinheiro sob um mandato que já está projetado nesta organização, identificado por id. É o caminho que o meta-tool `codespar_pay` usa por dentro, então o comportamento aqui é o mesmo que um agente obtém — esta rota existe para quem não usa o SDK chegar ao mesmo lugar.\n\nCom `ted` presente, a perna do provedor é uma transferência bancária de verdade, debitada da sub-conta do próprio consumidor. Sem `ted`, `payee` é uma chave Pix ou um copia-e-cola.\n\n**TED tem três exigências que as outras formas de pagamento não têm, e as três vinculam ANTES de qualquer passo de dinheiro:**\n\n1. `attempt_id` é OBRIGATÓRIO. Uma TED não tem copia-e-cola nem nonce de onde derivar correlação, e duas TEDs sob o mesmo mandato nunca podem colidir num id derivado.\n2. `payee` tem que ser IGUAL à string canônica do destino, `ted:<ispb>:<agência>:<conta>`, só alfanuméricos e em maiúsculas. A comparação normaliza apenas espaços em branco, então uma entrada com ponto ou hífen NÃO casa. Esta regra existe para o pin da lista assinada e o fio nomearem o MESMO destino: sem ela, um recebedor aprovado serviria de fachada para outra conta bancária.\n3. O destino tem que estar na `withdrawal_allowlist` ASSINADA do mandato. Um curinga `\"*\"` de lista de comerciante NUNCA autoriza saída de dinheiro, nem no caminho legado.\n\nO teto cumulativo é conferido e CONSUMIDO sob trava de advisory lock, e a reserva na carteira é tomada dentro da mesma trava. A trava é liberada antes da chamada ao provedor, então uma chamada lenta não serializa as outras.\n\n**Não existe rota de leitura do desfecho.** Um `attempt_id` que respondeu `psp_dispatch_uncertain` não tem endpoint para consultar depois. Guarde o `attempt_id` e reapresente-o: o ciclo é idempotente por ele e responde o estado em que aquela tentativa parou, em vez de disparar uma segunda. NÃO reinicie a mesma intenção com um `attempt_id` novo — é assim que se paga duas vezes.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "description": "Id do mandato."
+              },
+              "required": true,
+              "description": "Id do mandato.",
+              "name": "id",
+              "in": "path"
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "amount_minor": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "description": "Valor em centavos."
+                    },
+                    "payee": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1024,
+                      "description": "Chave Pix, copia-e-cola, ou — para TED — a string canônica do destino. O limite de 1024 acomoda um copia-e-cola."
+                    },
+                    "agent_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "attempt_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "description": "Obrigatório quando `ted` está presente. Reapresente-o em toda retentativa."
+                    },
+                    "ted": {
+                      "$ref": "#/components/schemas/TedDestination"
+                    },
+                    "quote": {
+                      "$ref": "#/components/schemas/SpendQuote"
+                    }
+                  },
+                  "required": [
+                    "amount_minor",
+                    "payee"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SpendOutcome"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "O corpo não casou com o schema.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "O destino não está na lista de saque assinada do mandato. Nada foi enviado ao provedor. A resposta traz o próximo passo de consentimento.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "withdrawal_pin"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Não existe mandato com esse id nesta organização.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "mandate_not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "O estado local impede. `psp_attempt_in_flight`: a mesma tentativa está em voo. `psp_attempt_uncertain`: uma tentativa anterior ficou com desfecho desconhecido e esta intenção está PINADA nela — reapresente o mesmo `attempt_id`, nunca um novo. `psp_attempt_conflict`: a tentativa anterior já foi compensada.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "psp_attempt_in_flight",
+                              "psp_attempt_uncertain",
+                              "psp_attempt_conflict"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "O mandato recusa. `mandate_verify`: assinatura, agente, propósito ou recebedor não conferem. `mandate_projection_mismatch`: a assinatura apresentada difere da armazenada, ou o mandato não está ativo. `no_funding_source`: o consumidor não tem fonte de recursos que sirva a este rail — para TED, exige conta bancária registrada.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "mandate_verify",
+                              "mandate_projection_mismatch",
+                              "no_funding_source"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "O verificador respondeu sem resolver o teto cumulativo, então a recheca sob trava não teria limite com que comparar. Recusa deliberada: nada é debitado.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "mandate_cap_unresolved"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "502": {
+              "description": "O provedor recusou ou não respondeu. `psp_dispatch_failed`: recusa conhecida, nada saiu. `psp_dispatch_uncertain`: NÃO se sabe se saiu — a reserva permanece e a tentativa fica pinada.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "psp_dispatch_failed",
+                              "psp_dispatch_uncertain"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/consumer-payments/execute": {
+        "post": {
+          "summary": "Gastar apresentando o mandato assinado",
+          "description": "O mesmo ciclo da rota por id, para quem carrega o envelope assinado em vez de um mandato já projetado. Use esta quando o mandato vem do consumidor no momento da chamada; use a `/consumers/mandates/{id}/spend` quando ele já está registrado aqui.\n\n`signature` é o HMAC de 64 caracteres hexadecimais sobre o mandato canônico. O `agent_id` do corpo é conferido contra o ASSINADO: a atribuição do gasto pertence ao mandato, não a quem chama.\n\n**TED tem três exigências que as outras formas de pagamento não têm, e as três vinculam ANTES de qualquer passo de dinheiro:**\n\n1. `attempt_id` é OBRIGATÓRIO. Uma TED não tem copia-e-cola nem nonce de onde derivar correlação, e duas TEDs sob o mesmo mandato nunca podem colidir num id derivado.\n2. `payee` tem que ser IGUAL à string canônica do destino, `ted:<ispb>:<agência>:<conta>`, só alfanuméricos e em maiúsculas. A comparação normaliza apenas espaços em branco, então uma entrada com ponto ou hífen NÃO casa. Esta regra existe para o pin da lista assinada e o fio nomearem o MESMO destino: sem ela, um recebedor aprovado serviria de fachada para outra conta bancária.\n3. O destino tem que estar na `withdrawal_allowlist` ASSINADA do mandato. Um curinga `\"*\"` de lista de comerciante NUNCA autoriza saída de dinheiro, nem no caminho legado.\n\n**Não existe rota de leitura do desfecho.** Um `attempt_id` que respondeu `psp_dispatch_uncertain` não tem endpoint para consultar depois. Guarde o `attempt_id` e reapresente-o: o ciclo é idempotente por ele e responde o estado em que aquela tentativa parou, em vez de disparar uma segunda. NÃO reinicie a mesma intenção com um `attempt_id` novo — é assim que se paga duas vezes.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mandate": {
+                      "description": "O mandato canônico, na forma em que foi assinado."
+                    },
+                    "signature": {
+                      "type": "string",
+                      "minLength": 64,
+                      "maxLength": 64,
+                      "description": "HMAC em hexadecimal, 64 caracteres."
+                    },
+                    "amount_minor": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "purpose": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "agent_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "payee": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1024
+                    },
+                    "attempt_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "ted": {
+                      "$ref": "#/components/schemas/TedDestination"
+                    },
+                    "quote": {
+                      "$ref": "#/components/schemas/SpendQuote"
+                    }
+                  },
+                  "required": [
+                    "signature",
+                    "amount_minor",
+                    "purpose",
+                    "agent_id",
+                    "payee"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SpendOutcome"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "O corpo não casou com o schema.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "O destino não está na lista de saque assinada. Nada foi enviado ao provedor.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "withdrawal_pin"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "O estado local impede — mesmas três condições da rota por id.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "psp_attempt_in_flight",
+                              "psp_attempt_uncertain",
+                              "psp_attempt_conflict"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "O mandato recusa, ou o consumidor não tem fonte de recursos para este rail.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "mandate_verify",
+                              "mandate_projection_mismatch",
+                              "no_funding_source"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "O teto cumulativo não foi resolvido pelo verificador. Nada é debitado.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "mandate_cap_unresolved"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "502": {
+              "description": "O provedor recusou, ou o desfecho é desconhecido.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "psp_dispatch_failed",
+                              "psp_dispatch_uncertain"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/consumer-payments/execute-stream": {
+        "post": {
+          "summary": "Gastar apresentando o mandato, com os passos em streaming",
+          "description": "Mesmo corpo e mesmos gates da `/v1/consumer-payments/execute`. A diferença é só o transporte da resposta: os passos do ciclo (verificação do mandato, roteamento da fonte, reserva, débito no provedor, selo do recibo) chegam como eventos `text/event-stream` à medida que acontecem, em vez de um único JSON no fim.\n\nO desfecho é o mesmo objeto da rota irmã, no último evento. Um cliente que não precisa acompanhar o progresso deve usar a `/execute`: streaming não torna a liquidação mais rápida, só a torna observável enquanto corre.\n\n**Não existe rota de leitura do desfecho.** Um `attempt_id` que respondeu `psp_dispatch_uncertain` não tem endpoint para consultar depois. Guarde o `attempt_id` e reapresente-o: o ciclo é idempotente por ele e responde o estado em que aquela tentativa parou, em vez de disparar uma segunda. NÃO reinicie a mesma intenção com um `attempt_id` novo — é assim que se paga duas vezes.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mandate": {},
+                    "signature": {
+                      "type": "string",
+                      "minLength": 64,
+                      "maxLength": 64
+                    },
+                    "amount_minor": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "purpose": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "agent_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "payee": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1024
+                    },
+                    "attempt_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "ted": {
+                      "$ref": "#/components/schemas/TedDestination"
+                    },
+                    "quote": {
+                      "$ref": "#/components/schemas/SpendQuote"
+                    }
+                  },
+                  "required": [
+                    "signature",
+                    "amount_minor",
+                    "purpose",
+                    "agent_id",
+                    "payee"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Fluxo de eventos. Cada evento é um passo do ciclo; o último carrega o mesmo objeto de desfecho que a `/execute` devolve.",
+              "content": {
+                "text/event-stream": {
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "O corpo não casou com o schema.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "O destino não está na lista de saque assinada.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "withdrawal_pin"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "O mandato recusa, ou não há fonte de recursos para este rail.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "mandate_verify",
+                              "mandate_projection_mismatch",
+                              "no_funding_source"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "502": {
+              "description": "O provedor recusou, ou o desfecho é desconhecido.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "psp_dispatch_failed",
+                              "psp_dispatch_uncertain"
                             ]
                           },
                           "message": {
@@ -36899,6 +38718,45 @@
                     },
                     "required": [
                       "error"
+                    ]
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Unprocessable — the project is in `environment=\"test\"` and this server cannot be exercised there. `reason` is the provider's `test_venue` classification: `none` means the provider runs no test environment at all, so the call would land on production with a real effect (a Z-API WhatsApp message goes to a real number); `unclassified` means nobody has established what it does in test. Answered whether or not `PROXY_REQUIRE_CONNECTION` is set, because it is about the environment and not about a missing connection, and not retryable — the same call from a `live` project reaches the provider (ent#722).",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "test_venue_unavailable"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "enum": [
+                          "none",
+                          "unclassified",
+                          "separate_host"
+                        ]
+                      },
+                      "server": {
+                        "type": "string"
+                      },
+                      "message": {
+                        "type": "string",
+                        "description": "Names the catalog file and the field to declare."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "reason",
+                      "server",
+                      "message"
                     ]
                   }
                 }
