@@ -97,8 +97,16 @@ describe("coverage: every operation in the generated table is dispatchable", () 
     expect(reached).toBe(API_OPERATIONS.length);
     // The number the snapshot carries. Stated here so a snapshot refresh that
     // drops routes has to change this line on purpose. 213 at #139; 215 after
-    // the 2026-09-10 refresh (`/v1/fees`, `/v1/fees/movimentar`).
-    expect(API_OPERATIONS.length).toBe(215);
+    // the 2026-09-10 refresh (`/v1/fees`, `/v1/fees/movimentar`); 221 after the
+    // 2026-09-11 refresh, which brought six paths and no removals:
+    // `/v1/consents` and `/v1/consents/init` (ent#979), `/v1/fees/governar`
+    // (#1213), and the three that serve governed TED — `/v1/consumer-payments/
+    // execute`, `/v1/consumer-payments/execute-stream` and
+    // `/v1/consumers/mandates/{id}/spend` (ent#1176). The last three were
+    // reachable over HTTP since ent#948 and absent from the served document
+    // until then, which is why a partner reading it concluded TED did not
+    // exist.
+    expect(API_OPERATIONS.length).toBe(221);
   });
 
   it("refuses a method/path pair the document does not declare, before any request", async () => {

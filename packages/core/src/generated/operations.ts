@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 35fddb5dbab7c5518b2e6a2cc7427a51c0da8366eed912ee36d802ece49fb69f, fetched 2026-09-10T10:32:58.952Z
+// Source: openapi-snapshot.json (sha256 97ee015c2ad4f74a9f922bf1d7a4e479c940336ead1b2770e1714758b9cb7f95, fetched 2026-09-11T10:51:22.760Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -75,6 +75,7 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/ofb/consents/{id}", body: null, accept: "application/json" },
   { method: "get", path: "/v1/fees", body: null, accept: "application/json" },
   { method: "get", path: "/v1/fees/movimentar", body: null, accept: "application/json" },
+  { method: "get", path: "/v1/fees/governar", body: null, accept: "application/json" },
   { method: "post", path: "/v1/cart/meli/connect/start", body: null, accept: "application/json" },
   { method: "post", path: "/v1/cart/ifood/connect/start", body: null, accept: "application/json" },
   { method: "get", path: "/v1/cards/{id}", body: null, accept: "application/json" },
@@ -130,6 +131,11 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/connections/engine/{run_id}/status", body: null, accept: "application/json" },
   { method: "post", path: "/v1/connections/subaccount/{id}/revoke", body: null, accept: "application/json" },
   { method: "get", path: "/v1/connections/subaccount/{id}/status", body: null, accept: "application/json" },
+  { method: "post", path: "/v1/consents", body: "application/json", accept: "application/json" },
+  { method: "post", path: "/v1/consents/init", body: "application/json", accept: "application/json" },
+  { method: "post", path: "/v1/consumers/mandates/{id}/spend", body: "application/json", accept: "application/json" },
+  { method: "post", path: "/v1/consumer-payments/execute", body: "application/json", accept: "application/json" },
+  { method: "post", path: "/v1/consumer-payments/execute-stream", body: "application/json", accept: "text/event-stream" },
   { method: "get", path: "/v1/consumers/{consumerId}/dda/subscriptions/{document}", body: null, accept: "application/json" },
   { method: "delete", path: "/v1/consumers/{consumerId}/dda/subscriptions/{document}", body: null, accept: "application/json" },
   { method: "get", path: "/v1/consumers/{consumerId}/dda/boletos", body: null, accept: "application/json" },
