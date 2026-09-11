@@ -533,6 +533,20 @@ export interface LedgerResult {
 
 /* ── Agentic receipt (the Control Record) ────────────────────── */
 
+/**
+ * The metered basis sealed into a post-paid (v3) receipt: what was counted, how
+ * much of it, and the atomic price per unit. Present only on a metered receipt,
+ * so every other receipt's signed chain is byte-identical to v1.
+ */
+export interface ReceiptMetering {
+  /** 'tokens' | 'time' | 'units'. */
+  basis: string;
+  /** Quantity metered, as a decimal string. */
+  units: string;
+  /** Atomic price per unit, as a decimal string. */
+  unit_price: string;
+}
+
 /** One settle-time policy divergence recorded on a receipt (OBSERVE mode) —
  *  e.g. the settled amount/payee diverging from the bound quote. */
 export interface ReceiptException {
@@ -585,6 +599,30 @@ export interface AgenticReceipt {
     /** PSP tx id / Pix endToEndId / on-chain hash. */
     tx_id: string | null;
     amount_minor: number;
+    /**
+     * Exact atomic amount for rails whose unit is finer than the minor unit
+     * (6-decimal USDC). Sent on every receipt, and `null` on a fiat rail, so a
+     * fiat receipt's signed chain stays byte-identical to v1. Optional here
+     * only so a receipt persisted before the column existed still types.
+     */
+    amount_atomic?: string | null;
+    /**
+     * The three-amount post-paid contract, all atomic decimal strings and all
+     * append-only. Present only on a metered (v3) receipt: an agent authorizes
+     * a ceiling, the settled usage is charged, and the difference comes back.
+     * Absent — not zero — on a receipt that was never metered.
+     */
+    amount_authorized?: string;
+    amount_charged?: string;
+    amount_refunded?: string;
+    /** What was metered, on a metered receipt. Absent otherwise. */
+    metering?: ReceiptMetering;
+    /**
+     * True when the settlement was SIMULATED (a test-mode project, a stage
+     * issuer host). Sent only when true, and folded into the signed chain, so
+     * a simulated spend can never be read back as a real one.
+     */
+    sandbox?: boolean;
     attempt_id: string;
     /** True when real money moved (e.g. a Celcoin cash-out); false for a
      *  pending charge (e.g. a Mercado Pago QR). */

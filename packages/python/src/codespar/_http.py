@@ -17,6 +17,7 @@ from typing import Any
 
 import httpx
 
+from ._version import USER_AGENT
 from .errors import ApiError, ConfigError, StreamError, TimeoutError
 
 DEFAULT_BASE_URL = "https://api.codespar.dev"
@@ -51,7 +52,7 @@ def build_headers(
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
-        "User-Agent": "codespar-python/0.10.0",
+        "User-Agent": USER_AGENT,
     }
     if project_id:
         headers["x-codespar-project"] = project_id

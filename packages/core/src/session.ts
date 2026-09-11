@@ -69,19 +69,29 @@ async function safeFetch<T>(
   }
 }
 
+/**
+ * The managed runtime's `POST /sessions` body. Everything but `id` and `status`
+ * is optional HERE and not on the wire: the MIT runtime shipped a 201 carrying
+ * only those two, and typing the rest as required is what let the SDK read
+ * `undefined` as though it were a string (oss-sdk#6). The optionality is a
+ * statement about what this code must survive, not about what a correct backend
+ * sends — see the fallbacks at the construction site.
+ */
 interface BackendSessionResponse {
   id: string;
-  org_id: string;
-  user_id: string;
-  servers: string[];
+  org_id?: string;
+  user_id?: string;
+  servers?: string[];
   status: "active" | "closed" | "error";
-  created_at: string;
-  closed_at: string | null;
+  created_at?: string;
+  closed_at?: string | null;
 }
 
+/** Same reasoning: `tools` was absent from the MIT runtime's response, and an
+ *  absent key cached `undefined` as the answer to `session.tools()`. */
 interface BackendConnectionsResponse {
   servers: ServerConnection[];
-  tools: Tool[];
+  tools?: Tool[];
 }
 
 // The concrete session object satisfies the Session interface and carries extra
@@ -143,11 +153,28 @@ export async function createSession(
   let cachedTools: Tool[] | null = null;
   let cachedConnections: ServerConnection[] | null = null;
 
+  // A backend that answers thinly must degrade to a value that is TRUE, not to
+  // one that is broken. `new Date(undefined)` is an Invalid Date rather than a
+  // throw: it formats as "Invalid Date", compares false to everything and
+  // serialises to null, so a runtime that omitted `created_at` produced a
+  // session that looked fine until someone read the field. Same for `user_id`
+  // and `servers` arriving as undefined.
+  //
+  // Nothing is invented: the fallbacks are what THIS call asked for, and the
+  // moment this response was received — within one round trip of the real
+  // creation time. The backend's value always wins when it sends one.
+  const observedAt = new Date();
+  const createdAt = (() => {
+    if (typeof data.created_at !== "string") return observedAt;
+    const parsed = new Date(data.created_at);
+    return Number.isNaN(parsed.getTime()) ? observedAt : parsed;
+  })();
+
   const session = {
     id: data.id,
-    userId: data.user_id,
-    servers: data.servers,
-    createdAt: new Date(data.created_at),
+    userId: data.user_id ?? userId,
+    servers: data.servers ?? req.servers,
+    createdAt,
     status: data.status,
     // Placeholder MCP transport URL — runtime endpoint lands in Marco 3.
     // Kept here so @codespar/mcp config helpers work today.
@@ -598,9 +625,13 @@ export async function createSession(
           async (r) => {
             if (!r.ok) return cachedConnections ?? [];
             const payload = (await r.json()) as BackendConnectionsResponse;
-            cachedConnections = payload.servers;
-            cachedTools = payload.tools;
-            return payload.servers;
+            cachedConnections = payload.servers ?? [];
+            // An absent `tools` key is a backend that did not answer, not an
+            // empty catalogue — but caching `undefined` makes `tools()` re-ask
+            // forever and `?? []` hides that at every call site. Cache the
+            // empty list once: same answer, and the cache is a cache.
+            cachedTools = payload.tools ?? [];
+            return cachedConnections;
           },
         );
       } catch {
