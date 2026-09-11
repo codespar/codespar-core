@@ -1,5 +1,40 @@
 # @codespar/cli — changelog
 
+## 0.7.0 — 2026-09-11
+
+Resource groups and the 15 meta-tools, derived from the published
+surface instead of written one by one. See
+[codespar/codespar-core#125](https://github.com/codespar/codespar-core/issues/125).
+
+### Added
+
+- Six resource command groups — `consumers`, `boletos`, `sellers`,
+  `mcp-servers`, `wallets`, `triggers` — covering 61 operations. Each
+  subcommand is one row of `API_OPERATIONS`, the table `@codespar/sdk`
+  generates from the served OpenAPI document: the path parameters are the
+  positionals, `-q/--query key=value` is repeatable, and `-i/--input` is
+  accepted only where the operation declares a body. Dispatch goes
+  through `cs.api`, so the CLI adds no HTTP of its own.
+- `codespar tool <name>` — invoke any of the 15 meta-tools published in
+  `@codespar/types`. `--action` is checked against the tool's published
+  vocabulary, `--arg key=value` is typed by the published schema, and a
+  missing required property fails before anything is sent.
+- `codespar pay` and `codespar kyc` — shorthands for `tool codespar_pay`
+  and `tool codespar_kyc`.
+- `codespar tools meta [name]` — the published definitions: actions,
+  required input, closed vocabularies, full input schema.
+- A coverage gate (`src/__tests__/surface-coverage.test.ts`): every
+  resource family of the served document needs a command or an exception
+  with a reason and a date, and the exception list is a ratchet that only
+  goes down. A second ratchet pins the ten REST paths the older commands
+  still build by hand, none of which the served document declares.
+
+### Changed
+
+- Errors from the generated REST client (`CodesparApiError`,
+  `TimeoutError`) print the API's message and body and exit 1, instead of
+  falling through to the internal-error stack trace.
+
 ## 0.6.1 — 2026-09-09
 
 Dependency range only: `@codespar/sdk` `^0.12.0` (the generated REST
