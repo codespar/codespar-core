@@ -105,8 +105,13 @@ describe("coverage: every operation in the generated table is dispatchable", () 
     // `/v1/consumers/mandates/{id}/spend` (ent#1176). The last three were
     // reachable over HTTP since ent#948 and absent from the served document
     // until then, which is why a partner reading it concluded TED did not
-    // exist.
-    expect(API_OPERATIONS.length).toBe(221);
+    // exist. 227 after the 2026-09-14 refresh, again six paths and no
+    // removals: the `/v1/charges` family of four, which existed over HTTP
+    // and was absent from the document (ent#1307 reads as "charge.get and
+    // charge.cancel exist only in REST" for exactly this reason), plus the
+    // meta-tool catalogue document under both mounts, `/meta-tools.json`
+    // and `/v1/meta-tools.json`.
+    expect(API_OPERATIONS.length).toBe(227);
   });
 
   it("refuses a method/path pair the document does not declare, before any request", async () => {

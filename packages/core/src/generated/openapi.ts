@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 97ee015c2ad4f74a9f922bf1d7a4e479c940336ead1b2770e1714758b9cb7f95, fetched 2026-09-11T10:51:22.760Z
+// Source: openapi-snapshot.json (sha256 4ad23e2c4fa27e50dae11b1e174209a20044ea823c4efeef1006f0effa97e029, fetched 2026-09-14T15:47:40.455Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -419,6 +419,114 @@ export interface paths {
                     };
                     content: {
                         "application/json": Record<string, never>;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/meta-tools.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The tool catalogue the execute operation dispatches
+         * @description THE LEGAL VALUES OF `tool`, and what each one accepts. `POST /v1/sessions/{id}/execute` names a tool by string; this is the document that gives those strings meaning, one entry per tool with a JSON Schema for its input.
+         *
+         *     Served with no credential, `Access-Control-Allow-Origin: *`, cached for five minutes. It carries no tenant data: names, descriptions and schemas, identical for every caller. `/meta-tools.json` and `/v1/meta-tools.json` return the same bytes.
+         *
+         *     READ IT BEFORE CONCLUDING A CAPABILITY IS MISSING. The tool descriptions and their schemas carry contracts this OpenAPI document does not repeat — which `action` values exist, which arguments are mandatory for which combination, and what a create answers when the instrument is not ready yet. A capability can be fully implemented and still read as absent to someone holding only this document.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Names the source so the reader does not have to take the document's word for it: this is the same output the MCP transport answers `tools/list` with, not a second reading of the catalogue that could drift from it.
+                             * @enum {string}
+                             */
+                            generated_from: "tools/list";
+                            tools: {
+                                /** @description The value to send as `tool` on the execute operation. */
+                                name: string;
+                                description: string;
+                                /** @description JSON Schema for that tool's input, which is what goes in `params`. */
+                                inputSchema: Record<string, never>;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meta-tools.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The tool catalogue, under the /v1 mount
+         * @description Identical to `/meta-tools.json`, for a caller already pointed at the versioned prefix. Same bytes, same absence of a credential.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Names the source so the reader does not have to take the document's word for it: this is the same output the MCP transport answers `tools/list` with, not a second reading of the catalogue that could drift from it.
+                             * @enum {string}
+                             */
+                            generated_from: "tools/list";
+                            tools: {
+                                /** @description The value to send as `tool` on the execute operation. */
+                                name: string;
+                                description: string;
+                                /** @description JSON Schema for that tool's input, which is what goes in `params`. */
+                                inputSchema: Record<string, never>;
+                            }[];
+                        };
                     };
                 };
             };
@@ -4530,7 +4638,7 @@ export interface paths {
          * @deprecated
          * @description What to ask an operator for before connecting this provider, and where the request will go once connected. It NEVER returns a stored secret: the vault is write-only from this side, and `fields` describes inputs to collect, not values that exist.
          *
-         *     AN EMPTY `fields` DOES NOT MEAN NOTHING TO DO, and four auth types produce one. `oauth` collects nothing here because the browser leg starts at `POST /v1/connections/start` instead. `none` needs no credential. And `jwt_ecdsa` and `cdp` reach no field-building branch at all, so they come back empty while still needing operator-issued material: read that pair as unsupported by this form rather than as ready to connect. The other five all return at least one field, `cert` included.
+         *     AN EMPTY `fields` DOES NOT MEAN NOTHING TO DO, and four of the auth types produce one. `oauth` collects nothing here because the browser leg starts at `POST /v1/connections/start` instead. `none` needs no credential. And `jwt_ecdsa` and `cdp` reach no field-building branch at all, so they come back empty while still needing operator-issued material: read that pair as unsupported by this form rather than as ready to connect. The rest all return at least one field, `cert` included.
          *
          *     `base_url` IS ENVIRONMENT-RESOLVED against the credential in hand: a test key sees the provider's test host when the catalog declares one, and the live host otherwise. It is the empty string when the provider has no endpoint row, which is a catalog gap rather than a value to dial.
          *
@@ -10924,27 +11032,27 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Gastar sob um mandato já projetado
-         * @description Executa uma saída de dinheiro sob um mandato que já está projetado nesta organização, identificado por id. É o caminho que o meta-tool `codespar_pay` usa por dentro, então o comportamento aqui é o mesmo que um agente obtém — esta rota existe para quem não usa o SDK chegar ao mesmo lugar.
+         * Spend under a mandate already projected here
+         * @description Moves money out under a mandate already projected into this organization, addressed by id. This is the path the `codespar_pay` meta-tool takes internally, so the behaviour here is the behaviour an agent gets; the route exists so a caller who does not use the SDK reaches the same place.
          *
-         *     Com `ted` presente, a perna do provedor é uma transferência bancária de verdade, debitada da sub-conta do próprio consumidor. Sem `ted`, `payee` é uma chave Pix ou um copia-e-cola.
+         *     With `ted` present the provider leg is a real bank transfer, debited from the consumer's own sub-account. Without `ted`, `payee` is a Pix key or a copy-and-paste string.
          *
-         *     **TED tem três exigências que as outras formas de pagamento não têm, e as três vinculam ANTES de qualquer passo de dinheiro:**
+         *     **TED carries three requirements the other payment methods do not, and all three bind BEFORE any money step:**
          *
-         *     1. `attempt_id` é OBRIGATÓRIO. Uma TED não tem copia-e-cola nem nonce de onde derivar correlação, e duas TEDs sob o mesmo mandato nunca podem colidir num id derivado.
-         *     2. `payee` tem que ser IGUAL à string canônica do destino, `ted:<ispb>:<agência>:<conta>`, só alfanuméricos e em maiúsculas. A comparação normaliza apenas espaços em branco, então uma entrada com ponto ou hífen NÃO casa. Esta regra existe para o pin da lista assinada e o fio nomearem o MESMO destino: sem ela, um recebedor aprovado serviria de fachada para outra conta bancária.
-         *     3. O destino tem que estar na `withdrawal_allowlist` ASSINADA do mandato. Um curinga `"*"` de lista de comerciante NUNCA autoriza saída de dinheiro, nem no caminho legado.
+         *     1. `attempt_id` is MANDATORY. A TED has no copy-and-paste string and no nonce to derive correlation from, and two TEDs under the same mandate must never collide on a derived id.
+         *     2. `payee` must EQUAL the destination's canonical string, `ted:<ispb>:<branch>:<account>`, alphanumerics only and upper-cased. The comparison normalizes whitespace and nothing else, so an entry carrying a dot or a hyphen does NOT match. The rule is what makes the signed-allowlist pin and the wire name the SAME destination: without it, an approved payee fronts for a different bank account.
+         *     3. The destination must be NAMED in a signed list of the mandate, and a merchant-list wildcard `"*"` NEVER authorizes money out. Which list is accepted is mid-rollout, so read this one carefully: the target rule is `withdrawal_allowlist` alone, and while the rollout flag is off a destination named explicitly in the signed `merchant_allowlist` is ALSO accepted, with the stricter rule's refusal recorded rather than applied. Tolerance never widens what passes: a wildcard is refused on both paths, and a destination in neither list is refused with its own code. Build against `withdrawal_allowlist`: it is the list that keeps working when the flag turns on.
          *
-         *     O teto cumulativo é conferido e CONSUMIDO sob trava de advisory lock, e a reserva na carteira é tomada dentro da mesma trava. A trava é liberada antes da chamada ao provedor, então uma chamada lenta não serializa as outras.
+         *     The cumulative cap is checked and CONSUMED under an advisory lock, and the wallet hold is taken inside that same lock. The lock is released before the provider call, so a slow provider does not serialize everyone else.
          *
-         *     **Não existe rota de leitura do desfecho.** Um `attempt_id` que respondeu `psp_dispatch_uncertain` não tem endpoint para consultar depois. Guarde o `attempt_id` e reapresente-o: o ciclo é idempotente por ele e responde o estado em que aquela tentativa parou, em vez de disparar uma segunda. NÃO reinicie a mesma intenção com um `attempt_id` novo — é assim que se paga duas vezes.
+         *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice.
          */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Id do mandato. */
+                    /** @description The mandate's id. */
                     id: string;
                 };
                 cookie?: never;
@@ -10952,12 +11060,12 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Valor em centavos. */
+                        /** @description Amount in minor units. */
                         amount_minor: number;
-                        /** @description Chave Pix, copia-e-cola, ou — para TED — a string canônica do destino. O limite de 1024 acomoda um copia-e-cola. */
+                        /** @description A Pix key, a copy-and-paste string, or, for TED, the destination's canonical string. The 1024 limit is there to fit a copy-and-paste string. */
                         payee: string;
                         agent_id?: string;
-                        /** @description Obrigatório quando `ted` está presente. Reapresente-o em toda retentativa. */
+                        /** @description Mandatory when `ted` is present. Present the same one again on every retry. */
                         attempt_id?: string;
                         ted?: components["schemas"]["TedDestination"];
                         quote?: components["schemas"]["SpendQuote"];
@@ -10974,7 +11082,7 @@ export interface paths {
                         "application/json": components["schemas"]["SpendOutcome"];
                     };
                 };
-                /** @description O corpo não casou com o schema. */
+                /** @description The body did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -10994,7 +11102,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O destino não está na lista de saque assinada do mandato. Nada foi enviado ao provedor. A resposta traz o próximo passo de consentimento. */
+                /** @description The destination is not on the mandate's signed withdrawal allowlist. Nothing was sent to the provider. The response carries the next consent step. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -11014,7 +11122,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Não existe mandato com esse id nesta organização. */
+                /** @description No mandate with that id exists in this organization. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -11034,7 +11142,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O estado local impede. `psp_attempt_in_flight`: a mesma tentativa está em voo. `psp_attempt_uncertain`: uma tentativa anterior ficou com desfecho desconhecido e esta intenção está PINADA nela — reapresente o mesmo `attempt_id`, nunca um novo. `psp_attempt_conflict`: a tentativa anterior já foi compensada. */
+                /** @description Local state refuses. `psp_attempt_in_flight`: the same attempt is already in flight. `psp_attempt_uncertain`: an earlier attempt ended with an unknown outcome and this intent is PINNED to it, so present the same `attempt_id` again, never a new one. `psp_attempt_conflict`: the earlier attempt was already compensated. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -11054,7 +11162,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O mandato recusa. `mandate_verify`: assinatura, agente, propósito ou recebedor não conferem. `mandate_projection_mismatch`: a assinatura apresentada difere da armazenada, ou o mandato não está ativo. `no_funding_source`: o consumidor não tem fonte de recursos que sirva a este rail — para TED, exige conta bancária registrada. */
+                /** @description The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -11074,7 +11182,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O verificador respondeu sem resolver o teto cumulativo, então a recheca sob trava não teria limite com que comparar. Recusa deliberada: nada é debitado. */
+                /** @description The verifier answered without resolving the cumulative cap, so the re-check under the lock would have no limit to compare against. A deliberate refusal: nothing is debited. */
                 500: {
                     headers: {
                         [name: string]: unknown;
@@ -11094,7 +11202,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O provedor recusou ou não respondeu. `psp_dispatch_failed`: recusa conhecida, nada saiu. `psp_dispatch_uncertain`: NÃO se sabe se saiu — a reserva permanece e a tentativa fica pinada. */
+                /** @description The provider refused or did not answer. `psp_dispatch_failed`: a known refusal, nothing left. `psp_dispatch_uncertain`: it is NOT known whether anything left, so the hold stands and the attempt stays pinned. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -11132,18 +11240,18 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Gastar apresentando o mandato assinado
-         * @description O mesmo ciclo da rota por id, para quem carrega o envelope assinado em vez de um mandato já projetado. Use esta quando o mandato vem do consumidor no momento da chamada; use a `/consumers/mandates/{id}/spend` quando ele já está registrado aqui.
+         * Spend by presenting the signed mandate
+         * @description The same lifecycle as the by-id route, for a caller who carries the signed envelope instead of a mandate already projected here. Use this one when the mandate arrives from the consumer at call time; use `/consumers/mandates/{id}/spend` when it is already registered here.
          *
-         *     `signature` é o HMAC de 64 caracteres hexadecimais sobre o mandato canônico. O `agent_id` do corpo é conferido contra o ASSINADO: a atribuição do gasto pertence ao mandato, não a quem chama.
+         *     `signature` is the 64-character hexadecimal HMAC over the canonical mandate. The body's `agent_id` is checked against the SIGNED one: attribution of the spend belongs to the mandate, not to the caller.
          *
-         *     **TED tem três exigências que as outras formas de pagamento não têm, e as três vinculam ANTES de qualquer passo de dinheiro:**
+         *     **TED carries three requirements the other payment methods do not, and all three bind BEFORE any money step:**
          *
-         *     1. `attempt_id` é OBRIGATÓRIO. Uma TED não tem copia-e-cola nem nonce de onde derivar correlação, e duas TEDs sob o mesmo mandato nunca podem colidir num id derivado.
-         *     2. `payee` tem que ser IGUAL à string canônica do destino, `ted:<ispb>:<agência>:<conta>`, só alfanuméricos e em maiúsculas. A comparação normaliza apenas espaços em branco, então uma entrada com ponto ou hífen NÃO casa. Esta regra existe para o pin da lista assinada e o fio nomearem o MESMO destino: sem ela, um recebedor aprovado serviria de fachada para outra conta bancária.
-         *     3. O destino tem que estar na `withdrawal_allowlist` ASSINADA do mandato. Um curinga `"*"` de lista de comerciante NUNCA autoriza saída de dinheiro, nem no caminho legado.
+         *     1. `attempt_id` is MANDATORY. A TED has no copy-and-paste string and no nonce to derive correlation from, and two TEDs under the same mandate must never collide on a derived id.
+         *     2. `payee` must EQUAL the destination's canonical string, `ted:<ispb>:<branch>:<account>`, alphanumerics only and upper-cased. The comparison normalizes whitespace and nothing else, so an entry carrying a dot or a hyphen does NOT match. The rule is what makes the signed-allowlist pin and the wire name the SAME destination: without it, an approved payee fronts for a different bank account.
+         *     3. The destination must be NAMED in a signed list of the mandate, and a merchant-list wildcard `"*"` NEVER authorizes money out. Which list is accepted is mid-rollout, so read this one carefully: the target rule is `withdrawal_allowlist` alone, and while the rollout flag is off a destination named explicitly in the signed `merchant_allowlist` is ALSO accepted, with the stricter rule's refusal recorded rather than applied. Tolerance never widens what passes: a wildcard is refused on both paths, and a destination in neither list is refused with its own code. Build against `withdrawal_allowlist`: it is the list that keeps working when the flag turns on.
          *
-         *     **Não existe rota de leitura do desfecho.** Um `attempt_id` que respondeu `psp_dispatch_uncertain` não tem endpoint para consultar depois. Guarde o `attempt_id` e reapresente-o: o ciclo é idempotente por ele e responde o estado em que aquela tentativa parou, em vez de disparar uma segunda. NÃO reinicie a mesma intenção com um `attempt_id` novo — é assim que se paga duas vezes.
+         *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice.
          */
         post: {
             parameters: {
@@ -11155,9 +11263,9 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description O mandato canônico, na forma em que foi assinado. */
+                        /** @description The canonical mandate, in the form it was signed in. */
                         mandate?: unknown;
-                        /** @description HMAC em hexadecimal, 64 caracteres. */
+                        /** @description HMAC in hexadecimal, 64 characters. */
                         signature: string;
                         amount_minor: number;
                         purpose: string;
@@ -11179,7 +11287,7 @@ export interface paths {
                         "application/json": components["schemas"]["SpendOutcome"];
                     };
                 };
-                /** @description O corpo não casou com o schema. */
+                /** @description The body did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -11199,7 +11307,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O destino não está na lista de saque assinada. Nada foi enviado ao provedor. */
+                /** @description The destination is not on the signed withdrawal allowlist. Nothing was sent to the provider. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -11219,7 +11327,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O estado local impede — mesmas três condições da rota por id. */
+                /** @description Local state refuses, on the same three conditions as the by-id route. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -11239,7 +11347,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O mandato recusa, ou o consumidor não tem fonte de recursos para este rail. */
+                /** @description The mandate refuses, or the consumer has no funding source for this rail. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -11259,7 +11367,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O teto cumulativo não foi resolvido pelo verificador. Nada é debitado. */
+                /** @description The cumulative cap was not resolved by the verifier. Nothing is debited. */
                 500: {
                     headers: {
                         [name: string]: unknown;
@@ -11279,7 +11387,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O provedor recusou, ou o desfecho é desconhecido. */
+                /** @description The provider refused, or the outcome is unknown. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -11317,12 +11425,12 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Gastar apresentando o mandato, com os passos em streaming
-         * @description Mesmo corpo e mesmos gates da `/v1/consumer-payments/execute`. A diferença é só o transporte da resposta: os passos do ciclo (verificação do mandato, roteamento da fonte, reserva, débito no provedor, selo do recibo) chegam como eventos `text/event-stream` à medida que acontecem, em vez de um único JSON no fim.
+         * Spend by presenting the mandate, with the steps streamed
+         * @description Same body and same gates as `/v1/consumer-payments/execute`. Only the response transport differs: the lifecycle steps (mandate verification, funding-source routing, hold, provider debit, receipt seal) arrive as `text/event-stream` events as they happen, instead of one JSON at the end.
          *
-         *     O desfecho é o mesmo objeto da rota irmã, no último evento. Um cliente que não precisa acompanhar o progresso deve usar a `/execute`: streaming não torna a liquidação mais rápida, só a torna observável enquanto corre.
+         *     The outcome is the same object the sibling route returns, carried on the last event. A client that does not need to follow progress should use `/execute`: streaming does not make settlement faster, it makes it observable while it runs.
          *
-         *     **Não existe rota de leitura do desfecho.** Um `attempt_id` que respondeu `psp_dispatch_uncertain` não tem endpoint para consultar depois. Guarde o `attempt_id` e reapresente-o: o ciclo é idempotente por ele e responde o estado em que aquela tentativa parou, em vez de disparar uma segunda. NÃO reinicie a mesma intenção com um `attempt_id` novo — é assim que se paga duas vezes.
+         *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice.
          */
         post: {
             parameters: {
@@ -11347,7 +11455,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Fluxo de eventos. Cada evento é um passo do ciclo; o último carrega o mesmo objeto de desfecho que a `/execute` devolve. */
+                /** @description An event stream. Each event is one lifecycle step; the last one carries the same outcome object `/execute` returns. */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -11356,7 +11464,7 @@ export interface paths {
                         "text/event-stream": string;
                     };
                 };
-                /** @description O corpo não casou com o schema. */
+                /** @description The body did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -11376,7 +11484,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O destino não está na lista de saque assinada. */
+                /** @description The destination is not on the signed withdrawal allowlist. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -11396,7 +11504,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O mandato recusa, ou não há fonte de recursos para este rail. */
+                /** @description The mandate refuses, or there is no funding source for this rail. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -11416,7 +11524,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O provedor recusou, ou o desfecho é desconhecido. */
+                /** @description The provider refused, or the outcome is unknown. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -11426,6 +11534,605 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "psp_dispatch_failed" | "psp_dispatch_uncertain";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/charges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List charges
+         * @description The charges this project issued, newest first. Page with `limit` (1 to 200, default 50) and `cursor`, which is the `created_at` of the last row you saw; `next_cursor` comes back null when the page is the last one.
+         *
+         *     **The `settlement` here is the LAST KNOWN, and the one on the by-id read is the one from now.** The by-id read calls the issuer and compares; a list cannot do that per row, because 200 rows would be 200 provider calls and paging would become a flood. So every item carries `settlement_as_of`: when we last knew the issuer's state for that charge, or null if we never did.
+         *
+         *     The same charge can therefore answer a different `settlement` here and there. That is the age of the data, not a defect, which is why the freshness field is required rather than optional. A charge we never read carries `settlement_as_of: null` and can never be `unconfirmable` on this list, because there is nothing to conflict with.
+         *
+         *     `settlement=none` selects the charge with no settlement to report: nobody paid it, so there is no pending settlement, only an open receivable. It is not the same as omitting the filter.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Our own row status: `pending`, `settled`, `expired`. */
+                    status?: string;
+                    /** @description Filters on the same three facts the field is derived from, in SQL. */
+                    settlement?: "confirmed" | "pending" | "unconfirmable" | "none";
+                    limit?: string;
+                    cursor?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string | null;
+                                status: string;
+                                local_status: string;
+                                status_conflict: boolean;
+                                currency: string;
+                                amount_minor: number;
+                                due_date: string | null;
+                                created_at: string;
+                                /** @enum {string|null} */
+                                settlement: "confirmed" | "pending" | "unconfirmable" | null;
+                                /** @description When we last knew the issuer's state. Null means we never did. */
+                                settlement_as_of: string | null;
+                            }[];
+                            next_cursor: string | null;
+                        };
+                    };
+                };
+                /** @description The query is malformed, or the credential names no project. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_scope_missing" | "invalid_settlement_filter" | "invalid_limit";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Issue a charge
+         * @description Issues an inbound charge: the buyer pays the merchant. The RAIL IS A FIELD, not a path. `method: "pix"` mints an immediate Pix that hands back its copy-and-paste string right away and expires in about an hour. `method: "boleto"` WITH a `due_date` issues a cobrança com vencimento: ONE receivable the payer settles either as a boleto (barcode and linha digitável) or by Pix. One debt, two payable legs, never two documents.
+         *
+         *     **The cobrança com vencimento answers `PROCESSING` with `payable: false` and no document.** The instrument registers with the clearing house first. Subscribe to `commerce.charge.created` rather than polling for a barcode that is not late, only not made yet. `commerce.charge.paid` is the event that means the funds arrived, by either leg.
+         *
+         *     **`idempotency_key` is REQUIRED for that combination**, and it is checked before anything reaches the issuer. A repeat with the same key returns the charge already issued, or its still-open reservation, instead of a second receivable the same debtor could pay twice. Send it as the `Idempotency-Key` header, as the body's `idempotency_key`, or as both with the SAME value; two different values are refused rather than one silently winning.
+         *
+         *     An agreement in N instalments is N cobranças, one per parcela, each with its own `due_date` and its own key. There is no single instalment charge.
+         *
+         *     **Each refusal names a `reason`, and the reason is what to branch on.** The two error `code` values (`invalid_args`, `provider_error`) are too coarse: they cover six different situations, and reading them as one would turn `not found` into `bad request`.
+         *
+         *     | reason | status | what it means |
+         *     |---|---|---|
+         *     | `charge_id_missing` | 400 | the call named no charge |
+         *     | `project_scope_missing` | 400 | the credential is not project-scoped, and a charge belongs to one project |
+         *     | `charge_not_found` | 404 | no charge under that id FOR THIS TENANT |
+         *     | `issuance_unconfirmed` | 409 | the key holds a reservation whose create never got an answer |
+         *     | `already_payment_notified` | 409 | the clearing house already notified a payment |
+         *     | `not_cancellable_in_this_state` | 409 | the issuer accepts a cancellation only in some states |
+         *     | `provider_status_unreadable` | 502 | the issuer did not answer the read |
+         *     | `provider_cancel_failed` | 502 | the issuer refused the withdrawal |
+         *
+         *     `charge_not_found` is deliberately the SAME answer for an id that belongs to another project and for an id that exists nowhere. Telling those apart would be an oracle about another tenant over a string anyone can guess.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description In minor units. */
+                        amount: number;
+                        currency: string;
+                        /** @description `pix`, `boleto`, `card` or `wallet`. */
+                        method: string;
+                        description?: string;
+                        buyer?: {
+                            [key: string]: unknown;
+                        };
+                        /** @description `YYYY-MM-DD`. With `method: "boleto"` this is what makes it a cobrança com vencimento; an immediate Pix has no due date and refuses one. */
+                        due_date?: string;
+                        /** @description Required for a cobrança com vencimento. Stable per debt: it is what makes a retry the SAME charge instead of a second one. */
+                        idempotency_key?: string;
+                        country?: string;
+                        metadata?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The issuer's charge id. Null while the issuance is unconfirmed. */
+                            id: string | null;
+                            /** @description The provider's state as far as we know it, normalized. Forced to PROCESSING until the issuance is confirmed. */
+                            status: string;
+                            /** @description What CodeSpar recorded, which is a different question from `status`. */
+                            local_status: string;
+                            /** @description True when the two disagree terminally, instead of one of them silently winning. */
+                            status_conflict: boolean;
+                            method: string;
+                            currency: string;
+                            /** @description In units. */
+                            amount: number;
+                            /** @description In minor units. */
+                            amount_minor: number;
+                            due_date: string | null;
+                            /** @description True only when all four hold: the issuance is confirmed, our row is still open, the provider says PENDING, and at least one document exists. This is the field to branch on, not `status`. */
+                            payable: boolean;
+                            boleto_bar_code: string | null;
+                            boleto_bank_line: string | null;
+                            /** @description The Pix leg of the same debt. One receivable, two payable legs. */
+                            pix_copy_paste: string | null;
+                            /** @description Whether an inbound Pix on this charge's Pix leg can resolve a wallet on its own. False until registration hands us the leg's identifier. */
+                            credit_correlation_armed: boolean;
+                            /** @description True when a payment was notified and the receivable is still open. Read this before you write anything off: the issuer can answer EXPIRED for a boleto it already told us was paid, because the baixa happened before the due date and the credit lands on the next business day. */
+                            payment_in_flight: boolean;
+                            /**
+                             * @description The settlement tri-state (decision 10b of the canonical matrix). `confirmed`: the money is in the account. `pending`: the clearing house notified a payment and the credit has not landed, which is the D+1 window. `unconfirmable`: our terminal state disagrees with the issuer's, so settlement cannot be established.
+                             *
+                             *     NULL MEANS NOT APPLICABLE, never `pending`. A charge nobody paid has no pending settlement: it has an open receivable. Reading null as pending would tell you money is on its way.
+                             * @enum {string|null}
+                             */
+                            settlement: "confirmed" | "pending" | "unconfirmable" | null;
+                            /** @description True while the row is a reservation with no charge id: the issuer's answer to the create was lost, or a create is in flight elsewhere under the same key. Nothing is payable and nothing was duplicated. */
+                            issuance_unconfirmed: boolean;
+                        };
+                    };
+                };
+                /** @description The call is malformed, or the two idempotency keys disagree. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_idempotency_key_required" | "idempotency_key_conflict";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The idempotency slot is held by a row this project cannot read. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_idempotency_slot_unreadable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The slot could not be reserved, or the issuer refused. Nothing was sent. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_idempotency_reserve_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/charges/{chargeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a charge
+         * @description Reads a charge this project issued. `chargeId` accepts EITHER the id the create returned OR the caller's own `idempotency_key` — the row is resolved under this credential's org and project, which is what makes another tenant's id simply not found.
+         *
+         *     **Branch on `payable`, not on `status`.** `payable` is true only when the issuance is confirmed, our row is still open, the provider says PENDING, and at least one payable document exists. A cobrança com vencimento answers PROCESSING with `payable: false` and no document at first, because the instrument registers with the clearing house before it can be paid.
+         *
+         *     This read also ARMS the Pix leg's correlation when the provider's answer carries it, which is why `credit_correlation_armed` can flip from a read. Nothing else about it writes: no ledger row, no money.
+         *
+         *     **Each refusal names a `reason`, and the reason is what to branch on.** The two error `code` values (`invalid_args`, `provider_error`) are too coarse: they cover six different situations, and reading them as one would turn `not found` into `bad request`.
+         *
+         *     | reason | status | what it means |
+         *     |---|---|---|
+         *     | `charge_id_missing` | 400 | the call named no charge |
+         *     | `project_scope_missing` | 400 | the credential is not project-scoped, and a charge belongs to one project |
+         *     | `charge_not_found` | 404 | no charge under that id FOR THIS TENANT |
+         *     | `issuance_unconfirmed` | 409 | the key holds a reservation whose create never got an answer |
+         *     | `already_payment_notified` | 409 | the clearing house already notified a payment |
+         *     | `not_cancellable_in_this_state` | 409 | the issuer accepts a cancellation only in some states |
+         *     | `provider_status_unreadable` | 502 | the issuer did not answer the read |
+         *     | `provider_cancel_failed` | 502 | the issuer refused the withdrawal |
+         *
+         *     `charge_not_found` is deliberately the SAME answer for an id that belongs to another project and for an id that exists nowhere. Telling those apart would be an oracle about another tenant over a string anyone can guess.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    chargeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The issuer's charge id. Null while the issuance is unconfirmed. */
+                            id: string | null;
+                            /** @description The provider's state as far as we know it, normalized. Forced to PROCESSING until the issuance is confirmed. */
+                            status: string;
+                            /** @description What CodeSpar recorded, which is a different question from `status`. */
+                            local_status: string;
+                            /** @description True when the two disagree terminally, instead of one of them silently winning. */
+                            status_conflict: boolean;
+                            method: string;
+                            currency: string;
+                            /** @description In units. */
+                            amount: number;
+                            /** @description In minor units. */
+                            amount_minor: number;
+                            due_date: string | null;
+                            /** @description True only when all four hold: the issuance is confirmed, our row is still open, the provider says PENDING, and at least one document exists. This is the field to branch on, not `status`. */
+                            payable: boolean;
+                            boleto_bar_code: string | null;
+                            boleto_bank_line: string | null;
+                            /** @description The Pix leg of the same debt. One receivable, two payable legs. */
+                            pix_copy_paste: string | null;
+                            /** @description Whether an inbound Pix on this charge's Pix leg can resolve a wallet on its own. False until registration hands us the leg's identifier. */
+                            credit_correlation_armed: boolean;
+                            /** @description True when a payment was notified and the receivable is still open. Read this before you write anything off: the issuer can answer EXPIRED for a boleto it already told us was paid, because the baixa happened before the due date and the credit lands on the next business day. */
+                            payment_in_flight: boolean;
+                            /**
+                             * @description The settlement tri-state (decision 10b of the canonical matrix). `confirmed`: the money is in the account. `pending`: the clearing house notified a payment and the credit has not landed, which is the D+1 window. `unconfirmable`: our terminal state disagrees with the issuer's, so settlement cannot be established.
+                             *
+                             *     NULL MEANS NOT APPLICABLE, never `pending`. A charge nobody paid has no pending settlement: it has an open receivable. Reading null as pending would tell you money is on its way.
+                             * @enum {string|null}
+                             */
+                            settlement: "confirmed" | "pending" | "unconfirmable" | null;
+                            /** @description True while the row is a reservation with no charge id: the issuer's answer to the create was lost, or a create is in flight elsewhere under the same key. Nothing is payable and nothing was duplicated. */
+                            issuance_unconfirmed: boolean;
+                        };
+                    };
+                };
+                /** @description The call is malformed. `reason` says which half. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_id_missing" | "project_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No charge under that id for this tenant. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The charge exists and is not readable in this state. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "issuance_unconfirmed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The issuer did not answer. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "provider_status_unreadable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/charges/{chargeId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Withdraw a charge
+         * @description Withdraws a charge that has not been paid. Takes no body: the id is the whole request, and it accepts the same two forms the read does.
+         *
+         *     **This never moves money.** It is not a refund: an unpaid receivable is withdrawn, and a charge whose payment the clearing house already notified is REFUSED with `already_payment_notified` rather than withdrawn. That refusal is the D+1 guard: a boleto paid after the convênio's cut-off is notified on one day and credited on the next business day, so the due date can fall between the two, and withdrawing there would write off a receivable somebody paid.
+         *
+         *     A charge the issuer already reports as cancelled is a no-op that closes our row, not a second withdrawal.
+         *
+         *     **Each refusal names a `reason`, and the reason is what to branch on.** The two error `code` values (`invalid_args`, `provider_error`) are too coarse: they cover six different situations, and reading them as one would turn `not found` into `bad request`.
+         *
+         *     | reason | status | what it means |
+         *     |---|---|---|
+         *     | `charge_id_missing` | 400 | the call named no charge |
+         *     | `project_scope_missing` | 400 | the credential is not project-scoped, and a charge belongs to one project |
+         *     | `charge_not_found` | 404 | no charge under that id FOR THIS TENANT |
+         *     | `issuance_unconfirmed` | 409 | the key holds a reservation whose create never got an answer |
+         *     | `already_payment_notified` | 409 | the clearing house already notified a payment |
+         *     | `not_cancellable_in_this_state` | 409 | the issuer accepts a cancellation only in some states |
+         *     | `provider_status_unreadable` | 502 | the issuer did not answer the read |
+         *     | `provider_cancel_failed` | 502 | the issuer refused the withdrawal |
+         *
+         *     `charge_not_found` is deliberately the SAME answer for an id that belongs to another project and for an id that exists nowhere. Telling those apart would be an oracle about another tenant over a string anyone can guess.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    chargeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The issuer's charge id. Null while the issuance is unconfirmed. */
+                            id: string | null;
+                            /** @description The provider's state as far as we know it, normalized. Forced to PROCESSING until the issuance is confirmed. */
+                            status: string;
+                            /** @description What CodeSpar recorded, which is a different question from `status`. */
+                            local_status: string;
+                            /** @description True when the two disagree terminally, instead of one of them silently winning. */
+                            status_conflict: boolean;
+                            method: string;
+                            currency: string;
+                            /** @description In units. */
+                            amount: number;
+                            /** @description In minor units. */
+                            amount_minor: number;
+                            due_date: string | null;
+                            /** @description True only when all four hold: the issuance is confirmed, our row is still open, the provider says PENDING, and at least one document exists. This is the field to branch on, not `status`. */
+                            payable: boolean;
+                            boleto_bar_code: string | null;
+                            boleto_bank_line: string | null;
+                            /** @description The Pix leg of the same debt. One receivable, two payable legs. */
+                            pix_copy_paste: string | null;
+                            /** @description Whether an inbound Pix on this charge's Pix leg can resolve a wallet on its own. False until registration hands us the leg's identifier. */
+                            credit_correlation_armed: boolean;
+                            /** @description True when a payment was notified and the receivable is still open. Read this before you write anything off: the issuer can answer EXPIRED for a boleto it already told us was paid, because the baixa happened before the due date and the credit lands on the next business day. */
+                            payment_in_flight: boolean;
+                            /**
+                             * @description The settlement tri-state (decision 10b of the canonical matrix). `confirmed`: the money is in the account. `pending`: the clearing house notified a payment and the credit has not landed, which is the D+1 window. `unconfirmable`: our terminal state disagrees with the issuer's, so settlement cannot be established.
+                             *
+                             *     NULL MEANS NOT APPLICABLE, never `pending`. A charge nobody paid has no pending settlement: it has an open receivable. Reading null as pending would tell you money is on its way.
+                             * @enum {string|null}
+                             */
+                            settlement: "confirmed" | "pending" | "unconfirmable" | null;
+                            /** @description True while the row is a reservation with no charge id: the issuer's answer to the create was lost, or a create is in flight elsewhere under the same key. Nothing is payable and nothing was duplicated. */
+                            issuance_unconfirmed: boolean;
+                        };
+                    };
+                };
+                /** @description The call is malformed. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_id_missing" | "project_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No charge under that id for this tenant. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The charge exists and this state does not accept a withdrawal. `already_payment_notified` is the D+1 guard and is never a retry case. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "issuance_unconfirmed" | "already_payment_notified" | "not_cancellable_in_this_state";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The issuer refused the withdrawal, or did not answer. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "provider_cancel_failed" | "provider_status_unreadable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -18827,7 +19534,7 @@ export interface paths {
          *
          *     `linked_consumer_id` is set on first write and then kept: a later call that sends a different one does not overwrite it. The other KYB fields are overwritten by the re-POST.
          *
-         *     `document_number` is stored with every non-digit stripped. A value that survives the schema but contains no digits at all leaves nothing to store, and that surfaces as 502 `seller_document_required`, not as 400: the check lives in the provisioning flow, past the point where the body was validated.
+         *     `document_number` must be a CPF (11 digits) or a CNPJ (14 characters, letters allowed in the twelve base positions per IN RFB 2229/2024) whose check digits verify, and `document_type` / `document_tax_type` must agree with it (CPF ↔ PF, CNPJ ↔ PJ | MEI | ME); any of those failing is 400 `invalid_body` with the offending field in `issues[].path`, before Rinne is reached. It is then stored with every non-digit stripped. A value that survives the schema but contains no digits at all leaves nothing to store, and that surfaces as 502 `seller_document_required`, not as 400: the check lives in the provisioning flow, past the point where the body was validated.
          *
          *     The response is the seller row, not Rinne's. `status` and `affiliation_status` reflect whatever the affiliation was at that instant, which for a fresh onboarding is normally pending rather than active.
          */
@@ -20231,6 +20938,18 @@ export interface paths {
          *     Three refusals arrive IN BAND on the catalog branch, as a 200 whose `error` starts with `policy_denied: `, `approval_required: ` or `policy_engine_error: `. The policy 403 and the policy 503 below are the same decisions taken one layer earlier, by the route's guard, before the handler runs. A caller that only checks the status code will read an in-band refusal as a successful request.
          *
          *     413 is absent from this operation on purpose: the guard here does not hand the caller's tool input to the policy engine, so the engine's payload cap cannot fire. `POST /v1/sessions/{id}/proxy_execute` does hand it over, and does answer 413.
+         *
+         *     WHICH STRINGS ARE LEGAL IN `tool`. This operation takes the name opaquely and this document does not enumerate it. `GET /v1/meta-tools.json` does: one entry per tool, each with a JSON Schema for what goes in `params`, served with no credential. Read that before hardcoding a name or concluding a capability is missing, because the per-tool contracts live there and not here.
+         *
+         *     SEVERAL OF THOSE TOOLS MOVE MONEY, and the envelope above shows none of what they require. `codespar_pay` spends outbound under a mandate; `codespar_charge` issues an inbound receivable. Both answer in this same 200 envelope, so `success` is the field that says whether the money instruction was accepted, and a refusal that starts with `policy_denied: ` or `approval_required: ` is a refusal even though the status is 200.
+         *
+         *     THE COBRANÇA COM VENCIMENTO IS THE ONE THAT SURPRISES CALLERS. `codespar_charge` with `action: "create"`, `method: "boleto"` and a `due_date` issues ONE receivable the payer settles EITHER as a boleto (barcode and linha digitável) OR by Pix — one debt, two payable legs, never two documents. Three properties of it are not visible from this envelope and each one costs money to learn late:
+         *
+         *     1. `idempotency_key` is REQUIRED for that combination. A create without one is refused before anything reaches the provider, and a repeat with the same key returns the charge already issued rather than a second document for the same debt. An agent that retries on a timeout without it bills the payer twice.
+         *     2. The create answers `status: "PROCESSING"` with `payable: false` and NO document. The instrument registers with the clearing house first. Subscribe to `commerce.charge.created` instead of polling for a barcode that is not late, only not made yet.
+         *     3. `commerce.charge.paid` is the event that means the funds arrived, by either leg. A boleto payment can be preceded by `commerce.charge.payment_notified`, which is the clearing house posting its operational baixa and which the issuer states is not proof of payment; every convênio has a daily cut-off, so a boleto paid after it is notified on one day and credited on the next business day. Ship on `paid`.
+         *
+         *     An agreement in N instalments is N cobranças, one per parcela, each with its own `due_date` and its own `idempotency_key`. There is no single instalment charge.
          */
         post: {
             parameters: {
@@ -22875,12 +23594,12 @@ export interface components {
             };
             payment: {
                 transactionId: string;
-                /** @description O endToEndId do Pix quando o rail produz um. Null para rails que não têm, TED incluída. */
+                /** @description The Pix endToEndId when the rail produces one. Null for rails that have none, TED included. */
                 endToEndId: string | null;
                 amountMinor: number;
                 rail: string;
                 provider: string;
-                /** @description False quando o adaptador é mock ou stub de staging. True quando dinheiro real saiu. */
+                /** @description False when the adapter is a mock or a staging stub. True when real money left. */
                 moneyMoved: boolean;
                 adapter: string;
             };
@@ -22890,7 +23609,7 @@ export interface components {
                 fundEntryId: string | null;
                 debitEntryId: string | null;
             };
-            /** @description O Control Record selado. Null quando não havia segredo do consumidor para assiná-lo. */
+            /** @description The sealed Control Record. Null when there was no consumer secret to sign it with. */
             receipt: {
                 id: string;
                 /** @enum {string} */
@@ -22898,34 +23617,35 @@ export interface components {
                 chain: string;
                 exceptions: unknown[];
             } | null;
-            /** @description Os passos do ciclo, em ordem, com carimbo de tempo e desfecho. */
+            /** @description The lifecycle steps, in order, each with a timestamp and an outcome. */
             audit: unknown[];
         };
+        /** @description The destination of a TED, the Brazilian same-day bank wire. Present this object on a spend to send a wire instead of a Pix: its presence is what switches the rail, and what makes the three TED requirements on those operations bind. Money leaves the consumer's own sub-account, never a pooled one. */
         TedDestination: {
-            /** @description ISPB da instituição de destino, só dígitos. */
+            /** @description ISPB of the destination institution, digits only. */
             bank: string;
-            /** @description Agência, sem dígito verificador separado. */
+            /** @description Branch, with no separate check digit. */
             branch: string;
-            /** @description Conta, incluindo o dígito. */
+            /** @description Account, including the check digit. */
             account: string;
-            /** @description CPF ou CNPJ do titular do destino. */
+            /** @description CPF or CNPJ of the destination account holder. */
             tax_id: string;
-            /** @description Nome do titular do destino. */
+            /** @description Name of the destination account holder. */
             name: string;
             /**
-             * @description Corrente, investimento, pagamento ou poupança. Enum do produto de TED, DIFERENTE do enum de conta do Pix (CACC|SLRY|SVGS|TRAN) — são endpoints e produtos distintos no provedor.
+             * @description Checking, investment, payment or savings. This is the TED product's OWN enum, different from the Pix account enum (`CACC`, `SLRY`, `SVGS`, `TRAN`): they are distinct endpoints and distinct products at the provider.
              * @enum {string}
              */
             account_type?: "CC" | "CI" | "PG" | "PP";
             /**
-             * @description Pessoa física ou jurídica.
+             * @description A natural person or a legal entity.
              * @enum {string}
              */
             person_type?: "F" | "J";
-            /** @description Código de finalidade do parceiro bancário. Default `1` (transferência genérica). */
+            /** @description The banking partner's purpose code. Defaults to `1`, a generic transfer. */
             client_finality?: string;
         };
-        /** @description A oferta que o agente aprovou. Quando presente, é assinada dentro do recibo, e no fechamento o preço e o recebedor são comparados com o que de fato liquidou. Divergência é REGISTRADA no recibo; ela não aborta a liquidação. */
+        /** @description The offer the agent approved. When present it is signed into the receipt, and at close the price and the payee are compared against what actually settled. A divergence is RECORDED on the receipt; it does not abort settlement. */
         SpendQuote: {
             seller: string;
             resource: string;

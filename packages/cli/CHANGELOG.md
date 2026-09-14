@@ -1,5 +1,20 @@
 # @codespar/cli — changelog
 
+## 0.9.0 — 2026-09-14
+
+### Added
+
+- `codespar charges` — `list`, `create`, `get <chargeId>` and
+  `cancel <chargeId>`. The family answered over HTTP and was missing from
+  the served OpenAPI document, so nothing downstream could see it; the
+  snapshot refresh brought it in and the group derives from it with no
+  per-route code. Closes the CLI half of
+  [codespar/codespar-enterprise#1307](https://github.com/codespar/codespar-enterprise/issues/1307).
+
+### Changed
+
+- The SDK dependency range accepts `^0.14.0`.
+
 ## 0.8.0 — 2026-09-14
 
 The hand-written commands now address routes the served OpenAPI document

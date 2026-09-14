@@ -127,6 +127,11 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
   // published, not excepted: the coverage gate reserves an exception for a
   // family with no terminal use, and both of these end at a person.
   {
+    name: "charges",
+    prefix: "/v1/charges",
+    description: "Charges: issue one, read it, list them, withdraw one",
+  },
+  {
     name: "consents",
     prefix: "/v1/consents",
     description: "Consent tokens: mint the token whose URL the consumer opens to authorise an agent",
@@ -332,6 +337,16 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
       "Versioned alias of the served spec document. Same reason as the unversioned one: spec:refresh, not a CLI command.",
     since: "2026-09-10",
   },
+  "(non-v1) meta-tools.json": {
+    reason:
+      "The meta-tool catalogue as a served document, read by a runtime deciding what to dispatch. `codespar tools meta` is the terminal-side entrance, and it prints the same definitions from the published @codespar/types rather than over the network.",
+    since: "2026-09-14",
+  },
+  "meta-tools.json": {
+    reason:
+      "Versioned alias of the meta-tool catalogue document. Same reason as the unversioned one: `codespar tools meta` is what a person runs.",
+    since: "2026-09-14",
+  },
   servers: {
     reason: "Covered by the pre-existing `codespar servers list|show` commands (hand-written paths).",
     since: "2026-09-10",
@@ -495,7 +510,7 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
 };
 
 /** How many exceptions the gate expects. Lower it when one goes away. */
-export const EXCEPTION_PIN = 43;
+export const EXCEPTION_PIN = 45;
 
 export type ViolationKind =
   | "uncovered-group"

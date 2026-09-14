@@ -101,11 +101,16 @@ const PINNED_COMMANDS = [
   "triggers dlq → GET /v1/triggers/{id}/dlq",
   "triggers retry-pending → POST /v1/triggers/retry-pending",
   "triggers deliveries-redeliver → POST /v1/triggers/deliveries/{delivery_id}/redeliver",
+  "charges list → GET /v1/charges",
+  "charges create → POST /v1/charges",
+  "charges get → GET /v1/charges/{chargeId}",
+  "charges cancel → POST /v1/charges/{chargeId}/cancel",
   "consents create → POST /v1/consents",
   "consents init → POST /v1/consents/init",
   "consumer-payments execute → POST /v1/consumer-payments/execute",
   "consumer-payments execute-stream → POST /v1/consumer-payments/execute-stream",
 ];
+
 
 describe("derived resource commands", () => {
   it("are exactly these, with exactly these requests behind them", () => {
