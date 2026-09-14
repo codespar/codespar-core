@@ -148,9 +148,18 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
   // portão: exceção é para família sem uso terminal, e as duas terminam numa
   // pessoa no terminal.
   {
-    name: "tools",
+    // ⚠️ O NOME NÃO É `tools`, e a razão é dura: `program.command("tools")` já
+    // existe escrito à mão (inspeciona as tools de um servidor), e o commander
+    // ABORTA o processo inteiro com "cannot add command 'tools' as already have
+    // command 'tools'". Publiquei 0.11.0 com essa colisão e `codespar --help`
+    // não subia — nenhum teste botava o programa de pé, então 113 passaram.
+    // `boots.test.ts` agora sobe.
+    //
+    // `catalog` também é o nome mais honesto: a rota busca o CATÁLOGO por
+    // intenção, e não as tools de um servidor conectado.
+    name: "catalog",
     prefix: "/v1/tools",
-    description: "Tools: search the catalog for a capability by intent",
+    description: "Catalog: search it for a capability by intent",
   },
   {
     name: "test",
