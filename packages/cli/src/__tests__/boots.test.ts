@@ -60,17 +60,28 @@ describe("o programa sobe", () => {
     expect(saida.length).toBeGreaterThan(200);
   });
 
-  it("todo grupo de recurso derivado responde a `--help`", async () => {
-    const { derivedSurface } = await import("../surface.js");
-    const grupos = derivedSurface().map((g) => g.spec.name);
-    expect(grupos.length, "nenhum grupo derivado").toBeGreaterThan(5);
-    const quebrados: string[] = [];
-    for (const nome of grupos) {
-      const r = roda(nome, "--help");
-      if (r.status !== 0) quebrados.push(`${nome}: exit ${r.status} — ${`${r.stdout}${r.stderr}`.slice(0, 160)}`);
-    }
-    expect(quebrados).toEqual([]);
-  });
+  // ⚠️ ORÇAMENTO EXPLÍCITO, e ele não é decoração. Este caso bota um processo
+  // node de pé por grupo — onze hoje. Coube nos 5 s padrão do vitest na minha
+  // máquina e ESTOUROU no runner, derrubando o publish da 0.11.1 depois do
+  // merge: o pacote consertado não chegou ao npm e o quebrado continuou lá.
+  // Um teste que mede boot é lento por construção; o número tem de ser dito.
+  it(
+    "todo grupo de recurso derivado responde a `--help`",
+    async () => {
+      const { derivedSurface } = await import("../surface.js");
+      const grupos = derivedSurface().map((g) => g.spec.name);
+      expect(grupos.length, "nenhum grupo derivado").toBeGreaterThan(5);
+      // Em paralelo: são processos independentes, e em série o tempo é a soma.
+      const saidas = await Promise.all(
+        grupos.map(async (nome) => ({ nome, r: roda(nome, "--help") })),
+      );
+      const quebrados = saidas
+        .filter(({ r }) => r.status !== 0)
+        .map(({ nome, r }) => `${nome}: exit ${r.status} — ${`${r.stdout}${r.stderr}`.slice(0, 160)}`);
+      expect(quebrados).toEqual([]);
+    },
+    60_000,
+  );
 
   it("CONTROLE: um comando que não existe sai não-zero", () => {
     const r = roda("comando-que-nao-existe-mesmo");
