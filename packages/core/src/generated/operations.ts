@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 97ee015c2ad4f74a9f922bf1d7a4e479c940336ead1b2770e1714758b9cb7f95, fetched 2026-09-11T10:51:22.760Z
+// Source: openapi-snapshot.json (sha256 4ad23e2c4fa27e50dae11b1e174209a20044ea823c4efeef1006f0effa97e029, fetched 2026-09-14T15:47:40.455Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -20,6 +20,8 @@ export const API_OPERATIONS = [
   { method: "post", path: "/oauth/token", body: "application/x-www-form-urlencoded", accept: "application/json" },
   { method: "get", path: "/openapi.json", body: null, accept: "application/json" },
   { method: "get", path: "/v1/openapi.json", body: null, accept: "application/json" },
+  { method: "get", path: "/meta-tools.json", body: null, accept: "application/json" },
+  { method: "get", path: "/v1/meta-tools.json", body: null, accept: "application/json" },
   { method: "get", path: "/v1/providers", body: null, accept: "application/json" },
   { method: "get", path: "/v1/providers/{slug}", body: null, accept: "application/json" },
   { method: "get", path: "/v1/servers", body: null, accept: "application/json" },
@@ -136,6 +138,10 @@ export const API_OPERATIONS = [
   { method: "post", path: "/v1/consumers/mandates/{id}/spend", body: "application/json", accept: "application/json" },
   { method: "post", path: "/v1/consumer-payments/execute", body: "application/json", accept: "application/json" },
   { method: "post", path: "/v1/consumer-payments/execute-stream", body: "application/json", accept: "text/event-stream" },
+  { method: "get", path: "/v1/charges", body: null, accept: "application/json" },
+  { method: "post", path: "/v1/charges", body: "application/json", accept: "application/json" },
+  { method: "get", path: "/v1/charges/{chargeId}", body: null, accept: "application/json" },
+  { method: "post", path: "/v1/charges/{chargeId}/cancel", body: null, accept: "application/json" },
   { method: "get", path: "/v1/consumers/{consumerId}/dda/subscriptions/{document}", body: null, accept: "application/json" },
   { method: "delete", path: "/v1/consumers/{consumerId}/dda/subscriptions/{document}", body: null, accept: "application/json" },
   { method: "get", path: "/v1/consumers/{consumerId}/dda/boletos", body: null, accept: "application/json" },

@@ -1,5 +1,15 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.14.0 — 2026-09-14
+
+### Added
+
+- The OpenAPI snapshot goes from 221 to 227 operations, so `cs.api` and
+  `API_OPERATIONS` reach six routes the served document had been missing:
+  the `/v1/charges` family (list, issue, read, withdraw) and the
+  meta-tool catalogue document under both mounts (`/meta-tools.json` and
+  `/v1/meta-tools.json`). No operation was removed.
+
 ## 0.12.0
 
 A REST client generated from the served OpenAPI document lands next to the session API. Closes the "SDK covers 11 of 213 routes" half of [codespar/codespar-core#125](https://github.com/codespar/codespar-core/issues/125).
