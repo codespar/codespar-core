@@ -2,15 +2,26 @@ import type { ApiClient } from "../api.js";
 import { CliError } from "../config.js";
 import { json, kv, table } from "../output.js";
 
-interface ToolSummary {
-  name: string;
-  server: string;
-  description?: string;
-}
-
-interface ToolDetail extends ToolSummary {
-  input_schema?: Record<string, unknown>;
-  output_schema?: Record<string, unknown>;
+/**
+ * Tools are listed per server, because that is the only listing the API has.
+ *
+ * These two commands used to call `GET /v1/tools` and `GET /v1/tools/{name}`,
+ * a pair of routes that has never existed: both 404'd on every invocation
+ * (core#130). What exists is `GET /v1/servers/{id}/tools`, so the server is
+ * no longer an optional filter — it is the address of the listing.
+ */
+function requireServer(server: string | undefined, example: string): string {
+  if (server) return server;
+  throw new CliError(
+    [
+      "A server is required: tools are listed per server.",
+      "",
+      `  ${example}`,
+      "",
+      "  codespar servers list          the ids you can pass",
+      "  codespar tools meta            the 15 meta-tools, which are not per-server",
+    ].join("\n"),
+  );
 }
 
 interface ListOptions {
@@ -19,26 +30,23 @@ interface ListOptions {
 }
 
 export async function listToolsCommand(client: ApiClient, opts: ListOptions): Promise<void> {
-  const data = await client.get<{ data: ToolSummary[] }>("/v1/tools", {
-    server: opts.server,
-  });
+  const id = requireServer(opts.server, "codespar tools list --server stripe");
+  const data = await client.get("/v1/servers/{id}/tools", { path: { id } });
 
   if (opts.json) {
-    json(data.data);
+    json(data.tools);
     return;
   }
 
   table(
-    ["NAME", "SERVER", "DESCRIPTION"],
-    data.data.map((t) => [
-      t.name,
-      t.server,
-      truncate(t.description ?? "", 60),
-    ]),
+    ["NAME", "DESCRIPTION"],
+    data.tools.map((tool) => [tool.name, truncate(tool.description ?? "", 70)]),
   );
+  process.stdout.write(`\n${data.total} tool(s) on ${data.server_id}.\n`);
 }
 
 interface ShowOptions {
+  server?: string;
   json?: boolean;
 }
 
@@ -47,9 +55,18 @@ export async function showToolCommand(
   name: string,
   opts: ShowOptions,
 ): Promise<void> {
-  if (!name) throw new CliError("Tool name is required. Example: `codespar tools show codespar_pay`");
+  if (!name) {
+    throw new CliError("Tool name is required. Example: `codespar tools show accept_dispute --server adyen`");
+  }
+  const id = requireServer(opts.server, `codespar tools show ${name} --server adyen`);
 
-  const tool = await client.get<ToolDetail>(`/v1/tools/${encodeURIComponent(name)}`);
+  const data = await client.get("/v1/servers/{id}/tools", { path: { id } });
+  const tool = data.tools.find((t) => t.name === name);
+  if (!tool) {
+    throw new CliError(
+      `${id} exposes no tool called "${name}". Run \`codespar tools list --server ${id}\` for the ${data.total} it does expose.`,
+    );
+  }
 
   if (opts.json) {
     json(tool);
@@ -58,18 +75,12 @@ export async function showToolCommand(
 
   kv([
     ["Name", tool.name],
-    ["Server", tool.server],
+    ["Server", data.server_id],
   ]);
   if (tool.description) process.stdout.write(`\n${tool.description}\n`);
-
-  if (tool.input_schema) {
-    process.stdout.write("\nInput schema:\n");
-    process.stdout.write(JSON.stringify(tool.input_schema, null, 2) + "\n");
-  }
-  if (tool.output_schema) {
-    process.stdout.write("\nOutput schema:\n");
-    process.stdout.write(JSON.stringify(tool.output_schema, null, 2) + "\n");
-  }
+  // No input/output schema section: the catalog listing carries a name and a
+  // description, and nothing else. It is `codespar tools meta <name>` that
+  // has schemas, for the meta-tools, from the published definitions.
 }
 
 function truncate(s: string, n: number): string {

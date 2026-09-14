@@ -43,10 +43,10 @@ export async function spendCommand(opts: SpendCommandOptions): Promise<void> {
     project: opts.project,
   });
 
-  const result = await client.post<Record<string, unknown>>(
-    `/v1/consumers/mandates/${encodeURIComponent(opts.mandate)}/spend`,
-    { amount_minor: amountMinor, payee: opts.payee, agent_id: opts.agent },
-  );
+  const result = await client.post("/v1/consumers/mandates/{id}/spend", {
+    path: { id: opts.mandate },
+    body: { amount_minor: amountMinor, payee: opts.payee, agent_id: opts.agent },
+  });
 
   if (opts.json) {
     json(result);

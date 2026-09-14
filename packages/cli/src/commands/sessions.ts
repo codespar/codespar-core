@@ -1,15 +1,27 @@
 import type { ApiClient } from "../api.js";
 import { CliError } from "../config.js";
-import { json, kv, success, table } from "../output.js";
+import { isoSeconds, isoTime, json, kv, success, table } from "../output.js";
 
-interface SessionSummary {
-  id: string;
-  user_id?: string;
-  status?: "active" | "closed" | "error";
-  servers?: string[];
-  created_at?: string;
-  closed_at?: string;
-  tool_call_count?: number;
+/** `--limit 20` → 20, refusing anything the query parameter cannot carry. */
+function parseLimit(raw: string | undefined, flag = "--limit"): number | undefined {
+  if (raw === undefined) return undefined;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new CliError(`${flag} expects a positive whole number, got "${raw}".`);
+  }
+  return value;
+}
+
+type SessionStatus = "active" | "closed" | "error";
+
+const SESSION_STATUSES: readonly SessionStatus[] = ["active", "closed", "error"];
+
+function parseStatus(raw: string | undefined): SessionStatus | undefined {
+  if (raw === undefined) return undefined;
+  if (!SESSION_STATUSES.includes(raw as SessionStatus)) {
+    throw new CliError(`--status expects one of ${SESSION_STATUSES.join(", ")}, got "${raw}".`);
+  }
+  return raw as SessionStatus;
 }
 
 interface ListOptions {
@@ -19,41 +31,35 @@ interface ListOptions {
 }
 
 export async function listSessionsCommand(client: ApiClient, opts: ListOptions): Promise<void> {
-  const data = await client.get<{ data: SessionSummary[] }>("/v1/sessions", {
-    status: opts.status,
-    limit: opts.limit,
+  const data = await client.get("/v1/sessions", {
+    query: { status: parseStatus(opts.status), limit: parseLimit(opts.limit) },
   });
 
   if (opts.json) {
-    json(data.data);
+    json(data.sessions);
     return;
   }
 
+  // No tool-call count here: the listing does not carry one, and the column
+  // that used to be in this table printed 0 for every row.
   table(
-    ["ID", "USER", "STATUS", "SERVERS", "TOOL CALLS", "CREATED"],
-    data.data.map((s) => [
+    ["ID", "USER", "STATUS", "SERVERS", "CREATED"],
+    data.sessions.map((s) => [
       s.id,
       s.user_id ?? "-",
       s.status ?? "-",
       (s.servers ?? []).join(", "),
-      String(s.tool_call_count ?? 0),
-      s.created_at ? new Date(s.created_at).toISOString().slice(0, 19).replace("T", " ") : "-",
+      isoSeconds(s.created_at),
     ]),
   );
+  if (data.next_before) {
+    process.stdout.write(`\nMore rows: \`--limit\` with a larger number, or page from ${data.next_before}.\n`);
+  }
 }
 
 interface ShowOptions {
   json?: boolean;
   logs?: boolean;
-}
-
-interface LogEntry {
-  id: string;
-  tool: string;
-  server: string;
-  status: "success" | "error" | "running";
-  duration_ms?: number;
-  called_at?: string;
 }
 
 export async function showSessionCommand(
@@ -63,15 +69,17 @@ export async function showSessionCommand(
 ): Promise<void> {
   if (!id) throw new CliError("Session id is required.");
 
-  const session = await client.get<SessionSummary>(`/v1/sessions/${encodeURIComponent(id)}`);
+  const session = await client.get("/v1/sessions/{id}", { path: { id } });
+
+  // `--logs` reads the session's tool calls. It used to read
+  // `/v1/sessions/{id}/logs`, a route the API does not have, so the flag
+  // 404'd on every session that existed (core#130).
+  const calls = opts.logs
+    ? (await client.get("/v1/sessions/{id}/tool-calls", { path: { id } })).tool_calls
+    : undefined;
 
   if (opts.json) {
-    if (opts.logs) {
-      const logs = await client.get<{ data: LogEntry[] }>(`/v1/sessions/${encodeURIComponent(id)}/logs`);
-      json({ session, logs: logs.data });
-    } else {
-      json(session);
-    }
+    json(calls ? { session, tool_calls: calls } : session);
     return;
   }
 
@@ -80,22 +88,21 @@ export async function showSessionCommand(
     ["User", session.user_id ?? "-"],
     ["Status", session.status ?? "-"],
     ["Servers", (session.servers ?? []).join(", ")],
-    ["Tool calls", String(session.tool_call_count ?? 0)],
+    ["Tool calls", String(session.tool_calls_count ?? 0)],
     ["Created", session.created_at ?? "-"],
     ["Closed", session.closed_at ?? "-"],
   ]);
 
-  if (opts.logs) {
-    const logs = await client.get<{ data: LogEntry[] }>(`/v1/sessions/${encodeURIComponent(id)}/logs`);
-    process.stdout.write("\nLogs:\n");
+  if (calls) {
+    process.stdout.write("\nTool calls:\n");
     table(
       ["TOOL", "SERVER", "STATUS", "MS", "AT"],
-      logs.data.map((l) => [
-        l.tool,
-        l.server,
-        l.status,
-        String(l.duration_ms ?? "-"),
-        l.called_at ? new Date(l.called_at).toISOString().slice(11, 19) : "-",
+      calls.map((call) => [
+        call.tool_name,
+        call.server_id ?? "-",
+        call.status ?? "-",
+        String(call.duration_ms ?? "-"),
+        isoTime(call.called_at),
       ]),
     );
   }
@@ -103,6 +110,8 @@ export async function showSessionCommand(
 
 export async function closeSessionCommand(client: ApiClient, id: string): Promise<void> {
   if (!id) throw new CliError("Session id is required.");
-  await client.post(`/v1/sessions/${encodeURIComponent(id)}/close`);
-  success(`Session ${id} closed.`);
+  // `DELETE /v1/sessions/{id}` is the documented close. The old
+  // `POST /v1/sessions/{id}/close` was never a route (core#130).
+  const closed = await client.delete("/v1/sessions/{id}", { path: { id } });
+  success(`Session ${closed.id} ${closed.status}${closed.closed_at ? ` at ${closed.closed_at}` : ""}.`);
 }

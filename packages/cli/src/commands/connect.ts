@@ -2,25 +2,26 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { ApiClient } from "../api.js";
 import { CliError } from "../config.js";
-import { info, json, success, table } from "../output.js";
+import { info, isoDay, json, success, table } from "../output.js";
 
 const execFileAsync = promisify(execFile);
 
-interface Connection {
-  id: string;
-  server_id: string;
-  user_id: string;
-  auth_type: string;
-  status: "connected" | "pending" | "revoked" | "expired";
-  display_name: string | null;
-  connected_at: string | null;
-  expires_at: string | null;
-}
+/**
+ * The connection statuses the listing declares. Assigned into the query below,
+ * so a vocabulary change on the API is a type error here. `--status revogada`
+ * used to travel to the server as-is.
+ */
+const CONNECTION_STATUSES = ["pending", "connected", "revoked", "expired"] as const;
+type ConnectionStatus = (typeof CONNECTION_STATUSES)[number];
 
-interface StartResponse {
-  link_token: string;
-  authorize_url: string;
-  expires_at: string;
+function parseStatus(raw: string | undefined): ConnectionStatus | undefined {
+  if (raw === undefined) return undefined;
+  if (!(CONNECTION_STATUSES as readonly string[]).includes(raw)) {
+    throw new CliError(
+      `--status expects one of ${CONNECTION_STATUSES.join(", ")}, got "${raw}".`,
+    );
+  }
+  return raw as ConnectionStatus;
 }
 
 interface ListOptions {
@@ -30,9 +31,8 @@ interface ListOptions {
 }
 
 export async function listConnectionsCommand(client: ApiClient, opts: ListOptions): Promise<void> {
-  const data = await client.get<{ connections: Connection[] }>("/v1/connections", {
-    user_id: opts.user,
-    status: opts.status,
+  const data = await client.get("/v1/connections", {
+    query: { user_id: opts.user, status: parseStatus(opts.status) },
   });
 
   if (opts.json) {
@@ -47,8 +47,8 @@ export async function listConnectionsCommand(client: ApiClient, opts: ListOption
       c.server_id,
       c.user_id,
       c.status,
-      c.connected_at ? new Date(c.connected_at).toISOString().slice(0, 10) : "-",
-      c.expires_at ? new Date(c.expires_at).toISOString().slice(0, 10) : "-",
+      isoDay(c.connected_at),
+      isoDay(c.expires_at),
     ]),
   );
 }
@@ -78,11 +78,13 @@ export async function startConnectCommand(
   // a hosted UI. Users with a real app should pass --redirect-uri.
   const redirectUri = opts.redirectUri ?? "http://localhost:3000/connect/success";
 
-  const res = await client.post<StartResponse>("/v1/connect/start", {
-    server_id: server,
-    user_id: userId,
-    redirect_uri: redirectUri,
-    scopes: opts.scopes,
+  const res = await client.post("/v1/connect/start", {
+    body: {
+      server_id: server,
+      user_id: userId,
+      redirect_uri: redirectUri,
+      scopes: opts.scopes,
+    },
   });
 
   if (opts.json) {
@@ -135,10 +137,8 @@ export async function revokeConnectCommand(
   let connectionId = serverOrId;
   if (!serverOrId.startsWith("ca_")) {
     const userId = opts.user ?? "cli-user";
-    const list = await client.get<{ connections: Connection[] }>("/v1/connections", {
-      user_id: userId,
-      server_id: serverOrId,
-      status: "connected",
+    const list = await client.get("/v1/connections", {
+      query: { user_id: userId, server_id: serverOrId, status: "connected" },
     });
     if (list.connections.length === 0) {
       throw new CliError(`No active connection for server "${serverOrId}" and user "${userId}".`);
@@ -146,7 +146,7 @@ export async function revokeConnectCommand(
     connectionId = list.connections[0]!.id;
   }
 
-  await client.post(`/v1/connections/${encodeURIComponent(connectionId)}/revoke`, {});
+  await client.post("/v1/connections/{id}/revoke", { path: { id: connectionId } });
   success(`Revoked connection ${connectionId}.`);
 }
 

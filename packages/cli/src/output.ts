@@ -47,6 +47,27 @@ export function table(headers: string[], rows: string[][]): void {
 }
 
 /** Print valid JSON to stdout — for `--json` flag / scripting. */
+/**
+ * Timestamps as the tables print them, and "-" for anything that is not a
+ * date. `new Date("y").toISOString()` throws RangeError, which in a table
+ * renderer means the whole command dies on one unexpected field rather than
+ * printing the rows it has.
+ */
+export function isoDay(value: string | null | undefined): string {
+  const ms = value ? Date.parse(value) : NaN;
+  return Number.isNaN(ms) ? "-" : new Date(ms).toISOString().slice(0, 10);
+}
+
+export function isoSeconds(value: string | null | undefined): string {
+  const ms = value ? Date.parse(value) : NaN;
+  return Number.isNaN(ms) ? "-" : new Date(ms).toISOString().slice(0, 19).replace("T", " ");
+}
+
+export function isoTime(value: string | null | undefined): string {
+  const ms = value ? Date.parse(value) : NaN;
+  return Number.isNaN(ms) ? "--:--:--" : new Date(ms).toISOString().slice(11, 19);
+}
+
 export function json(value: unknown): void {
   process.stdout.write(JSON.stringify(value, null, 2) + "\n");
 }

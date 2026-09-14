@@ -9,23 +9,6 @@ interface WalletCommandOptions {
   json?: boolean;
 }
 
-interface WalletCurrency {
-  currency: string;
-  rail: string | null;
-  authorized_minor: number;
-  spent_minor: number;
-  available_minor: number;
-  /** True exactly when `available_minor` is negative (settled debits exceed the cap). */
-  overspent: boolean;
-  funding_source_ids: string[];
-  mandate_ids: string[];
-}
-
-interface WalletResponse {
-  consumer_id: string;
-  currencies: WalletCurrency[];
-}
-
 /**
  * Show a consumer's unified wallet, rolled up per currency:
  *   GET /v1/consumers/:id/wallet
@@ -51,9 +34,9 @@ export async function walletCommand(
     project: opts.project,
   });
 
-  const wallet = await client.get<WalletResponse>(
-    `/v1/consumers/${encodeURIComponent(consumerId)}/wallet`,
-  );
+  const wallet = await client.get("/v1/consumers/{id}/wallet", {
+    path: { id: consumerId },
+  });
 
   if (opts.json) {
     json(wallet);

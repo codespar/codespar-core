@@ -1,5 +1,56 @@
 # @codespar/cli — changelog
 
+## 0.8.0 — 2026-09-14
+
+The hand-written commands now address routes the served OpenAPI document
+declares, and the client is typed by that document, so a route that does
+not exist is a compile error rather than a 404 in the user's terminal.
+See [codespar/codespar-core#130](https://github.com/codespar/codespar-core/issues/130).
+
+### Fixed
+
+- `codespar servers list` and `codespar sessions list` crashed with
+  `TypeError: Cannot read properties of undefined` against production:
+  they read `data`, and the payloads carry `servers` and `sessions`.
+- `codespar tools list` and `codespar tools show` called `GET /v1/tools`
+  and `GET /v1/tools/{name}`, routes the API has never had. Tools are
+  listed per server, so `--server <id>` is now the address, not a filter,
+  and its absence is refused with the two commands that lead to an id.
+- `codespar servers show <id>` called `GET /v1/servers/{id}`, which does
+  not exist. It is now assembled from the catalog listing, the per-server
+  tool listing and the per-server auth schema.
+- `codespar sessions close <id>` posted to `/v1/sessions/{id}/close`; the
+  documented close is `DELETE /v1/sessions/{id}`.
+- `codespar sessions show <id> --logs` read `/v1/sessions/{id}/logs`,
+  which does not exist; the session's tool calls do.
+- `codespar logs tail` opened an SSE stream on `/v1/logs/stream`, which
+  does not exist, and its failure message pointed at `sessions show
+  --logs`, which was the second missing route. It reads
+  `GET /v1/tool-calls` now, with `--follow` polling for new rows, because
+  the API has no push channel for this.
+- `codespar connect list --status` accepted any word; the listing
+  declares `pending|connected|revoked|expired`.
+- A timestamp the API sends in an unexpected shape no longer kills the
+  whole table with `RangeError: Invalid time value`.
+
+### Changed
+
+- **Breaking:** `codespar servers list --region <code>` is now
+  `--country <code>`. `region` was not a query parameter the API accepts,
+  so the flag silently returned every server; `?country=BR` returns 62 of
+  134. `-q/--query <text>` is new, and the document declares it.
+- `codespar tools show <name>` no longer prints an input/output schema
+  section: the catalog listing carries a name and a description only.
+  `codespar tools meta <name>` is where the published schemas are.
+
+### Internal
+
+- `ApiClient` is typed by path template and response shape from the same
+  generated document `@codespar/sdk` uses. `ApiClient.offSpec` is the
+  single, deliberately named door for the two routes that answer in
+  production but are absent from the document.
+- The hand-written path ratchet drops from eight entries to two.
+
 ## 0.7.1 — 2026-09-14
 
 ### Fixed
@@ -10,6 +61,7 @@
   hand-written literal that four releases forgot to update. The module
   reads the manifest instead, so there is no second place to forget. See
   [codespar/codespar-core#144](https://github.com/codespar/codespar-core/issues/144).
+
 
 ## 0.7.0 — 2026-09-11
 

@@ -193,28 +193,32 @@ describe("auditSurface controls", () => {
 
 /**
  * Paths the CLI builds by hand instead of dispatching through the
- * generated operation table. Each of these is a route the served OpenAPI
- * document does not declare, so nothing checks it: a rename on the
- * backend reaches the user as a 404 at runtime.
+ * generated operation table.
  *
- * This list is a ratchet too. It exists to stop the number growing while
- * the drift is worked off route by route; it is NOT a place to register
- * a new hand-written call.
+ * Both entries are LIVE and UNDECLARED: an unauthenticated probe answers
+ * 400 and 401 respectively, where a route the API does not have answers
+ * 404. So the debt is the served OpenAPI document's, not the command's,
+ * and the fix is in codespar-enterprise — declare the route, refresh the
+ * snapshot, and the call moves to the typed methods.
+ *
+ * The register used to hold eight, and the other six were a different
+ * debt wearing the same label: `/v1/tools`, `/v1/tools/{}`,
+ * `/v1/logs/stream`, `/v1/servers/{}`, `/v1/sessions/{}/close` and
+ * `/v1/sessions/{}/logs` answered 404 in production because they have
+ * never existed. Those were not documentation gaps, they were commands
+ * that could not work, and they were repointed at routes that do.
+ *
+ * This list is a ratchet. It exists to stop the number growing while the
+ * drift is worked off route by route; it is NOT a place to register a
+ * new hand-written call. `ApiClient.offSpec` is the only method that can
+ * make one, and it is named to be visible at the call site.
  */
 const OFF_SPEC_PATHS = [
-  // `/v1/consents/init` and `/v1/consumers/mandates/{}/spend` left this list
-  // when core#143 refreshed the snapshot to 221 operations: both are now
-  // declared by the served document, so the generated table checks them. The
-  // ratchet went DOWN, which is the only direction it is allowed to move
-  // without an argument.
+  // POST, answers 400 to an unauthenticated probe (a declared body it did
+  // not get), so the route is there and the document is behind.
   "/v1/consents/{}/submit",
+  // POST, answers 401 to an unauthenticated probe.
   "/v1/consumers/{}/wallet/transfer",
-  "/v1/logs/stream",
-  "/v1/servers/{}",
-  "/v1/sessions/{}/close",
-  "/v1/sessions/{}/logs",
-  "/v1/tools",
-  "/v1/tools/{}",
 ];
 
 function sourceFiles(dir: string): string[] {
