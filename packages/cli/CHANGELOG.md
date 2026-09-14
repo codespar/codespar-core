@@ -1,5 +1,16 @@
 # @codespar/cli — changelog
 
+## 0.7.1 — 2026-09-14
+
+### Fixed
+
+- `codespar --version`, the banner and the `User-Agent` header now report
+  the version the package declares. They reported `0.5.5` in the
+  published 0.6.0, 0.6.1, 0.6.2 and 0.7.0, because the number lived in a
+  hand-written literal that four releases forgot to update. The module
+  reads the manifest instead, so there is no second place to forget. See
+  [codespar/codespar-core#144](https://github.com/codespar/codespar-core/issues/144).
+
 ## 0.7.0 — 2026-09-11
 
 Resource groups and the 15 meta-tools, derived from the published
