@@ -1,5 +1,16 @@
 # @codespar/cli — changelog
 
+## 0.10.0 — 2026-09-14
+
+### Changed
+
+- `--arg` accepts either form of a property that publishes a union of
+  shapes. `codespar pay --arg recipient=pix@example.com` sends the Pix
+  key as text and `--arg recipient={"bank":...}` sends the bank-account
+  object, from the same flag (codespar-core#128). A key that is all
+  digits stays text: the parse is taken only when it lands on a
+  structured branch, so a CPF does not become a number.
+
 ## 0.9.0 — 2026-09-14
 
 ### Added

@@ -48,6 +48,40 @@ export function coerceArg(
     );
   }
   let value: unknown = raw;
+  // A union property (`anyOf`) takes whichever branch the text fits: JSON when
+  // it parses and a structured branch exists, the literal otherwise. This is
+  // `codespar_pay --arg recipient=...`, which takes either a Pix key string or
+  // a bank-account object (core#128) — the CLI must not force one of them.
+  if (property.anyOf) {
+    const structured = property.anyOf.some((b) => b.type === "object" || b.type === "array");
+    const literal = property.anyOf.some(
+      (b) => b.type === "string" || b.type === "number" || b.type === "integer" || b.type === "boolean",
+    );
+    if (structured) {
+      let parsed: unknown;
+      let parsedOk = false;
+      try {
+        parsed = JSON.parse(raw) as unknown;
+        parsedOk = true;
+      } catch (err) {
+        if (!literal) {
+          const shapes = property.anyOf.map((b) => b.type ?? "?").join(" | ");
+          throw new CliError(
+            `${key} accepts ${shapes}; --arg needs valid JSON for it (or use --input): ${(err as Error).message}`,
+          );
+        }
+      }
+      // Only a parse that LANDS on a structured branch counts. A Pix key of
+      // eleven digits is a valid JSON number, and taking the parse blindly
+      // would turn a CPF into 12345678901 and send the wrong type on a rail
+      // that reads it as text.
+      const isStructured =
+        parsedOk && typeof parsed === "object" && parsed !== null;
+      if (isStructured) return parsed;
+      if (!literal) return parsed;
+    }
+    return raw;
+  }
   if (property.type === "number" || property.type === "integer") {
     const n = Number(raw);
     if (!Number.isFinite(n)) throw new CliError(`${key} expects a number, got "${raw}".`);

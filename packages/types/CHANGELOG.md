@@ -1,5 +1,27 @@
 # @codespar/types — CHANGELOG
 
+## 0.11.0 — 2026-09-14
+
+### Changed
+
+- **A property may publish a union of shapes.** `MetaToolInputProperty`
+  gains `anyOf`, and `type` becomes optional — exactly one of the two is
+  present. `codespar_pay.recipient` is why: it takes either a Pix key
+  string or a bank-account object, and it was published as
+  `type: "string"` with a description telling the caller to pass an
+  object anyway. A client that enforces the declared schema — strict MCP
+  validation, OpenAI strict tool mode, a gateway running ajv — rejected
+  the correct call before it left the machine. See
+  [codespar/codespar-core#128](https://github.com/codespar/codespar-core/issues/128).
+- `recipient` now declares both branches, and the bank-account branch
+  declares `bank`, `account`, `branch`, `tax_id`, `name` and
+  `account_type` field by field, where the prose used to list them.
+- The conformance machinery reads unions: the prose walk and the
+  vocabulary walk descend into branches, and the cross-runtime comparator
+  compares shape signatures — so a runtime that flattens the union back to
+  one type, or drops a field from a branch, is reported. Branch order is
+  not part of the signature: a union is a set.
+
 ## 0.10.0
 
 - Added `MockObject` and `MockValue` type aliases for the hosted

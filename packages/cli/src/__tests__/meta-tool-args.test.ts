@@ -119,3 +119,51 @@ describe("required input", () => {
     }
   });
 });
+
+describe("a property that publishes a union of shapes (core#128)", () => {
+  // `codespar_pay.recipient` takes either a Pix key string or a bank-account
+  // object. It used to be published as `type: "string"` with a description
+  // telling the caller to pass an object, so a client that enforced the schema
+  // rejected the correct call. The union is now in the schema, and the CLI has
+  // to accept both forms through the same flag.
+  const recipient = pay.input_schema.properties.recipient!;
+
+  it("is published as a union and not as one type", () => {
+    expect(recipient.type).toBeUndefined();
+    expect(recipient.anyOf?.map((b) => b.type).sort()).toEqual(["object", "string"]);
+  });
+
+  it("keeps a Pix key as the string it is", () => {
+    // A CPF key is all digits and must not become a number, and an EVP is not
+    // JSON. Both stay text.
+    expect(coerceArg(pay, "recipient", "pix@example.com")).toBe("pix@example.com");
+    expect(coerceArg(pay, "recipient", "12345678901")).toBe("12345678901");
+    expect(coerceArg(pay, "recipient", "b5b8e0f4-0000-4000-8000-000000000000")).toBe(
+      "b5b8e0f4-0000-4000-8000-000000000000",
+    );
+  });
+
+  it("parses the bank-account object the other branch declares", () => {
+    const account = {
+      bank: "60701190",
+      account: "12345678",
+      branch: "0001",
+      tax_id: "12345678901",
+      name: "Fulana de Tal",
+      account_type: "CACC",
+    };
+    expect(coerceArg(pay, "recipient", JSON.stringify(account))).toEqual(account);
+  });
+
+  it("builds the whole call with either form", () => {
+    const viaKey = buildArgs(pay, undefined, ["recipient=pix@example.com"], "pay");
+    expect(viaKey.recipient).toBe("pix@example.com");
+    const viaAccount = buildArgs(
+      pay,
+      undefined,
+      ['recipient={"bank":"60701190","account":"12345678","branch":"0001"}'],
+      "pay",
+    );
+    expect(viaAccount.recipient).toMatchObject({ bank: "60701190" });
+  });
+});

@@ -35,8 +35,13 @@
 
 /** A single input property's wire description. */
 export interface MetaToolInputProperty {
-  /** JSON-value type: "string" | "number" | "boolean" | "object" | "array". */
-  type: string;
+  /**
+   * JSON-value type: "string" | "number" | "boolean" | "object" | "array".
+   *
+   * Absent exactly when `anyOf` carries the shape instead. Exactly one of the
+   * two is present on any published property.
+   */
+  type?: string;
   /** Human-readable description shown to the agent. */
   description?: string;
   /**
@@ -55,6 +60,24 @@ export interface MetaToolInputProperty {
    * conformance test.
    */
   properties?: Record<string, MetaToolInputProperty>;
+  /**
+   * The alternative shapes a property accepts, when one `type` cannot say it.
+   *
+   * `codespar_pay.recipient` is why this exists: it takes EITHER a Pix key
+   * string OR a bank-account object, and it was published as `type: "string"`
+   * with a description instructing the caller to pass an object anyway
+   * (core#128). A client that ENFORCES the declared schema — strict MCP
+   * validation, OpenAI strict tool mode, a gateway running ajv — then
+   * rejects the correct call before it leaves the machine, or coerces the
+   * object to a string, which the same description forbids. Prose cannot
+   * fix a schema that contradicts it; the schema has to carry the union.
+   *
+   * `anyOf` and not a `type` array because that is what the strict modes
+   * accept in practice. A branch is a property in its own right, so it
+   * carries its own `description`, `enum` and `properties`, and the
+   * conformance walkers descend into it for exactly that reason.
+   */
+  anyOf?: readonly MetaToolInputProperty[];
 }
 
 /** The JSON-Schema-shaped input contract an agent-facing meta-tool advertises. */
@@ -215,9 +238,31 @@ const PAY_INPUT: MetaToolInputSchema = {
       enum: ["pix", "card", "boleto", "wire"],
     },
     recipient: {
-      type: "string",
       description:
-        "EITHER a Pix KEY string (email, phone, CPF/CNPJ, EVP) — the common case — OR an object with bank-account details ({bank, account, branch, tax_id, name, account_type?}) to pay a destination that has no registered Pix key (Pix cash-out via initiationType MANUAL). Pass the object literally (do not JSON-stringify it) — the tool-call argument type, not this schema's declared string type, is what determines routing. For a copia-e-cola/QR use `copia_e_cola` instead.",
+        "Who gets paid. EITHER a Pix KEY string (email, phone, CPF/CNPJ, EVP) — the common case — OR an object with bank-account details, to pay a destination that has no registered Pix key (Pix cash-out via initiationType MANUAL). Pass the object literally, not JSON-stringified. For a copia-e-cola/QR use `copia_e_cola` instead.",
+      anyOf: [
+        {
+          type: "string",
+          description:
+            "A Pix key: email, phone, CPF/CNPJ or EVP (the random key). The common case.",
+        },
+        {
+          type: "object",
+          description:
+            "Bank-account details, for a destination with no registered Pix key.",
+          properties: {
+            bank: { type: "string", description: "The destination bank's ISPB." },
+            account: { type: "string", description: "Account number, digits only." },
+            branch: { type: "string", description: "Branch (agência), digits only." },
+            tax_id: { type: "string", description: "The holder's CPF or CNPJ." },
+            name: { type: "string", description: "The account holder's name." },
+            account_type: {
+              type: "string",
+              description: "Account type, when the rail needs it told apart.",
+            },
+          },
+        },
+      ],
     },
     copia_e_cola: { type: "string", description: "A Pix copia-e-cola / BR Code to PAY (a store order's QR, '0002...'). Use this to pay a checkout's pix_copia_e_cola; the rail resolves the payee. Either recipient OR copia_e_cola is required." },
     consumer_id: { type: "string", description: "Whose governed wallet pays (the payment account to debit). Defaults to the session user — but for a checkout-originated Pix you MUST pass the consumer used in the checkout, otherwise the cash-out resolves no account. Same id as codespar_shop/codespar_wallet." },

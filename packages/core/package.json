@@ -1,6 +1,6 @@
 {
   "name": "@codespar/sdk",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Commerce SDK for AI agents — sessions, managed auth, Complete Loop orchestration for Latin American APIs",
   "type": "module",
   "main": "./dist/index.js",
@@ -58,7 +58,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@codespar/types": "^0.10.1",
+    "@codespar/types": "^0.10.1 || ^0.11.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {

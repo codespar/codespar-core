@@ -109,14 +109,41 @@ describe("shared meta-tool definitions", () => {
     ]);
   });
 
-  it("codespar_pay publishes the recipient-as-object capability (ent#933 drift 1)", () => {
+  it("codespar_pay publishes the recipient-as-object capability STRUCTURALLY (ent#933 drift 1, core#128)", () => {
     // The runtime accepts `recipient` as a bank-account OBJECT (manual Pix
-    // cash-out to a destination with no registered key). The published
-    // definition must say so — this pin keeps the capability from silently
-    // falling back out of the contract.
+    // cash-out to a destination with no registered key). This used to be
+    // published in prose only, under `type: "string"` — a schema that
+    // contradicted its own description, so a client enforcing the schema
+    // rejected the correct call (core#128). The capability is now in the
+    // schema itself, which is what a validator reads.
     const recipient = SHARED_META_TOOL_DEFINITIONS.codespar_pay.input_schema.properties.recipient!;
+
+    // No single type: the contradiction was declaring one.
+    expect(recipient.type).toBeUndefined();
+    expect(recipient.anyOf).toHaveLength(2);
+
+    const branches = recipient.anyOf!;
+    const asString = branches.find((b) => b.type === "string");
+    const asObject = branches.find((b) => b.type === "object");
+    expect(asString, "the Pix-key form must stay a declared branch").toBeDefined();
+    expect(asObject, "the bank-account form must be a declared branch").toBeDefined();
+
+    // Field for field, in the schema — not in a sentence.
+    expect(Object.keys(asObject!.properties ?? {}).sort()).toEqual([
+      "account",
+      "account_type",
+      "bank",
+      "branch",
+      "name",
+      "tax_id",
+    ]);
+    for (const field of Object.values(asObject!.properties ?? {})) {
+      expect(field.type).toBe("string");
+    }
+
+    // The prose still has to lead a reader to the object form; it just is no
+    // longer the only place the form exists.
     expect(recipient.description).toMatch(/object with bank-account details/i);
-    expect(recipient.description).toMatch(/\{bank, account, branch, tax_id, name, account_type\?\}/);
   });
 
   it("codespar_wallet and codespar_kyc have published definitions with their vocabularies (ent#933 drift 3)", () => {
@@ -258,6 +285,46 @@ describe("sharedDefinitionConformanceReasons (the cross-runtime comparator sees 
 
   it("a mirroring runtime tool passes with zero reasons (positive control)", () => {
     expect(sharedDefinitionConformanceReasons(conformingTool(), shared)).toEqual([]);
+  });
+
+  it("a runtime that flattens a published union back to one type is reported (core#128)", () => {
+    // The regression this guards is the original defect: `recipient` declared
+    // `type: "string"` while the contract wanted an object too. A comparator
+    // that read the raw `type` field would call these EQUAL once both sides
+    // went to `anyOf` (both `undefined`), and would say nothing when one side
+    // flattened back.
+    const tool = conformingTool();
+    tool.input_schema.properties.recipient = {
+      type: "string",
+      description: "EITHER a Pix key OR an object with bank-account details",
+    };
+    const reasons = sharedDefinitionConformanceReasons(tool, shared);
+    expect(reasons.some((r) => r.includes('property "recipient" type'))).toBe(true);
+    // And the message has to name both shapes, or the reader cannot tell which
+    // side moved.
+    expect(reasons.find((r) => r.includes("recipient"))).toMatch(/anyOf\(/);
+  });
+
+  it("a union whose branches are written in another order still conforms", () => {
+    // A union is a set. Reordering the branches changes no contract, and a
+    // gate that reddens on reordering is a gate people learn to ignore.
+    const tool = conformingTool();
+    const recipient = tool.input_schema.properties.recipient as {
+      anyOf: unknown[];
+    };
+    recipient.anyOf = [...recipient.anyOf].reverse();
+    expect(sharedDefinitionConformanceReasons(tool, shared)).toEqual([]);
+  });
+
+  it("a runtime that drops a field from the union's object branch is reported", () => {
+    const tool = conformingTool();
+    const recipient = tool.input_schema.properties.recipient as {
+      anyOf: Array<{ type?: string; properties?: Record<string, unknown> }>;
+    };
+    const objectBranch = recipient.anyOf.find((b) => b.type === "object")!;
+    delete objectBranch.properties!.tax_id;
+    const reasons = sharedDefinitionConformanceReasons(tool, shared);
+    expect(reasons.some((r) => r.includes("recipient"))).toBe(true);
   });
 
   it("an allowlisted extra property passes; an unlisted one fails", () => {
@@ -469,12 +536,16 @@ describe("wire-shape arg unions match the published definition vocabularies (ent
     const viaAccount: PayArgs["recipient"] = dest;
     expect(typeof viaKey).toBe("string");
     expect(typeof viaAccount).toBe("object");
-    // Every field of the TS object form is visible in the published prose,
-    // so the type and the agent-facing description name the same shape.
-    const prose =
-      SHARED_META_TOOL_DEFINITIONS.codespar_pay.input_schema.properties.recipient!.description ?? "";
+    // Every field of the TS object form is declared in the published schema's
+    // object branch, so the type a caller compiles against and the schema a
+    // validator enforces name the same shape. This asserted the PROSE until
+    // core#128 put the shape in the schema; prose was all there was.
+    const recipient =
+      SHARED_META_TOOL_DEFINITIONS.codespar_pay.input_schema.properties.recipient!;
+    const objectBranch = recipient.anyOf?.find((b) => b.type === "object");
+    expect(objectBranch, "recipient must publish an object branch").toBeDefined();
     for (const field of Object.keys(dest)) {
-      expect(prose).toContain(field);
+      expect(Object.keys(objectBranch!.properties ?? {})).toContain(field);
     }
   });
 });
