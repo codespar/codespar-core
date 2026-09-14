@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 4ad23e2c4fa27e50dae11b1e174209a20044ea823c4efeef1006f0effa97e029, fetched 2026-09-14T15:47:40.455Z
+// Source: openapi-snapshot.json (sha256 13a33bbf4918a1ca6e5c000f332d3355e0da64a8f7a836484e328ba230381fae, fetched 2026-09-14T22:01:27.987Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -2800,6 +2800,378 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List approvals held for review
+         * @description As retenções da organização, mais recentes primeiro.
+         *
+         *     **Sem `status`, você recebe só as `pending`** — não todas. É o padrão útil para uma fila de operador, e é a pegadinha para quem espera um histórico: peça `status=approved,denied` para ver o que já foi decidido.
+         *
+         *     A resposta é um ARRAY, sem envelope e sem cursor.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Separado por vírgula, de `pending`, `approved`, `denied`, `expired` e `execution_failed`. AUSENTE NÃO É "todos": o padrão é `pending`. */
+                    status?: string;
+                    limit?: number | null;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `apv_` + nanoid(16). */
+                            id: string;
+                            org_id: string;
+                            /** @description Null for a hold raised outside any project. */
+                            project_id: string | null;
+                            session_id: string | null;
+                            agent_id: string;
+                            /** @description The policy rule that held the call. */
+                            matched_rule_id: string;
+                            matched_rule_name: string;
+                            /** @description The held call, in whatever form the lane that raised the hold writes. There is no single format: see the operation description before matching on it. */
+                            tool_name: string;
+                            /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. */
+                            tool_input: {
+                                [key: string]: unknown;
+                            };
+                            /** @enum {string} */
+                            status: "pending" | "approved" | "denied" | "expired" | "execution_failed";
+                            /** Format: date-time */
+                            created_at: string;
+                            /**
+                             * Format: date-time
+                             * @description When the hold stops being decidable.
+                             */
+                            expires_at: string;
+                            /** Format: date-time */
+                            decided_at: string | null;
+                            /** @description The approver, null while pending. */
+                            decided_by: string | null;
+                            decision_reason: string | null;
+                            /** Format: date-time */
+                            executed_at: string | null;
+                            /** @description Null until an approved call has been replayed. Open shape, passed through verbatim. */
+                            execution_result: {
+                                [key: string]: unknown;
+                            } | null;
+                        }[];
+                    };
+                };
+                /** @description A query não casou com o schema. Corpo cru. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "invalid_query";
+                            issues: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Organização não resolvida. Corpo cru. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/approvals/{id}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve or deny a held call
+         * @description Aprova ou nega uma retenção, e é O passo que libera (ou mata) a chamada que a política segurou.
+         *
+         *     **`reason` é obrigatório nos dois sentidos.** Até 8000 caracteres, e só espaço em branco não conta: a trilha de auditoria de uma decisão humana sem motivo escrito não serve para nada depois.
+         *
+         *     **Decidir exige uma PESSOA, não uma chave.** Uma credencial de portador sozinha é recusada com `bearer_token_cannot_decide`: o token do usuário tem de vir junto, ser verificável, e a identidade dele tem de casar com a que o cabeçalho afirma. É o que separa `a organização decidiu` de `alguém com a chave decidiu`.
+         *
+         *     **Uma decisão já tomada é 409, e uma expirada é 410** — nos dois casos a aprovação completa vem no corpo, para o chamador ver quem decidiu o quê sem uma segunda leitura.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decision: "approve" | "deny";
+                        /** @description Obrigatório nos dois sentidos. Só espaço em branco é recusado. */
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `apv_` + nanoid(16). */
+                            id: string;
+                            org_id: string;
+                            /** @description Null for a hold raised outside any project. */
+                            project_id: string | null;
+                            session_id: string | null;
+                            agent_id: string;
+                            /** @description The policy rule that held the call. */
+                            matched_rule_id: string;
+                            matched_rule_name: string;
+                            /** @description The held call, in whatever form the lane that raised the hold writes. There is no single format: see the operation description before matching on it. */
+                            tool_name: string;
+                            /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. */
+                            tool_input: {
+                                [key: string]: unknown;
+                            };
+                            /** @enum {string} */
+                            status: "pending" | "approved" | "denied" | "expired" | "execution_failed";
+                            /** Format: date-time */
+                            created_at: string;
+                            /**
+                             * Format: date-time
+                             * @description When the hold stops being decidable.
+                             */
+                            expires_at: string;
+                            /** Format: date-time */
+                            decided_at: string | null;
+                            /** @description The approver, null while pending. */
+                            decided_by: string | null;
+                            decision_reason: string | null;
+                            /** Format: date-time */
+                            executed_at: string | null;
+                            /** @description Null until an approved call has been replayed. Open shape, passed through verbatim. */
+                            execution_result: {
+                                [key: string]: unknown;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Corpo fora do schema. `reason_invalid` quando o problema é o motivo (vazio, só espaço, ou acima do limite), `invalid_body` no resto. Corpo cru, com `limit` repetindo o teto de 8000. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "reason_invalid" | "invalid_body";
+                            /** @enum {number} */
+                            limit: 8000;
+                            issues: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Quem chamou não pode decidir. `bearer_token_cannot_decide` quando só veio uma credencial de portador; `user_token_required`, `user_token_invalid` e `user_token_identity_mismatch` quando o token do usuário falta, não verifica, ou não bate com a identidade afirmada no cabeçalho; `insufficient_role` quando a pessoa está abaixo de admin. Corpo cru. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "bearer_token_cannot_decide" | "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "insufficient_role";
+                            /** @enum {string} */
+                            required?: "admin";
+                        };
+                    };
+                };
+                /** @description Não existe, ou é de outra organização — indistinguível de propósito. Corpo cru. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
+                        };
+                    };
+                };
+                /** @description Já decidida. A aprovação completa vem junto, para o chamador ver quem decidiu o quê sem uma segunda leitura. Corpo cru. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "already_decided";
+                            approval: {
+                                /** @description `apv_` + nanoid(16). */
+                                id: string;
+                                org_id: string;
+                                /** @description Null for a hold raised outside any project. */
+                                project_id: string | null;
+                                session_id: string | null;
+                                agent_id: string;
+                                /** @description The policy rule that held the call. */
+                                matched_rule_id: string;
+                                matched_rule_name: string;
+                                /** @description The held call, in whatever form the lane that raised the hold writes. There is no single format: see the operation description before matching on it. */
+                                tool_name: string;
+                                /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. */
+                                tool_input: {
+                                    [key: string]: unknown;
+                                };
+                                /** @enum {string} */
+                                status: "pending" | "approved" | "denied" | "expired" | "execution_failed";
+                                /** Format: date-time */
+                                created_at: string;
+                                /**
+                                 * Format: date-time
+                                 * @description When the hold stops being decidable.
+                                 */
+                                expires_at: string;
+                                /** Format: date-time */
+                                decided_at: string | null;
+                                /** @description The approver, null while pending. */
+                                decided_by: string | null;
+                                decision_reason: string | null;
+                                /** Format: date-time */
+                                executed_at: string | null;
+                                /** @description Null until an approved call has been replayed. Open shape, passed through verbatim. */
+                                execution_result: {
+                                    [key: string]: unknown;
+                                } | null;
+                            };
+                        };
+                    };
+                };
+                /** @description Expirou antes de alguém decidir. A aprovação completa vem junto. Corpo cru. */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "expired";
+                            approval: {
+                                /** @description `apv_` + nanoid(16). */
+                                id: string;
+                                org_id: string;
+                                /** @description Null for a hold raised outside any project. */
+                                project_id: string | null;
+                                session_id: string | null;
+                                agent_id: string;
+                                /** @description The policy rule that held the call. */
+                                matched_rule_id: string;
+                                matched_rule_name: string;
+                                /** @description The held call, in whatever form the lane that raised the hold writes. There is no single format: see the operation description before matching on it. */
+                                tool_name: string;
+                                /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. */
+                                tool_input: {
+                                    [key: string]: unknown;
+                                };
+                                /** @enum {string} */
+                                status: "pending" | "approved" | "denied" | "expired" | "execution_failed";
+                                /** Format: date-time */
+                                created_at: string;
+                                /**
+                                 * Format: date-time
+                                 * @description When the hold stops being decidable.
+                                 */
+                                expires_at: string;
+                                /** Format: date-time */
+                                decided_at: string | null;
+                                /** @description The approver, null while pending. */
+                                decided_by: string | null;
+                                decision_reason: string | null;
+                                /** Format: date-time */
+                                executed_at: string | null;
+                                /** @description Null until an approved call has been replayed. Open shape, passed through verbatim. */
+                                execution_result: {
+                                    [key: string]: unknown;
+                                } | null;
+                            };
+                        };
+                    };
+                };
+                /** @description Limite de tentativas de decisão. `retry_after_seconds` diz quanto esperar. Corpo cru. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "rate_limit_exceeded";
+                            retry_after_seconds: number;
+                        };
+                    };
+                };
+                /** @description O deployment não tem verificação de token de usuário configurada, então ninguém pode decidir aqui até que tenha. Corpo cru. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_verification_unconfigured";
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/approvals/health": {
         parameters: {
             query?: never;
@@ -3097,6 +3469,558 @@ export interface paths {
                         "application/json": {
                             /** @enum {string} */
                             error: "project_required";
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/audit-events/anchors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List audit-chain anchors
+         * @description As âncoras da cadeia de auditoria desta organização, mais recentes primeiro.
+         *
+         *     `status` filtra entre `pending`, `sent`, `local_only` e `failed`. **`local_only` é um estado terminal de verdade, não um `sent` atrasado**: a âncora está durável neste banco e testemunhada em NENHUM lugar fora dele. Ela já foi reportada como `sent`, e a pergunta que isso tornava impossível de responder era exatamente a que um auditor faz.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description 1 a 200; o padrão é 50. */
+                    limit?: number;
+                    status?: "pending" | "sent" | "local_only" | "failed";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            anchors: {
+                                id: string;
+                                /** @description Até onde a cadeia ia quando esta âncora foi tirada. */
+                                head_sequence: number;
+                                head_hash: string;
+                                signature: string;
+                                signature_alg: string;
+                                /** @description Para onde a testemunha externa foi enviada. */
+                                target: string | null;
+                                target_status: string | null;
+                                target_response: string | null;
+                                delivery_attempts: number;
+                                /** Format: date-time */
+                                anchored_at: string;
+                                /** Format: date-time */
+                                delivered_at: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description A query não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/audit/anchors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List audit-chain anchors (deprecated path)
+         * @deprecated
+         * @description Alias DEPRECIADO de `GET /v1/audit-events/anchors` (ent#979), mantido por dois releases. Mesmo handler, mesmo escopo.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    status?: "pending" | "sent" | "local_only" | "failed";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            anchors: {
+                                id: string;
+                                /** @description Até onde a cadeia ia quando esta âncora foi tirada. */
+                                head_sequence: number;
+                                head_hash: string;
+                                signature: string;
+                                signature_alg: string;
+                                /** @description Para onde a testemunha externa foi enviada. */
+                                target: string | null;
+                                target_status: string | null;
+                                target_response: string | null;
+                                delivery_attempts: number;
+                                /** Format: date-time */
+                                anchored_at: string;
+                                /** Format: date-time */
+                                delivered_at: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description A query não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/audit-events/anchors/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify an anchor document against our record
+         * @description Recebe um documento de âncora que você guardou e responde duas perguntas SEPARADAS: a assinatura confere, e a nossa cópia bate?
+         *
+         *     Elas não são a mesma pergunta, e é por isso que o veredito tem quatro valores em vez de um booleano. Assinatura boa com a nossa linha diferente (`local_record_diverges`) é o caso que um auditor precisa ver; assinatura boa sem cópia nossa (`signature_ok_but_no_local_record`) é outro problema e tem outro nome.
+         *
+         *     Verificar âncora de OUTRA organização é recusado: a assinatura é derivada do segredo da organização dona.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {number} */
+                        version: 1;
+                        anchor_id: string;
+                        org_id: string;
+                        head_sequence: number;
+                        head_hash: string;
+                        /** Format: date-time */
+                        anchored_at: string;
+                        /** @enum {string} */
+                        signature_alg: "HMAC-SHA256";
+                        signature: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            anchor_id: string;
+                            org_id: string;
+                            head_sequence: number;
+                            /** @description A assinatura confere com o segredo desta organização. */
+                            signature_valid: boolean;
+                            /** @description Existe uma linha nossa com esse `anchor_id`. */
+                            persisted_locally: boolean;
+                            /** @description E ela bate campo a campo com o documento apresentado. */
+                            persisted_matches: boolean;
+                            /**
+                             * @description Os três primeiros NÃO são a mesma coisa e a distinção é o produto: `verified` é assinatura boa e registro nosso idêntico; `signature_ok_but_no_local_record` é um documento que assinamos e do qual não temos mais cópia; `local_record_diverges` é assinatura boa com a nossa linha DIFERENTE — o caso que interessa a um auditor.
+                             * @enum {string}
+                             */
+                            verdict: "verified" | "signature_ok_but_no_local_record" | "local_record_diverges" | "signature_invalid";
+                        };
+                    };
+                };
+                /** @description O documento não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O `org_id` do documento não é o da credencial. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "cross_org_verify_denied";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O segredo de âncora não está configurado neste deployment, então nada pode ser verificado aqui. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "anchor_secret_unconfigured";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/audit/anchors/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify an anchor document against our record (deprecated path)
+         * @deprecated
+         * @description Alias DEPRECIADO de `POST /v1/audit-events/anchors/verify` (ent#979), mantido por dois releases. Mesmo handler, mesmo escopo, mesmos quatro vereditos.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {number} */
+                        version: 1;
+                        anchor_id: string;
+                        org_id: string;
+                        head_sequence: number;
+                        head_hash: string;
+                        /** Format: date-time */
+                        anchored_at: string;
+                        /** @enum {string} */
+                        signature_alg: "HMAC-SHA256";
+                        signature: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            anchor_id: string;
+                            org_id: string;
+                            head_sequence: number;
+                            /** @description A assinatura confere com o segredo desta organização. */
+                            signature_valid: boolean;
+                            /** @description Existe uma linha nossa com esse `anchor_id`. */
+                            persisted_locally: boolean;
+                            /** @description E ela bate campo a campo com o documento apresentado. */
+                            persisted_matches: boolean;
+                            /**
+                             * @description Os três primeiros NÃO são a mesma coisa e a distinção é o produto: `verified` é assinatura boa e registro nosso idêntico; `signature_ok_but_no_local_record` é um documento que assinamos e do qual não temos mais cópia; `local_record_diverges` é assinatura boa com a nossa linha DIFERENTE — o caso que interessa a um auditor.
+                             * @enum {string}
+                             */
+                            verdict: "verified" | "signature_ok_but_no_local_record" | "local_record_diverges" | "signature_invalid";
+                        };
+                    };
+                };
+                /** @description O documento não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O `org_id` do documento não é o da credencial. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "cross_org_verify_denied";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O segredo de âncora não está configurado. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "anchor_secret_unconfigured";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/audit-events/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export audit events, with a signed manifest
+         * @description Exporta os eventos de auditoria da janela pedida, em JSON, com um manifesto ASSINADO no fim.
+         *
+         *     **A resposta é transmitida, não montada.** O corpo abre com `{"export_id", "org_id", "rows": [` e vai escrevendo linha a linha direto do cursor, então um consumidor que espera um documento completo na memória vai contra o desenho. O cabeçalho `x-export-row-count` chega antes da primeira linha.
+         *
+         *     **O manifesto assina o ESCOPO, não só o conteúdo.** Além de `final_hash` e `row_count`, ele carrega os `filters` aplicados: sem isso, uma exportação estreitada a um agente era apresentada — honestamente assinada e íntegra — como se fosse o dia inteiro. O `rows_digest` cobre a numeração, para uma renumeração não passar por um `final_hash` que continuaria batendo.
+         *
+         *     Uma janela grande demais é recusada ANTES de abrir a transmissão, com a contagem e o teto no corpo.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Início da janela, ISO 8601. Obrigatório. */
+                    from: string;
+                    /** @description Fim da janela, ISO 8601. Obrigatório. */
+                    to: string;
+                    /** @description Estreita para um agente, e o manifesto DIZ isso. */
+                    agent_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            export_id: string;
+                            org_id: string;
+                            rows: {
+                                [key: string]: unknown;
+                            }[];
+                            manifest: {
+                                export_id: string;
+                                org_id: string;
+                                requested_by: string | null;
+                                /** Format: date-time */
+                                requested_at: string;
+                                /** @description A janela pedida, como ela foi assinada. */
+                                date_range: {
+                                    [key: string]: unknown;
+                                };
+                                scope_version: number;
+                                /** @description Os ESTREITAMENTOS aplicados, dentro do escopo assinado. Sem isto, um recorte de um agente só era apresentado — honestamente assinado e íntegro — como se fosse o dia inteiro. */
+                                filters: {
+                                    [key: string]: unknown;
+                                };
+                                final_hash: string;
+                                row_count: number;
+                                /** @description Digest de (sequence_number, entry_hash), que pega renumeração. */
+                                rows_digest: string;
+                            };
+                            export_signature: {
+                                [key: string]: unknown;
+                            };
+                            key_id: string;
+                        };
+                    };
+                };
+                /** @description Query fora do schema, data que não é ISO 8601, ou `from` depois de `to`. Corpo cru, não o envelope `{ error: { code } }`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "invalid_query" | "invalid_iso_8601" | "from_after_to";
+                            issues?: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description A credencial não pode exportar auditoria desta organização. Corpo cru. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "forbidden";
+                        };
+                    };
+                };
+                /** @description A janela pedida passa do teto de linhas. `row_count` diz quantas seriam e `limit` diz o teto — estreite a janela. Corpo cru. */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "export_too_large";
+                            row_count: number;
+                            limit: number;
                         };
                     };
                 };
@@ -3773,6 +4697,306 @@ export interface paths {
         };
         trace?: never;
     };
+    "/v1/bank-consents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Open Finance bank consents
+         * @description Os consentimentos de Open Finance da organização, mais recentes primeiro.
+         *
+         *     `status` filtra por um dos cinco estados do ciclo: `pending` (o consentimento existe e a pessoa ainda não autorizou no banco), `authorised`, `revoked`, `expired` e `consumed`. Ausente, vêm todos.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description 1 a 200; o padrão é 50. */
+                    limit?: number;
+                    status?: "pending" | "authorised" | "revoked" | "expired" | "consumed";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            bank_consents: {
+                                /** @description `ofb_`-prefixed. The id every other operation in this family takes. */
+                                id: string;
+                                /** @description Lowercase kebab-case, as supplied when the consent was opened: `itau`, `bradesco`, `bb`, `inter`. */
+                                bank_id: string;
+                                /** @description The consumer, in the caller's own namespace. */
+                                consumer_id: string;
+                                /**
+                                 * @description The wallet named on the create request, or null. Written once at creation and never rewritten: neither state transition on this consent touches the column.
+                                 *
+                                 *     It is a label, not routing. A statement refresh copies this value onto every event it ingests, and nothing downstream reads it: reconciliation resolves a wallet from the funding source behind an event's `connection_id`, and the events this family publishes carry no such key. Binding a consent to a wallet therefore does not, on its own, put the ingested statement into that wallet's reconciliation.
+                                 */
+                                wallet_id: string | null;
+                                /**
+                                 * @description `authorised` carries the British spelling, which is the column's own and not a typo. `revoked`, `expired` and `consumed` are terminal: no transition leaves them. Read "is this consent usable now" from `status` being `authorised`, never from `revoked_at` being null.
+                                 * @enum {string}
+                                 */
+                                status: "pending" | "authorised" | "revoked" | "expired" | "consumed";
+                                /** @description The OFB scopes the consent was opened for. */
+                                scopes: string[];
+                                /** @description The bank's own identifier for the consent, as returned when it was opened. */
+                                bank_consent_id: string | null;
+                                /** @description The URL the consumer opens to authorise the consent at their bank. */
+                                authorisation_url: string | null;
+                                /**
+                                 * Format: date-time
+                                 * @description Expiry of the bank access token. The token references themselves are never returned by this API.
+                                 */
+                                token_expires_at: string | null;
+                                /** Format: date-time */
+                                created_at: string;
+                                /**
+                                 * Format: date-time
+                                 * @description American spelling here, unlike `status: "authorised"`; both mirror their own column names. Stamped in the same statement as the transition into `authorised`.
+                                 */
+                                authorized_at: string | null;
+                                /**
+                                 * Format: date-time
+                                 * @description Mirror of the bank-side consent expiry, stamped when the consent is opened.
+                                 */
+                                expires_at: string | null;
+                                /** Format: date-time */
+                                revoked_at: string | null;
+                                /** Format: date-time */
+                                consumed_at: string | null;
+                                metadata: {
+                                    [key: string]: unknown;
+                                };
+                            }[];
+                        };
+                    };
+                };
+                /** @description A query não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Initiate a bank consent
+         * @description Opens a consent at the bank and persists it as `pending`. `POST /v1/ofb/consents` is the legacy spelling of this same operation, kept for two releases (ent#979); new integrations use this path.
+         *
+         *     THE BANK IS CALLED BEFORE THE ROW IS WRITTEN, and that ordering is visible in the failure modes below: every refusal that arrives after the bank call leaves a bank-side consent with no row of ours pointing at it. Retrying opens another one.
+         *
+         *     One open consent per consumer per bank per organization. A sibling project in your organization holding an open consent for this consumer at this bank is refused, and the refusal is not something a retry clears.
+         *
+         *     On 201 the consent is `pending`, and `authorisation_url`, `bank_consent_id` and `expires_at` are all set: the adapter's result declares them non-nullable and the INSERT writes all three. Send the consumer to `authorisation_url`, then post the code they come back with to the callback operation.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        bank_id: string;
+                        consumer_id: string;
+                        scopes: string[];
+                        /**
+                         * Format: uri
+                         * @description Where the bank returns the consumer after authorisation. You compose it and you host it.
+                         */
+                        redirect_url: string;
+                        /** @description Binds the consent to a wallet, so the statements it ingests carry that wallet. */
+                        wallet_id?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created. The consent is `pending` and `authorisation_url` is set. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description Lowercase kebab-case, for example `itau` or `bb`. */
+                            bank_id: string;
+                            consumer_id: string;
+                            /** @description Set when the consent was bound to a wallet at initiation; null when it was not. */
+                            wallet_id: string | null;
+                            /** @enum {string} */
+                            status: "pending" | "authorised" | "revoked" | "expired" | "consumed";
+                            scopes: string[];
+                            /** @description The bank's own identifier for the consent. Null until the bank issues one. */
+                            bank_consent_id: string | null;
+                            /** @description Where the consumer authorises the consent. This is the URL to send them to. */
+                            authorisation_url: string | null;
+                            /** Format: date-time */
+                            token_expires_at: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /**
+                             * Format: date-time
+                             * @description Spelled with a z, unlike `authorised` in `status`. Both spellings are column names, not typos.
+                             */
+                            authorized_at: string | null;
+                            /**
+                             * Format: date-time
+                             * @description Mirrors the bank-side consent expiry, as the bank reported it at initiation.
+                             */
+                            expires_at: string | null;
+                            /** Format: date-time */
+                            revoked_at: string | null;
+                            /** Format: date-time */
+                            consumed_at: string | null;
+                            metadata: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. `details.issues` carries the Zod issues. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /**
+                 * @description `bank_consent_held_elsewhere` when another project in this organization holds an open (`pending` or `authorised`) consent for this consumer at this bank. `details.remediation` says what to do and `details.retriable` is false: one project's bank grant is never shared with another, so re-sending this request unchanged will not clear it.
+                 *
+                 *     `consent_active_for_consumer` when YOUR OWN project already holds one. Revoke it first.
+                 *
+                 *     `db_error` when the consent could not be persisted for any other reason. The cause is in our logs under the request id and is deliberately not in this body, because the driver's own message names another project's key values.
+                 */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "bank_consent_held_elsewhere" | "consent_active_for_consumer" | "db_error";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `consent_disappeared`: the row was written and could not be read back. Do not retry blind; both the row and the bank-side consent may exist. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "consent_disappeared";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The bank refused the request or could not be reached, before anything was written. The message is the adapter's own. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "adapter_error";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `consent_lock_timeout`: another request is issuing a consent for this consumer at this bank and the wait ended without an answer, so NOTHING WAS DECIDED. We do not know whether a sibling holds the grant, and saying so is why this is not the 409. `details.retriable` is true. No consent row was created; a bank-side consent was, and is orphaned. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "consent_lock_timeout";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/bank-consents/{id}": {
         parameters: {
             query?: never;
@@ -4383,6 +5607,945 @@ export interface paths {
                             error: "browser_worker_unconfigured";
                             /** @description Free text for an operator, not a code to branch on. On a 502 it relays the underlying failure, which may be the browser worker's own status line truncated to 160 characters, or a database error from the pending-session insert. */
                             message: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cart/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Price a cart at a merchant
+         * @description Builds a cart at the merchant and returns it priced, with line items, totals and the payment methods the merchant's checkout accepts. NOTHING IS BOUGHT and no money moves: this is the quote step, and the numbers in `totals` are what the merchant says the order would cost right now.
+         *
+         *     WHICH RAIL ANSWERS IS RESOLVED FOR YOU. The dispatcher tries its rails in registration order and the first one that claims the merchant handles the call; the rail that won is named in `rail`, so you can tell a connected-API answer from a browser-driven one without knowing the routing table. When no rail claims the merchant, the answer is 422 `no_cart_rail`, and that is a statement about coverage, not about the merchant being closed or the items being unavailable.
+         *
+         *     IDENTIFIERS COME FROM A SEARCH, NOT FROM GUESSWORK. `variant_id` is the merchant's own id for a specific purchasable variant (a size, a colour), which is the granularity a cart needs; a product id will not do. `seller` is only meaningful on marketplaces where the same variant is offered by several sellers.
+         *
+         *     LIMITS ARE THE VALIDATOR'S, and they refuse rather than truncate: at least 1 and at most 50 line items, and a quantity between 1 and 99 per line.
+         *
+         *     THE SESSION IS NOT A RESERVATION. Nothing here holds stock or freezes a price, and there is no route to read a session back later: the object in the 200 is the whole of it. Treat `id` as the merchant-side handle it is and re-price rather than assume the quote survives.
+         *
+         *     A TIER 0 (BROWSER-DRIVEN) MERCHANT MAY ANSWER 422 HERE EVEN THOUGH IT SUPPORTS CHECKOUT. The browser rail's own session step is deliberately not implemented — its cart is assembled during checkout, in one browser run — so for those merchants `POST /v1/cart/checkout` is the entry point and this route is not a required first step.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        merchant: string;
+                        items: {
+                            variant_id: string;
+                            quantity: number;
+                            seller?: string;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The merchant-side handle for this cart. Not a reservation and not readable back through this API. */
+                            id: string;
+                            /** @description Which rail answered (`vtex`, `nuvemshop`, `browser`, `acp`, `ucp`, ...). The practical split is connected-API rails against the browser rail, which is what decides latency and what a checkout can return. */
+                            rail: string;
+                            merchant: string;
+                            /**
+                             * @description `ready_for_payment` is the one that matters: the cart can be taken to checkout. `not_ready_for_payment` means the merchant still wants an address or a fulfillment choice, which this route does not collect. `canceled` is terminal for this cart.
+                             * @enum {string}
+                             */
+                            status: "in_progress" | "not_ready_for_payment" | "ready_for_payment" | "completed" | "canceled";
+                            currency: string;
+                            line_items: {
+                                id: string;
+                                item: {
+                                    id: string;
+                                    name?: string;
+                                    unit_amount?: number;
+                                };
+                                quantity: number;
+                                name?: string;
+                                unit_amount?: number;
+                                sku?: string;
+                                variant_id?: string;
+                                images?: string[];
+                                /** @description `in_stock`, `low_stock`, `out_of_stock`, `backorder`, `pre_order` where the merchant reports it. */
+                                availability_status?: string;
+                                totals?: {
+                                    /** @description What this line is: `items_base_amount`, `items_discount`, `subtotal`, `discount`, `fulfillment`, `tax`, `total`. The set is the ACP vocabulary and merchants do not all emit every line, so find `total` by its type rather than by position. */
+                                    type: string;
+                                    /** @description The merchant's own label, in the merchant's language. */
+                                    display_text: string;
+                                    /** @description Minor units of `currency`. */
+                                    amount: number;
+                                }[];
+                            }[];
+                            totals: {
+                                /** @description What this line is: `items_base_amount`, `items_discount`, `subtotal`, `discount`, `fulfillment`, `tax`, `total`. The set is the ACP vocabulary and merchants do not all emit every line, so find `total` by its type rather than by position. */
+                                type: string;
+                                /** @description The merchant's own label, in the merchant's language. */
+                                display_text: string;
+                                /** @description Minor units of `currency`. */
+                                amount: number;
+                            }[];
+                            fulfillment_options?: {
+                                /** @enum {string} */
+                                type: "shipping" | "pickup" | "digital" | "local_delivery";
+                                id: string;
+                                title: string;
+                                totals: {
+                                    /** @description What this line is: `items_base_amount`, `items_discount`, `subtotal`, `discount`, `fulfillment`, `tax`, `total`. The set is the ACP vocabulary and merchants do not all emit every line, so find `total` by its type rather than by position. */
+                                    type: string;
+                                    /** @description The merchant's own label, in the merchant's language. */
+                                    display_text: string;
+                                    /** @description Minor units of `currency`. */
+                                    amount: number;
+                                }[];
+                            }[];
+                            fulfillment_address?: {
+                                name?: string;
+                                line_one?: string;
+                                line_two?: string;
+                                city?: string;
+                                state?: string;
+                                country?: string;
+                                postal_code?: string;
+                            };
+                            payment_handlers?: {
+                                id: string;
+                                name: string;
+                                /**
+                                 * @description The merchant's method normalized into ours, so a payment layer can pick a rail without parsing the merchant's own naming.
+                                 * @enum {string}
+                                 */
+                                kind: "pix" | "card" | "boleto" | "wallet" | "other";
+                                psp?: string;
+                            }[];
+                            /** @description Convenience mirror of `payment_handlers`. ABSENT means the rail did not say, not false. */
+                            accepts_pix?: boolean;
+                            /** @description A hosted checkout page, where the rail exposes one at this step. */
+                            checkout_url?: string;
+                            /** @description The rail's own object, passed through for debugging. Its shape is the merchant's and changes without notice; nothing in this API depends on it and neither should you. */
+                            raw?: unknown;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. Most often an empty `items`, a quantity outside 1..99, or a `variant_id` that is not a string. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "invalid_body";
+                            /** @description Zod's issue array verbatim: each entry carries at least `code`, `path` and `message`, and some carry more depending on the check that failed. Treat `path` as the pointer to the offending field and `message` as text for a human; the set of `code` values is Zod's, not ours, so do not branch on it exhaustively. */
+                            issues: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description No rail supports this merchant, or the rail that does cannot assemble a cart outside a checkout run. Not a transient failure: retrying the same merchant answers the same way until a rail covers it. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "no_cart_rail" | "nuvemshop_items_required";
+                            /** @description Free text for an operator, not a code to branch on. On a 502 it relays the underlying failure, which may be the browser worker's own status line truncated to 160 characters, or a database error from the pending-session insert. */
+                            message: string;
+                        };
+                    };
+                };
+                /** @description The merchant, or the hosted browser in front of it, failed or refused. `message` relays the underlying failure. Safe to retry: no cart persisted here. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "cart_session_failed";
+                            /** @description Free text for an operator, not a code to branch on. On a 502 it relays the underlying failure, which may be the browser worker's own status line truncated to 160 characters, or a database error from the pending-session insert. */
+                            message: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cart/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Finalize a cart into something payable
+         * @description Takes a cart to the end of the merchant's own checkout and returns the instrument that settles it. STILL NOT A PAYMENT: what comes back is a Pix copia-e-cola or a checkout URL, and paying it is a separate act on a separate rail. What HAS happened by the time this returns is that an order exists on the merchant's side, in whatever pending state that merchant uses.
+         *
+         *     WHICH FIELD CARRIES THE RESULT DEPENDS ON THE TIER, and you should read both rather than assume. A Tier 0 merchant (the hosted browser drove its storefront) fills `pix_copia_e_cola` with the store's real, payable BR code. A Tier 1 merchant (a connected API, Nuvemshop today) fills `checkout_url` with the storefront page where the buyer completes payment through the merchant's own PSP, and leaves the Pix field empty. `rail` tells you which one answered.
+         *
+         *     TWO WAYS TO SAY WHAT IS BEING BOUGHT, and they are not interchangeable. Merchants with a catalog take `items`. Mercado Livre has no buyer-purchase API at all, so it takes `url` — the listing page — and refuses without it (`meli_url_required`). Sending neither is `items_required`.
+         *
+         *     MERCADO LIVRE BUYS ON A PERSON'S OWN ACCOUNT. Pass `consumer_id` and the checkout resolves THAT consumer's connected Mercado Livre context, so the order lands on their account rather than a shared one. In live this is required, not preferred: without a connected context the call is refused with `meli_not_connected` rather than quietly falling back to the shared demo context, which is test-only. The connection is made first through `POST /v1/cart/meli/connect/start`.
+         *
+         *     THE BUYER AND ADDRESS FIELDS ARE OPTIONAL IN THE SCHEMA AND REQUIRED IN LIVE, and the difference is deliberate. In TEST the hosted browser fills sandbox defaults so an integration can run end to end without inventing a real person. In LIVE the checkout REFUSES — `buyer_identity_required`, `shipping_address_required` — rather than fabricate identity or shipping details on an order that will really be placed and really be delivered somewhere. The refusal message names the missing fields. Read the optionality as an environment rule, not as permission to omit them on a real order.
+         *
+         *     SLOW BY CONSTRUCTION ON TIER 0. A browser-driven checkout is a real browser walking a real storefront; the worker is allowed a retry budget of roughly 165 seconds plus a final in-flight attempt, and the client waits past that. Allow at least 230 seconds and do not retry on timeout without checking the merchant: a second attempt can place a second order.
+         *
+         *     A RAIL THAT CANNOT FINISH SYNCHRONOUSLY IS REFUSED, not queued. If a connected rail comes back from its own session step in a non-terminal state, the answer is 502 `rail_async_not_supported`. There is no session-to-rail persistence behind this route, so there would be nothing to resume; saying so is more useful than handing back a handle that leads nowhere.
+         *
+         *     WHAT IS NOT HERE. No idempotency key, so a retried request is a retried checkout. No route to read a checkout back by id. No cancellation: an order placed on the merchant is cancelled at the merchant.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        merchant: string;
+                        items?: {
+                            variant_id: string;
+                            quantity?: number;
+                            seller?: string;
+                        }[];
+                        /** Format: uri */
+                        url?: string;
+                        consumer_id?: string;
+                        buyer?: {
+                            email?: string;
+                            firstName?: string;
+                            lastName?: string;
+                            document?: string;
+                            phone?: string;
+                        };
+                        address?: {
+                            postalCode?: string;
+                            street?: string;
+                            number?: string;
+                            neighborhood?: string;
+                            city?: string;
+                            state?: string;
+                            complement?: string;
+                            country?: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            merchant?: string;
+                            /** @description Which rail finalized the order. */
+                            rail: string;
+                            /** @description The merchant's own order handle, where the rail exposes one. */
+                            order_form_id?: string;
+                            /** @description Minor units. Absent when the rail did not return a priced total; do not infer zero. */
+                            total_minor?: number;
+                            /** @description TIER 0. The store's real, payable Pix BR code, minted by the merchant's own checkout. Pay it on a Pix rail; nothing in this call moved money. */
+                            pix_copia_e_cola?: string;
+                            /** @description TIER 1. The storefront page where the buyer completes payment through the merchant's own PSP. Empty on Tier 0. */
+                            checkout_url?: string;
+                            /** @description The merchant's own status string for the order just placed. The vocabulary is the merchant's, not ours. */
+                            order_status?: string;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema — for example a `url` that is not a URL, or a `country` that is not two characters. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "invalid_body";
+                            /** @description Zod's issue array verbatim: each entry carries at least `code`, `path` and `message`, and some carry more depending on the check that failed. Treat `path` as the pointer to the offending field and `message` as text for a human; the set of `code` values is Zod's, not ours, so do not branch on it exhaustively. */
+                            issues: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description No rail supports this merchant at all. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "no_cart_rail";
+                            /** @description Free text for an operator, not a code to branch on. On a 502 it relays the underlying failure, which may be the browser worker's own status line truncated to 160 characters, or a database error from the pending-session insert. */
+                            message: string;
+                        };
+                    };
+                };
+                /** @description The merchant, the hosted browser, or a connected rail failed. `rail_async_not_supported` is the one that will not resolve on retry: the rail answered with a non-terminal status and this route has nowhere to park it. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "cart_checkout_failed" | "rail_async_not_supported";
+                            /** @description Free text for an operator, not a code to branch on. On a 502 it relays the underlying failure, which may be the browser worker's own status line truncated to 160 characters, or a database error from the pending-session insert. */
+                            message: string;
+                        };
+                    };
+                };
+                /** @description No hosted browser is configured for this deployment, so no Tier 0 checkout can run. An operator's configuration to supply; retrying cannot fix it. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "browser_worker_unconfigured";
+                            /** @description Free text for an operator, not a code to branch on. On a 502 it relays the underlying failure, which may be the browser worker's own status line truncated to 160 characters, or a database error from the pending-session insert. */
+                            message: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cart/nuvemshop/connect/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Begin a Nuvemshop app install for a store (OAuth, step 1 of 2)
+         * @description Mints a one-time state and returns the Nuvemshop install URL a MERCHANT opens to authorize the CodeSpar app on their own store. Nothing is connected when this returns: the connection exists after the merchant authorizes and Nuvemshop redirects to `redirect_uri`, which the server exchanges for a store token out of band.
+         *
+         *     THIS IS A DIFFERENT KIND OF CONNECT FROM THE MARKETPLACE ONES. `meli` and `ifood` open a hosted browser and ask a SHOPPER to log in, and what persists is a browser context. This is ordinary OAuth against a store's admin, the person who opens the link is the MERCHANT, and what persists is an API token. Once it exists, this project's checkouts on that store stop going through a browser and go through Nuvemshop's API instead (Tier 1).
+         *
+         *     THE DOMAIN IS CHECKED AGAINST NUVEMSHOP'S OWN HOSTING, not merely parsed. `merchant_domain` must end with a Nuvemshop-hosted suffix (`.lojavirtualnuvem.com.br`, `.tiendanube.com`, and the platform's other hosted suffixes); a store's custom domain is refused with 400 even though it serves the same shop. Send the hosted domain.
+         *
+         *     `country` PICKS THE API ROOT, not a language. `br` resolves the Brazilian root; `ar` and `mx` resolve the international one. Omitting it is fine; it becomes a resolver default rather than an error.
+         *
+         *     THE STATE IS BOUND TO THE CALLER'S ORG AND PROJECT before the URL is handed back, which is what makes the unauthenticated callback safe: the redirect carries no bearer, so the tenant is recovered from the state row and nothing else. Treat the URL as single use and do not hand the same one to two merchants.
+         *
+         *     THIS ROUTE ANSWERS ITS OWN 401, unlike the rest of the client surface. The shared preHandler admits service-to-service callers that carry no org or project, and this handler needs both to bind the state, so it refuses again with `{ error: "auth_required" }` — a body no generic 401 handler produces. The 503 is the other one worth reading: it means this DEPLOYMENT has no Nuvemshop app registered (`NUVEMSHOP_APP_ID` and friends unset), which no caller can fix by retrying.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        merchant_domain: string;
+                        /** @enum {string} */
+                        country?: "br" | "ar" | "mx";
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The Nuvemshop authorize URL the MERCHANT opens. It carries the one-time state; hand it to one merchant and treat it as spent once opened. */
+                            install_url: string;
+                            /** @description Where Nuvemshop sends the merchant after they authorize. Echoed back so an integrator can confirm it matches what the app is registered with — a mismatch fails at Nuvemshop, not here. */
+                            redirect_uri: string;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. The usual cause is a `merchant_domain` that is a store's custom domain rather than its Nuvemshop-hosted one; the issue's `message` says which suffixes are accepted. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "invalid_body";
+                            /** @description Zod's issue array verbatim: each entry carries at least `code`, `path` and `message`, and some carry more depending on the check that failed. Treat `path` as the pointer to the offending field and `message` as text for a human; the set of `code` values is Zod's, not ours, so do not branch on it exhaustively. */
+                            issues: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description The caller is authenticated but carries no org and project — a service-to-service key, which the shared preHandler admits and this route cannot use. A different body from the cross-cutting 401. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "auth_required";
+                            message: string;
+                        };
+                    };
+                };
+                /** @description The state could not be minted. Safe to retry: nothing was handed to the merchant. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "nuvemshop_connect_start_failed";
+                            /** @description Free text for an operator, not a code to branch on. On a 502 it relays the underlying failure, which may be the browser worker's own status line truncated to 160 characters, or a database error from the pending-session insert. */
+                            message: string;
+                        };
+                    };
+                };
+                /** @description This deployment has no Nuvemshop app registered, so no install can be started. An operator sets `NUVEMSHOP_APP_ID`, `NUVEMSHOP_APP_SECRET` and `NUVEMSHOP_REDIRECT_URI`; retrying cannot fix it. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "nuvemshop_app_not_registered";
+                            /** @description Free text for an operator, not a code to branch on. On a 502 it relays the underlying failure, which may be the browser worker's own status line truncated to 160 characters, or a database error from the pending-session insert. */
+                            message: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List issued cards
+         * @description Os cartões emitidos neste projeto, mais recentes primeiro.
+         *
+         *     Esta listagem traz CARTÕES, não fluxos de emissão: um `POST` que parou em `202` esperando KYC não aparece aqui até virar cartão. Para acompanhar aquele fluxo, leia o `flow_id` que a emissão devolveu.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Filtra pelos cartões de um consumidor. */
+                    consumer_id?: string;
+                    /** @description 1 a 200; o padrão é 50. */
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cards: {
+                                /** @description CodeSpar's own id for the card row. This is what `/v1/cards/{id}` resolves. */
+                                id: string;
+                                /**
+                                 * @description Closed from two sides: `IssuerId` in `@codespar-enterprise/issuer` and `CHECK (issuer IN ('pomelo', 'bridge'))` on `issuer_cards` (migration 0118).
+                                 * @enum {string}
+                                 */
+                                issuer: "pomelo" | "bridge";
+                                /** @description The issuer's own identifier for the card, as it was returned to us. */
+                                card_id: string;
+                                /** @description The last four digits. No other card-number material exists on this surface. */
+                                last4: string;
+                                /**
+                                 * @description `CHECK (network IN ('visa', 'mastercard'))`, migration 0118.
+                                 * @enum {string}
+                                 */
+                                network: "visa" | "mastercard";
+                                /**
+                                 * @description `IssuerCardStatus`, and `CHECK (status IN ('active', 'blocked', 'canceled'))` in 0118.
+                                 * @enum {string}
+                                 */
+                                status: "active" | "blocked" | "canceled";
+                                /** @description The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet. */
+                                token_id: string | null;
+                                /** Format: date-time */
+                                created_at: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description A query não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Issue a card under a signed mandate
+         * @description Emite um cartão para um agente, sob um mandato assinado.
+         *
+         *     **Três desfechos de sucesso, e o status os separa.** `201` é a emissão que terminou agora. `202` é o emissor pedindo KYC do titular antes de emitir: o fluxo fica `pending`, e `kyc_url` é para onde mandar a pessoa. `200` é REPETIÇÃO — a mesma `Idempotency-Key` chegando de novo num fluxo que já terminou, devolvendo o que ele produziu em vez de emitir um segundo cartão.
+         *
+         *     **Repetir é seguro e é o caminho de recuperação.** Um `502 issuer_ingest_failed` quer dizer que o cartão EXISTE e só a ingestão no ambiente de dados falhou: repetir com a MESMA chave reaproveita o token, e mandar uma chave nova emitiria um segundo cartão. O corpo dessa recusa já traz o cartão emitido.
+         *
+         *     **Uma chave repetida com corpo diferente é `409`**, não uma emissão nova: a impressão digital do pedido é derivada do titular e comparada, e ela sobrevive à redação dos dados do titular, então a divergência é pega muito depois.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description Chaveia o fluxo de emissão. Ausente, o servidor cunha uma — e aí a chamada deixa de ser repetível, porque não há chave para repetir. */
+                    "Idempotency-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description ISO 3166-1 alpha-2, maiúsculo. Decide o corredor emissor. */
+                        country: string;
+                        /** @description ISO 4217, maiúsculo. */
+                        currency: string;
+                        holder: {
+                            full_name: string;
+                            /** Format: email */
+                            email: string;
+                            /** @description `YYYY-MM-DD`. */
+                            birthdate: string;
+                            document: {
+                                type: string;
+                                value: string;
+                                /** @description ISO 3166-1 alpha-2, maiúsculo. */
+                                issuing_country: string;
+                            };
+                            address: {
+                                line1: string;
+                                line2?: string;
+                                /** @description Exigido por alguns corredores (Pomelo BR); opcional no schema. */
+                                street_number?: string;
+                                neighborhood?: string;
+                                city: string;
+                                state?: string;
+                                postal_code: string;
+                                /** @description Onde o corredor exige e difere de `city` — em Pomelo BR, o código IBGE. */
+                                municipality?: string;
+                                /** @description ISO 3166-1 alpha-2, maiúsculo. */
+                                country: string;
+                            };
+                            /** @description E.164, com o `+`. */
+                            phone?: string;
+                        };
+                        /** @description OBRIGATÓRIO em toda via, sem exceção por emissor. O cartão é o instrumento de gasto de um agente e o mandato é a autorização assinada do consumidor para ele. Emitir sem mandato produzia, na Bridge, um cartão sem limite e sem categoria numa via que nunca recusa; e na Pomelo, um cartão para o qual o autorizador não tem vínculo nenhum na hora do gasto. */
+                        mandate_id: string;
+                        metadata?: {
+                            [key: string]: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            state: "issued";
+                            flow_id: string;
+                            card: {
+                                /** @description CodeSpar's own id for the card row. This is what `/v1/cards/{id}` resolves. */
+                                id: string;
+                                /**
+                                 * @description Closed from two sides: `IssuerId` in `@codespar-enterprise/issuer` and `CHECK (issuer IN ('pomelo', 'bridge'))` on `issuer_cards` (migration 0118).
+                                 * @enum {string}
+                                 */
+                                issuer: "pomelo" | "bridge";
+                                /** @description The issuer's own identifier for the card, as it was returned to us. */
+                                card_id: string;
+                                /** @description The last four digits. No other card-number material exists on this surface. */
+                                last4: string;
+                                /**
+                                 * @description `CHECK (network IN ('visa', 'mastercard'))`, migration 0118.
+                                 * @enum {string}
+                                 */
+                                network: "visa" | "mastercard";
+                                /**
+                                 * @description `IssuerCardStatus`, and `CHECK (status IN ('active', 'blocked', 'canceled'))` in 0118.
+                                 * @enum {string}
+                                 */
+                                status: "active" | "blocked" | "canceled";
+                                /** @description The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet. */
+                                token_id: string | null;
+                                /** Format: date-time */
+                                created_at: string;
+                            };
+                        } | {
+                            /** @description `imf_` prefixed. The row it names is keyed by the mint call's `Idempotency-Key`, or by a server-minted one when that header was absent. */
+                            flow_id: string;
+                            /**
+                             * @description `MintFlowState`, and `CHECK (state IN ('pending', 'issued', 'revoked', 'failed'))` in 0118.
+                             * @enum {string}
+                             */
+                            state: "pending" | "issued" | "revoked" | "failed";
+                            /** @enum {string} */
+                            issuer: "pomelo" | "bridge";
+                            /** @description Why the flow is parked, when it is parked. Null otherwise. */
+                            reason: string | null;
+                            /** @description Where the holder finishes identity verification, when the issuer asked for one. Null otherwise. */
+                            kyc_url: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** @description PRESENT ONLY when `state` is `issued` AND the flow already points at a card row. In every other case the key is absent rather than null. Null inside that case means the card row did not resolve under this org and project. */
+                            card?: {
+                                /** @description CodeSpar's own id for the card row. This is what `/v1/cards/{id}` resolves. */
+                                id: string;
+                                /**
+                                 * @description Closed from two sides: `IssuerId` in `@codespar-enterprise/issuer` and `CHECK (issuer IN ('pomelo', 'bridge'))` on `issuer_cards` (migration 0118).
+                                 * @enum {string}
+                                 */
+                                issuer: "pomelo" | "bridge";
+                                /** @description The issuer's own identifier for the card, as it was returned to us. */
+                                card_id: string;
+                                /** @description The last four digits. No other card-number material exists on this surface. */
+                                last4: string;
+                                /**
+                                 * @description `CHECK (network IN ('visa', 'mastercard'))`, migration 0118.
+                                 * @enum {string}
+                                 */
+                                network: "visa" | "mastercard";
+                                /**
+                                 * @description `IssuerCardStatus`, and `CHECK (status IN ('active', 'blocked', 'canceled'))` in 0118.
+                                 * @enum {string}
+                                 */
+                                status: "active" | "blocked" | "canceled";
+                                /** @description The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet. */
+                                token_id: string | null;
+                                /** Format: date-time */
+                                created_at: string;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            state: "issued";
+                            flow_id: string;
+                            card: {
+                                /** @description CodeSpar's own id for the card row. This is what `/v1/cards/{id}` resolves. */
+                                id: string;
+                                /**
+                                 * @description Closed from two sides: `IssuerId` in `@codespar-enterprise/issuer` and `CHECK (issuer IN ('pomelo', 'bridge'))` on `issuer_cards` (migration 0118).
+                                 * @enum {string}
+                                 */
+                                issuer: "pomelo" | "bridge";
+                                /** @description The issuer's own identifier for the card, as it was returned to us. */
+                                card_id: string;
+                                /** @description The last four digits. No other card-number material exists on this surface. */
+                                last4: string;
+                                /**
+                                 * @description `CHECK (network IN ('visa', 'mastercard'))`, migration 0118.
+                                 * @enum {string}
+                                 */
+                                network: "visa" | "mastercard";
+                                /**
+                                 * @description `IssuerCardStatus`, and `CHECK (status IN ('active', 'blocked', 'canceled'))` in 0118.
+                                 * @enum {string}
+                                 */
+                                status: "active" | "blocked" | "canceled";
+                                /** @description The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet. */
+                                token_id: string | null;
+                                /** Format: date-time */
+                                created_at: string;
+                            };
+                        };
+                    };
+                };
+                /** @description OK */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `imf_` prefixed. The row it names is keyed by the mint call's `Idempotency-Key`, or by a server-minted one when that header was absent. */
+                            flow_id: string;
+                            /**
+                             * @description `MintFlowState`, and `CHECK (state IN ('pending', 'issued', 'revoked', 'failed'))` in 0118.
+                             * @enum {string}
+                             */
+                            state: "pending" | "issued" | "revoked" | "failed";
+                            /** @enum {string} */
+                            issuer: "pomelo" | "bridge";
+                            /** @description Why the flow is parked, when it is parked. Null otherwise. */
+                            reason: string | null;
+                            /** @description Where the holder finishes identity verification, when the issuer asked for one. Null otherwise. */
+                            kyc_url: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** @description PRESENT ONLY when `state` is `issued` AND the flow already points at a card row. In every other case the key is absent rather than null. Null inside that case means the card row did not resolve under this org and project. */
+                            card?: {
+                                /** @description CodeSpar's own id for the card row. This is what `/v1/cards/{id}` resolves. */
+                                id: string;
+                                /**
+                                 * @description Closed from two sides: `IssuerId` in `@codespar-enterprise/issuer` and `CHECK (issuer IN ('pomelo', 'bridge'))` on `issuer_cards` (migration 0118).
+                                 * @enum {string}
+                                 */
+                                issuer: "pomelo" | "bridge";
+                                /** @description The issuer's own identifier for the card, as it was returned to us. */
+                                card_id: string;
+                                /** @description The last four digits. No other card-number material exists on this surface. */
+                                last4: string;
+                                /**
+                                 * @description `CHECK (network IN ('visa', 'mastercard'))`, migration 0118.
+                                 * @enum {string}
+                                 */
+                                network: "visa" | "mastercard";
+                                /**
+                                 * @description `IssuerCardStatus`, and `CHECK (status IN ('active', 'blocked', 'canceled'))` in 0118.
+                                 * @enum {string}
+                                 */
+                                status: "active" | "blocked" | "canceled";
+                                /** @description The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet. */
+                                token_id: string | null;
+                                /** Format: date-time */
+                                created_at: string;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description O corpo não casou com o schema, o par país/moeda não tem corredor, o titular foi recusado pelo emissor, ou os controles pedidos não existem nesta via. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "issuer_corridor_unsupported" | "invalid_holder" | "issuer_controls_unsupported";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A chave e o ambiente do emissor não combinam. Uma chave de teste não emite cartão real, e uma chave live não emite no emissor de staging. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "stage_issuer_live_key" | "live_issuer_test_key";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O mandato nomeado não existe nesta organização. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "mandate_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A `Idempotency-Key` já foi usada com um corpo diferente, ou o mandato não está ativo. `details` carrega o estado do mandato no segundo caso. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "idempotency_key_conflict" | "mandate_not_active";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Quebra de invariante: o fluxo consta como emitido e não há linha de cartão legível por trás dele. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "issuer_card_unknown";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O emissor recusou ou falhou a emissão; ou o cartão foi emitido e a ingestão no ambiente de dados falhou. No segundo caso o cartão EXISTE e vem em `details.card` — repita com a MESMA chave. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "issuer_mint_failed" | "issuer_ingest_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description As credenciais do emissor não puderam ser lidas do vault. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "vault_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
                         };
                     };
                 };
@@ -5259,6 +7422,364 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/consent-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List consent evidence
+         * @description A evidência de consentimento da organização, mais recente primeiro. É append-only: nada aqui é editado depois de assinado.
+         *
+         *     A resposta é `{ consents: [...] }`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    consumer_id?: string;
+                    /** @description 1 a 200; o padrão é 50. */
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            consents: {
+                                /** @description `ccsnt_`-prefixed on rows the mandate-lifecycle writer creates. */
+                                id: string;
+                                consumer_id: string;
+                                /** @description The `consumer_funding_sources` row this consent authorizes debits against. Nullable on the column, and required by `consumer_consents_grant_completeness` on `kind = 'grant'` rows: a grant must declare what it authorizes, while `revoke` and `amend` reference the original grant. */
+                                funding_source_id: string | null;
+                                /** @description The agent the consumer authorized, when the row names one. */
+                                agent_id: string | null;
+                                /**
+                                 * @description Closed by `consumer_consents_kind_check`, whose name appears in exactly one migration file. The log is append-only: a revocation is a NEW row with `kind = 'revoke'`, never a rewrite of the grant, which is what makes a revocation replayable from the log alone.
+                                 * @enum {string}
+                                 */
+                                kind: "grant" | "revoke" | "amend";
+                                /**
+                                 * @description Which version of the consumer's HMAC secret signed this row. This is the field that makes rotation safe, and the half that is usually left out when the rule is quoted.
+                                 *
+                                 *     Rotating a consumer's secret invalidates FUTURE mandates only, and the reason is here rather than in the rotation: the verifier resolves the secret by `(consumer, version)` and the mandate itself carries the version it was signed under, so a mandate signed under the prior version still resolves the prior secret and still verifies. Rotation marks the old row and inserts version+1; it deletes nothing. Without the version stamp the sentence would mean the opposite — that rotating breaks the audit trail.
+                                 */
+                                hmac_secret_version: number;
+                                /** @description A STRING, not a number. The column is `bigint` and the driver hands bigints back as strings; the handler passes the value straight through. Parse it as an integer in the row's `currency`, and do not assume it survives a float. Null on `revoke` / `amend` rows. */
+                                cap_minor: string | null;
+                                /** @description Same `bigint`-as-string treatment as `cap_minor`. */
+                                per_tx_cap_minor: string | null;
+                                /**
+                                 * @description Closed by `consumer_consents_currency_check` (name in exactly one migration file), which admits NULL as well as the seven values. Non-null on `grant` rows, which the completeness constraint requires to declare one.
+                                 * @enum {string|null}
+                                 */
+                                currency: "BRL" | "USD" | "MXN" | "COP" | "ARS" | "USDC" | "BRLA" | null;
+                                /** @description The purpose the consumer signed. Non-null on `grant` rows. */
+                                purpose: string | null;
+                                /** @description The consumer's IP at signing time, from an `inet` column — personal data, held because a consent event has to be replayable with timestamp and origin. `user_agent` is recorded alongside it and is NOT returned. */
+                                ip_address: string | null;
+                                /**
+                                 * Format: date-time
+                                 * @description When the consent event happened. The listing orders by this.
+                                 */
+                                signed_at: string;
+                                /** Format: date-time */
+                                expires_at: string | null;
+                                /** @description Defaults to `{}`. Rows written by the mandate-lifecycle handler carry the transition instead: `action`, `from`, `to`, and `reason` when the caller gave one. */
+                                metadata: {
+                                    [key: string]: unknown;
+                                };
+                            }[];
+                        };
+                    };
+                };
+                /** @description A query não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/funding-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List consumer funding sources
+         * @description As fontes de recursos dos consumidores deste projeto.
+         *
+         *     **Este caminho NÃO consulta saldo vivo, e isso não é omissão.** O alias `GET /v1/consumers/funding-sources` aceita `?with_balance=1` e, para as linhas `pix-celcoin`, busca o saldo no provedor uma a uma. O caminho canônico tira isso de propósito: uma listagem de todos os consumidores com saldo vivo é um leque de N chamadas ao provedor por requisição. Se você precisa de saldo, peça o de UM consumidor — e a supressão aqui falha FECHADA: qualquer rota que este handler não reconheça como o alias não recebe saldo.
+         *
+         *     `unattributed_count` conta as linhas que nenhum consumidor reivindica.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    consumer_id?: string;
+                    /** @description 1 a 200; o padrão é 50. */
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            funding_sources: {
+                                /** @description `cfs_`- or `fs_celcoin_`-prefixed, depending on which writer created it. */
+                                id: string;
+                                /** @description Always a string here, never null. Rows the 0129 backfill could not attribute carry `project_id IS NULL`, and the resolving predicate is a strict `=` against the credential's project, which no NULL satisfies — so an unattributed row answers 404 on this path rather than returning with a null. */
+                                project_id: string;
+                                /** @description The consumer, in the caller's own namespace. */
+                                consumer_id: string;
+                                /**
+                                 * @description An OPEN string, and deliberately not an enum here. `consumer_funding_sources` constrains it only with `CHECK (length(rail) > 0)`, and the writers do not agree on a closed set: `celcoin-onboarding.ts` writes the literal `pix-celcoin`, `routes/consents.ts` writes one of its own five-value `RAILS` list on the single-rail path, and its multi-slot path writes `methodToRail(slot.rail)` — where the slot's `rail` is validated as `z.string().min(1).max(40)` and `methodToRail` returns its argument unchanged when no mapping matches. So a caller who opened a consent with an unmapped slot rail reads that same string back here.
+                                 *
+                                 *     The values a reader should expect in practice: `pix-celcoin`, `pix-consent`, `card-token`, `ted-debit-auth`, `usd-ach-debit`, `usdc-onchain`. Match on those and tolerate anything else.
+                                 */
+                                rail: string;
+                                /**
+                                 * @description Closed by `consumer_funding_sources_currency_check`. That constraint NAME appears in exactly one file under `packages/api/src/migrations/`, so nothing later drops, relaxes or replaces it — the instrument is the name, not a list of the migrations that came after, because the list is what rots while the conclusion holds.
+                                 * @enum {string}
+                                 */
+                                currency: "BRL" | "USD" | "MXN" | "COP" | "ARS" | "USDC" | "BRLA";
+                                /** @description The provider behind the rail. Derived, not chosen: `celcoin` from the onboarding writer, and `rail.split("-")[0]` from the consent writer, so it inherits the same openness `rail` has. */
+                                provider: string;
+                                /** @description Caller-supplied label, or null. */
+                                display_label: string | null;
+                                /**
+                                 * @description Closed by `consumer_funding_sources_status_check`, whose name likewise appears in exactly one migration file. Read usability from `status` being `active`. A companion constraint keeps `revoked_at` and `status = 'revoked'` in step, so they cannot disagree.
+                                 * @enum {string}
+                                 */
+                                status: "active" | "revoked" | "expired";
+                                /** @description Lifted out of `metadata.pixKey` when that key holds a string, else null. It is the DICT entry registered for the account, not a credential. */
+                                pix_key: string | null;
+                                /** @description Lifted out of `metadata.pixKeyType`, else null. */
+                                pix_key_type: string | null;
+                                /**
+                                 * @description ALWAYS null on this operation, and present so a caller does not have to tell an absent field from an unknown balance. Live balance left the canonical surface with D4: the balance lives in the ledger. This read is new enough to have no legacy alias that could be relying on the old behaviour, so it never calls the provider.
+                                 * @enum {object|null}
+                                 */
+                                balance_minor: null;
+                                /** Format: date-time */
+                                created_at: string;
+                                /** Format: date-time */
+                                expires_at: string | null;
+                                /**
+                                 * Format: date-time
+                                 * @description Non-null exactly when `status` is `revoked`; the table enforces the pair.
+                                 */
+                                revoked_at: string | null;
+                                /**
+                                 * @description The raw column, echoed with nothing stripped — plan for personal data in it. `provisionCelcoinFundingSource` writes `account`, `branch`, `provider` and, when the onboarding carried one, `documentNumber`, which is the consumer's CPF or CNPJ. Treat this object as regulated personal data at rest and in logs, and do not echo it to an end user.
+                                 *
+                                 *     What is NOT in it is the debit credential: that lives in the vault, and the row holds only an opaque `provider_token_ref` pointer, which this response does not carry.
+                                 */
+                                metadata: {
+                                    [key: string]: unknown;
+                                };
+                            }[];
+                            unattributed_count: number;
+                        };
+                    };
+                };
+                /** @description A query não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/account-applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open a consumer account application
+         * @description Abre a proposta de conta de um consumidor no provedor, e é por aqui que um consumidor passa a ter conta e fonte de recursos Pix.
+         *
+         *     **A resposta não é a conta, é a proposta.** O que volta é `verification_id` e um `status` do provedor; a conta e a fonte de recursos aparecem quando `GET /v1/account-applications/{id}` for lido depois da aprovação — essa leitura é que provisiona. Um fluxo que espera conta aqui fica esperando.
+         *
+         *     **O `disclosure` é para renderizar.** Ele nomeia a instituição que detém a conta e o papel da CodeSpar como correspondente; o texto vem em pt-BR para aparecer como está, não para ser reescrito.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Os campos de identidade que o provedor pede — `documentNumber` (CPF ou CNPJ), nome completo, nascimento, endereço. Passa adiante como objeto: o handler não valida campo a campo aqui, e o que o provedor recusar volta na recusa dele. */
+                        buyer: {
+                            [key: string]: unknown;
+                        };
+                        /** @description O consumidor que passa a ser dono da conta. Vira o `clientCode` do onboarding e o dono da fonte de recursos que a aprovação produz. */
+                        consumer_id?: string;
+                        /** @description Aceites colhidos na mesma tela. Hoje só `dda` faz alguma coisa, e ele exige que o documento seja o verificado deste consumidor E que esteja numa `dda_allowlist` assinada — sem isso o registro é recusado e o resto do onboarding segue. */
+                        opt_ins?: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description O id da proposta no provedor. É ele que `GET /v1/account-applications/{id}` lê. */
+                            verification_id: string;
+                            /** @description Onde a proposta está no provedor, na palavra dele. */
+                            status: string;
+                            /** @description A página de verificação, quando o provedor usa uma. Nulo quando é tudo por API. */
+                            hosted_url: string | null;
+                            /** @description Nulo quando o roteador não pousou numa instituição com texto registrado. */
+                            disclosure: {
+                                /** @description A instituição que detém a conta e responde por ela. */
+                                institution: string;
+                                /** @description O CNPJ dela, ou nulo enquanto não houver um confirmado contra o contrato assinado — renderizar um CNPJ errado é pior que não renderizar. */
+                                institution_document: string | null;
+                                /**
+                                 * @description O papel da CodeSpar no arranjo, na Res. CMN 4.935/2021.
+                                 * @enum {string}
+                                 */
+                                codespar_role: "correspondente";
+                                /** @description pt-BR, escrito para ser renderizado VERBATIM, sem reescrita. */
+                                text: string;
+                            } | null;
+                            /** @description Presente só quando `opt_ins` pediu `dda`. `pending` é o caminho normal: o registro é assíncrono e vira `active` quando a confirmação do provedor chega, então trate pendente como em andamento e não como falha. */
+                            dda_opt_in?: {
+                                /** @enum {string} */
+                                status: "pending" | "failed" | "deferred";
+                                message?: string;
+                            };
+                        };
+                    };
+                };
+                /** @description O corpo não casou com o schema, ou o documento não passou na checagem. CORPO CRU, não o envelope `{ error: { code, message } }`: este handler escreve a falha inline e não há `request_id`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "invalid_body";
+                            /** @description As questões do zod, como ele as emitiu. */
+                            issues: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description COLISÃO DE ONBOARDING, e é estado do chamador e não falha do provedor — por isso 409 e não 502. `provider_code` carrega o código do provedor (OBE064 proposta já aberta, CBE022 conta já existe, OBE062 clientCode já vinculado) para a trilha registrar o fundamento da recusa. Corpo cru. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_client_code_conflict";
+                            provider_code: string;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description A chamada ao provedor falhou, ou o roteador pousou numa instituição que não é a esperada. Corpo cru; `message` carrega a frase de baixo e é o que separa uma queda do provedor de uma recusa dele. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/account-applications/{id}": {
         parameters: {
             query?: never;
@@ -5846,6 +8367,413 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/issuer/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue a card under a signed mandate (deprecated path)
+         * @deprecated
+         * @description DEPRECATED alias of `POST /v1/cards` (ent#979), kept for two releases. Same handler, same required scope; switch the path and nothing else changes.
+         *
+         *     Três desfechos de sucesso: `201` emitiu agora, `202` o emissor pediu KYC do titular (`kyc_url` é para onde mandar a pessoa), `200` é repetição da mesma `Idempotency-Key` num fluxo já terminado. Repetir com a MESMA chave é o caminho de recuperação: um `502 issuer_ingest_failed` quer dizer que o cartão EXISTE e só a ingestão falhou, e uma chave nova emitiria um segundo cartão.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "Idempotency-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description ISO 3166-1 alpha-2, maiúsculo. */
+                        country: string;
+                        /** @description ISO 4217, maiúsculo. */
+                        currency: string;
+                        holder: {
+                            full_name: string;
+                            /** Format: email */
+                            email: string;
+                            birthdate: string;
+                            document: {
+                                type: string;
+                                value: string;
+                                issuing_country: string;
+                            };
+                            address: {
+                                line1: string;
+                                line2?: string;
+                                street_number?: string;
+                                neighborhood?: string;
+                                city: string;
+                                state?: string;
+                                postal_code: string;
+                                municipality?: string;
+                                country: string;
+                            };
+                            phone?: string;
+                        };
+                        /** @description Obrigatório: não existe cartão sem mandato assinado. */
+                        mandate_id: string;
+                        metadata?: {
+                            [key: string]: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            state: "issued";
+                            flow_id: string;
+                            card: {
+                                id: string;
+                                /** @enum {string} */
+                                issuer: "pomelo" | "bridge";
+                                card_id: string;
+                                last4: string;
+                                /** @enum {string} */
+                                network: "visa" | "mastercard";
+                                /** @enum {string} */
+                                status: "active" | "blocked" | "canceled";
+                                token_id: string | null;
+                                /** Format: date-time */
+                                created_at: string;
+                            };
+                        } | {
+                            flow_id: string;
+                            /** @enum {string} */
+                            state: "pending" | "issued" | "revoked" | "failed";
+                            /** @enum {string} */
+                            issuer: "pomelo" | "bridge";
+                            reason: string | null;
+                            kyc_url: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                        };
+                    };
+                };
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            state: "issued";
+                            flow_id: string;
+                            card: {
+                                id: string;
+                                /** @enum {string} */
+                                issuer: "pomelo" | "bridge";
+                                card_id: string;
+                                last4: string;
+                                /** @enum {string} */
+                                network: "visa" | "mastercard";
+                                /** @enum {string} */
+                                status: "active" | "blocked" | "canceled";
+                                token_id: string | null;
+                                /** Format: date-time */
+                                created_at: string;
+                            };
+                        };
+                    };
+                };
+                /** @description OK */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            flow_id: string;
+                            /** @enum {string} */
+                            state: "pending" | "issued" | "revoked" | "failed";
+                            /** @enum {string} */
+                            issuer: "pomelo" | "bridge";
+                            reason: string | null;
+                            kyc_url: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                        };
+                    };
+                };
+                /** @description Corpo fora do schema, par país/moeda sem corredor, titular recusado, ou controles pedidos que a via não tem. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "issuer_corridor_unsupported" | "invalid_holder" | "issuer_controls_unsupported";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Chave e ambiente do emissor não combinam. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "stage_issuer_live_key" | "live_issuer_test_key";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O mandato nomeado não existe nesta organização. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "mandate_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Chave repetida com corpo diferente, ou mandato não ativo. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "idempotency_key_conflict" | "mandate_not_active";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Fluxo emitido sem linha de cartão legível. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "issuer_card_unknown";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O emissor falhou, ou o cartão foi emitido e a ingestão falhou — no segundo caso o cartão vem em `details.card` e a recuperação é repetir a mesma chave. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "issuer_mint_failed" | "issuer_ingest_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Credenciais do emissor ilegíveis no vault. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "vault_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/kyc/onboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open a consumer account application (deprecated path)
+         * @deprecated
+         * @description DEPRECATED alias of `POST /v1/account-applications` (ent#979), kept for two releases. Same handler, same required scope; switch the path and nothing else changes.
+         *
+         *     A resposta é a PROPOSTA, não a conta: volta `verification_id` e o `status` do provedor, e é a leitura por id, depois da aprovação, que provisiona a conta e a fonte de recursos Pix. O `disclosure` vem em pt-BR para ser renderizado verbatim.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Os campos de identidade que o provedor pede — `documentNumber` (CPF ou CNPJ), nome completo, nascimento, endereço. */
+                        buyer: {
+                            [key: string]: unknown;
+                        };
+                        /** @description O consumidor que passa a ser dono da conta e da fonte de recursos. */
+                        consumer_id?: string;
+                        /** @description Aceites da mesma tela. Hoje só `dda` faz algo, e ele tem governança própria. */
+                        opt_ins?: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            verification_id: string;
+                            status: string;
+                            hosted_url: string | null;
+                            disclosure: {
+                                institution: string;
+                                institution_document: string | null;
+                                /** @enum {string} */
+                                codespar_role: "correspondente";
+                                text: string;
+                            } | null;
+                            dda_opt_in?: {
+                                /** @enum {string} */
+                                status: "pending" | "failed" | "deferred";
+                                message?: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Corpo fora do schema, ou documento recusado na checagem. CORPO CRU, não o envelope `{ error: { code, message } }`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "invalid_body";
+                            issues: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Colisão de onboarding — estado do chamador, não falha do provedor. `provider_code` carrega OBE064, CBE022 ou OBE062. Corpo cru. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_client_code_conflict";
+                            provider_code: string;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description A chamada ao provedor falhou. Corpo cru; leia `message` antes de tratar como queda. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/kyc/onboard/{proposalId}/status": {
         parameters: {
             query?: never;
@@ -6409,6 +9337,93 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tools/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find tools by intent, in words
+         * @description Descreve o que você quer fazer e recebe as ferramentas que servem, com uma confiança e o porquê de cada uma.
+         *
+         *     **Esta rota não falha por causa do classificador.** Quando a chave do modelo não está configurada, ou a chamada ao classificador dá errado, ela DEGRADA para uma busca heurística e responde 200 assim mesmo — e diz qual caminho usou em `source`. Um chamador que trata `source: "fallback"` como sucesso silencioso está lendo um resultado mais fraco sem saber; o campo existe para isso ser visível.
+         *
+         *     O teto de `limit` é 5.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description O que você quer fazer, em palavras. */
+                        intent: string;
+                        limit?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Ecoa o que foi pedido. */
+                            intent: string;
+                            hits: {
+                                tool_name: string;
+                                /** @enum {string} */
+                                confidence: "high" | "medium" | "low";
+                                /** @description Por que esta ferramenta, em uma frase. */
+                                rationale: string;
+                            }[];
+                            elapsed_ms: number;
+                            /**
+                             * @description `llm` quando o classificador respondeu; `fallback` quando a busca heurística respondeu no lugar dele.
+                             * @enum {string}
+                             */
+                            source: "llm" | "fallback";
+                        };
+                    };
+                };
+                /** @description O corpo não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -9941,6 +12956,141 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/connections/{id}/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Merge user-editable metadata into a connection
+         * @description Mescla campos na `connection_metadata` de uma conexão. **É merge, não substituição**: as chaves enviadas entram por cima e as demais ficam.
+         *
+         *     **O que pode ser editado é decidido pela própria linha**, pela lista `requires_user_fields` que ela carrega. Uma chave fora dessa lista é recusada com `fields_not_user_editable`, e uma conexão que não carrega lista nenhuma recusa TODO patch com `no_user_fields` — o caminho dela é reconectar, não editar.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Pelo menos uma chave, e no máximo 32 KB serializado. O corpo é MESCLADO com o que já está lá, chave a chave — não substitui o objeto inteiro. */
+                        connection_metadata: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `ca_`-prefixed. Globally unique, visible only inside the owning org and project. */
+                            id: string;
+                            user_id: string;
+                            /** @description Catalog id of the provider this connection authenticates. */
+                            server_id: string;
+                            /** @description Mirrors the catalog's `auth_type` at connect time: api_key, path_secret, cert, hmac_signed, jwt_ecdsa, two_header, oauth, cdp or none. Left open because the column is plain text. */
+                            auth_type: string;
+                            /** @enum {string} */
+                            status: "pending" | "connected" | "revoked" | "expired";
+                            display_name: string | null;
+                            /** @description Provider metadata the OAuth callback wrote (scope, refresh ref) or the provisioning projection wrote (account_id). Always present; null for a key registered through POST /v1/connections, which never sets it. */
+                            metadata: {
+                                [key: string]: unknown;
+                            } | null;
+                            /** @description Operator-supplied merchant config the router merges into upstream calls. `{}` when nothing was set. */
+                            connection_metadata: {
+                                [key: string]: unknown;
+                            };
+                            /** @description Issuer, subject, validity window and SHA-256 fingerprint parsed from the uploaded PEM at connect time. `{}` for every non-cert connection. */
+                            cert_metadata: {
+                                [key: string]: unknown;
+                            };
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: date-time */
+                            connected_at: string | null;
+                            /** Format: date-time */
+                            revoked_at: string | null;
+                            /** Format: date-time */
+                            expires_at: string | null;
+                        };
+                    };
+                };
+                /** @description Corpo fora do schema (vazio, chave longa demais, ou acima de 32 KB), a conexão não declara campos editáveis, ou uma das chaves não está na lista dela. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "no_user_fields" | "fields_not_user_editable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
+                        };
+                    };
+                };
+                /** @description A linha sumiu entre a leitura e a escrita — corrida com uma revogação ou uma exclusão. Releia antes de repetir. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "metadata_update_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/v1/connections/{id}": {
         parameters: {
             query?: never;
@@ -12151,6 +15301,181 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/consumers/consents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List consent evidence (deprecated path)
+         * @deprecated
+         * @description DEPRECATED alias of `GET /v1/consent-records` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    consumer_id?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            consents: {
+                                id: string;
+                                consumer_id: string;
+                                funding_source_id: string | null;
+                                agent_id: string | null;
+                                kind: string;
+                                hmac_secret_version: number | null;
+                                cap_minor: number | null;
+                                per_tx_cap_minor: number | null;
+                                currency: string | null;
+                                purpose: string | null;
+                                ip_address: string | null;
+                                /** Format: date-time */
+                                signed_at: string;
+                                /** Format: date-time */
+                                expires_at: string | null;
+                                metadata: {
+                                    [key: string]: unknown;
+                                } | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description A query não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumers/funding-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List consumer funding sources, optionally with live balance (deprecated path)
+         * @deprecated
+         * @description Alias DEPRECIADO de `GET /v1/funding-sources` (ent#979), mantido por dois releases — **mas com uma diferença de comportamento que o canônico não tem**, e por isso ele não é uma troca de caminho e pronto.
+         *
+         *     **`?with_balance=1` funciona AQUI e não no canônico.** Para cada linha `pix-celcoin`, o saldo vivo é buscado no provedor — uma chamada por linha. O caminho canônico suprime isso porque uma listagem de todos os consumidores viraria um leque de N chamadas por requisição. Quando migrar para o canônico, peça saldo por consumidor em vez de pela lista inteira.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    consumer_id?: string;
+                    limit?: number;
+                    /** @description `1` ou `true` liga a busca de saldo vivo. Qualquer outro valor não liga. */
+                    with_balance?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            funding_sources: {
+                                id: string;
+                                project_id: string | null;
+                                consumer_id: string | null;
+                                rail: string;
+                                currency: string;
+                                provider: string | null;
+                                display_label: string | null;
+                                status: string;
+                                /** Format: date-time */
+                                created_at: string;
+                                /** Format: date-time */
+                                expires_at: string | null;
+                                /** Format: date-time */
+                                revoked_at: string | null;
+                                account_masked: string | null;
+                                metadata: {
+                                    [key: string]: unknown;
+                                } | null;
+                                /** @description Só preenchido com `?with_balance=1`, e só para linhas `pix-celcoin`. Nulo quando não foi pedido, quando a linha é de outro rail, ou quando a consulta ao provedor não respondeu. */
+                                balance_minor: number | null;
+                            }[];
+                            unattributed_count: number;
+                        };
+                    };
+                };
+                /** @description A query não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/consumers/{consumerId}/dda/subscriptions/{document}": {
         parameters: {
             query?: never;
@@ -13866,6 +17191,773 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/test/fund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Credit a consumer in the sandbox
+         * @description Credita a conta de sandbox do consumidor direto, sem passar por um Pix. É o atalho para deixar uma carteira de teste com saldo antes de exercitar um fluxo de gasto.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Obrigatório no caminho `/v1/test/*`, onde a rota não tem segmento de consumidor. Ignorado no alias `/v1/consumers/{consumerId}/...`, onde o segmento manda. */
+                        consumer_id?: string;
+                        /** @description Centavos de BRL. */
+                        amount_minor: number;
+                        /** @description Sobrescreve a conta de sandbox; o padrão é a fonte `pix-celcoin` ativa. */
+                        account?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            attempt_id: string;
+                            deposit_id: string;
+                            status: string;
+                            account: string;
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /** @enum {boolean} */
+                            money_credited: true;
+                        };
+                    };
+                };
+                /** @description Corpo fora do schema, ou `consumer_id` ausente no caminho `/v1/test/*` (onde ele é obrigatório, porque a rota não tem segmento de consumidor). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "missing_required_field";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Chave de ambiente LIVE. Estas rotas creditam dinheiro de mentira e existem só em ambiente de teste — use uma chave `csk_test_*` num projeto de teste. O ambiente lido vem em `details.environment`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_funding_not_permitted";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O consumidor não tem conta Celcoin para creditar, ou o provedor de sandbox recusou. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "no_celcoin_account" | "sandbox_funding_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumers/{consumerId}/fund/sandbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Credit a consumer in the sandbox (deprecated path)
+         * @deprecated
+         * @description Alias DEPRECIADO de `POST /v1/test/fund` (ent#979), mantido por dois releases. Uma diferença real: aqui o consumidor vem no SEGMENTO da rota, e o `consumer_id` do corpo é ignorado.\n\nCredita a conta de sandbox do consumidor direto, sem passar por um Pix. É o atalho para deixar uma carteira de teste com saldo antes de exercitar um fluxo de gasto.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    consumerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Obrigatório no caminho `/v1/test/*`, onde a rota não tem segmento de consumidor. Ignorado no alias `/v1/consumers/{consumerId}/...`, onde o segmento manda. */
+                        consumer_id?: string;
+                        /** @description Centavos de BRL. */
+                        amount_minor: number;
+                        /** @description Sobrescreve a conta de sandbox; o padrão é a fonte `pix-celcoin` ativa. */
+                        account?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            attempt_id: string;
+                            deposit_id: string;
+                            status: string;
+                            account: string;
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /** @enum {boolean} */
+                            money_credited: true;
+                        };
+                    };
+                };
+                /** @description Corpo fora do schema, ou `consumer_id` ausente no caminho `/v1/test/*` (onde ele é obrigatório, porque a rota não tem segmento de consumidor). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "missing_required_field";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Chave de ambiente LIVE. Estas rotas creditam dinheiro de mentira e existem só em ambiente de teste — use uma chave `csk_test_*` num projeto de teste. O ambiente lido vem em `details.environment`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_funding_not_permitted";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O consumidor não tem conta Celcoin para creditar, ou o provedor de sandbox recusou. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "no_celcoin_account" | "sandbox_funding_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/test/pix-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mint a sandbox Pix charge to fund a consumer
+         * @description Cunha uma cobrança Pix de sandbox e devolve o copia-e-cola. Nada é creditado aqui: este passo produz o código, e a liquidação é o passo seguinte.\n\nGuarde o `transaction_id` — é ele que a liquidação usa como chave de idempotência.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Obrigatório no caminho `/v1/test/*`, onde a rota não tem segmento de consumidor. Ignorado no alias `/v1/consumers/{consumerId}/...`, onde o segmento manda. */
+                        consumer_id?: string;
+                        /** @description Centavos de BRL. */
+                        amount_minor: number;
+                        description?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description O código que se paga, como se paga um Pix de verdade. */
+                            pix_copia_e_cola: string;
+                            /** @description A chave de idempotência do passo de liquidação. */
+                            transaction_id: string;
+                            pix_key: string;
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /** @enum {string} */
+                            rail: "pix-celcoin";
+                        };
+                    };
+                };
+                /** @description Corpo fora do schema, ou `consumer_id` ausente no caminho `/v1/test/*` (onde ele é obrigatório, porque a rota não tem segmento de consumidor). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "missing_required_field";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Chave de ambiente LIVE. Estas rotas creditam dinheiro de mentira e existem só em ambiente de teste — use uma chave `csk_test_*` num projeto de teste. O ambiente lido vem em `details.environment`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_funding_not_permitted";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O provedor de sandbox recusou a cunhagem. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "pix_in_mint_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumers/{consumerId}/fund/pix-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mint a sandbox Pix charge to fund a consumer (deprecated path)
+         * @deprecated
+         * @description Alias DEPRECIADO de `POST /v1/test/pix-in` (ent#979), mantido por dois releases. Uma diferença real: aqui o consumidor vem no SEGMENTO da rota, e o `consumer_id` do corpo é ignorado.\n\nCunha uma cobrança Pix de sandbox e devolve o copia-e-cola. Nada é creditado aqui: este passo produz o código, e a liquidação é o passo seguinte.\n\nGuarde o `transaction_id` — é ele que a liquidação usa como chave de idempotência.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    consumerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Obrigatório no caminho `/v1/test/*`, onde a rota não tem segmento de consumidor. Ignorado no alias `/v1/consumers/{consumerId}/...`, onde o segmento manda. */
+                        consumer_id?: string;
+                        /** @description Centavos de BRL. */
+                        amount_minor: number;
+                        description?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description O código que se paga, como se paga um Pix de verdade. */
+                            pix_copia_e_cola: string;
+                            /** @description A chave de idempotência do passo de liquidação. */
+                            transaction_id: string;
+                            pix_key: string;
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /** @enum {string} */
+                            rail: "pix-celcoin";
+                        };
+                    };
+                };
+                /** @description Corpo fora do schema, ou `consumer_id` ausente no caminho `/v1/test/*` (onde ele é obrigatório, porque a rota não tem segmento de consumidor). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "missing_required_field";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Chave de ambiente LIVE. Estas rotas creditam dinheiro de mentira e existem só em ambiente de teste — use uma chave `csk_test_*` num projeto de teste. O ambiente lido vem em `details.environment`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_funding_not_permitted";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O provedor de sandbox recusou a cunhagem. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "pix_in_mint_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/test/settle-pix-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Settle a sandbox Pix charge and credit the consumer
+         * @description Liquida a cobrança que a cunhagem produziu e credita o consumidor.\n\n**O `transaction_id` é a chave de idempotência**: reenviar a mesma liquidação não credita duas vezes.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Obrigatório no caminho `/v1/test/*`, onde a rota não tem segmento de consumidor. Ignorado no alias `/v1/consumers/{consumerId}/...`, onde o segmento manda. */
+                        consumer_id?: string;
+                        amount_minor: number;
+                        /** @description O `transaction_id` que a cunhagem devolveu. É a CHAVE DE IDEMPOTÊNCIA do crédito e do espelho na carteira: reenviar a mesma liquidação não credita duas vezes. */
+                        transaction_id: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            settled: true;
+                            transaction_id: string;
+                            deposit_id: string;
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /** @enum {boolean} */
+                            money_credited: true;
+                        };
+                    };
+                };
+                /** @description Corpo fora do schema, ou `consumer_id` ausente no caminho `/v1/test/*` (onde ele é obrigatório, porque a rota não tem segmento de consumidor). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "missing_required_field";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Chave de ambiente LIVE. Estas rotas creditam dinheiro de mentira e existem só em ambiente de teste — use uma chave `csk_test_*` num projeto de teste. O ambiente lido vem em `details.environment`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_funding_not_permitted";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O provedor de sandbox recusou a liquidação. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_funding_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A conta de sandbox foi creditada e o espelho no livro da carteira falhou — estado dividido, e `details.deposit_id` é por onde reconciliar. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "wallet_credit_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumers/{consumerId}/fund/pix-in/settle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Settle a sandbox Pix charge and credit the consumer (deprecated path)
+         * @deprecated
+         * @description Alias DEPRECIADO de `POST /v1/test/settle-pix-in` (ent#979), mantido por dois releases. Uma diferença real: aqui o consumidor vem no SEGMENTO da rota, e o `consumer_id` do corpo é ignorado.\n\nLiquida a cobrança que a cunhagem produziu e credita o consumidor.\n\n**O `transaction_id` é a chave de idempotência**: reenviar a mesma liquidação não credita duas vezes.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    consumerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Obrigatório no caminho `/v1/test/*`, onde a rota não tem segmento de consumidor. Ignorado no alias `/v1/consumers/{consumerId}/...`, onde o segmento manda. */
+                        consumer_id?: string;
+                        amount_minor: number;
+                        /** @description O `transaction_id` que a cunhagem devolveu. É a CHAVE DE IDEMPOTÊNCIA do crédito e do espelho na carteira: reenviar a mesma liquidação não credita duas vezes. */
+                        transaction_id: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            settled: true;
+                            transaction_id: string;
+                            deposit_id: string;
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /** @enum {boolean} */
+                            money_credited: true;
+                        };
+                    };
+                };
+                /** @description Corpo fora do schema, ou `consumer_id` ausente no caminho `/v1/test/*` (onde ele é obrigatório, porque a rota não tem segmento de consumidor). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "missing_required_field";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Chave de ambiente LIVE. Estas rotas creditam dinheiro de mentira e existem só em ambiente de teste — use uma chave `csk_test_*` num projeto de teste. O ambiente lido vem em `details.environment`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_funding_not_permitted";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description O provedor de sandbox recusou a liquidação. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_funding_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A conta de sandbox foi creditada e o espelho no livro da carteira falhou — estado dividido, e `details.deposit_id` é por onde reconciliar. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "wallet_credit_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/consumers/{consumerId}/contact-verifications": {
         parameters: {
             query?: never;
@@ -14486,6 +18578,625 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/consumers/{consumerId}/pix/devolutions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reverse a Pix, in either direction
+         * @description Returns money on the Pix rail itself, keyed on the ORIGINAL payment's `endToEndId`. This is not a charge refund and it does not go through a charge: the rail reverses the transfer, and the consumer's governed wallet is mirrored to match.
+         *
+         *     WHICH WAY THE MONEY GOES IS `payment_direction`, AND IT IS EASY TO GET BACKWARDS. It describes the ORIGINAL payment from the consumer's point of view, not the movement you are asking for. `inbound` (the default) means the consumer RECEIVED that payment, so the devolution sends it back to whoever paid. `outbound` means the consumer SENT it, so the devolution brings the money BACK to the consumer. Sending the wrong one does not fail loudly — it reverses a real payment in the wrong direction — so set it explicitly rather than leaning on the default.
+         *
+         *     `idempotency_key` IS REQUIRED, and it is the only thing standing between a retry and a second reversal. The server mints its own `client_code` from it for the provider, so the correlation survives even a response you never saw. Reuse the same key for the same intent and a replay comes back as 200 with `idempotent_replay: true`; a first dispatch is 201. Reusing one key for a DIFFERENT devolution is refused with `idempotency_key_conflict` rather than silently accepted.
+         *
+         *     THE AMOUNT IS OPTIONAL IN EXACTLY ONE CASE. When an inbound payment credited a governed wallet, omitting `amount_minor` returns the remaining reversible amount, computed from the consumer's own statement. Everywhere else — and on every outbound devolution — it is required, and omitting it is `amount_required`. A partial reversal is allowed; asking for more than was received is `devolution_amount_exceeds_received`.
+         *
+         *     TENANCY IS PROVED FROM THE PROVIDER, NOT FROM OUR TABLES. The original payment has to appear on this consumer's own account statement before anything is dispatched, which is why an unknown or foreign `end_to_end_id` answers `devolution_source_not_found` rather than a permission error. It also means the call FAILS CLOSED when the statement cannot be read: `statement_unavailable` with 503, never a dispatch on an unverified reference.
+         *
+         *     A 502 `psp_dispatch_uncertain` IS THE ONE THAT NEEDS A HUMAN-SAFE RULE. It means the request may have reached the provider and the answer did not come back — a timeout, a reset, an unparseable body. Money may have moved. The safe move is to re-send the SAME `idempotency_key`, which either replays the recorded outcome or resolves it; it is never to issue a second devolution with a new key.
+         *
+         *     SLOW, AND DELIBERATELY SO. A statement read precedes the dispatch, and the dispatch is a real rail call. Allow for it rather than timing out into a retry you did not mean.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The consumer whose account the original payment touched. It is also what binds the statement lookup. */
+                    consumerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        end_to_end_id: string;
+                        amount_minor?: number;
+                        idempotency_key: string;
+                        reason?: string;
+                        description?: string;
+                        /** @enum {string} */
+                        payment_direction?: "inbound" | "outbound";
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            devolution_id: string;
+                            /**
+                             * @description The five values the table's CHECK constraint admits. `uncertain` is the one to plan for: it means the reversal MAY have been sent and the answer did not say. Resolve it by reading the devolution back, never by reversing again.
+                             * @enum {string}
+                             */
+                            status: "pending" | "accepted" | "settled" | "failed" | "uncertain";
+                            /**
+                             * @description Echoes which side of the rail the ORIGINAL payment was on, so a client that omitted the field can see what the default resolved to.
+                             * @enum {string}
+                             */
+                            payment_direction: "inbound" | "outbound";
+                            /** @description The original payment being reversed, echoed back. */
+                            end_to_end_id: string;
+                            /** @description What is actually being returned, in centavos. On an inbound devolution that omitted the amount, this is the remaining reversible amount the statement supported, which may be less than the original payment if part of it was already returned. */
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /** @description The Pix return code that was used, defaulted if you sent none. */
+                            reason: string;
+                            /** @description The correlation the server minted and sent upstream. Derived from your `idempotency_key`, not equal to it: this is the value to quote to the provider, and yours is the value to send back here. */
+                            client_code: string;
+                            /** @description The provider's own id for the reversal. Null until the provider has accepted it. */
+                            return_identification: string | null;
+                            original_payment_id: string | null;
+                            /** @description The governed wallet the mirror entry was written against, when the payment touched one. */
+                            wallet_id: string | null;
+                            charge_id: string | null;
+                            /** @description Populated on `failed`; null otherwise. */
+                            failure_reason: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /**
+                             * Format: date-time
+                             * @description Set only once the consumer's own statement showed the reversal. A `202`-like optimism has no place here: acceptance is not settlement.
+                             */
+                            settled_at: string | null;
+                            /** @description True when this response replays an outcome recorded earlier for the same idempotency key. It travels with the 200; a first dispatch answers 201. */
+                            idempotent_replay: boolean;
+                            /** @description Free text for an operator. Not a code to branch on. */
+                            status_message: string;
+                        };
+                    };
+                };
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            devolution_id: string;
+                            /**
+                             * @description The five values the table's CHECK constraint admits. `uncertain` is the one to plan for: it means the reversal MAY have been sent and the answer did not say. Resolve it by reading the devolution back, never by reversing again.
+                             * @enum {string}
+                             */
+                            status: "pending" | "accepted" | "settled" | "failed" | "uncertain";
+                            /**
+                             * @description Echoes which side of the rail the ORIGINAL payment was on, so a client that omitted the field can see what the default resolved to.
+                             * @enum {string}
+                             */
+                            payment_direction: "inbound" | "outbound";
+                            /** @description The original payment being reversed, echoed back. */
+                            end_to_end_id: string;
+                            /** @description What is actually being returned, in centavos. On an inbound devolution that omitted the amount, this is the remaining reversible amount the statement supported, which may be less than the original payment if part of it was already returned. */
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /** @description The Pix return code that was used, defaulted if you sent none. */
+                            reason: string;
+                            /** @description The correlation the server minted and sent upstream. Derived from your `idempotency_key`, not equal to it: this is the value to quote to the provider, and yours is the value to send back here. */
+                            client_code: string;
+                            /** @description The provider's own id for the reversal. Null until the provider has accepted it. */
+                            return_identification: string | null;
+                            original_payment_id: string | null;
+                            /** @description The governed wallet the mirror entry was written against, when the payment touched one. */
+                            wallet_id: string | null;
+                            charge_id: string | null;
+                            /** @description Populated on `failed`; null otherwise. */
+                            failure_reason: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /**
+                             * Format: date-time
+                             * @description Set only once the consumer's own statement showed the reversal. A `202`-like optimism has no place here: acceptance is not settlement.
+                             */
+                            settled_at: string | null;
+                            /** @description True when this response replays an outcome recorded earlier for the same idempotency key. It travels with the 200; a first dispatch answers 201. */
+                            idempotent_replay: boolean;
+                            /** @description Free text for an operator. Not a code to branch on. */
+                            status_message: string;
+                        };
+                    };
+                };
+                /** @description The request could not be acted on as written. `invalid_body` carries Zod's issues in `details.issues`; the rest are checks the schema cannot express, raised before anything is claimed or dispatched. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "idempotency_key_required" | "invalid_end_to_end_id" | "invalid_reason" | "invalid_amount" | "invalid_payment_direction" | "amount_required";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The original payment is not on this consumer's statement. The same answer covers a reference that never existed and one that belongs to another consumer, org or project: telling those apart would leak whether a given end-to-end id exists. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "devolution_source_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The reversal cannot proceed in the state the world is in, and the code says which state. `devolution_already_reversed` and `devolution_in_progress` mean another devolution has the claim; `idempotency_key_conflict` means this key was used for a different devolution; `insufficient_funds` and `devolution_ledger_exhausted` mean the governed wallet cannot cover the mirror; `funding_source_unavailable`, `devolution_correlation_unavailable`, `devolution_ledger_unavailable` and `devolution_charge_unsettled` mean a precondition on our side is not resolvable right now. None of these dispatched anything. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "devolution_already_reversed" | "devolution_in_progress" | "idempotency_key_conflict" | "insufficient_funds" | "devolution_ledger_exhausted" | "funding_source_unavailable" | "devolution_correlation_unavailable" | "devolution_ledger_unavailable" | "devolution_charge_unsettled" | "devolution_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The request is well formed and the rail will not do it. `devolution_amount_exceeds_received` means you asked for more than the statement supports; `devolution_refused` is the provider's own 4xx, which proves NO reversal was minted. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "devolution_amount_exceeds_received" | "devolution_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The wallet mirror could not be written after the rail leg, or the handler failed in a way it does not classify. `wallet_reverse_failed` is the specific one and it means the ledger and the rail may disagree until an operator reconciles. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "wallet_reverse_failed" | "devolution_error";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The dispatch may or may not have reached the provider. MONEY MAY HAVE MOVED. Re-send the same `idempotency_key`; do not issue a new one. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "psp_dispatch_uncertain";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A precondition could not be read, so the call failed closed rather than dispatching on an unverified reference. `statement_unavailable` is the consumer's own account statement; `credential_unavailable` is the provider credential. Both are retryable and neither sent anything. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "statement_unavailable" | "credential_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumers/mandates/{id}/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The spend feed for one allowance
+         * @description Every SETTLED debit against this mandate, newest first. This is the consumer-facing answer to "what did my agent spend my allowance on", and it is the read to show a person rather than the tool-call log.
+         *
+         *     IT READS THE LEDGER, NOT THE ATTEMPTS. The rows come from the wallet ledger, so an authorization that never settled is not here and neither is a failed payment. That also means a spend appears only once the money moved, which can be after the agent reported success.
+         *
+         *     AMOUNTS ARE POSITIVE. The ledger stores a debit as a negative number and this route negates it, so `amount_minor` reads as a spend without a sign to interpret. It is a STRING because ledger amounts are exact and a large one does not survive a round trip through a double.
+         *
+         *     THE OPTIONAL FIELDS ARE THE MERCHANT'S, NOT OURS. `payee` and `purpose` come out of the ledger row's metadata, which the paying rail fills in as best it can; both are null when whatever moved the money did not say. `psp_tx_id` is the provider's own reference for the settlement, useful for reconciling against a statement.
+         *
+         *     SCOPE IS THE ORG, AND THE 404 IS DELIBERATE. A mandate belonging to another organization answers `mandate_not_found`, the same as one that never existed, so the route cannot be used to test which mandate ids are real.
+         *
+         *     PAGING IS A CEILING, NOT A CURSOR. `limit` defaults to 50 and caps at 200, and there is no cursor: a mandate with more settled debits than the limit shows the newest ones and the rest are not reachable through this route today.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    /** @description The consumer mandate. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            mandate_id: string;
+                            receipts: {
+                                /** @description The wallet-ledger entry this spend is. */
+                                ledger_id: string;
+                                /** @description Minor units, as an exact decimal string, already positive. */
+                                amount_minor: string;
+                                currency: string;
+                                /** @description The provider's reference for the settlement, where the rail recorded one. */
+                                psp_tx_id: string | null;
+                                /** @description From the ledger row's metadata; null when the rail did not say. */
+                                payee: string | null;
+                                /** @description From the ledger row's metadata; null when the rail did not say. */
+                                purpose: string | null;
+                                /**
+                                 * Format: date-time
+                                 * @description When the money moved, not when it was authorized.
+                                 */
+                                settled_at: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description The query did not match the schema — a `limit` below 1, above 200, or not a number. Zod's issues are in `details.issues`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No such mandate for this organization. The same answer for a mandate that does not exist and one that belongs to someone else. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "mandate_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumers/receipts/{id}/delivery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Seal a delivery proof onto a receipt
+         * @description Folds evidence that the thing paid for actually arrived into a receipt that already exists, RE-SIGNS the receipt chain with the consumer's own secret, and advances the receipt to `delivered`. Nothing is created and no money moves; what changes is what the receipt can prove.
+         *
+         *     PROOFS ARE RANKED, AND THE SEAL ONLY EVER MOVES UP. Three classes, weakest first: rail evidence (`pix_e2e`, `order_confirmation`, `tracking`, `resource`), a third-party merchant document reference (`merchant_ref`, or any kind carrying an `nfe_chave`), and a fiscal document (`nfe`, `nfse`). A proof STRICTLY stronger than the one already sealed re-seals the receipt; a weaker or equal one is accepted and changes nothing, answering 200 with the receipt as it stands. That is what makes this route safe to call from a webhook that may fire twice, and it is why the restaurant's NFC-e that arrives hours after an iFood order can be attached without clobbering anything.
+         *
+         *     IT IS APPEND-ONLY UNDERNEATH. Every accepted delivery lands as its own `receipt_delivered` audit event, and an upgrade records what it replaced. The receipt row is the current projection of that history, not the history itself, so the chain reads as a sequence of evidence rather than as a mutation.
+         *
+         *     A VOIDED RECEIPT IS CLOSED AND SAYS SO GENTLY. It answers 200 with the receipt unchanged rather than an error: a void is a decision that already happened, and failing a late webhook over it would be noise.
+         *
+         *     SCOPE IS THE PROJECT, NOT JUST THE ORG. The receipt is resolved and re-sealed within the calling project, so a test key cannot read or rewrite a live receipt and the reverse. A receipt in another project answers `receipt_not_found`, the same as one that never existed.
+         *
+         *     `proof` IS FREE TEXT AND `kind` IS WHAT IT MEANS. Put the identifier a human or an auditor would follow in `proof` (the tracking number, the order id, the endToEndId), and use `nfe_chave` for the fiscal key itself when there is one — a chave present under any kind is what lifts the proof to the document class. `at` is when the delivery happened, not when you are telling us; omitting it stamps now.
+         *
+         *     A 409 `consumer_secret_unavailable` MEANS THE RECEIPT CANNOT BE RE-SIGNED, so it was left exactly as it was. Nothing partial was written. It is an operator's problem (the consumer's secret version is not resolvable from the vault), not a caller's, and the delivery can be re-sent once it is fixed.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The agentic receipt to seal onto. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        result: "confirmed" | "pending" | "failed";
+                        proof: string;
+                        /** @enum {string} */
+                        kind: "order_confirmation" | "nfe" | "nfse" | "tracking" | "resource" | "merchant_ref" | "pix_e2e";
+                        nfe_chave?: string;
+                        at?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            receipt_id: string;
+                            /** @enum {string} */
+                            state: "paid" | "delivered" | "exception" | "voided";
+                            mandate: {
+                                id: string;
+                                nonce: string;
+                                scope: string;
+                                currency: string;
+                                sig: string;
+                            };
+                            /** @description Null when the receipt carries neither a seller nor a resource. */
+                            quote: {
+                                seller: string | null;
+                                resource: string | null;
+                                price_minor: number | null;
+                                payee: string | null;
+                                session_id: string | null;
+                                sig: string | null;
+                                at: string | null;
+                            } | null;
+                            payment: {
+                                rail: string;
+                                provider: string | null;
+                                tx_id: string | null;
+                                amount_minor: number;
+                                /** @description Exact atomic amount for crypto rails; null for fiat. */
+                                amount_atomic: string | null;
+                                amount_authorized?: string;
+                                amount_charged?: string;
+                                amount_refunded?: string;
+                                /** @description Present only on a metered receipt. The three amounts above travel with it. */
+                                metering?: {
+                                    basis: string;
+                                    units: string;
+                                    unit_price: string;
+                                };
+                                /**
+                                 * @description Present, and always true, ONLY when the settlement was simulated.
+                                 * @enum {boolean}
+                                 */
+                                sandbox?: true;
+                                attempt_id: string;
+                                money_moved: boolean;
+                                at: string;
+                            };
+                            /** @description Null until a delivery proof has been sealed onto the receipt. */
+                            delivery: {
+                                /** @enum {string} */
+                                result: "confirmed" | "pending" | "failed";
+                                proof: string | null;
+                                kind: string | null;
+                                nfe_chave: string | null;
+                                at: string | null;
+                            } | null;
+                            chain: string;
+                            receipt_sig: string;
+                            exceptions: {
+                                code: string;
+                                detail: string;
+                                at: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. Most often a `kind` outside the seven accepted values, or a `proof` longer than 500 characters. Zod's issues are in `details.issues`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No such receipt in this project. The same answer for a receipt that does not exist and one belonging to another project or organization. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "receipt_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The consumer's signing secret could not be resolved, so the chain could not be re-signed. The receipt is unchanged and the call can be repeated once the secret is available. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "consumer_secret_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The audit append and the row update run in one transaction and it failed, so neither landed. The receipt is unchanged and the call is safe to repeat. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "receipt_reseal_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/mandates": {
         parameters: {
             query?: never;
@@ -14503,7 +19214,7 @@ export interface paths {
          *
          *     The response object has one key, `mandates`, and no `count`.
          *
-         *     `GET /v1/consumers/mandates` is a live alias of this operation: same handler, same `mandates:read` scope.
+         *     `GET /v1/consumers/mandates` is the legacy spelling of this same operation, kept for two releases (ent#979): same handler, same `mandates:read` scope.
          */
         get: {
             parameters: {
@@ -14699,7 +19410,7 @@ export interface paths {
          *
          *     The status flip and the evidence row are one transaction, and the UPDATE is guarded on the status this request read.
          *
-         *     `POST /v1/consumers/mandates/{id}/pause` is a live alias: same handler, same `mandates:write` scope.
+         *     `POST /v1/consumers/mandates/{id}/pause` is the legacy spelling, kept for two releases (ent#979): same handler, same `mandates:write` scope.
          */
         post: {
             parameters: {
@@ -14819,7 +19530,7 @@ export interface paths {
          *
          *     Caps and expiry are untouched: the UPDATE sets `status` and `updated_at` and nothing else, so the allowance resumes with the spend it had already used still counted against it. Resuming an allowance whose `expires_at` has passed is legal here and still buys nothing, because the spend path refuses an expired mandate on its own.
          *
-         *     `POST /v1/consumers/mandates/{id}/resume` is a live alias: same handler, same `mandates:write` scope.
+         *     `POST /v1/consumers/mandates/{id}/resume` is the legacy spelling, kept for two releases (ent#979): same handler, same `mandates:write` scope.
          */
         post: {
             parameters: {
@@ -14939,7 +19650,954 @@ export interface paths {
          *
          *     Revoking stops the spend on the same three gates that pausing does.
          *
-         *     `POST /v1/consumers/mandates/{id}/revoke` is a live alias: same handler, same `mandates:write` scope.
+         *     `POST /v1/consumers/mandates/{id}/revoke` is the legacy spelling, kept for two releases (ent#979): same handler, same `mandates:write` scope.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Recorded in the evidence row's metadata, alongside the from/to pair. Not echoed in the response. */
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            mandate: {
+                                id: string;
+                                /** @enum {string} */
+                                status: "revoked";
+                            };
+                            /** @description False when the allowance was already in this state. Nothing was written and no evidence row was appended. */
+                            changed: boolean;
+                        };
+                    };
+                };
+                /** @description A body was sent and did not match the schema. `details.issues` carries the Zod issues. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No such allowance for this credential's organization. An allowance belonging to another organization answers exactly the same way: the org predicate sits in the SELECT, so the handler cannot tell absent from someone else's, and must not. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "mandate_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `invalid_transition` when the allowance's current status is not a legal source for this verb. `transition_conflict` when another request moved the allowance between this one's read and its write: the UPDATE is guarded on the status that was read, so a concurrent transition loses rather than double-applying, and the evidence row is written in the same transaction as the status change or not at all. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_transition" | "transition_conflict";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bank-consents/{id}/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Finalise a consent after the consumer authorises it
+         * @description Exchanges the bank's authorisation code for tokens and moves the consent to `authorised`. `POST /v1/ofb/consents/{id}/callback` is the legacy spelling of this same operation (ent#979).
+         *
+         *     Only a `pending` consent can be finalised. A consent that is already `authorised` answers 409, not a second exchange, so replaying a callback does not mint a second token pair.
+         *
+         *     The token pointers and the `authorised` event are one transaction. On success the response is the re-read consent, without token material.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description The code the bank put on the redirect. */
+                        auth_code: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description Lowercase kebab-case, for example `itau` or `bb`. */
+                            bank_id: string;
+                            consumer_id: string;
+                            /** @description Set when the consent was bound to a wallet at initiation; null when it was not. */
+                            wallet_id: string | null;
+                            /** @enum {string} */
+                            status: "pending" | "authorised" | "revoked" | "expired" | "consumed";
+                            scopes: string[];
+                            /** @description The bank's own identifier for the consent. Null until the bank issues one. */
+                            bank_consent_id: string | null;
+                            /** @description Where the consumer authorises the consent. This is the URL to send them to. */
+                            authorisation_url: string | null;
+                            /** Format: date-time */
+                            token_expires_at: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /**
+                             * Format: date-time
+                             * @description Spelled with a z, unlike `authorised` in `status`. Both spellings are column names, not typos.
+                             */
+                            authorized_at: string | null;
+                            /**
+                             * Format: date-time
+                             * @description Mirrors the bank-side consent expiry, as the bank reported it at initiation.
+                             */
+                            expires_at: string | null;
+                            /** Format: date-time */
+                            revoked_at: string | null;
+                            /** Format: date-time */
+                            consumed_at: string | null;
+                            metadata: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. `details.issues` carries the Zod issues. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No such consent for this credential's organization AND project. A consent created by a sibling project in the same organization answers the same way: the resolver requires both predicates on purpose, because resolving on organization alone let one project read, transition and refresh another project's consent. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The consent's current status does not permit this transition. `details.from` and `details.to` carry the pair. `pending` may become `authorised`, `revoked` or `expired`; `authorised` may become `revoked`, `expired` or `consumed`; `revoked`, `expired` and `consumed` are terminal and permit nothing. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "illegal_transition";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `missing_bank_consent_id`: the stored consent carries no bank-side id, so there is nothing to finalise. Ours to fix, not yours; quote the request id. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "missing_bank_consent_id";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The bank refused the code or could not be reached. What this handler wrote is nothing: the UPDATE runs only after the exchange returns, so the consent is still `pending` and no token pointer was stored. Whether the code itself is still usable is the BANK's state and not ours to report, so this answer does not claim either way. The message is the adapter's own, and empty when what the adapter threw was not an Error. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "adapter_error";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bank-consents/{id}/refresh-statement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fetch the bank statement and ingest it
+         * @description Pulls transactions from the bank under an `authorised` consent and ingests them as events the reconciliation engine picks up. `POST /v1/ofb/consents/{id}/refresh-statement` is the legacy spelling of this same operation (ent#979).
+         *
+         *     `since` and `until` bound what is fetched. Both are optional; the adapter decides the window when they are absent.
+         *
+         *     SAFE TO CALL TWICE. Each entry is ingested under a dedup key of (source, the bank's own event id, project), and an entry that key has already seen is counted in `duplicates` rather than credited again. That is what makes `imported` and `duplicates` mean what they say.
+         *
+         *     The answer is 202 rather than 200 because the statement is fetched and ingested synchronously but RECONCILIATION IS NOT: matching these events against the ledger happens on a later cycle.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** Format: date-time */
+                        since?: string;
+                        /** Format: date-time */
+                        until?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Accepted. The statement was fetched and ingested; reconciliation happens after. */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            consent_id: string;
+                            /** @description Identifies this refresh in the consent's event log, on the started, completed and failed events alike. Quote it in support. */
+                            run_id: string;
+                            /** @description Entries ingested as new events by this call. */
+                            imported: number;
+                            /** @description Entries a previous call had already ingested, recognised by the dedup key and not credited a second time. */
+                            duplicates: number;
+                            /** @description A constant hint about how often reconciliation runs. Not a queue estimate and not a promise about this run. */
+                            next_recon_cycle_within_seconds: number;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema: `since` and `until` must be RFC 3339 timestamps carrying an offset. `details.issues` carries the Zod issues. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No such consent for this credential's organization AND project. A consent created by a sibling project in the same organization answers the same way: the resolver requires both predicates on purpose, because resolving on organization alone let one project read, transition and refresh another project's consent. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `consent_not_authorised`: the consent is not in `authorised`. `details.status` carries what it is. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "consent_not_authorised";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `consent_missing_tokens`: the consent says `authorised` but is missing something the fetch needs. TWO conditions raise it and the code does not distinguish them: no stored access-token pointer, OR no bank-side consent id. The second is not a token, so read the code as `this authorised consent is not usable` rather than as a statement about credentials. Ours to fix, not yours; quote the request id. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "consent_missing_tokens";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The bank refused or could not be reached. Partial progress is KEPT: each entry is committed as it is ingested, so entries taken before the failure stay ingested and a retry re-imports only what is missing. The message is the adapter's own unless the failure came from our own database, in which case it is replaced by a fixed sentence rather than naming our tables. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "adapter_error";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bank-consents/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke a bank consent
+         * @description Moves a `pending` or `authorised` consent to `revoked`. `POST /v1/ofb/consents/{id}/revoke` is the legacy spelling of this same operation (ent#979).
+         *
+         *     THIS STOPS US, NOT THE BANK. The handler calls no bank adapter: it flips our row and appends a `revoked` event, so what ends is our use of the consent. If the grant must also end at the bank, revoke it in the bank's own channel as well.
+         *
+         *     Revoking frees the (organization, consumer, bank) slot, so a new consent can be initiated afterwards. `revoked` is terminal: a second revoke answers 409.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Recorded on the `revoked` event. */
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description Lowercase kebab-case, for example `itau` or `bb`. */
+                            bank_id: string;
+                            consumer_id: string;
+                            /** @description Set when the consent was bound to a wallet at initiation; null when it was not. */
+                            wallet_id: string | null;
+                            /** @enum {string} */
+                            status: "pending" | "authorised" | "revoked" | "expired" | "consumed";
+                            scopes: string[];
+                            /** @description The bank's own identifier for the consent. Null until the bank issues one. */
+                            bank_consent_id: string | null;
+                            /** @description Where the consumer authorises the consent. This is the URL to send them to. */
+                            authorisation_url: string | null;
+                            /** Format: date-time */
+                            token_expires_at: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /**
+                             * Format: date-time
+                             * @description Spelled with a z, unlike `authorised` in `status`. Both spellings are column names, not typos.
+                             */
+                            authorized_at: string | null;
+                            /**
+                             * Format: date-time
+                             * @description Mirrors the bank-side consent expiry, as the bank reported it at initiation.
+                             */
+                            expires_at: string | null;
+                            /** Format: date-time */
+                            revoked_at: string | null;
+                            /** Format: date-time */
+                            consumed_at: string | null;
+                            metadata: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. `details.issues` carries the Zod issues. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No such consent for this credential's organization AND project. A consent created by a sibling project in the same organization answers the same way: the resolver requires both predicates on purpose, because resolving on organization alone let one project read, transition and refresh another project's consent. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The consent's current status does not permit this transition. `details.from` and `details.to` carry the pair. `pending` may become `authorised`, `revoked` or `expired`; `authorised` may become `revoked`, `expired` or `consumed`; `revoked`, `expired` and `consumed` are terminal and permit nothing. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "illegal_transition";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumers/mandates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List consumer allowances (legacy path)
+         * @deprecated
+         * @description DEPRECATED alias of `GET /v1/mandates` (ent#979), kept for two releases. Same handler, same `mandates:read` scope; switch the path and nothing else changes. The truncation and the 400-on-unknown-`status` behaviour described on the canonical path apply here unchanged.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    consumer_id?: string;
+                    limit?: number;
+                    status?: "active" | "paused" | "revoked" | "expired";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            mandates: {
+                                id: string;
+                                consumer_id: string;
+                                /** @description The agent this allowance authorizes to spend. */
+                                agent_id: string;
+                                display_name: string | null;
+                                purpose: string;
+                                /** @description The payees this allowance may pay, read as `merchant_pin_kind` says to read them. Never empty: `consumer_mandates_allowlist_nonempty` refuses a row whose allowlist is not an array of at least one entry, so an allowance that authorizes nothing cannot exist. */
+                                merchant_allowlist: string[];
+                                /**
+                                 * @description How each allowlist entry pins a payee. The v1 rail pins by Pix key.
+                                 * @enum {string}
+                                 */
+                                merchant_pin_kind: "pix-key" | "merchant-id" | "mcc";
+                                intent_note: string | null;
+                                /** @description Total spend authorized over the life of the allowance, in minor units. A STRING: the column is `bigint` and the driver hands it back as text, so parse it as an integer and never as a float. */
+                                cap_minor: string;
+                                /** @description Per-transaction ceiling, in minor units. Same string shape as `cap_minor`. */
+                                per_tx_cap_minor: string;
+                                /** @description Left open here rather than closed. The column admits BRL, USD, MXN, COP, ARS, USDC and BRLA today, and that list is a CHECK constraint on our side rather than a promise on the wire. */
+                                currency: string;
+                                /** @enum {string} */
+                                status: "active" | "paused" | "revoked" | "expired";
+                                /**
+                                 * Format: date-time
+                                 * @description Never null: the column is NOT NULL.
+                                 */
+                                expires_at: string;
+                                /** Format: date-time */
+                                created_at: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description The query did not match the schema: an unknown `status`, a `limit` outside 1..200, or a `limit` that is not a number. `details.issues` carries the Zod issues. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumers/mandates/{id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pause an allowance (legacy path)
+         * @deprecated
+         * @description DEPRECATED alias of `POST /v1/mandates/{id}/pause` (ent#979), kept for two releases. Same handler, same `mandates:write` scope. `active` is still the only legal source, an already-`paused` allowance still answers 200 with `changed: false`, and the status flip and its evidence row are still one transaction.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Recorded in the evidence row's metadata, alongside the from/to pair. Not echoed in the response. */
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            mandate: {
+                                id: string;
+                                /** @enum {string} */
+                                status: "paused";
+                            };
+                            /** @description False when the allowance was already in this state. Nothing was written and no evidence row was appended. */
+                            changed: boolean;
+                        };
+                    };
+                };
+                /** @description A body was sent and did not match the schema. `details.issues` carries the Zod issues. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No such allowance for this credential's organization. An allowance belonging to another organization answers exactly the same way: the org predicate sits in the SELECT, so the handler cannot tell absent from someone else's, and must not. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "mandate_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `invalid_transition` when the allowance's current status is not a legal source for this verb. `transition_conflict` when another request moved the allowance between this one's read and its write: the UPDATE is guarded on the status that was read, so a concurrent transition loses rather than double-applying, and the evidence row is written in the same transaction as the status change or not at all. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_transition" | "transition_conflict";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumers/mandates/{id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resume a paused allowance (legacy path)
+         * @deprecated
+         * @description DEPRECATED alias of `POST /v1/mandates/{id}/resume` (ent#979), kept for two releases. Same handler, same `mandates:write` scope. `paused` is still the only legal source, and resuming still leaves caps, expiry and spend-to-date exactly as they were.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Recorded in the evidence row's metadata, alongside the from/to pair. Not echoed in the response. */
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            mandate: {
+                                id: string;
+                                /** @enum {string} */
+                                status: "active";
+                            };
+                            /** @description False when the allowance was already in this state. Nothing was written and no evidence row was appended. */
+                            changed: boolean;
+                        };
+                    };
+                };
+                /** @description A body was sent and did not match the schema. `details.issues` carries the Zod issues. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No such allowance for this credential's organization. An allowance belonging to another organization answers exactly the same way: the org predicate sits in the SELECT, so the handler cannot tell absent from someone else's, and must not. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "mandate_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `invalid_transition` when the allowance's current status is not a legal source for this verb. `transition_conflict` when another request moved the allowance between this one's read and its write: the UPDATE is guarded on the status that was read, so a concurrent transition loses rather than double-applying, and the evidence row is written in the same transaction as the status change or not at all. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_transition" | "transition_conflict";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumers/mandates/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke an allowance (legacy path)
+         * @deprecated
+         * @description DEPRECATED alias of `POST /v1/mandates/{id}/revoke` (ent#979), kept for two releases. Same handler, same `mandates:write` scope. Still terminal, and still no verb anywhere that brings a revoked allowance back.
          */
         post: {
             parameters: {
@@ -15054,14 +20712,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Initiate a bank consent
-         * @description Opens a consent at the bank and persists it as `pending`. `POST /v1/bank-consents` is a live alias and is the canonical spelling; this one is kept for clients that already call it.
-         *
-         *     THE BANK IS CALLED BEFORE THE ROW IS WRITTEN, and that ordering is visible in the failure modes below: every refusal that arrives after the bank call leaves a bank-side consent with no row of ours pointing at it. Retrying opens another one.
-         *
-         *     One open consent per consumer per bank per organization. A sibling project in your organization holding an open consent for this consumer at this bank is refused, and the refusal is not something a retry clears.
-         *
-         *     On 201 the consent is `pending`, and `authorisation_url`, `bank_consent_id` and `expires_at` are all set: the adapter's result declares them non-nullable and the INSERT writes all three. Send the consumer to `authorisation_url`, then post the code they come back with to the callback operation.
+         * Initiate a bank consent (legacy path)
+         * @deprecated
+         * @description DEPRECATED alias of `POST /v1/bank-consents` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.\n\nEverything the canonical path says still holds here, including the two that cost money to learn late: the BANK IS CALLED BEFORE THE ROW IS WRITTEN, so a refusal after that point leaves a bank-side consent with nothing of ours pointing at it; and one open consent per consumer per bank per organization, which a sibling project can be holding.
          */
         post: {
             parameters: {
@@ -15255,12 +20908,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Finalise a consent after the consumer authorises it
-         * @description Exchanges the bank's authorisation code for tokens and moves the consent to `authorised`. `POST /v1/bank-consents/{id}/callback` is a live alias and is the canonical spelling.
-         *
-         *     Only a `pending` consent can be finalised. A consent that is already `authorised` answers 409, not a second exchange, so replaying a callback does not mint a second token pair.
-         *
-         *     The token pointers and the `authorised` event are one transaction. On success the response is the re-read consent, without token material.
+         * Finalise a consent after the consumer authorises it (legacy path)
+         * @deprecated
+         * @description DEPRECATED alias of `POST /v1/bank-consents/{id}/callback` (ent#979), kept for two releases. Same handler, same scope. Only a `pending` consent can be finalised, so a replayed callback answers 409 rather than minting a second token pair.
          */
         post: {
             parameters: {
@@ -15442,14 +21092,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Fetch the bank statement and ingest it
-         * @description Pulls transactions from the bank under an `authorised` consent and ingests them as events the reconciliation engine picks up. `POST /v1/bank-consents/{id}/refresh-statement` is a live alias and is the canonical spelling.
-         *
-         *     `since` and `until` bound what is fetched. Both are optional; the adapter decides the window when they are absent.
-         *
-         *     SAFE TO CALL TWICE. Each entry is ingested under a dedup key of (source, the bank's own event id, project), and an entry that key has already seen is counted in `duplicates` rather than credited again. That is what makes `imported` and `duplicates` mean what they say.
-         *
-         *     The answer is 202 rather than 200 because the statement is fetched and ingested synchronously but RECONCILIATION IS NOT: matching these events against the ledger happens on a later cycle.
+         * Fetch the bank statement and ingest it (legacy path)
+         * @deprecated
+         * @description DEPRECATED alias of `POST /v1/bank-consents/{id}/refresh-statement` (ent#979), kept for two releases. Same handler, same scope. Still safe to call twice — the dedup key puts a repeat in `duplicates` rather than crediting it again — and still 202, because the ingest is synchronous and the reconciliation is not.
          */
         post: {
             parameters: {
@@ -15608,12 +21253,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Revoke a bank consent
-         * @description Moves a `pending` or `authorised` consent to `revoked`. `POST /v1/bank-consents/{id}/revoke` is a live alias and is the canonical spelling.
-         *
-         *     THIS STOPS US, NOT THE BANK. The handler calls no bank adapter: it flips our row and appends a `revoked` event, so what ends is our use of the consent. If the grant must also end at the bank, revoke it in the bank's own channel as well.
-         *
-         *     Revoking frees the (organization, consumer, bank) slot, so a new consent can be initiated afterwards. `revoked` is terminal: a second revoke answers 409.
+         * Revoke a bank consent (legacy path)
+         * @deprecated
+         * @description DEPRECATED alias of `POST /v1/bank-consents/{id}/revoke` (ent#979), kept for two releases. Same handler, same scope. It still STOPS US AND NOT THE BANK: no adapter is called, so a grant that must also end at the bank has to be revoked in the bank's own channel.
          */
         post: {
             parameters: {
@@ -16691,6 +22333,456 @@ export interface paths {
                             };
                             /** @description Echoes the `X-Request-Id` header when the request carried one. */
                             request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/orgs/{orgId}/audit/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export audit events, with a signed manifest (deprecated path)
+         * @deprecated
+         * @description Alias DEPRECIADO de `GET /v1/audit-events/export` (ent#979), mantido por dois releases. Mesmo handler, mesmo escopo; um `{orgId}` que não é o da credencial é recusado.
+         *
+         *     A resposta é TRANSMITIDA linha a linha, com o manifesto assinado no fim — o manifesto cobre o escopo (inclusive os estreitamentos aplicados), não só o conteúdo. Detalhe completo no caminho canônico.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Início da janela, ISO 8601. Obrigatório. */
+                    from: string;
+                    /** @description Fim da janela, ISO 8601. Obrigatório. */
+                    to: string;
+                    agent_id?: string;
+                };
+                header?: never;
+                path: {
+                    orgId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            export_id: string;
+                            org_id: string;
+                            rows: {
+                                [key: string]: unknown;
+                            }[];
+                            manifest: {
+                                [key: string]: unknown;
+                            };
+                            export_signature: {
+                                [key: string]: unknown;
+                            };
+                            key_id: string;
+                        };
+                    };
+                };
+                /** @description Query fora do schema, data não ISO 8601, ou `from` depois de `to`. Corpo cru. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "invalid_query" | "invalid_iso_8601" | "from_after_to";
+                            issues?: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description A credencial não pode exportar auditoria desta organização. Corpo cru. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "forbidden";
+                        };
+                    };
+                };
+                /** @description A janela passa do teto de linhas; estreite-a. Corpo cru. */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "export_too_large";
+                            row_count: number;
+                            limit: number;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/orgs/{orgId}/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List approvals held for review (deprecated path)
+         * @deprecated
+         * @description DEPRECATED alias of `GET /v1/approvals` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.
+         *
+         *     **Sem `status`, você recebe só as `pending`** — não todas. Peça `status=approved,denied` para ver o que já foi decidido. A resposta é um array, sem envelope e sem cursor. Um `{orgId}` que não é o da credencial é 404 antes de qualquer leitura.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Separado por vírgula; o padrão é `pending`. */
+                    status?: string;
+                    limit?: number | null;
+                };
+                header?: never;
+                path: {
+                    orgId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            org_id: string;
+                            project_id: string | null;
+                            session_id: string | null;
+                            agent_id: string;
+                            matched_rule_id: string;
+                            matched_rule_name: string;
+                            tool_name: string;
+                            /** @description The tool arguments the rule held for review, verbatim. */
+                            tool_input: {
+                                [key: string]: unknown;
+                            };
+                            /**
+                             * @description Closed by the table's own CHECK constraint, not by convention.
+                             * @enum {string}
+                             */
+                            status: "pending" | "approved" | "denied" | "expired" | "execution_failed";
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: date-time */
+                            expires_at: string;
+                            /** Format: date-time */
+                            decided_at: string | null;
+                            decided_by: string | null;
+                            decision_reason: string | null;
+                            /** Format: date-time */
+                            executed_at: string | null;
+                            execution_result: {
+                                [key: string]: unknown;
+                            } | null;
+                        }[];
+                    };
+                };
+                /** @description A query não casou com o schema. Corpo cru. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "invalid_query";
+                            issues: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/orgs/{orgId}/approvals/{id}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve or deny a held call (deprecated path)
+         * @deprecated
+         * @description DEPRECATED alias of `POST /v1/approvals/{id}/decide` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.
+         *
+         *     `reason` é obrigatório nos dois sentidos, até 8000 caracteres, e só espaço em branco é recusado. Decidir exige uma PESSOA: uma credencial de portador sozinha leva `bearer_token_cannot_decide`. Já decidida é 409 e expirada é 410, as duas com a aprovação completa no corpo.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    orgId: string;
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decision: "approve" | "deny";
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            org_id: string;
+                            project_id: string | null;
+                            session_id: string | null;
+                            agent_id: string;
+                            matched_rule_id: string;
+                            matched_rule_name: string;
+                            tool_name: string;
+                            /** @description The tool arguments the rule held for review, verbatim. */
+                            tool_input: {
+                                [key: string]: unknown;
+                            };
+                            /**
+                             * @description Closed by the table's own CHECK constraint, not by convention.
+                             * @enum {string}
+                             */
+                            status: "pending" | "approved" | "denied" | "expired" | "execution_failed";
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: date-time */
+                            expires_at: string;
+                            /** Format: date-time */
+                            decided_at: string | null;
+                            decided_by: string | null;
+                            decision_reason: string | null;
+                            /** Format: date-time */
+                            executed_at: string | null;
+                            execution_result: {
+                                [key: string]: unknown;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Corpo fora do schema. `reason_invalid` quando o problema é o motivo. Corpo cru. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "reason_invalid" | "invalid_body";
+                            /** @enum {number} */
+                            limit: 8000;
+                            issues: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Quem chamou não pode decidir: só credencial de portador, token de usuário ausente/inválido/divergente, ou pessoa abaixo de admin. Corpo cru. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "bearer_token_cannot_decide" | "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "insufficient_role";
+                            /** @enum {string} */
+                            required?: "admin";
+                        };
+                    };
+                };
+                /** @description Não existe, ou é de outra organização. Corpo cru. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
+                        };
+                    };
+                };
+                /** @description Já decidida; a aprovação completa vem junto. Corpo cru. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "already_decided";
+                            approval: {
+                                id: string;
+                                org_id: string;
+                                project_id: string | null;
+                                session_id: string | null;
+                                agent_id: string;
+                                matched_rule_id: string;
+                                matched_rule_name: string;
+                                tool_name: string;
+                                /** @description The tool arguments the rule held for review, verbatim. */
+                                tool_input: {
+                                    [key: string]: unknown;
+                                };
+                                /**
+                                 * @description Closed by the table's own CHECK constraint, not by convention.
+                                 * @enum {string}
+                                 */
+                                status: "pending" | "approved" | "denied" | "expired" | "execution_failed";
+                                /** Format: date-time */
+                                created_at: string;
+                                /** Format: date-time */
+                                expires_at: string;
+                                /** Format: date-time */
+                                decided_at: string | null;
+                                decided_by: string | null;
+                                decision_reason: string | null;
+                                /** Format: date-time */
+                                executed_at: string | null;
+                                execution_result: {
+                                    [key: string]: unknown;
+                                } | null;
+                            };
+                        };
+                    };
+                };
+                /** @description Expirou antes de alguém decidir; a aprovação completa vem junto. Corpo cru. */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "expired";
+                            approval: {
+                                id: string;
+                                org_id: string;
+                                project_id: string | null;
+                                session_id: string | null;
+                                agent_id: string;
+                                matched_rule_id: string;
+                                matched_rule_name: string;
+                                tool_name: string;
+                                /** @description The tool arguments the rule held for review, verbatim. */
+                                tool_input: {
+                                    [key: string]: unknown;
+                                };
+                                /**
+                                 * @description Closed by the table's own CHECK constraint, not by convention.
+                                 * @enum {string}
+                                 */
+                                status: "pending" | "approved" | "denied" | "expired" | "execution_failed";
+                                /** Format: date-time */
+                                created_at: string;
+                                /** Format: date-time */
+                                expires_at: string;
+                                /** Format: date-time */
+                                decided_at: string | null;
+                                decided_by: string | null;
+                                decision_reason: string | null;
+                                /** Format: date-time */
+                                executed_at: string | null;
+                                execution_result: {
+                                    [key: string]: unknown;
+                                } | null;
+                            };
+                        };
+                    };
+                };
+                /** @description Limite de tentativas. `retry_after_seconds` diz quanto esperar. Corpo cru. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "rate_limit_exceeded";
+                            retry_after_seconds: number;
+                        };
+                    };
+                };
+                /** @description Verificação de token de usuário não configurada neste deployment. Corpo cru. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_verification_unconfigured";
                         };
                     };
                 };
@@ -18522,7 +24614,201 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /**
+         * Create a paywall
+         * @description Cria um paywall x402 na frente de uma origem sua.
+         *
+         *     **O `slug` é global.** O índice de unicidade cobre só o slug, então ele é por ordem de chegada entre TODOS os tenants — e um já tomado volta como `slug_conflict`, mesmo que ninguém da sua organização o use.
+         *
+         *     **A `upstream_url` é resolvida aqui, não só validada.** O gateway busca essa origem a cada chamada paga, então um nome que não resolve, ou que resolve para endereço privado ou de metadados, é recusado na criação em vez de virar uma busca na hora do pedido.
+         *
+         *     **Pede papel `admin` na organização**, para um membro não abrir superfície de cobrança sozinho.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Minúsculas, dígitos, `_` e `-`. É a chave pública do gateway e é ÚNICA GLOBALMENTE, não por projeto: um slug tomado por outro tenant é recusado com `slug_conflict`. */
+                        slug: string;
+                        name: string;
+                        /**
+                         * Format: uri
+                         * @description A origem que o gateway busca a cada chamada paga. O host é RESOLVIDO na criação, não só lido: um nome público cujo A aponta para 169.254.169.254 é o ataque que essa checagem existe para fechar, e um nome que não resolve é 400 aqui em vez de uma busca na hora do pedido.
+                         */
+                        upstream_url: string;
+                        /** @description USDC decimal, e.g. `"0.001"`. Até 6 casas. */
+                        price: string;
+                        currency?: string;
+                        /** @description Obrigatório quando `payto.kind` é `provisioned`: é a carteira que recebe. */
+                        consumer_id?: string;
+                        description?: string;
+                        category?: string;
+                        /** @description Os métodos HTTP que o paywall cobre. Ausente = todos; um método fora da lista leva 405 no gateway. */
+                        methods?: string[];
+                        /** @description `flat`, `tiered`, `dynamic` ou `metered`. */
+                        pricing_model?: string;
+                        /** @description Para `tiered`. Os limites `up_to` sobem estritamente e o ÚLTIMO é obrigatoriamente aberto (`up_to: null`). */
+                        pricing_tiers?: {
+                            /** @description EXCLUSIVE upper bound on the paywall's cumulative settled call count for which this tier's price applies: the gateway quotes the first tier whose `up_to` is null or strictly greater than the settled volume. The last tier carries null, meaning unbounded. */
+                            up_to: number | null;
+                            /** @description USDC atomic units (6 decimals) as an integer string. */
+                            price_atomic: string;
+                        }[];
+                        /**
+                         * Format: uri
+                         * @description Para `dynamic`: o gateway faz GET aqui por pedido e cota o preço devolvido.
+                         */
+                        dynamic_price_url?: string;
+                        /** @description Para `metered`. */
+                        metered_config?: {
+                            /** @description Metering label ('complexity', 'tokens', 'time', 'units'). Informational: the price is base times the reported multiplier whatever the label says. */
+                            basis: string;
+                            /** @description Base price in USDC atomic units, before the multiplier. */
+                            base_atomic: string;
+                            /** @description Lower clamp on the multiplier, and the DEFAULT: a missing, malformed or non-positive multiplier header meters at `min_mult`, so a seller that reports nothing charges the least. */
+                            min_mult: number;
+                            /** @description Upper clamp. `base_atomic` times `max_mult` is the CEILING advertised in the 402 and signed by the payer, so a metered call can never settle above it. */
+                            max_mult: number;
+                            /** @description Response header the seller reports the multiplier in. */
+                            units_header: string;
+                        };
+                        payto: {
+                            /** @enum {string} */
+                            kind: "byo" | "provisioned";
+                            /** @description Endereço EVM `0x…`, obrigatório em `byo` e ignorado em `provisioned`. */
+                            address?: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `pw_` followed by a 16-character nanoid. */
+                            id: string;
+                            project_id: string;
+                            /** @description The public gateway key. UNIQUE GLOBALLY, not per project: the uniqueness index covers the slug alone, so a slug is first-come across all tenants and a taken one is refused with 400 `slug_conflict` on create. */
+                            slug: string;
+                            name: string;
+                            /** @description Origin the gateway proxies to once a call is paid for. */
+                            upstream_url: string;
+                            /** @description `price_atomic` rendered as a decimal USDC string with trailing zeros trimmed ('1000' becomes '0.001'). Derived on the way out, not stored. */
+                            price: string;
+                            /** @description The stored price: USDC atomic units (6 decimals) as an integer string, to keep the x402 UintString convention exact. */
+                            price_atomic: string;
+                            /** @description 'USDC' on every row the create route writes; the column has no CHECK. */
+                            currency: string;
+                            /**
+                             * @description Inherited from the calling credential's project at create time.
+                             * @enum {string}
+                             */
+                            environment: "live" | "test";
+                            /**
+                             * @description 'byo': the seller supplied the receiving 0x USDC address. 'provisioned': CodeSpar derived and owns a CDP address for the tenant's consumer.
+                             * @enum {string}
+                             */
+                            payto_kind: "byo" | "provisioned";
+                            /** @description The 0x address that receives settlement. */
+                            payto_address: string;
+                            /** @description The consumer whose wallet receives, for a provisioned payTo. Null for 'byo'. */
+                            consumer_id: string | null;
+                            description: string | null;
+                            category: string | null;
+                            /** @description HTTP methods this paywall fronts. Null means any method. A method that is not listed is refused by the gateway with 405 `method_not_allowed` and an `Allow` header, BEFORE any 402 challenge, so it cannot be paid for and then proxied. */
+                            methods: string[] | null;
+                            /**
+                             * @description The full set a row may hold. Only 'flat', 'tiered', 'dynamic' and 'metered' can be created today; the create route refuses the other three with 400 `pricing_model_unsupported` rather than storing a model that would bill as flat.
+                             * @enum {string}
+                             */
+                            pricing_model: "flat" | "token" | "dynamic" | "time" | "per_unit" | "tiered" | "metered";
+                            /** @description Ascending price curve for 'tiered'. Null for every other model. */
+                            pricing_tiers: {
+                                /** @description EXCLUSIVE upper bound on the paywall's cumulative settled call count for which this tier's price applies: the gateway quotes the first tier whose `up_to` is null or strictly greater than the settled volume. The last tier carries null, meaning unbounded. */
+                                up_to: number | null;
+                                /** @description USDC atomic units (6 decimals) as an integer string. */
+                                price_atomic: string;
+                            }[] | null;
+                            /** @description Seller price hook for 'dynamic': the gateway GETs it per request and quotes what it returns. It is fail-safe, not fail-closed: an unsafe, unreachable, non-2xx, malformed or timed-out hook falls back to `price_atomic`, so the gateway can always quote a price. */
+                            dynamic_price_url: string | null;
+                            /** @description Config for 'metered'. Null for every other model. */
+                            metered_config: {
+                                /** @description Metering label ('complexity', 'tokens', 'time', 'units'). Informational: the price is base times the reported multiplier whatever the label says. */
+                                basis: string;
+                                /** @description Base price in USDC atomic units, before the multiplier. */
+                                base_atomic: string;
+                                /** @description Lower clamp on the multiplier, and the DEFAULT: a missing, malformed or non-positive multiplier header meters at `min_mult`, so a seller that reports nothing charges the least. */
+                                min_mult: number;
+                                /** @description Upper clamp. `base_atomic` times `max_mult` is the CEILING advertised in the 402 and signed by the payer, so a metered call can never settle above it. */
+                                max_mult: number;
+                                /** @description Response header the seller reports the multiplier in. */
+                                units_header: string;
+                            } | null;
+                            /** @description The gateway resolves ACTIVE rows only; an inactive paywall stops serving. */
+                            active: boolean;
+                            /** @description `https://gw.codespar.dev/<slug>`, built from the slug on the way out. The id does not appear in it. */
+                            gateway_url: string;
+                            /** Format: date-time */
+                            created_at: string;
+                        };
+                    };
+                };
+                /** @description O corpo não passou. Os códigos dizem qual regra: `invalid_body` (schema ou preço fora do formato USDC), `invalid_upstream_url` (não resolve, ou resolve para host privado), `slug_conflict` (o slug já existe, globalmente), `invalid_payto` (`byo` sem endereço EVM, ou `provisioned` sem `consumer_id`), `invalid_tiers` (limites que não sobem, ou último limitado), `pricing_model_unsupported`, `invalid_dynamic_price_url`, e os três de `metered` — desligado no deployment, sem `payto` provisionado (o reembolso sai de uma carteira nossa), ou configuração inválida. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "invalid_upstream_url" | "slug_conflict" | "invalid_payto" | "invalid_tiers" | "pricing_model_unsupported" | "invalid_dynamic_price_url" | "metered_not_enabled" | "metered_requires_provisioned" | "invalid_metered_config";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Forbidden. The acting user does not satisfy the org-role guard in front of this route. With an OAuth access token this is the live behaviour when `x-codespar-user` is absent or names a user below admin; with an API key it appears only where the deployment enforces the same guard. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `insufficient_role` on the ordinary path. */
+                            error: string;
+                            /**
+                             * @description The minimum org role this route asks for.
+                             * @enum {string}
+                             */
+                            required: "admin";
+                            /** @description Present only on the enforced API-key path. */
+                            message?: string;
+                            /**
+                             * @description Present only on the enforced API-key path.
+                             * @enum {number}
+                             */
+                            status?: 403;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -18730,7 +25016,174 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update a paywall
+         * @description Altera nome, origem, preço ou o estado ativo. Só os campos enviados mudam.
+         *
+         *     O `slug` NÃO está aqui: ele é a chave pública que os pagadores já usam, e trocá-lo quebraria todo cliente apontado para o antigo. Pede papel `admin`.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        /** Format: uri */
+                        upstream_url?: string;
+                        price?: string;
+                        active?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `pw_` followed by a 16-character nanoid. */
+                            id: string;
+                            project_id: string;
+                            /** @description The public gateway key. UNIQUE GLOBALLY, not per project: the uniqueness index covers the slug alone, so a slug is first-come across all tenants and a taken one is refused with 400 `slug_conflict` on create. */
+                            slug: string;
+                            name: string;
+                            /** @description Origin the gateway proxies to once a call is paid for. */
+                            upstream_url: string;
+                            /** @description `price_atomic` rendered as a decimal USDC string with trailing zeros trimmed ('1000' becomes '0.001'). Derived on the way out, not stored. */
+                            price: string;
+                            /** @description The stored price: USDC atomic units (6 decimals) as an integer string, to keep the x402 UintString convention exact. */
+                            price_atomic: string;
+                            /** @description 'USDC' on every row the create route writes; the column has no CHECK. */
+                            currency: string;
+                            /**
+                             * @description Inherited from the calling credential's project at create time.
+                             * @enum {string}
+                             */
+                            environment: "live" | "test";
+                            /**
+                             * @description 'byo': the seller supplied the receiving 0x USDC address. 'provisioned': CodeSpar derived and owns a CDP address for the tenant's consumer.
+                             * @enum {string}
+                             */
+                            payto_kind: "byo" | "provisioned";
+                            /** @description The 0x address that receives settlement. */
+                            payto_address: string;
+                            /** @description The consumer whose wallet receives, for a provisioned payTo. Null for 'byo'. */
+                            consumer_id: string | null;
+                            description: string | null;
+                            category: string | null;
+                            /** @description HTTP methods this paywall fronts. Null means any method. A method that is not listed is refused by the gateway with 405 `method_not_allowed` and an `Allow` header, BEFORE any 402 challenge, so it cannot be paid for and then proxied. */
+                            methods: string[] | null;
+                            /**
+                             * @description The full set a row may hold. Only 'flat', 'tiered', 'dynamic' and 'metered' can be created today; the create route refuses the other three with 400 `pricing_model_unsupported` rather than storing a model that would bill as flat.
+                             * @enum {string}
+                             */
+                            pricing_model: "flat" | "token" | "dynamic" | "time" | "per_unit" | "tiered" | "metered";
+                            /** @description Ascending price curve for 'tiered'. Null for every other model. */
+                            pricing_tiers: {
+                                /** @description EXCLUSIVE upper bound on the paywall's cumulative settled call count for which this tier's price applies: the gateway quotes the first tier whose `up_to` is null or strictly greater than the settled volume. The last tier carries null, meaning unbounded. */
+                                up_to: number | null;
+                                /** @description USDC atomic units (6 decimals) as an integer string. */
+                                price_atomic: string;
+                            }[] | null;
+                            /** @description Seller price hook for 'dynamic': the gateway GETs it per request and quotes what it returns. It is fail-safe, not fail-closed: an unsafe, unreachable, non-2xx, malformed or timed-out hook falls back to `price_atomic`, so the gateway can always quote a price. */
+                            dynamic_price_url: string | null;
+                            /** @description Config for 'metered'. Null for every other model. */
+                            metered_config: {
+                                /** @description Metering label ('complexity', 'tokens', 'time', 'units'). Informational: the price is base times the reported multiplier whatever the label says. */
+                                basis: string;
+                                /** @description Base price in USDC atomic units, before the multiplier. */
+                                base_atomic: string;
+                                /** @description Lower clamp on the multiplier, and the DEFAULT: a missing, malformed or non-positive multiplier header meters at `min_mult`, so a seller that reports nothing charges the least. */
+                                min_mult: number;
+                                /** @description Upper clamp. `base_atomic` times `max_mult` is the CEILING advertised in the 402 and signed by the payer, so a metered call can never settle above it. */
+                                max_mult: number;
+                                /** @description Response header the seller reports the multiplier in. */
+                                units_header: string;
+                            } | null;
+                            /** @description The gateway resolves ACTIVE rows only; an inactive paywall stops serving. */
+                            active: boolean;
+                            /** @description `https://gw.codespar.dev/<slug>`, built from the slug on the way out. The id does not appear in it. */
+                            gateway_url: string;
+                            /** Format: date-time */
+                            created_at: string;
+                        };
+                    };
+                };
+                /** @description Corpo vazio ou fora do schema, preço fora do formato USDC, ou origem que não resolve para um host público. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "invalid_upstream_url";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Forbidden. The acting user does not satisfy the org-role guard in front of this route. With an OAuth access token this is the live behaviour when `x-codespar-user` is absent or names a user below admin; with an API key it appears only where the deployment enforces the same guard. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `insufficient_role` on the ordinary path. */
+                            error: string;
+                            /**
+                             * @description The minimum org role this route asks for.
+                             * @enum {string}
+                             */
+                            required: "admin";
+                            /** @description Present only on the enforced API-key path. */
+                            message?: string;
+                            /**
+                             * @description Present only on the enforced API-key path.
+                             * @enum {number}
+                             */
+                            status?: 403;
+                        };
+                    };
+                };
+                /** @description Not Found. A paywall owned by another org or another project is indistinguishable from one that does not exist: the lookup filters on id AND org AND project in the same query, so a cross-tenant read is 404 and never 403. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "paywall_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/v1/paywalls/{id}/stats": {
@@ -20769,6 +27222,171 @@ export interface paths {
         };
         trace?: never;
     };
+    "/v1/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List registered agents
+         * @description Os agentes registrados na organização, mais recentes primeiro.
+         *
+         *     **A linha traz `has_principal`, não `principal_ref`.** A referência do principal aponta para o documento provado no KYC e não sai no wire; o booleano responde a pergunta que um operador faz — este agente tem principal vinculado? — sem publicar o valor.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description 1 a 200; o padrão é 50. */
+                    limit?: number;
+                    status?: "active" | "suspended" | "retired" | "revoked" | "unregistered";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            agents: {
+                                /** @description O DID do agente. */
+                                did: string;
+                                agent_id: string;
+                                display_name: string | null;
+                                /** @enum {string} */
+                                status: "active" | "suspended" | "retired" | "revoked" | "unregistered";
+                                /** @description Se há principal vinculado. NUNCA a referência — veja a nota acima. */
+                                has_principal: boolean;
+                                /** Format: date-time */
+                                created_at: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description A query não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Register an agent identity and mint its first signing key
+         * @description Creates a `did:web` identity for this org and returns its first key. The DID is DERIVED from the org and the `agent_id`, which is why both must be URL-safe: the accepted alphabet is letters, digits, `.`, `_` and `-`, and anything else is a 400 rather than a mangled identifier.
+         *
+         *     `principal_ref` IS AN OPAQUE HANDLE, NEVER A DOCUMENT. This value is signed into a mandate and served to counterparties without auth. A run of eleven digits, punctuation ignored, is refused for that reason. Passing it is not proof of KYC either; verification is a separate record.
+         *
+         *     `pubkey` is base64. The key material's private half never leaves the server and is not returned here or anywhere else.
+         *
+         *     Both 409s are caller-state, not server fault: the handle is already registered with an active key, or the derived DID belongs to another org's row. Registering under a different handle is the way out of either.
+         *
+         *     Errors on this operation use the `{ error: { code, message }, request_id }` envelope, not the bare `{ error }` the session routes use.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        agent_id: string;
+                        display_name?: string;
+                        principal_ref: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            agent_did: string;
+                            /** @description `<did>#<n>`, where n is the key's ordinal. */
+                            kid: string;
+                            /** @description base64. */
+                            pubkey: string;
+                            /** @enum {string} */
+                            status: "active";
+                        };
+                    };
+                };
+                /** @description Bad Request — schema failure, or a DID segment outside the URL-safe alphabet. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "missing_required_field" | "org_id_not_did_safe" | "agent_id_not_did_safe";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Conflict — the handle or the derived DID is taken. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "agent_already_registered" | "agent_did_owned_elsewhere";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/sessions/{id}/connections": {
         parameters: {
             query?: never;
@@ -21498,109 +28116,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/agents": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Register an agent identity and mint its first signing key
-         * @description Creates a `did:web` identity for this org and returns its first key. The DID is DERIVED from the org and the `agent_id`, which is why both must be URL-safe: the accepted alphabet is letters, digits, `.`, `_` and `-`, and anything else is a 400 rather than a mangled identifier.
-         *
-         *     `principal_ref` IS AN OPAQUE HANDLE, NEVER A DOCUMENT. This value is signed into a mandate and served to counterparties without auth. A run of eleven digits, punctuation ignored, is refused for that reason. Passing it is not proof of KYC either; verification is a separate record.
-         *
-         *     `pubkey` is base64. The key material's private half never leaves the server and is not returned here or anywhere else.
-         *
-         *     Both 409s are caller-state, not server fault: the handle is already registered with an active key, or the derived DID belongs to another org's row. Registering under a different handle is the way out of either.
-         *
-         *     Errors on this operation use the `{ error: { code, message }, request_id }` envelope, not the bare `{ error }` the session routes use.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        agent_id: string;
-                        display_name?: string;
-                        principal_ref: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description OK */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            agent_did: string;
-                            /** @description `<did>#<n>`, where n is the key's ordinal. */
-                            kid: string;
-                            /** @description base64. */
-                            pubkey: string;
-                            /** @enum {string} */
-                            status: "active";
-                        };
-                    };
-                };
-                /** @description Bad Request — schema failure, or a DID segment outside the URL-safe alphabet. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "missing_required_field" | "org_id_not_did_safe" | "agent_id_not_did_safe";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description Conflict — the handle or the derived DID is taken. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "agent_already_registered" | "agent_did_owned_elsewhere";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/agents/{agentId}/keys/rotate": {
         parameters: {
             query?: never;
@@ -21944,7 +28459,111 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update a webhook endpoint
+         * @description Altera nome, URL e estado de uma assinatura. Só os campos enviados mudam; os outros ficam como estão.
+         *
+         *     A `webhook_url` passa pela mesma checagem de sintaxe da criação — HTTPS, e nada de host de loopback, privado ou de metadados. O DNS é reconferido no despacho, então passar aqui não promete que ela resolva publicamente depois.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Endpoint id, `trg_` followed by a 16 character nanoid, as minted by the create call. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        /** Format: uri */
+                        webhook_url?: string;
+                        /**
+                         * @description Só `active` e `paused` são definíveis. `error` existe na leitura mas é do despachante: ele o escreve sozinho quando um endpoint auto-pausa depois de entregas mortas consecutivas, e um patch não o alcança.
+                         * @enum {string}
+                         */
+                        status?: "active" | "paused";
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            org_id: string;
+                            /** @description Nullable in the row type this response is serialized from; a later migration sets the column NOT NULL, so an endpoint created since then always carries one. */
+                            project_id: string | null;
+                            name: string;
+                            /** @description The event name this endpoint subscribes to, dot separated lowercase. */
+                            event: string;
+                            server_id: string | null;
+                            webhook_url: string;
+                            /** @description `active`, `paused` or `error`. Left as an open string because the column is `text` with no CHECK constraint: `active` and `paused` are what a patch may set, and `error` is what the dispatcher writes on its own when an endpoint auto-pauses after enough consecutive dead deliveries. */
+                            status: string;
+                            /** @description Deliveries that landed. A failed or dead attempt does not count, which is why this can sit at 0 while the deliveries listing is full of rows. */
+                            total_runs: number;
+                            /**
+                             * Format: date-time
+                             * @description Timestamp of the last DELIVERED attempt, on the same rule as `total_runs`.
+                             */
+                            last_run_at: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** @description Whether a signing secret exists. The secret itself is never read back: the serializer drops the vault reference and reports only this boolean. */
+                            signing_enabled: boolean;
+                        };
+                    };
+                };
+                /** @description O corpo não casou com o schema (inclusive o corpo vazio), ou a `webhook_url` foi recusada pela checagem de sintaxe. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "invalid_url" | "not_https" | "reserved_host";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No webhook endpoint with that id in the caller's organization and project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/v1/triggers/{id}": {
@@ -22105,6 +28724,370 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        /**
+         * Update a webhook endpoint (deprecated path)
+         * @deprecated
+         * @description DEPRECATED alias of `PATCH /v1/webhook-endpoints/{id}` (ent#979), kept for two releases. Same handler, same required scope, same request and same responses; switch the path and nothing else changes. The canonical path is described in this document too.
+         *
+         *     Altera nome, URL e estado de uma assinatura. Só os campos enviados mudam; os outros ficam como estão.
+         *
+         *     A `webhook_url` passa pela mesma checagem de sintaxe da criação — HTTPS, e nada de host de loopback, privado ou de metadados. O DNS é reconferido no despacho, então passar aqui não promete que ela resolva publicamente depois.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Endpoint id, `trg_` followed by a 16 character nanoid, as minted by the create call. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        /** Format: uri */
+                        webhook_url?: string;
+                        /**
+                         * @description Só `active` e `paused` são definíveis. `error` existe na leitura mas é do despachante: ele o escreve sozinho quando um endpoint auto-pausa depois de entregas mortas consecutivas, e um patch não o alcança.
+                         * @enum {string}
+                         */
+                        status?: "active" | "paused";
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            org_id: string;
+                            /** @description Nullable in the row type this response is serialized from; a later migration sets the column NOT NULL, so an endpoint created since then always carries one. */
+                            project_id: string | null;
+                            name: string;
+                            /** @description The event name this endpoint subscribes to, dot separated lowercase. */
+                            event: string;
+                            server_id: string | null;
+                            webhook_url: string;
+                            /** @description `active`, `paused` or `error`. Left as an open string because the column is `text` with no CHECK constraint: `active` and `paused` are what a patch may set, and `error` is what the dispatcher writes on its own when an endpoint auto-pauses after enough consecutive dead deliveries. */
+                            status: string;
+                            /** @description Deliveries that landed. A failed or dead attempt does not count, which is why this can sit at 0 while the deliveries listing is full of rows. */
+                            total_runs: number;
+                            /**
+                             * Format: date-time
+                             * @description Timestamp of the last DELIVERED attempt, on the same rule as `total_runs`.
+                             */
+                            last_run_at: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** @description Whether a signing secret exists. The secret itself is never read back: the serializer drops the vault reference and reports only this boolean. */
+                            signing_enabled: boolean;
+                        };
+                    };
+                };
+                /** @description O corpo não casou com o schema (inclusive o corpo vazio), ou a `webhook_url` foi recusada pela checagem de sintaxe. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "invalid_url" | "not_https" | "reserved_host";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No webhook endpoint with that id in the caller's organization and project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/webhook-endpoints/{id}/test-fire": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Deliver a synthetic event to a webhook endpoint
+         * @description Publica um evento sintético nesta assinatura e entrega na hora, para você ver a requisição chegar do outro lado sem esperar um evento real.
+         *
+         *     O endpoint precisa estar `active`: um pausado é recusado com 409 em vez de enfileirar em silêncio. O corpo entregue carrega `test: true` e o `trigger_id`, escritos pelo servidor DEPOIS do seu `payload`, então esses dois marcadores não são falsificáveis pelo chamador.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Endpoint id, `trg_` followed by a 16 character nanoid, as minted by the create call. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Ponto-separado minúsculo, mesma forma que o `event` de uma assinatura. Ausente, o evento sintético sai como `trigger.test_fire`. */
+                        event_type?: string;
+                        /** @description Campos EXTRA no corpo do evento. Eles não reescrevem os marcadores: o servidor grava `test: true`, `trigger_id` e `requested_at` POR ÚLTIMO, então um assinante que decide por `test` nunca recebe um disparo de teste disfarçado de real. */
+                        payload?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            trigger_id: string;
+                            /** @description O evento sintético, persistido para a entrega ter um alvo real. */
+                            event_id: string;
+                            /** @description Nulo quando o despacho não chegou a registrar uma tentativa. */
+                            delivery_id: string | null;
+                            /** @description O desfecho da tentativa, como o despachante o escreveu. */
+                            status: string;
+                            /** @description O status HTTP que o assinante devolveu, ou nulo quando não houve resposta. */
+                            response_status: number | null;
+                            /** @description A causa da falha, na mesma forma do histórico de entregas. */
+                            error: string | null;
+                        };
+                    };
+                };
+                /** @description O corpo não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No webhook endpoint with that id in the caller's organization and project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A assinatura não está `active`. O estado atual vem em `details.status`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "trigger_not_active";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/triggers/{id}/test-fire": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Deliver a synthetic event to a webhook endpoint (deprecated path)
+         * @deprecated
+         * @description DEPRECATED alias of `POST /v1/webhook-endpoints/{id}/test-fire` (ent#979), kept for two releases. Same handler, same required scope, same request and same responses; switch the path and nothing else changes. The canonical path is described in this document too.
+         *
+         *     Publica um evento sintético nesta assinatura e entrega na hora, para você ver a requisição chegar do outro lado sem esperar um evento real.
+         *
+         *     O endpoint precisa estar `active`: um pausado é recusado com 409 em vez de enfileirar em silêncio. O corpo entregue carrega `test: true` e o `trigger_id`, escritos pelo servidor DEPOIS do seu `payload`, então esses dois marcadores não são falsificáveis pelo chamador.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Endpoint id, `trg_` followed by a 16 character nanoid, as minted by the create call. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Ponto-separado minúsculo, mesma forma que o `event` de uma assinatura. Ausente, o evento sintético sai como `trigger.test_fire`. */
+                        event_type?: string;
+                        /** @description Campos EXTRA no corpo do evento. Eles não reescrevem os marcadores: o servidor grava `test: true`, `trigger_id` e `requested_at` POR ÚLTIMO, então um assinante que decide por `test` nunca recebe um disparo de teste disfarçado de real. */
+                        payload?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            trigger_id: string;
+                            /** @description O evento sintético, persistido para a entrega ter um alvo real. */
+                            event_id: string;
+                            /** @description Nulo quando o despacho não chegou a registrar uma tentativa. */
+                            delivery_id: string | null;
+                            /** @description O desfecho da tentativa, como o despachante o escreveu. */
+                            status: string;
+                            /** @description O status HTTP que o assinante devolveu, ou nulo quando não houve resposta. */
+                            response_status: number | null;
+                            /** @description A causa da falha, na mesma forma do histórico de entregas. */
+                            error: string | null;
+                        };
+                    };
+                };
+                /** @description O corpo não casou com o schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No webhook endpoint with that id in the caller's organization and project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A assinatura não está `active`. O estado atual vem em `details.status`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "trigger_not_active";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;

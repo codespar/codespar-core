@@ -142,6 +142,22 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     description:
       "Consumer payments: execute a payment on a consumer's behalf, with the audit chain (execute-stream returns SSE)",
   },
+  // As duas famílias abaixo chegaram quando packages/core refrescou o snapshot
+  // para 276 operações (ent#1406, as 49 rotas que existiam em produção e o
+  // documento não descrevia). Publicadas, não excetuadas, pelo critério do
+  // portão: exceção é para família sem uso terminal, e as duas terminam numa
+  // pessoa no terminal.
+  {
+    name: "tools",
+    prefix: "/v1/tools",
+    description: "Tools: search the catalog for a capability by intent",
+  },
+  {
+    name: "test",
+    prefix: "/v1/test",
+    description:
+      "Sandbox money (test keys only): credit a consumer directly, or mint a Pix charge and settle it",
+  },
 ];
 
 /* ── Derivation ───────────────────────────────────────────────────── */

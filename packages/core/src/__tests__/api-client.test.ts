@@ -8,8 +8,12 @@ import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { ApiClient, createApiClient } from "../api/client.js";
 import type { ApiPathsFor, ApiRequestOptions, ApiSuccess, ApiOperation } from "../api/types.js";
 import { API_OPERATIONS } from "../generated/operations.js";
+import SNAPSHOT from "../../openapi-snapshot.json" with { type: "json" };
 import { CodeSpar } from "../index.js";
 import { CodesparApiError, TimeoutError } from "../errors.js";
+
+/** Os verbos que contam como operação, do mesmo jeito que o gerador conta. */
+const METODOS = new Set(["get", "post", "put", "patch", "delete"]);
 
 const BASE = "https://api.example.test";
 const KEY = "csk_test_example";
@@ -95,23 +99,38 @@ describe("coverage: every operation in the generated table is dispatchable", () 
     }
 
     expect(reached).toBe(API_OPERATIONS.length);
-    // The number the snapshot carries. Stated here so a snapshot refresh that
-    // drops routes has to change this line on purpose. 213 at #139; 215 after
-    // the 2026-09-10 refresh (`/v1/fees`, `/v1/fees/movimentar`); 221 after the
-    // 2026-09-11 refresh, which brought six paths and no removals:
-    // `/v1/consents` and `/v1/consents/init` (ent#979), `/v1/fees/governar`
-    // (#1213), and the three that serve governed TED — `/v1/consumer-payments/
-    // execute`, `/v1/consumer-payments/execute-stream` and
-    // `/v1/consumers/mandates/{id}/spend` (ent#1176). The last three were
-    // reachable over HTTP since ent#948 and absent from the served document
-    // until then, which is why a partner reading it concluded TED did not
-    // exist. 227 after the 2026-09-14 refresh, again six paths and no
-    // removals: the `/v1/charges` family of four, which existed over HTTP
-    // and was absent from the document (ent#1307 reads as "charge.get and
-    // charge.cancel exist only in REST" for exactly this reason), plus the
-    // meta-tool catalogue document under both mounts, `/meta-tools.json`
-    // and `/v1/meta-tools.json`.
-    expect(API_OPERATIONS.length).toBe(227);
+
+    // A TABELA TEM DE SER O SNAPSHOT, e o snapshot só pode crescer.
+    //
+    // Duas asserções, porque são dois defeitos diferentes:
+    //
+    //  1. a tabela gerada e o snapshot têm de casar EXATAMENTE. Um gerador que
+    //     perde uma linha, ou um snapshot editado à mão, aparece aqui. O número
+    //     é LIDO do snapshot, não soletrado: esta linha era `toBe(227)` e o
+    //     refresh de 276 a derrubou, o que transforma toda subida legítima numa
+    //     edição manual e o comentário num changelog de quinze linhas.
+    //
+    //  2. o documento servido não pode ENCOLHER sem alguém dizer que sim. Esse
+    //     era o motivo real do literal, e ele continua valendo: `PISO` só sobe,
+    //     e um refresh que derruba rotas reprova até que alguém abaixe o piso de
+    //     propósito. Subir é opcional e barato; descer exige uma decisão.
+    //
+    // Histórico das subidas, que antes vivia neste comentário, está no git:
+    // 213 (#139) → 215 → 221 (ent#1176, TED) → 227 (ent#1307, charges) → 276
+    // (ent#1406, as 49 rotas que existiam em produção e o documento não
+    // descrevia).
+    const doSnapshot = Object.values(SNAPSHOT.document.paths as Record<string, Record<string, unknown>>).reduce(
+      (n, item) => n + Object.keys(item).filter((m) => METODOS.has(m)).length,
+      0,
+    );
+    expect(API_OPERATIONS.length, "a tabela gerada não bate com o snapshot").toBe(doSnapshot);
+
+    const PISO = 276;
+    expect(
+      API_OPERATIONS.length,
+      `o documento encolheu para ${API_OPERATIONS.length}, abaixo do piso de ${PISO}. ` +
+        "Se a remoção é intencional, abaixe o piso na mesma mudança e diga por quê.",
+    ).toBeGreaterThanOrEqual(PISO);
   });
 
   it("refuses a method/path pair the document does not declare, before any request", async () => {
