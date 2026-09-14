@@ -2,57 +2,52 @@ import type { ApiClient } from "../api.js";
 import { CliError } from "../config.js";
 import { json, kv, table } from "../output.js";
 
-interface ServerSummary {
-  id: string;
-  name: string;
-  category?: string;
-  region?: string;
-  status?: "live" | "beta" | "coming-soon";
-  tool_count?: number;
-  capabilities?: string[];
-}
-
-interface ServerDetail extends ServerSummary {
-  description?: string;
-  auth_type?: string;
-  docs_url?: string;
-  tools?: Array<{ name: string; description?: string }>;
-}
-
 interface ListOptions {
   category?: string;
-  region?: string;
+  country?: string;
+  q?: string;
   json?: boolean;
 }
 
 export async function listServersCommand(client: ApiClient, opts: ListOptions): Promise<void> {
-  const data = await client.get<{ data: ServerSummary[] }>("/v1/servers", {
-    category: opts.category,
-    region: opts.region,
+  const data = await client.get("/v1/servers", {
+    query: { category: opts.category, country: opts.country, q: opts.q },
   });
 
   if (opts.json) {
-    json(data.data);
+    json(data.servers);
     return;
   }
 
   table(
-    ["ID", "NAME", "CATEGORY", "REGION", "TOOLS", "STATUS"],
-    data.data.map((s) => [
+    ["ID", "NAME", "CATEGORY", "COUNTRY", "TOOLS", "STATUS"],
+    data.servers.map((s) => [
       s.id,
       s.name,
       s.category ?? "-",
-      s.region ?? "-",
-      String(s.tool_count ?? "-"),
+      s.country ?? "-",
+      String(s.tools_count ?? "-"),
       s.status ?? "-",
     ]),
   );
+  if (data.filtered !== data.total) {
+    process.stdout.write(`\n${data.filtered} of ${data.total} servers shown.\n`);
+  }
 }
 
 interface ShowOptions {
   json?: boolean;
 }
 
+/**
+ * One server, assembled from the three routes that describe it.
+ *
+ * There is no `GET /v1/servers/{id}`: this command used to call it and got
+ * a 404 every time it ran (core#130). What exists is the catalog listing,
+ * which carries the descriptive fields, plus the two per-server reads. The
+ * listing is fetched first because it is the only one that can tell an
+ * unknown id from an id whose tools have not been indexed.
+ */
 export async function showServerCommand(
   client: ApiClient,
   id: string,
@@ -60,10 +55,21 @@ export async function showServerCommand(
 ): Promise<void> {
   if (!id) throw new CliError("Server id is required. Example: `codespar servers show stripe`");
 
-  const server = await client.get<ServerDetail>(`/v1/servers/${encodeURIComponent(id)}`);
+  const catalog = await client.get("/v1/servers");
+  const server = catalog.servers.find((s) => s.id === id);
+  if (!server) {
+    throw new CliError(
+      `No server with id "${id}" in the catalog. Run \`codespar servers list\` to see the ${catalog.total} available.`,
+    );
+  }
+
+  const [tools, auth] = await Promise.all([
+    client.get("/v1/servers/{id}/tools", { path: { id } }),
+    client.get("/v1/servers/{id}/auth-schema", { path: { id } }),
+  ]);
 
   if (opts.json) {
-    json(server);
+    json({ ...server, auth_schema: auth, tools: tools.tools });
     return;
   }
 
@@ -71,20 +77,28 @@ export async function showServerCommand(
     ["ID", server.id],
     ["Name", server.name],
     ["Category", server.category ?? "-"],
-    ["Region", server.region ?? "-"],
+    ["Country", server.country ?? "-"],
     ["Status", server.status ?? "-"],
-    ["Auth", server.auth_type ?? "-"],
-    ["Tools", String(server.tool_count ?? server.tools?.length ?? "-")],
+    ["Auth", auth.auth_type],
+    ["Environment", auth.environment],
+    ["Tools", String(tools.total)],
   ]);
 
   if (server.description) {
     process.stdout.write(`\n${server.description}\n`);
   }
 
-  if (server.tools && server.tools.length > 0) {
+  if (auth.fields.length > 0) {
+    process.stdout.write("\nCredentials it asks for:\n");
+    for (const field of auth.fields) {
+      process.stdout.write(`  • ${field.label} (${field.name}, ${field.kind})\n`);
+    }
+  }
+
+  if (tools.tools.length > 0) {
     process.stdout.write("\nTools:\n");
-    for (const t of server.tools) {
-      process.stdout.write(`  • ${t.name}${t.description ? ` — ${t.description}` : ""}\n`);
+    for (const tool of tools.tools) {
+      process.stdout.write(`  • ${tool.name}${tool.description ? ` — ${tool.description}` : ""}\n`);
     }
   }
 }

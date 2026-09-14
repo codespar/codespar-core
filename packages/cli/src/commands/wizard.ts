@@ -1,7 +1,7 @@
 import { CodeSpar } from "@codespar/sdk";
 import type { ConnectionWizardOptions, ConnectionWizardResult } from "@codespar/sdk";
 import { CliError } from "../config.js";
-import { c, info, json, kv, success, table } from "../output.js";
+import { c, info, isoDay, json, kv, success, table } from "../output.js";
 
 interface WizardCommandOptions {
   apiKey: string;
@@ -70,7 +70,7 @@ function renderWizardResult(result: ConnectionWizardResult): void {
         row.auth_type,
         row.status,
         row.difficulty,
-        row.connected_at ? new Date(row.connected_at).toISOString().slice(0, 10) : "-",
+        isoDay(row.connected_at),
       ]),
     );
     return;

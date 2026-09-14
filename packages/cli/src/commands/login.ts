@@ -64,25 +64,18 @@ export async function loginCommand(opts: LoginOptions): Promise<void> {
 
   // Validate before saving so we don't persist a typo.
   const client = new ApiClient({ apiKey, baseUrl });
-  const me = await client.get<WhoAmIResponse>("/v1/whoami");
+  const me = await client.get("/v1/whoami");
 
   await saveConfig({ apiKey, baseUrl });
 
-  success(`Logged in as ${me.user?.email ?? me.user?.id ?? "unknown user"}`);
+  success(`Logged in as ${me.user?.email ?? "unknown user"}`);
   if (me.organization?.name) {
     info(`Organization: ${me.organization.name}`);
   }
 }
 
-interface WhoAmIResponse {
-  user?: { id?: string; email?: string; name?: string };
-  organization?: { id?: string; name?: string };
-  project?: { id?: string; name?: string };
-  key?: { id?: string; environment?: "live" | "test"; scopes?: string[] };
-}
-
 export async function whoamiCommand(client: ApiClient, asJson: boolean): Promise<void> {
-  const me = await client.get<WhoAmIResponse>("/v1/whoami");
+  const me = await client.get("/v1/whoami");
 
   if (asJson) {
     const { json } = await import("../output.js");
@@ -92,10 +85,10 @@ export async function whoamiCommand(client: ApiClient, asJson: boolean): Promise
 
   const { kv } = await import("../output.js");
   kv([
-    ["User", me.user?.email ?? me.user?.id ?? "(unknown)"],
-    ["Organization", me.organization?.name ?? "(none)"],
-    ["Project", me.project?.name ?? me.project?.id ?? "(none)"],
-    ["Key env", me.key?.environment ?? "(unknown)"],
-    ["Scopes", me.key?.scopes?.join(", ") ?? "(all)"],
+    ["User", me.user?.email ?? "(unknown)"],
+    ["Organization", me.organization.name ?? "(none)"],
+    ["Project", me.project.name ?? me.project.id],
+    ["Key env", me.key.environment ?? "(unknown)"],
+    ["Scopes", me.key.scopes.join(", ") || "(all)"],
   ]);
 }

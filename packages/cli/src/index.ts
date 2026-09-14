@@ -118,10 +118,11 @@ servers
   .command("list")
   .description("List servers")
   .option("-c, --category <name>", "Filter by category")
-  .option("-r, --region <code>", "Filter by region (e.g. BR, MX)")
-  .action(async (opts: { category?: string; region?: string }) => {
+  .option("--country <code>", "Filter by country (e.g. BR, MX)")
+  .option("-q, --query <text>", "Full-text search over the catalog")
+  .action(async (opts: { category?: string; country?: string; query?: string }) => {
     const client = await authedClient();
-    await listServersCommand(client, { ...opts, json: rootJsonFlag() });
+    await listServersCommand(client, { ...opts, q: opts.query, json: rootJsonFlag() });
   });
 
 servers
@@ -137,8 +138,8 @@ const tools = program.command("tools").description("Inspect tools exposed by ser
 
 tools
   .command("list")
-  .description("List tools")
-  .option("-s, --server <id>", "Filter by server")
+  .description("List the tools one server exposes")
+  .option("-s, --server <id>", "Server id (required — tools are listed per server)")
   .action(async (opts: { server?: string }) => {
     const client = await authedClient();
     await listToolsCommand(client, { ...opts, json: rootJsonFlag() });
@@ -146,10 +147,11 @@ tools
 
 tools
   .command("show <name>")
-  .description("Show a tool's full schema")
-  .action(async (name: string) => {
+  .description("Show one tool of a server")
+  .option("-s, --server <id>", "Server id (required — tools are addressed per server)")
+  .action(async (name: string, opts: { server?: string }) => {
     const client = await authedClient();
-    await showToolCommand(client, name, { json: rootJsonFlag() });
+    await showToolCommand(client, name, { ...opts, json: rootJsonFlag() });
   });
 
 tools
@@ -623,15 +625,24 @@ const logs = program.command("logs").description("Inspect tool-call execution lo
 
 logs
   .command("tail")
-  .description("Stream logs in real time (SSE)")
-  .option("-s, --server <id>", "Filter by server")
-  .option("--status <s>", "Filter by status: success, error, running")
-  .option("-t, --tool <name>", "Filter by tool name")
-  .option("--limit <n>", "Request up to N backfilled entries before tailing")
-  .action(async (opts: { server?: string; status?: string; tool?: string; limit?: string }) => {
-    const auth = await resolveAuth();
-    await tailLogsCommand(auth, { ...opts, json: rootJsonFlag() });
-  });
+  .description("Show recent tool calls; with --follow, poll for new ones")
+  .option("-s, --server <id>", "Keep only this server (applied to the page fetched)")
+  .option("--status <s>", "Keep only this status (applied to the page fetched)")
+  .option("-t, --tool <name>", "Keep only this tool (applied to the page fetched)")
+  .option("--limit <n>", "How many recent calls to read (default 20)")
+  .option("-f, --follow", "Keep polling for new calls until interrupted")
+  .action(
+    async (opts: {
+      server?: string;
+      status?: string;
+      tool?: string;
+      limit?: string;
+      follow?: boolean;
+    }) => {
+      const client = await authedClient();
+      await tailLogsCommand(client, { ...opts, json: rootJsonFlag() });
+    },
+  );
 
 // ============ init ============
 program

@@ -2,8 +2,36 @@ import { ApiClient } from "../api.js";
 import { CliError } from "../config.js";
 import { info, json, kv, success } from "../output.js";
 
+/**
+ * The currencies and pin kinds the consent intent declares.
+ *
+ * Written here as `const`, and assigned into the request body below, so the
+ * compiler compares them with the document's own enum on every build: a
+ * currency the API drops, or one it adds, shows up as a type error rather
+ * than as a 400 the user sees at the end of a mandate ceremony.
+ */
+const CURRENCIES = ["BRL", "USD", "MXN", "COP", "ARS", "USDC", "BRLA"] as const;
+type Currency = (typeof CURRENCIES)[number];
+
+const PIN_KINDS = ["pix-key", "merchant-id", "mcc"] as const;
+type PinKind = (typeof PIN_KINDS)[number];
+
+function parseCurrency(raw: string, where: string): Currency {
+  if (!(CURRENCIES as readonly string[]).includes(raw)) {
+    throw new CliError(`${where} expects one of ${CURRENCIES.join(", ")}, got "${raw}".`);
+  }
+  return raw as Currency;
+}
+
+function parsePinKind(raw: string): PinKind {
+  if (!(PIN_KINDS as readonly string[]).includes(raw)) {
+    throw new CliError(`--pin-kind expects one of ${PIN_KINDS.join(", ")}, got "${raw}".`);
+  }
+  return raw as PinKind;
+}
+
 interface MandateSlotInput {
-  currency: string;
+  currency: Currency;
   rail: string;
   cap_minor: number;
   per_tx_cap_minor: number;
@@ -57,7 +85,12 @@ function parseSlots(specs: string[]): MandateSlotInput[] {
     if (!Number.isInteger(per_tx_cap_minor) || per_tx_cap_minor <= 0) {
       throw new CliError(`--slot ${spec}: per-tx cap must be a positive integer (minor units).`);
     }
-    return { currency, rail, cap_minor, per_tx_cap_minor };
+    return {
+      currency: parseCurrency(currency, `--slot ${spec}`),
+      rail,
+      cap_minor,
+      per_tx_cap_minor,
+    };
   });
 }
 
@@ -106,7 +139,7 @@ export async function mandateCreateCommand(opts: MandateCreateOptions): Promise<
   // multi-slot mandate; for the legacy path they come from --cap / --currency.
   let primaryCapMinor: number;
   let primaryPerTxMinor: number;
-  let primaryCurrency: string;
+  let primaryCurrency: Currency;
   if (slots) {
     primaryCapMinor = slots[0]!.cap_minor;
     primaryPerTxMinor = slots[0]!.per_tx_cap_minor;
@@ -114,7 +147,7 @@ export async function mandateCreateCommand(opts: MandateCreateOptions): Promise<
   } else {
     primaryCapMinor = Number(opts.cap);
     primaryPerTxMinor = Number(opts.perTxCap);
-    primaryCurrency = opts.currency;
+    primaryCurrency = parseCurrency(opts.currency, "--currency");
     if (!Number.isInteger(primaryCapMinor) || primaryCapMinor <= 0) {
       throw new CliError(
         "--cap must be a positive integer in minor units (or use --slot for a multi-currency mandate).",
@@ -134,20 +167,21 @@ export async function mandateCreateCommand(opts: MandateCreateOptions): Promise<
   });
 
   // 1. Mint the consent token (authed). slots ride along in the intent.
-  const intent: Record<string, unknown> = {
-    purpose: opts.purpose,
-    cap_minor: primaryCapMinor,
-    per_tx_cap_minor: primaryPerTxMinor,
-    currency: primaryCurrency,
-    mandate_ttl_seconds: ttl,
-    merchant_allowlist: allowlist,
-    merchant_pin_kind: opts.pinKind,
-  };
-  if (slots) intent.slots = slots;
-
-  const init = await client.post<{ token: string; expires_at: string }>("/v1/consents/init", {
-    agent_id: opts.agent,
-    intent,
+  //    The body is built inline so the document checks every field of it.
+  const init = await client.post("/v1/consents/init", {
+    body: {
+      agent_id: opts.agent,
+      intent: {
+        purpose: opts.purpose,
+        cap_minor: primaryCapMinor,
+        per_tx_cap_minor: primaryPerTxMinor,
+        currency: primaryCurrency,
+        mandate_ttl_seconds: ttl,
+        merchant_allowlist: allowlist,
+        merchant_pin_kind: parsePinKind(opts.pinKind),
+        ...(slots ? { slots } : {}),
+      },
+    },
   });
 
   // 2. Submit the consumer side → funding source(s) + signed mandate (public;
@@ -155,7 +189,11 @@ export async function mandateCreateCommand(opts: MandateCreateOptions): Promise<
   //    For a multi-slot mandate the backend derives one funding source per slot
   //    from intent.slots; the rail/provider_token here only satisfy the submit
   //    schema (a valid rail value), so the --rail default is fine.
-  const submit = await client.post<Record<string, unknown>>(
+  // `POST /v1/consents/{token}/submit` answers in production but the served
+  // OpenAPI document does not declare it, so this call cannot be checked by
+  // the generated table. It is one of the two entries in OFF_SPEC_PATHS.
+  const submit = await client.offSpec<Record<string, unknown>>(
+    "POST",
     `/v1/consents/${encodeURIComponent(init.token)}/submit`,
     {
       consumer_id: opts.consumer,

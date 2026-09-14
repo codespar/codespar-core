@@ -65,7 +65,11 @@ export async function transferCommand(consumerId: string, opts: TransferCommandO
   if (opts.agent) body.agent_id = opts.agent;
   if (opts.purpose) body.purpose = opts.purpose;
 
-  const res = await client.post<TransferResponse>(
+  // `POST /v1/consumers/{id}/wallet/transfer` answers in production but the
+  // served OpenAPI document does not declare it, so this call cannot be
+  // checked by the generated table. It is one of the two OFF_SPEC_PATHS.
+  const res = await client.offSpec<TransferResponse>(
+    "POST",
     `/v1/consumers/${encodeURIComponent(consumerId)}/wallet/transfer`,
     body,
   );

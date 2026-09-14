@@ -1,3 +1,10 @@
+import type {
+  ApiOperation,
+  ApiPathsFor,
+  ApiRequestOptions,
+  ApiSuccess,
+} from "@codespar/sdk";
+
 import { CliError } from "./config.js";
 import { VERSION } from "./version.js";
 
@@ -13,10 +20,57 @@ export interface ApiClientConfig {
   timeoutMs?: number;
 }
 
+/** `[opts?]` when the operation declares nothing required, `[opts]` otherwise. */
+type RequestArgs<Op> = {} extends ApiRequestOptions<Op>
+  ? [options?: ApiRequestOptions<Op>]
+  : [options: ApiRequestOptions<Op>];
+
+type Options = {
+  path?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+  body?: unknown;
+  header?: Record<string, unknown>;
+  timeout?: number;
+};
+
 /**
- * Thin fetch wrapper around the CodeSpar REST API. The SDK doesn't expose
- * every endpoint the CLI needs (catalog listings, session bookkeeping),
- * so we hit the HTTP surface directly with the user's API key.
+ * Expand `{name}` segments with encoded values, refusing before the request
+ * when one is missing: an unexpanded `{id}` reaches the backend as a literal
+ * and 404s in a way that reads to the user like a bad id.
+ */
+function expandPath(template: string, params: Record<string, unknown> | undefined): string {
+  const values = params ?? {};
+  const missing: string[] = [];
+  const expanded = template.replace(/\{([^}]+)\}/g, (_, name: string) => {
+    const value = values[name];
+    if (value === undefined || value === null || value === "") {
+      missing.push(name);
+      return "";
+    }
+    return encodeURIComponent(String(value));
+  });
+  if (missing.length > 0) {
+    throw new CliError(
+      `${template}: missing path parameter${missing.length > 1 ? "s" : ""} ${missing.join(", ")}.`,
+    );
+  }
+  return expanded;
+}
+
+/**
+ * The CLI's REST client, typed by the served OpenAPI document.
+ *
+ * `path` is a path TEMPLATE the document declares, and the response type is
+ * the one the document declares for it — so a route that does not exist, and
+ * a field the payload does not carry, are both compile errors rather than a
+ * 404 or a `Cannot read properties of undefined` in the user's terminal.
+ * Both had shipped: `codespar servers list` read `data.data` from a payload
+ * whose array is `servers`, and crashed for every user who ran it (core#130).
+ *
+ * It stays separate from the SDK's `cs.api`, which the derived resource
+ * commands dispatch through, for one reason: the `codespar-cli/<version>`
+ * User-Agent and the CliError message shape. The typing here is the SDK's,
+ * imported, not a second copy.
  */
 export class ApiClient {
   private readonly timeoutMs: number;
@@ -25,28 +79,68 @@ export class ApiClient {
     this.timeoutMs = config.timeoutMs ?? 30_000;
   }
 
-  async get<T>(path: string, query?: Record<string, string | undefined>): Promise<T> {
-    return this.request<T>("GET", path, undefined, query);
+  get<P extends ApiPathsFor<"get">>(
+    path: P,
+    ...args: RequestArgs<ApiOperation<P, "get">>
+  ): Promise<ApiSuccess<ApiOperation<P, "get">>> {
+    return this.request("GET", path, args[0] as Options) as Promise<
+      ApiSuccess<ApiOperation<P, "get">>
+    >;
   }
 
-  async post<T>(path: string, body?: unknown): Promise<T> {
-    return this.request<T>("POST", path, body);
+  post<P extends ApiPathsFor<"post">>(
+    path: P,
+    ...args: RequestArgs<ApiOperation<P, "post">>
+  ): Promise<ApiSuccess<ApiOperation<P, "post">>> {
+    return this.request("POST", path, args[0] as Options) as Promise<
+      ApiSuccess<ApiOperation<P, "post">>
+    >;
   }
 
-  async delete<T>(path: string): Promise<T> {
-    return this.request<T>("DELETE", path);
+  patch<P extends ApiPathsFor<"patch">>(
+    path: P,
+    ...args: RequestArgs<ApiOperation<P, "patch">>
+  ): Promise<ApiSuccess<ApiOperation<P, "patch">>> {
+    return this.request("PATCH", path, args[0] as Options) as Promise<
+      ApiSuccess<ApiOperation<P, "patch">>
+    >;
   }
 
-  private async request<T>(
-    method: string,
-    path: string,
-    body?: unknown,
-    query?: Record<string, string | undefined>,
-  ): Promise<T> {
-    const url = new URL(path.startsWith("/") ? path : `/${path}`, this.config.baseUrl);
-    if (query) {
-      for (const [k, v] of Object.entries(query)) {
-        if (v !== undefined) url.searchParams.set(k, v);
+  delete<P extends ApiPathsFor<"delete">>(
+    path: P,
+    ...args: RequestArgs<ApiOperation<P, "delete">>
+  ): Promise<ApiSuccess<ApiOperation<P, "delete">>> {
+    return this.request("DELETE", path, args[0] as Options) as Promise<
+      ApiSuccess<ApiOperation<P, "delete">>
+    >;
+  }
+
+  /**
+   * Call a route the served document does not declare.
+   *
+   * Two of these exist and both are real: `POST /v1/consents/{id}/submit` and
+   * `POST /v1/consumers/{id}/wallet/transfer` answer in production (400 and
+   * 401 to an unauthenticated probe, against 404 for a route that is absent),
+   * but the OpenAPI document the backend serves never mentions them, so
+   * neither the generated table nor these types can check the call.
+   *
+   * It is deliberately not `get`/`post`: every use is debt registered in
+   * OFF_SPEC_PATHS, and the name is what makes the debt visible at the call
+   * site. The fix for each is in codespar-enterprise — declare the route —
+   * after which the call moves to the typed methods above and the entry
+   * leaves the register.
+   */
+  offSpec<T>(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, body?: unknown): Promise<T> {
+    return this.request(method, path, body === undefined ? {} : { body }) as Promise<T>;
+  }
+
+  private async request(method: string, template: string, options: Options = {}): Promise<unknown> {
+    const url = new URL(expandPath(template, options.path), this.config.baseUrl);
+    for (const [key, value] of Object.entries(options.query ?? {})) {
+      if (value === undefined || value === null) continue;
+      for (const item of Array.isArray(value) ? value : [value]) {
+        if (item === undefined || item === null) continue;
+        url.searchParams.append(key, typeof item === "object" ? JSON.stringify(item) : String(item));
       }
     }
 
@@ -56,22 +150,26 @@ export class ApiClient {
       "User-Agent": `codespar-cli/${VERSION}`,
     };
     if (this.config.project) headers["x-codespar-project"] = this.config.project;
+    for (const [key, value] of Object.entries(options.header ?? {})) {
+      if (value !== undefined && value !== null) headers[key] = String(value);
+    }
 
+    const timeoutMs = options.timeout ?? this.timeoutMs;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     let res: Response;
     try {
       res = await fetch(url, {
         method,
         headers,
-        body: body !== undefined ? JSON.stringify(body) : undefined,
+        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
         signal: controller.signal,
       });
     } catch (err) {
       if ((err as Error).name === "AbortError") {
         throw new CliError(
-          `Request to ${method} ${url.pathname} timed out after ${this.timeoutMs}ms.`,
+          `Request to ${method} ${url.pathname} timed out after ${timeoutMs}ms.`,
         );
       }
       throw new CliError(
@@ -105,8 +203,7 @@ export class ApiClient {
       throw new CliError(detail ? `${prefix}: ${detail}` : prefix);
     }
 
-    // 204 No Content
-    if (res.status === 204) return undefined as T;
-    return (await res.json()) as T;
+    if (res.status === 204) return undefined;
+    return (await res.json()) as unknown;
   }
 }
