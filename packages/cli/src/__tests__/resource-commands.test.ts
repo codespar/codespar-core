@@ -123,7 +123,7 @@ const PINNED_COMMANDS = [
   "consents init → POST /v1/consents/init",
   "consumer-payments execute → POST /v1/consumer-payments/execute",
   "consumer-payments execute-stream → POST /v1/consumer-payments/execute-stream",
-  "tools search → POST /v1/tools/search",
+  "catalog search → POST /v1/tools/search",
   "test fund → POST /v1/test/fund",
   "test pix-in → POST /v1/test/pix-in",
   "test settle-pix-in → POST /v1/test/settle-pix-in",
