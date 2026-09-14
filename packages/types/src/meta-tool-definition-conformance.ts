@@ -77,6 +77,13 @@ export function proseSurfaces(def: {
         String(prop.description ?? ""),
       ]);
       if (prop.properties) walk(prop.properties, `${prefix}${name}.`);
+      // A union branch is a property with its own prose. Skipping it would
+      // make the description of the bank-account form of `recipient`
+      // invisible to every prose check, which is the class these gates exist
+      // to catch rather than to create.
+      prop.anyOf?.forEach((branch, i) => {
+        walk({ [`anyOf[${i}]`]: branch }, `${prefix}${name}.`);
+      });
     }
   };
   walk(def.input_schema.properties, "");
@@ -101,6 +108,16 @@ function enumsByPath(
         out.set(path, v);
       }
     }
+    // Same reason as the prose walk: a vocabulary declared inside a union
+    // branch is still published vocabulary.
+    prop.anyOf?.forEach((branch, i) => {
+      for (const [path, v] of enumsByPath(
+        { [`anyOf[${i}]`]: branch },
+        `${prefix}${name}.`,
+      )) {
+        out.set(path, v);
+      }
+    });
   }
   return out;
 }
@@ -299,13 +316,39 @@ export function sharedDefinitionConformanceReasons(
   const asProp = (p: unknown): MetaToolInputProperty | undefined =>
     p && typeof p === "object" ? (p as MetaToolInputProperty) : undefined;
 
+  /**
+   * What a property declares, as one comparable string.
+   *
+   * A property says its shape with `type` or with `anyOf`, never both, and
+   * comparing the raw `type` field would call two identical unions different
+   * (both `undefined`) while calling a union and a bare string the same. The
+   * branches are sorted because a union is a set: reordering them changes no
+   * contract, and a gate that reddens on reordering trains people to ignore
+   * it.
+   */
+  const shapeOf = (prop: MetaToolInputProperty, insideUnion = false): string => {
+    if (prop.anyOf) {
+      return `anyOf(${prop.anyOf.map((b) => shapeOf(b, true)).sort().join("|")})`;
+    }
+    // Inside a union, the branch's own fields are part of the shape: the
+    // embedded-property check below reads `sharedProp.properties`, which a
+    // union leaves empty because its fields live one level down, in the
+    // branches. Without this a runtime could publish the bank-account branch
+    // with `tax_id` missing and conformance would say nothing — the same hole
+    // the union was opened to close, one level deeper.
+    if (insideUnion && prop.properties) {
+      return `${JSON.stringify(prop.type)}{${Object.keys(prop.properties).sort().join(",")}}`;
+    }
+    return JSON.stringify(prop.type);
+  };
+
   for (const k of sharedProps) {
     const toolProp = asProp(tool.input_schema.properties[k]);
     const sharedProp = shared.input_schema.properties[k];
     if (!toolProp || !sharedProp) continue; // presence already reported
-    if (toolProp.type !== sharedProp.type) {
+    if (shapeOf(toolProp) !== shapeOf(sharedProp)) {
       reasons.push(
-        `property "${k}" type ${JSON.stringify(toolProp.type)} != ${JSON.stringify(sharedProp.type)}`,
+        `property "${k}" type ${shapeOf(toolProp)} != ${shapeOf(sharedProp)}`,
       );
     }
     // Shared vocabulary must be honored — structurally when the runtime
@@ -334,9 +377,9 @@ export function sharedDefinitionConformanceReasons(
         const toolNested = asProp(nested[name]);
         if (!toolNested) {
           reasons.push(`property "${k}" is missing the embedded property "${name}"`);
-        } else if (toolNested.type !== sharedNested.type) {
+        } else if (shapeOf(toolNested) !== shapeOf(sharedNested)) {
           reasons.push(
-            `embedded property "${k}.${name}" type ${JSON.stringify(toolNested.type)} != ${JSON.stringify(sharedNested.type)}`,
+            `embedded property "${k}.${name}" type ${shapeOf(toolNested)} != ${shapeOf(sharedNested)}`,
           );
         }
       }

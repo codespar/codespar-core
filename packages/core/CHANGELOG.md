@@ -1,5 +1,14 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.15.0 — 2026-09-14
+
+### Changed
+
+- Re-exports the `@codespar/types` 0.11.0 contract, in which a meta-tool
+  input property may publish `anyOf` instead of a single `type`
+  (codespar-core#128). Consumers reading `property.type` as a `string`
+  must handle `undefined` for a union property.
+
 ## 0.14.0 — 2026-09-14
 
 ### Added
