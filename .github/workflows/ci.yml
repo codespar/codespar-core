@@ -38,6 +38,14 @@ jobs:
       - name: Publish drift guard — self-test
         run: node --test scripts/check-publish-drift.test.mjs
 
+      # A package naming @codespar/sdk in BOTH dependencies and
+      # peerDependencies must name the same range in each. @codespar/mcp
+      # names both, and 0.5.6 shipped with them disagreeing — a release step
+      # widened one and left the other, which is what happens to a fact
+      # written down twice. Hermetic, and it carries its own control.
+      - name: SDK range agreement
+        run: node --test scripts/check-sdk-range-agreement.test.mjs
+
       # core#129: @codespar/types carried 15 meta-tool definitions in main
       # while the published 0.10.15 tarball carried 3, for two months, with
       # CI green throughout. npm versions are immutable, so that number can
