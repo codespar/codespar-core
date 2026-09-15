@@ -48,4 +48,4 @@ npx turbo run test --filter=@codespar/sdk
 
 ## Questions?
 
-Open an issue or reach out at support@codespar.dev.
+Open an issue or reach out at hello@codespar.dev.
