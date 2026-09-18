@@ -69,7 +69,7 @@ export const SHOP_STATUS_READY_FIXTURE: ShopStatusResult = {
   status: "ready_for_payment",
   rail: "vtex",
   total_minor: 4990,
-  pix_copia_e_cola: "00020126580014br.gov.bcb.pix0136cks-fixture5204000053039865802BR6304ABCD",
+  pix_copia_e_cola: "00020126330014br.gov.bcb.pix0111cks-fixture5204000053039865802BR5912LOJA FIXTURE6009SAO PAULO62070503***63048071",
   order_status: "pending",
 };
 
