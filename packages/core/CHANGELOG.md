@@ -1,5 +1,16 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.1 — 2026-09-19
+
+### Changed
+
+- The OpenAPI snapshot is re-fetched from the served document
+  (276 operations, unchanged). The two consumer-spend endpoints now
+  answer 422 with `carrier_crc_invalid`, `carrier_malformed` or
+  `carrier_format_unsupported` when the payee is a Pix copia-e-cola that
+  fails its own check (codespar-enterprise#1427), and the generated types
+  carry those codes.
+
 ## 0.15.0 — 2026-09-14
 
 ### Changed

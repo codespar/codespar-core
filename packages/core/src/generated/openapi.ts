@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 13a33bbf4918a1ca6e5c000f332d3355e0da64a8f7a836484e328ba230381fae, fetched 2026-09-14T22:01:27.987Z
+// Source: openapi-snapshot.json (sha256 6462dfe7722070516b0a0a1832f6b21ccd4beffb5f11a3b7e6909e369daea610, fetched 2026-09-19T00:39:37.947Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -2809,16 +2809,16 @@ export interface paths {
         };
         /**
          * List approvals held for review
-         * @description As retenções da organização, mais recentes primeiro.
+         * @description The organization's holds, newest first.
          *
-         *     **Sem `status`, você recebe só as `pending`** — não todas. É o padrão útil para uma fila de operador, e é a pegadinha para quem espera um histórico: peça `status=approved,denied` para ver o que já foi decidido.
+         *     **Without `status`, you get only the `pending` ones**, not all of them. It is the useful default for an operator queue, and the trap for anyone expecting a history: ask for `status=approved,denied` to see what has already been decided.
          *
-         *     A resposta é um ARRAY, sem envelope e sem cursor.
+         *     The response is an ARRAY, with no envelope and no cursor.
          */
         get: {
             parameters: {
                 query?: {
-                    /** @description Separado por vírgula, de `pending`, `approved`, `denied`, `expired` e `execution_failed`. AUSENTE NÃO É "todos": o padrão é `pending`. */
+                    /** @description Comma-separated, from `pending`, `approved`, `denied`, `expired` and `execution_failed`. ABSENT IS NOT "all": the default is `pending`. */
                     status?: string;
                     limit?: number | null;
                 };
@@ -2874,7 +2874,7 @@ export interface paths {
                         }[];
                     };
                 };
-                /** @description A query não casou com o schema. Corpo cru. */
+                /** @description The query did not match the schema. Raw body. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2889,7 +2889,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Organização não resolvida. Corpo cru. */
+                /** @description Organization not resolved. Raw body. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2922,13 +2922,13 @@ export interface paths {
         put?: never;
         /**
          * Approve or deny a held call
-         * @description Aprova ou nega uma retenção, e é O passo que libera (ou mata) a chamada que a política segurou.
+         * @description Approves or denies a hold, and it is THE step that releases (or kills) the call the policy held.
          *
-         *     **`reason` é obrigatório nos dois sentidos.** Até 8000 caracteres, e só espaço em branco não conta: a trilha de auditoria de uma decisão humana sem motivo escrito não serve para nada depois.
+         *     **`reason` is required for both decisions.** Up to 8000 characters, and whitespace alone does not count: the audit trail of a human decision with no written reason is worth nothing later.
          *
-         *     **Decidir exige uma PESSOA, não uma chave.** Uma credencial de portador sozinha é recusada com `bearer_token_cannot_decide`: o token do usuário tem de vir junto, ser verificável, e a identidade dele tem de casar com a que o cabeçalho afirma. É o que separa `a organização decidiu` de `alguém com a chave decidiu`.
+         *     **Deciding takes a PERSON, not a key.** A bearer credential alone is refused with `bearer_token_cannot_decide`: the user token has to come with it, be verifiable, and its identity has to match the one the header asserts. That is what separates `the organization decided` from `someone with the key decided`.
          *
-         *     **Uma decisão já tomada é 409, e uma expirada é 410** — nos dois casos a aprovação completa vem no corpo, para o chamador ver quem decidiu o quê sem uma segunda leitura.
+         *     **A decision already taken is 409, and an expired one is 410.** In both cases the full approval comes in the body, so the caller can see who decided what without a second read.
          */
         post: {
             parameters: {
@@ -2944,7 +2944,7 @@ export interface paths {
                     "application/json": {
                         /** @enum {string} */
                         decision: "approve" | "deny";
-                        /** @description Obrigatório nos dois sentidos. Só espaço em branco é recusado. */
+                        /** @description Required for both decisions. Whitespace alone is refused. */
                         reason: string;
                     };
                 };
@@ -2996,7 +2996,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Corpo fora do schema. `reason_invalid` quando o problema é o motivo (vazio, só espaço, ou acima do limite), `invalid_body` no resto. Corpo cru, com `limit` repetindo o teto de 8000. */
+                /** @description Body outside the schema. `reason_invalid` when the problem is the reason (empty, whitespace only, or over the limit), `invalid_body` otherwise. Raw body, with `limit` repeating the ceiling of 8000. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -3013,7 +3013,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Quem chamou não pode decidir. `bearer_token_cannot_decide` quando só veio uma credencial de portador; `user_token_required`, `user_token_invalid` e `user_token_identity_mismatch` quando o token do usuário falta, não verifica, ou não bate com a identidade afirmada no cabeçalho; `insufficient_role` quando a pessoa está abaixo de admin. Corpo cru. */
+                /** @description The caller cannot decide. `bearer_token_cannot_decide` when only a bearer credential arrived; `user_token_required`, `user_token_invalid` and `user_token_identity_mismatch` when the user token is missing, does not verify, or does not match the identity asserted in the header; `insufficient_role` when the person is below admin. Raw body. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -3027,7 +3027,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Não existe, ou é de outra organização — indistinguível de propósito. Corpo cru. */
+                /** @description Does not exist, or belongs to another organization: indistinguishable on purpose. Raw body. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -3039,7 +3039,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Já decidida. A aprovação completa vem junto, para o chamador ver quem decidiu o quê sem uma segunda leitura. Corpo cru. */
+                /** @description Already decided. The full approval comes with it, so the caller can see who decided what without a second read. Raw body. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -3089,7 +3089,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Expirou antes de alguém decidir. A aprovação completa vem junto. Corpo cru. */
+                /** @description Expired before anyone decided. The full approval comes with it. Raw body. */
                 410: {
                     headers: {
                         [name: string]: unknown;
@@ -3139,7 +3139,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Limite de tentativas de decisão. `retry_after_seconds` diz quanto esperar. Corpo cru. */
+                /** @description Decision attempt rate limit. `retry_after_seconds` says how long to wait. Raw body. */
                 429: {
                     headers: {
                         [name: string]: unknown;
@@ -3152,7 +3152,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O deployment não tem verificação de token de usuário configurada, então ninguém pode decidir aqui até que tenha. Corpo cru. */
+                /** @description The deployment has no user token verification configured, so nobody can decide here until it does. Raw body. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -3187,6 +3187,8 @@ export interface paths {
          *
          *     `last_sweep_at` IS NOT SCOPED TO THE CALLER, and cannot be. It is the newest run of the expiry and orphan sweeps for the whole deployment: the table it reads holds one row per sweep type and carries no organization column, so the value moves for reasons that have nothing to do with this organization. Read it as 'the sweeps are alive here', never as 'my queue was swept'. Null means neither sweep has ever recorded a run.
          *
+         *     `status` is the verdict on that timestamp and nothing else: `degraded` with `status_reason: sweep_never_ran` when it is null, `degraded` with `sweep_stale` when the newest run is older than 30 minutes (six ticks of the 5-minute orphan schedule), `ok` otherwise with `status_reason: null`. Queue depth never degrades it; alert on `oldest_pending_age_seconds` for that.
+         *
          *     The age is in whole seconds, rounded.
          */
         get: {
@@ -3206,7 +3208,12 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            status: "ok";
+                            status: "ok" | "degraded";
+                            /**
+                             * @description Why `status` is `degraded`; null exactly when it is `ok`.
+                             * @enum {string|null}
+                             */
+                            status_reason: "sweep_never_ran" | "sweep_stale" | null;
                             pending_count: number;
                             /** @description Age of the oldest pending hold, in seconds. Null when none is pending. */
                             oldest_pending_age_seconds: number | null;
@@ -3491,14 +3498,14 @@ export interface paths {
         };
         /**
          * List audit-chain anchors
-         * @description As âncoras da cadeia de auditoria desta organização, mais recentes primeiro.
+         * @description This organization's audit-chain anchors, newest first.
          *
-         *     `status` filtra entre `pending`, `sent`, `local_only` e `failed`. **`local_only` é um estado terminal de verdade, não um `sent` atrasado**: a âncora está durável neste banco e testemunhada em NENHUM lugar fora dele. Ela já foi reportada como `sent`, e a pergunta que isso tornava impossível de responder era exatamente a que um auditor faz.
+         *     `status` filters among `pending`, `sent`, `local_only` and `failed`. **`local_only` is a genuinely terminal state, not a late `sent`**: the anchor is durable in this database and witnessed NOWHERE outside it. It used to be reported as `sent`, and the question that this made impossible to answer was exactly the one an auditor asks.
          */
         get: {
             parameters: {
                 query?: {
-                    /** @description 1 a 200; o padrão é 50. */
+                    /** @description 1 to 200; defaults to 50. */
                     limit?: number;
                     status?: "pending" | "sent" | "local_only" | "failed";
                 };
@@ -3517,12 +3524,12 @@ export interface paths {
                         "application/json": {
                             anchors: {
                                 id: string;
-                                /** @description Até onde a cadeia ia quando esta âncora foi tirada. */
+                                /** @description How far the chain reached when this anchor was taken. */
                                 head_sequence: number;
                                 head_hash: string;
                                 signature: string;
                                 signature_alg: string;
-                                /** @description Para onde a testemunha externa foi enviada. */
+                                /** @description Where the external witness was sent. */
                                 target: string | null;
                                 target_status: string | null;
                                 target_response: string | null;
@@ -3535,7 +3542,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A query não casou com o schema. */
+                /** @description The query did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -3575,7 +3582,7 @@ export interface paths {
         /**
          * List audit-chain anchors (deprecated path)
          * @deprecated
-         * @description Alias DEPRECIADO de `GET /v1/audit-events/anchors` (ent#979), mantido por dois releases. Mesmo handler, mesmo escopo.
+         * @description DEPRECATED alias of `GET /v1/audit-events/anchors` (ent#979), kept for two releases. Same handler, same scope.
          */
         get: {
             parameters: {
@@ -3598,12 +3605,12 @@ export interface paths {
                         "application/json": {
                             anchors: {
                                 id: string;
-                                /** @description Até onde a cadeia ia quando esta âncora foi tirada. */
+                                /** @description How far the chain reached when this anchor was taken. */
                                 head_sequence: number;
                                 head_hash: string;
                                 signature: string;
                                 signature_alg: string;
-                                /** @description Para onde a testemunha externa foi enviada. */
+                                /** @description Where the external witness was sent. */
                                 target: string | null;
                                 target_status: string | null;
                                 target_response: string | null;
@@ -3616,7 +3623,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A query não casou com o schema. */
+                /** @description The query did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -3657,11 +3664,11 @@ export interface paths {
         put?: never;
         /**
          * Verify an anchor document against our record
-         * @description Recebe um documento de âncora que você guardou e responde duas perguntas SEPARADAS: a assinatura confere, e a nossa cópia bate?
+         * @description Takes an anchor document you kept and answers two SEPARATE questions: does the signature check out, and does our copy match?
          *
-         *     Elas não são a mesma pergunta, e é por isso que o veredito tem quatro valores em vez de um booleano. Assinatura boa com a nossa linha diferente (`local_record_diverges`) é o caso que um auditor precisa ver; assinatura boa sem cópia nossa (`signature_ok_but_no_local_record`) é outro problema e tem outro nome.
+         *     They are not the same question, and that is why the verdict has four values instead of a boolean. A good signature with our row different (`local_record_diverges`) is the case an auditor needs to see; a good signature with no copy of ours (`signature_ok_but_no_local_record`) is a different problem and has a different name.
          *
-         *     Verificar âncora de OUTRA organização é recusado: a assinatura é derivada do segredo da organização dona.
+         *     Verifying an anchor of ANOTHER organization is refused: the signature is derived from the owning organization's secret.
          */
         post: {
             parameters: {
@@ -3698,21 +3705,21 @@ export interface paths {
                             anchor_id: string;
                             org_id: string;
                             head_sequence: number;
-                            /** @description A assinatura confere com o segredo desta organização. */
+                            /** @description The signature checks out against this organization's secret. */
                             signature_valid: boolean;
-                            /** @description Existe uma linha nossa com esse `anchor_id`. */
+                            /** @description A row of ours exists with that `anchor_id`. */
                             persisted_locally: boolean;
-                            /** @description E ela bate campo a campo com o documento apresentado. */
+                            /** @description And it matches the presented document field by field. */
                             persisted_matches: boolean;
                             /**
-                             * @description Os três primeiros NÃO são a mesma coisa e a distinção é o produto: `verified` é assinatura boa e registro nosso idêntico; `signature_ok_but_no_local_record` é um documento que assinamos e do qual não temos mais cópia; `local_record_diverges` é assinatura boa com a nossa linha DIFERENTE — o caso que interessa a um auditor.
+                             * @description The first three are NOT the same thing, and the distinction is the product: `verified` is a good signature with our record identical; `signature_ok_but_no_local_record` is a document we signed and of which we no longer hold a copy; `local_record_diverges` is a good signature with our row DIFFERENT, the case an auditor cares about.
                              * @enum {string}
                              */
                             verdict: "verified" | "signature_ok_but_no_local_record" | "local_record_diverges" | "signature_invalid";
                         };
                     };
                 };
-                /** @description O documento não casou com o schema. */
+                /** @description The document did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -3732,7 +3739,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O `org_id` do documento não é o da credencial. */
+                /** @description The document's `org_id` is not the credential's. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -3752,7 +3759,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O segredo de âncora não está configurado neste deployment, então nada pode ser verificado aqui. */
+                /** @description The anchor secret is not configured in this deployment, so nothing can be verified here. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -3792,7 +3799,7 @@ export interface paths {
         /**
          * Verify an anchor document against our record (deprecated path)
          * @deprecated
-         * @description Alias DEPRECIADO de `POST /v1/audit-events/anchors/verify` (ent#979), mantido por dois releases. Mesmo handler, mesmo escopo, mesmos quatro vereditos.
+         * @description DEPRECATED alias of `POST /v1/audit-events/anchors/verify` (ent#979), kept for two releases. Same handler, same scope, same four verdicts.
          */
         post: {
             parameters: {
@@ -3829,21 +3836,21 @@ export interface paths {
                             anchor_id: string;
                             org_id: string;
                             head_sequence: number;
-                            /** @description A assinatura confere com o segredo desta organização. */
+                            /** @description The signature checks out against this organization's secret. */
                             signature_valid: boolean;
-                            /** @description Existe uma linha nossa com esse `anchor_id`. */
+                            /** @description A row of ours exists with that `anchor_id`. */
                             persisted_locally: boolean;
-                            /** @description E ela bate campo a campo com o documento apresentado. */
+                            /** @description And it matches the presented document field by field. */
                             persisted_matches: boolean;
                             /**
-                             * @description Os três primeiros NÃO são a mesma coisa e a distinção é o produto: `verified` é assinatura boa e registro nosso idêntico; `signature_ok_but_no_local_record` é um documento que assinamos e do qual não temos mais cópia; `local_record_diverges` é assinatura boa com a nossa linha DIFERENTE — o caso que interessa a um auditor.
+                             * @description The first three are NOT the same thing, and the distinction is the product: `verified` is a good signature with our record identical; `signature_ok_but_no_local_record` is a document we signed and of which we no longer hold a copy; `local_record_diverges` is a good signature with our row DIFFERENT, the case an auditor cares about.
                              * @enum {string}
                              */
                             verdict: "verified" | "signature_ok_but_no_local_record" | "local_record_diverges" | "signature_invalid";
                         };
                     };
                 };
-                /** @description O documento não casou com o schema. */
+                /** @description The document did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -3863,7 +3870,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O `org_id` do documento não é o da credencial. */
+                /** @description The document's `org_id` is not the credential's. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -3883,7 +3890,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O segredo de âncora não está configurado. */
+                /** @description The anchor secret is not configured. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -3920,22 +3927,22 @@ export interface paths {
         };
         /**
          * Export audit events, with a signed manifest
-         * @description Exporta os eventos de auditoria da janela pedida, em JSON, com um manifesto ASSINADO no fim.
+         * @description Exports the audit events in the requested window, as JSON, with a SIGNED manifest at the end.
          *
-         *     **A resposta é transmitida, não montada.** O corpo abre com `{"export_id", "org_id", "rows": [` e vai escrevendo linha a linha direto do cursor, então um consumidor que espera um documento completo na memória vai contra o desenho. O cabeçalho `x-export-row-count` chega antes da primeira linha.
+         *     **The response is streamed, not assembled.** The body opens with `{"export_id", "org_id", "rows": [` and then writes row by row straight from the cursor, so a consumer that expects a complete document in memory works against the design. The `x-export-row-count` header arrives before the first row.
          *
-         *     **O manifesto assina o ESCOPO, não só o conteúdo.** Além de `final_hash` e `row_count`, ele carrega os `filters` aplicados: sem isso, uma exportação estreitada a um agente era apresentada — honestamente assinada e íntegra — como se fosse o dia inteiro. O `rows_digest` cobre a numeração, para uma renumeração não passar por um `final_hash` que continuaria batendo.
+         *     **The manifest signs the SCOPE, not just the content.** Besides `final_hash` and `row_count`, it carries the `filters` applied: without this, an export narrowed to one agent was presented, honestly signed and intact, as if it were the whole day. The `rows_digest` covers the numbering, so a renumbering does not get past a `final_hash` that would still match.
          *
-         *     Uma janela grande demais é recusada ANTES de abrir a transmissão, com a contagem e o teto no corpo.
+         *     A window that is too large is refused BEFORE the stream opens, with the count and the ceiling in the body.
          */
         get: {
             parameters: {
                 query: {
-                    /** @description Início da janela, ISO 8601. Obrigatório. */
+                    /** @description Start of the window, ISO 8601. Required. */
                     from: string;
-                    /** @description Fim da janela, ISO 8601. Obrigatório. */
+                    /** @description End of the window, ISO 8601. Required. */
                     to: string;
-                    /** @description Estreita para um agente, e o manifesto DIZ isso. */
+                    /** @description Narrows to one agent, and the manifest SAYS so. */
                     agent_id?: string;
                 };
                 header?: never;
@@ -3962,18 +3969,18 @@ export interface paths {
                                 requested_by: string | null;
                                 /** Format: date-time */
                                 requested_at: string;
-                                /** @description A janela pedida, como ela foi assinada. */
+                                /** @description The requested window, as it was signed. */
                                 date_range: {
                                     [key: string]: unknown;
                                 };
                                 scope_version: number;
-                                /** @description Os ESTREITAMENTOS aplicados, dentro do escopo assinado. Sem isto, um recorte de um agente só era apresentado — honestamente assinado e íntegro — como se fosse o dia inteiro. */
+                                /** @description The NARROWINGS applied, within the signed scope. Without this, a slice of a single agent was presented, honestly signed and intact, as if it were the whole day. */
                                 filters: {
                                     [key: string]: unknown;
                                 };
                                 final_hash: string;
                                 row_count: number;
-                                /** @description Digest de (sequence_number, entry_hash), que pega renumeração. */
+                                /** @description Digest of (sequence_number, entry_hash), which catches renumbering. */
                                 rows_digest: string;
                             };
                             export_signature: {
@@ -3983,7 +3990,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Query fora do schema, data que não é ISO 8601, ou `from` depois de `to`. Corpo cru, não o envelope `{ error: { code } }`. */
+                /** @description Query outside the schema, a date that is not ISO 8601, or `from` after `to`. Bare body, not the `{ error: { code } }` envelope. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -3998,7 +4005,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A credencial não pode exportar auditoria desta organização. Corpo cru. */
+                /** @description The credential cannot export audit data for this organization. Bare body. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -4010,7 +4017,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A janela pedida passa do teto de linhas. `row_count` diz quantas seriam e `limit` diz o teto — estreite a janela. Corpo cru. */
+                /** @description The requested window exceeds the row ceiling. `row_count` says how many there would be and `limit` says the ceiling: narrow the window. Bare body. */
                 413: {
                     headers: {
                         [name: string]: unknown;
@@ -4706,14 +4713,14 @@ export interface paths {
         };
         /**
          * List Open Finance bank consents
-         * @description Os consentimentos de Open Finance da organização, mais recentes primeiro.
+         * @description The organization's Open Finance consents, most recent first.
          *
-         *     `status` filtra por um dos cinco estados do ciclo: `pending` (o consentimento existe e a pessoa ainda não autorizou no banco), `authorised`, `revoked`, `expired` e `consumed`. Ausente, vêm todos.
+         *     `status` filters by one of the five states of the cycle: `pending` (the consent exists and the person has not yet authorised it at their bank), `authorised`, `revoked`, `expired` and `consumed`. Absent, all of them come back.
          */
         get: {
             parameters: {
                 query?: {
-                    /** @description 1 a 200; o padrão é 50. */
+                    /** @description 1 to 200; the default is 50. */
                     limit?: number;
                     status?: "pending" | "authorised" | "revoked" | "expired" | "consumed";
                 };
@@ -4782,7 +4789,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A query não casou com o schema. */
+                /** @description The query did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -6089,16 +6096,16 @@ export interface paths {
         };
         /**
          * List issued cards
-         * @description Os cartões emitidos neste projeto, mais recentes primeiro.
+         * @description The cards issued in this project, most recent first.
          *
-         *     Esta listagem traz CARTÕES, não fluxos de emissão: um `POST` que parou em `202` esperando KYC não aparece aqui até virar cartão. Para acompanhar aquele fluxo, leia o `flow_id` que a emissão devolveu.
+         *     This listing carries CARDS, not mint flows: a `POST` that stopped at `202` waiting for KYC does not appear here until it becomes a card. To follow that flow, read the `flow_id` the issuance returned.
          */
         get: {
             parameters: {
                 query?: {
-                    /** @description Filtra pelos cartões de um consumidor. */
+                    /** @description Filters to one consumer's cards. */
                     consumer_id?: string;
-                    /** @description 1 a 200; o padrão é 50. */
+                    /** @description 1 to 200; the default is 50. */
                     limit?: number;
                 };
                 header?: never;
@@ -6144,7 +6151,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A query não casou com o schema. */
+                /** @description The query did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -6169,19 +6176,19 @@ export interface paths {
         put?: never;
         /**
          * Issue a card under a signed mandate
-         * @description Emite um cartão para um agente, sob um mandato assinado.
+         * @description Issues a card for an agent, under a signed mandate.
          *
-         *     **Três desfechos de sucesso, e o status os separa.** `201` é a emissão que terminou agora. `202` é o emissor pedindo KYC do titular antes de emitir: o fluxo fica `pending`, e `kyc_url` é para onde mandar a pessoa. `200` é REPETIÇÃO — a mesma `Idempotency-Key` chegando de novo num fluxo que já terminou, devolvendo o que ele produziu em vez de emitir um segundo cartão.
+         *     **Three success outcomes, and the status separates them.** `201` is the issuance that finished now. `202` is the issuer asking for KYC on the holder before issuing: the flow stays `pending`, and `kyc_url` is where to send the person. `200` is a REPLAY: the same `Idempotency-Key` arriving again on a flow that already finished, returning what it produced instead of issuing a second card.
          *
-         *     **Repetir é seguro e é o caminho de recuperação.** Um `502 issuer_ingest_failed` quer dizer que o cartão EXISTE e só a ingestão no ambiente de dados falhou: repetir com a MESMA chave reaproveita o token, e mandar uma chave nova emitiria um segundo cartão. O corpo dessa recusa já traz o cartão emitido.
+         *     **Repeating is safe and it is the recovery path.** A `502 issuer_ingest_failed` means the card EXISTS and only the ingest into the data environment failed: repeating with the SAME key reuses the token, and sending a new key would issue a second card. The body of that refusal already carries the issued card.
          *
-         *     **Uma chave repetida com corpo diferente é `409`**, não uma emissão nova: a impressão digital do pedido é derivada do titular e comparada, e ela sobrevive à redação dos dados do titular, então a divergência é pega muito depois.
+         *     **A repeated key with a different body is `409`**, not a new issuance: the request fingerprint is derived from the holder and compared, and it survives the redaction of the holder's data, so the divergence is caught much later.
          */
         post: {
             parameters: {
                 query?: never;
                 header?: {
-                    /** @description Chaveia o fluxo de emissão. Ausente, o servidor cunha uma — e aí a chamada deixa de ser repetível, porque não há chave para repetir. */
+                    /** @description Keys the mint flow. When absent, the server mints one, and the call then stops being repeatable, because there is no key to repeat. */
                     "Idempotency-Key"?: string;
                 };
                 path?: never;
@@ -6190,9 +6197,9 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description ISO 3166-1 alpha-2, maiúsculo. Decide o corredor emissor. */
+                        /** @description ISO 3166-1 alpha-2, uppercase. Decides the issuing corridor. */
                         country: string;
-                        /** @description ISO 4217, maiúsculo. */
+                        /** @description ISO 4217, uppercase. */
                         currency: string;
                         holder: {
                             full_name: string;
@@ -6203,27 +6210,27 @@ export interface paths {
                             document: {
                                 type: string;
                                 value: string;
-                                /** @description ISO 3166-1 alpha-2, maiúsculo. */
+                                /** @description ISO 3166-1 alpha-2, uppercase. */
                                 issuing_country: string;
                             };
                             address: {
                                 line1: string;
                                 line2?: string;
-                                /** @description Exigido por alguns corredores (Pomelo BR); opcional no schema. */
+                                /** @description Required by some corridors (Pomelo BR); optional in the schema. */
                                 street_number?: string;
                                 neighborhood?: string;
                                 city: string;
                                 state?: string;
                                 postal_code: string;
-                                /** @description Onde o corredor exige e difere de `city` — em Pomelo BR, o código IBGE. */
+                                /** @description Where the corridor requires it and it differs from `city`: in Pomelo BR, the IBGE code. */
                                 municipality?: string;
-                                /** @description ISO 3166-1 alpha-2, maiúsculo. */
+                                /** @description ISO 3166-1 alpha-2, uppercase. */
                                 country: string;
                             };
-                            /** @description E.164, com o `+`. */
+                            /** @description E.164, with the `+`. */
                             phone?: string;
                         };
-                        /** @description OBRIGATÓRIO em toda via, sem exceção por emissor. O cartão é o instrumento de gasto de um agente e o mandato é a autorização assinada do consumidor para ele. Emitir sem mandato produzia, na Bridge, um cartão sem limite e sem categoria numa via que nunca recusa; e na Pomelo, um cartão para o qual o autorizador não tem vínculo nenhum na hora do gasto. */
+                        /** @description REQUIRED on every rail, with no exception by issuer. The card is an agent's spending instrument and the mandate is the consumer's signed authorization for it. Issuing with no mandate produced, on Bridge, a card with no limit and no category on a rail that never declines; and on Pomelo, a card the authorizer has no link to at all at spend time. */
                         mandate_id: string;
                         metadata?: {
                             [key: string]: string;
@@ -6409,7 +6416,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O corpo não casou com o schema, o par país/moeda não tem corredor, o titular foi recusado pelo emissor, ou os controles pedidos não existem nesta via. */
+                /** @description The body did not match the schema, the country/currency pair has no corridor, the holder was rejected by the issuer, or the controls requested do not exist on this rail. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -6429,7 +6436,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A chave e o ambiente do emissor não combinam. Uma chave de teste não emite cartão real, e uma chave live não emite no emissor de staging. */
+                /** @description The key and the issuer's environment do not match. A test key does not issue a real card, and a live key does not issue on the staging issuer. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -6449,7 +6456,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O mandato nomeado não existe nesta organização. */
+                /** @description The named mandate does not exist in this organization. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -6469,7 +6476,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A `Idempotency-Key` já foi usada com um corpo diferente, ou o mandato não está ativo. `details` carrega o estado do mandato no segundo caso. */
+                /** @description The `Idempotency-Key` was already used with a different body, or the mandate is not active. `details` carries the mandate's state in the second case. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -6489,7 +6496,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Quebra de invariante: o fluxo consta como emitido e não há linha de cartão legível por trás dele. */
+                /** @description Invariant break: the flow is recorded as issued and there is no readable card row behind it. */
                 500: {
                     headers: {
                         [name: string]: unknown;
@@ -6509,7 +6516,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O emissor recusou ou falhou a emissão; ou o cartão foi emitido e a ingestão no ambiente de dados falhou. No segundo caso o cartão EXISTE e vem em `details.card` — repita com a MESMA chave. */
+                /** @description The issuer refused or failed the issuance; or the card was issued and the ingest into the data environment failed. In the second case the card EXISTS and comes in `details.card`; repeat with the SAME key. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -6529,7 +6536,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description As credenciais do emissor não puderam ser lidas do vault. */
+                /** @description The issuer's credentials could not be read from the vault. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -7431,15 +7438,15 @@ export interface paths {
         };
         /**
          * List consent evidence
-         * @description A evidência de consentimento da organização, mais recente primeiro. É append-only: nada aqui é editado depois de assinado.
+         * @description The organization's consent evidence, most recent first. It is append-only: nothing here is edited after it is signed.
          *
-         *     A resposta é `{ consents: [...] }`.
+         *     The response is `{ consents: [...] }`.
          */
         get: {
             parameters: {
                 query?: {
                     consumer_id?: string;
-                    /** @description 1 a 200; o padrão é 50. */
+                    /** @description 1 to 200; the default is 50. */
                     limit?: number;
                 };
                 header?: never;
@@ -7502,7 +7509,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A query não casou com o schema. */
+                /** @description The query did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -7541,17 +7548,17 @@ export interface paths {
         };
         /**
          * List consumer funding sources
-         * @description As fontes de recursos dos consumidores deste projeto.
+         * @description The funding sources of this project's consumers.
          *
-         *     **Este caminho NÃO consulta saldo vivo, e isso não é omissão.** O alias `GET /v1/consumers/funding-sources` aceita `?with_balance=1` e, para as linhas `pix-celcoin`, busca o saldo no provedor uma a uma. O caminho canônico tira isso de propósito: uma listagem de todos os consumidores com saldo vivo é um leque de N chamadas ao provedor por requisição. Se você precisa de saldo, peça o de UM consumidor — e a supressão aqui falha FECHADA: qualquer rota que este handler não reconheça como o alias não recebe saldo.
+         *     **This path does NOT fetch live balance, and that is not an omission.** The alias `GET /v1/consumers/funding-sources` accepts `?with_balance=1` and, for the `pix-celcoin` rows, fetches the balance from the provider one by one. The canonical path leaves that out on purpose: a listing of every consumer with live balance is a fan-out of N provider calls per request. If you need a balance, ask for the balance of ONE consumer, and the suppression here fails CLOSED: any route this handler does not recognize as the alias does not get a balance.
          *
-         *     `unattributed_count` conta as linhas que nenhum consumidor reivindica.
+         *     `unattributed_count` counts the rows no consumer claims.
          */
         get: {
             parameters: {
                 query?: {
                     consumer_id?: string;
-                    /** @description 1 a 200; o padrão é 50. */
+                    /** @description 1 to 200; the default is 50. */
                     limit?: number;
                 };
                 header?: never;
@@ -7625,7 +7632,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A query não casou com o schema. */
+                /** @description The query did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -7666,11 +7673,11 @@ export interface paths {
         put?: never;
         /**
          * Open a consumer account application
-         * @description Abre a proposta de conta de um consumidor no provedor, e é por aqui que um consumidor passa a ter conta e fonte de recursos Pix.
+         * @description Opens a consumer's account application at the provider, and this is the path by which a consumer comes to have an account and a Pix funding source.
          *
-         *     **A resposta não é a conta, é a proposta.** O que volta é `verification_id` e um `status` do provedor; a conta e a fonte de recursos aparecem quando `GET /v1/account-applications/{id}` for lido depois da aprovação — essa leitura é que provisiona. Um fluxo que espera conta aqui fica esperando.
+         *     **The response is not the account, it is the application.** What comes back is `verification_id` and a `status` from the provider; the account and the funding source appear when `GET /v1/account-applications/{id}` is read after the approval: that read is what provisions. A flow that expects an account here keeps waiting.
          *
-         *     **O `disclosure` é para renderizar.** Ele nomeia a instituição que detém a conta e o papel da CodeSpar como correspondente; o texto vem em pt-BR para aparecer como está, não para ser reescrito.
+         *     **The `disclosure` is there to be rendered.** It names the institution that holds the account and CodeSpar's role as correspondente; the text comes in pt-BR to appear as it is, not to be rewritten.
          */
         post: {
             parameters: {
@@ -7682,13 +7689,13 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Os campos de identidade que o provedor pede — `documentNumber` (CPF ou CNPJ), nome completo, nascimento, endereço. Passa adiante como objeto: o handler não valida campo a campo aqui, e o que o provedor recusar volta na recusa dele. */
+                        /** @description The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. Passed through as an object: the handler does not validate it field by field here, and whatever the provider refuses comes back in the provider's own refusal. */
                         buyer: {
                             [key: string]: unknown;
                         };
-                        /** @description O consumidor que passa a ser dono da conta. Vira o `clientCode` do onboarding e o dono da fonte de recursos que a aprovação produz. */
+                        /** @description The consumer who becomes the owner of the account. It becomes the onboarding's `clientCode` and the owner of the funding source the approval produces. */
                         consumer_id?: string;
-                        /** @description Aceites colhidos na mesma tela. Hoje só `dda` faz alguma coisa, e ele exige que o documento seja o verificado deste consumidor E que esteja numa `dda_allowlist` assinada — sem isso o registro é recusado e o resto do onboarding segue. */
+                        /** @description Opt-ins collected on the same screen. Today only `dda` does anything, and it requires the document to be this consumer's verified one AND to be on a signed `dda_allowlist`. Without that the registration is refused and the rest of the onboarding continues. */
                         opt_ins?: string[];
                     };
                 };
@@ -7701,27 +7708,27 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description O id da proposta no provedor. É ele que `GET /v1/account-applications/{id}` lê. */
+                            /** @description The provider's proposal id. It is what `GET /v1/account-applications/{id}` reads. */
                             verification_id: string;
-                            /** @description Onde a proposta está no provedor, na palavra dele. */
+                            /** @description Where the proposal stands at the provider, in the provider's own word. */
                             status: string;
-                            /** @description A página de verificação, quando o provedor usa uma. Nulo quando é tudo por API. */
+                            /** @description The verification page, when the provider uses one. Null when it is all done through the API. */
                             hosted_url: string | null;
-                            /** @description Nulo quando o roteador não pousou numa instituição com texto registrado. */
+                            /** @description Null when the router did not land on an institution with registered text. */
                             disclosure: {
-                                /** @description A instituição que detém a conta e responde por ela. */
+                                /** @description The institution that holds the account and is accountable for it. */
                                 institution: string;
-                                /** @description O CNPJ dela, ou nulo enquanto não houver um confirmado contra o contrato assinado — renderizar um CNPJ errado é pior que não renderizar. */
+                                /** @description Its CNPJ, or null while there is none confirmed against the signed contract. Rendering the wrong CNPJ is worse than rendering none. */
                                 institution_document: string | null;
                                 /**
-                                 * @description O papel da CodeSpar no arranjo, na Res. CMN 4.935/2021.
+                                 * @description CodeSpar's role in the arrangement, under Res. CMN 4.935/2021.
                                  * @enum {string}
                                  */
                                 codespar_role: "correspondente";
-                                /** @description pt-BR, escrito para ser renderizado VERBATIM, sem reescrita. */
+                                /** @description pt-BR, written to be rendered VERBATIM, with no rewriting. */
                                 text: string;
                             } | null;
-                            /** @description Presente só quando `opt_ins` pediu `dda`. `pending` é o caminho normal: o registro é assíncrono e vira `active` quando a confirmação do provedor chega, então trate pendente como em andamento e não como falha. */
+                            /** @description Present only when `opt_ins` asked for `dda`. `pending` is the normal path: the registration is asynchronous and turns `active` when the provider's confirmation arrives, so treat pending as in progress and not as a failure. */
                             dda_opt_in?: {
                                 /** @enum {string} */
                                 status: "pending" | "failed" | "deferred";
@@ -7730,7 +7737,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O corpo não casou com o schema, ou o documento não passou na checagem. CORPO CRU, não o envelope `{ error: { code, message } }`: este handler escreve a falha inline e não há `request_id`. */
+                /** @description The body did not match the schema, or the document did not pass the check. BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -7739,14 +7746,14 @@ export interface paths {
                         "application/json": {
                             /** @enum {string} */
                             error: "invalid_body";
-                            /** @description As questões do zod, como ele as emitiu. */
+                            /** @description The Zod issues, as Zod emitted them. */
                             issues: {
                                 [key: string]: unknown;
                             }[];
                         };
                     };
                 };
-                /** @description COLISÃO DE ONBOARDING, e é estado do chamador e não falha do provedor — por isso 409 e não 502. `provider_code` carrega o código do provedor (OBE064 proposta já aberta, CBE022 conta já existe, OBE062 clientCode já vinculado) para a trilha registrar o fundamento da recusa. Corpo cru. */
+                /** @description ONBOARDING COLLISION, and it is caller state and not a provider failure, which is why 409 and not 502. `provider_code` carries the provider's code (OBE064 proposal already open, CBE022 account already exists, OBE062 clientCode already linked) so the audit trail records the ground for the refusal. Bare body. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -7760,7 +7767,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A chamada ao provedor falhou, ou o roteador pousou numa instituição que não é a esperada. Corpo cru; `message` carrega a frase de baixo e é o que separa uma queda do provedor de uma recusa dele. */
+                /** @description The provider call failed, or the router landed on an institution that is not the expected one. Bare body; `message` carries the underlying sentence and is what separates a provider outage from a refusal by the provider. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -8381,7 +8388,7 @@ export interface paths {
          * @deprecated
          * @description DEPRECATED alias of `POST /v1/cards` (ent#979), kept for two releases. Same handler, same required scope; switch the path and nothing else changes.
          *
-         *     Três desfechos de sucesso: `201` emitiu agora, `202` o emissor pediu KYC do titular (`kyc_url` é para onde mandar a pessoa), `200` é repetição da mesma `Idempotency-Key` num fluxo já terminado. Repetir com a MESMA chave é o caminho de recuperação: um `502 issuer_ingest_failed` quer dizer que o cartão EXISTE e só a ingestão falhou, e uma chave nova emitiria um segundo cartão.
+         *     Three success outcomes: `201` issued the card now, `202` the issuer asked for KYC of the holder (`kyc_url` is where to send the person), `200` is a repeat of the same `Idempotency-Key` on a flow that already finished. Repeating with the SAME key is the recovery path: a `502 issuer_ingest_failed` means the card EXISTS and only the ingest failed, and a new key would issue a second card.
          */
         post: {
             parameters: {
@@ -8395,9 +8402,9 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description ISO 3166-1 alpha-2, maiúsculo. */
+                        /** @description ISO 3166-1 alpha-2, uppercase. */
                         country: string;
-                        /** @description ISO 4217, maiúsculo. */
+                        /** @description ISO 4217, uppercase. */
                         currency: string;
                         holder: {
                             full_name: string;
@@ -8422,7 +8429,7 @@ export interface paths {
                             };
                             phone?: string;
                         };
-                        /** @description Obrigatório: não existe cartão sem mandato assinado. */
+                        /** @description Required: there is no card without a signed mandate. */
                         mandate_id: string;
                         metadata?: {
                             [key: string]: string;
@@ -8514,7 +8521,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Corpo fora do schema, par país/moeda sem corredor, titular recusado, ou controles pedidos que a via não tem. */
+                /** @description Body outside the schema, a country/currency pair with no corridor, a rejected holder, or controls requested that the rail does not have. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -8534,7 +8541,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Chave e ambiente do emissor não combinam. */
+                /** @description The key and the issuer environment do not match. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -8554,7 +8561,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O mandato nomeado não existe nesta organização. */
+                /** @description The named mandate does not exist in this organization. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -8574,7 +8581,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Chave repetida com corpo diferente, ou mandato não ativo. */
+                /** @description Key repeated with a different body, or the mandate is not active. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -8594,7 +8601,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Fluxo emitido sem linha de cartão legível. */
+                /** @description Flow issued with no readable card row. */
                 500: {
                     headers: {
                         [name: string]: unknown;
@@ -8614,7 +8621,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O emissor falhou, ou o cartão foi emitido e a ingestão falhou — no segundo caso o cartão vem em `details.card` e a recuperação é repetir a mesma chave. */
+                /** @description The issuer failed, or the card was issued and the ingest failed; in the second case the card comes back in `details.card` and the recovery is to repeat the same key. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -8634,7 +8641,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Credenciais do emissor ilegíveis no vault. */
+                /** @description Issuer credentials not readable in the vault. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -8676,7 +8683,7 @@ export interface paths {
          * @deprecated
          * @description DEPRECATED alias of `POST /v1/account-applications` (ent#979), kept for two releases. Same handler, same required scope; switch the path and nothing else changes.
          *
-         *     A resposta é a PROPOSTA, não a conta: volta `verification_id` e o `status` do provedor, e é a leitura por id, depois da aprovação, que provisiona a conta e a fonte de recursos Pix. O `disclosure` vem em pt-BR para ser renderizado verbatim.
+         *     The response is the PROPOSAL, not the account: it returns `verification_id` and the provider's `status`, and it is the read by id, after approval, that provisions the account and the Pix funding source. `disclosure` comes in pt-BR, to be rendered verbatim.
          */
         post: {
             parameters: {
@@ -8688,13 +8695,13 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Os campos de identidade que o provedor pede — `documentNumber` (CPF ou CNPJ), nome completo, nascimento, endereço. */
+                        /** @description The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. */
                         buyer: {
                             [key: string]: unknown;
                         };
-                        /** @description O consumidor que passa a ser dono da conta e da fonte de recursos. */
+                        /** @description The consumer that becomes the owner of the account and of the funding source. */
                         consumer_id?: string;
-                        /** @description Aceites da mesma tela. Hoje só `dda` faz algo, e ele tem governança própria. */
+                        /** @description Opt-ins from the same screen. Today only `dda` does anything, and it has governance of its own. */
                         opt_ins?: string[];
                     };
                 };
@@ -8725,7 +8732,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Corpo fora do schema, ou documento recusado na checagem. CORPO CRU, não o envelope `{ error: { code, message } }`. */
+                /** @description Body outside the schema, or a document rejected at the check. RAW BODY, not the `{ error: { code, message } }` envelope. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -8740,7 +8747,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Colisão de onboarding — estado do chamador, não falha do provedor. `provider_code` carrega OBE064, CBE022 ou OBE062. Corpo cru. */
+                /** @description Onboarding collision: caller state, not a provider failure. `provider_code` carries OBE064, CBE022 or OBE062. Raw body. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -8754,7 +8761,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A chamada ao provedor falhou. Corpo cru; leia `message` antes de tratar como queda. */
+                /** @description The provider call failed. Raw body; read `message` before treating it as an outage. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -9354,11 +9361,11 @@ export interface paths {
         put?: never;
         /**
          * Find tools by intent, in words
-         * @description Descreve o que você quer fazer e recebe as ferramentas que servem, com uma confiança e o porquê de cada uma.
+         * @description Describe what you want to do and receive the tools that serve it, with a confidence and the reason for each one.
          *
-         *     **Esta rota não falha por causa do classificador.** Quando a chave do modelo não está configurada, ou a chamada ao classificador dá errado, ela DEGRADA para uma busca heurística e responde 200 assim mesmo — e diz qual caminho usou em `source`. Um chamador que trata `source: "fallback"` como sucesso silencioso está lendo um resultado mais fraco sem saber; o campo existe para isso ser visível.
+         *     **This route does not fail because of the classifier.** When the model key is not configured, or the call to the classifier goes wrong, it DEGRADES to a heuristic search and answers 200 anyway, and it says which path it used in `source`. A caller that treats `source: "fallback"` as silent success is reading a weaker result without knowing it; the field exists so that this is visible.
          *
-         *     O teto de `limit` é 5.
+         *     The ceiling on `limit` is 5.
          */
         post: {
             parameters: {
@@ -9370,7 +9377,7 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description O que você quer fazer, em palavras. */
+                        /** @description What you want to do, in words. */
                         intent: string;
                         limit?: number;
                     };
@@ -9384,25 +9391,25 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description Ecoa o que foi pedido. */
+                            /** @description Echoes what was requested. */
                             intent: string;
                             hits: {
                                 tool_name: string;
                                 /** @enum {string} */
                                 confidence: "high" | "medium" | "low";
-                                /** @description Por que esta ferramenta, em uma frase. */
+                                /** @description Why this tool, in one sentence. */
                                 rationale: string;
                             }[];
                             elapsed_ms: number;
                             /**
-                             * @description `llm` quando o classificador respondeu; `fallback` quando a busca heurística respondeu no lugar dele.
+                             * @description `llm` when the classifier answered; `fallback` when the heuristic search answered in its place.
                              * @enum {string}
                              */
                             source: "llm" | "fallback";
                         };
                     };
                 };
-                /** @description O corpo não casou com o schema. */
+                /** @description The body did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -12971,9 +12978,9 @@ export interface paths {
         head?: never;
         /**
          * Merge user-editable metadata into a connection
-         * @description Mescla campos na `connection_metadata` de uma conexão. **É merge, não substituição**: as chaves enviadas entram por cima e as demais ficam.
+         * @description Merges fields into a connection's `connection_metadata`. **This is a merge, not a replacement**: the keys sent land on top and the rest stay.
          *
-         *     **O que pode ser editado é decidido pela própria linha**, pela lista `requires_user_fields` que ela carrega. Uma chave fora dessa lista é recusada com `fields_not_user_editable`, e uma conexão que não carrega lista nenhuma recusa TODO patch com `no_user_fields` — o caminho dela é reconectar, não editar.
+         *     **What can be edited is decided by the row itself**, by the `requires_user_fields` list it carries. A key outside that list is refused with `fields_not_user_editable`, and a connection that carries no list at all refuses EVERY patch with `no_user_fields`. Its path is to reconnect, not to edit.
          */
         patch: {
             parameters: {
@@ -12987,7 +12994,7 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Pelo menos uma chave, e no máximo 32 KB serializado. O corpo é MESCLADO com o que já está lá, chave a chave — não substitui o objeto inteiro. */
+                        /** @description At least one key, and at most 32 KB serialized. The body is MERGED with what is already there, key by key. It does not replace the whole object. */
                         connection_metadata: {
                             [key: string]: unknown;
                         };
@@ -13035,7 +13042,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Corpo fora do schema (vazio, chave longa demais, ou acima de 32 KB), a conexão não declara campos editáveis, ou uma das chaves não está na lista dela. */
+                /** @description The body is outside the schema (empty, a key that is too long, or above 32 KB), the connection declares no editable fields, or one of the keys is not in its list. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -13067,7 +13074,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A linha sumiu entre a leitura e a escrita — corrida com uma revogação ou uma exclusão. Releia antes de repetir. */
+                /** @description The row disappeared between the read and the write: a race with a revoke or a delete. Read it again before retrying. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -14183,7 +14190,7 @@ export interface paths {
         put?: never;
         /**
          * Spend under a mandate already projected here
-         * @description Moves money out under a mandate already projected into this organization, addressed by id. This is the path the `codespar_pay` meta-tool takes internally, so the behaviour here is the behaviour an agent gets; the route exists so a caller who does not use the SDK reaches the same place.
+         * @description Moves money out under a mandate already projected into this organization, addressed by id. This is the path the `codespar_pay` meta-tool takes internally, so the behaviour here is the behaviour an agent gets; the route exists so a caller who does not use the SDK reaches the same place. One difference: this route runs the organization's policy rules under `consumer_payment:execute`, for the mandate's agent, before the payment starts, exactly like `/v1/consumer-payments/execute`.
          *
          *     With `ted` present the provider leg is a real bank transfer, debited from the consumer's own sub-account. Without `ted`, `payee` is a Pix key or a copy-and-paste string.
          *
@@ -14195,7 +14202,7 @@ export interface paths {
          *
          *     The cumulative cap is checked and CONSUMED under an advisory lock, and the wallet hold is taken inside that same lock. The lock is released before the provider call, so a slow provider does not serialize everyone else.
          *
-         *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice.
+         *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.
          */
         post: {
             parameters: {
@@ -14252,7 +14259,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The destination is not on the mandate's signed withdrawal allowlist. Nothing was sent to the provider. The response carries the next consent step. */
+                /** @description Either a policy rule refused the spend (`policy_denied`, with `reason`, `ruleType` and `ruleId`, plus `approval_id` and `expires_at` when the rule opened an approval), or the destination is not on the mandate's signed withdrawal allowlist (`withdrawal_pin`, carrying the next consent step). Nothing was sent to the provider in either case. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -14261,7 +14268,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "withdrawal_pin";
+                                code: "policy_denied" | "withdrawal_pin";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -14312,7 +14319,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. */
+                /** @description The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. `carrier_crc_invalid`, `carrier_malformed`, `carrier_format_unsupported`: the payee is a Pix copia-e-cola that fails its own check (CRC, structure, or no usable Pix template); nothing was held or sent. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -14321,7 +14328,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source";
+                                code: "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source" | "carrier_crc_invalid" | "carrier_malformed" | "carrier_format_unsupported";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -14372,6 +14379,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description The policy engine could not evaluate the spend. Nothing was evaluated and nothing was sent to the provider; retry. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "policy_engine_error";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
             };
         };
         delete?: never;
@@ -14401,7 +14428,7 @@ export interface paths {
          *     2. `payee` must EQUAL the destination's canonical string, `ted:<ispb>:<branch>:<account>`, alphanumerics only and upper-cased. The comparison normalizes whitespace and nothing else, so an entry carrying a dot or a hyphen does NOT match. The rule is what makes the signed-allowlist pin and the wire name the SAME destination: without it, an approved payee fronts for a different bank account.
          *     3. The destination must be NAMED in a signed list of the mandate, and a merchant-list wildcard `"*"` NEVER authorizes money out. Which list is accepted is mid-rollout, so read this one carefully: the target rule is `withdrawal_allowlist` alone, and while the rollout flag is off a destination named explicitly in the signed `merchant_allowlist` is ALSO accepted, with the stricter rule's refusal recorded rather than applied. Tolerance never widens what passes: a wildcard is refused on both paths, and a destination in neither list is refused with its own code. Build against `withdrawal_allowlist`: it is the list that keeps working when the flag turns on.
          *
-         *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice.
+         *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.
          */
         post: {
             parameters: {
@@ -14497,7 +14524,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The mandate refuses, or the consumer has no funding source for this rail. */
+                /** @description The mandate refuses, the consumer has no funding source for this rail, or the payee is a Pix copia-e-cola that fails its own check (the three `carrier_*` codes). */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -14506,7 +14533,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source";
+                                code: "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source" | "carrier_crc_invalid" | "carrier_malformed" | "carrier_format_unsupported";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -14580,7 +14607,7 @@ export interface paths {
          *
          *     The outcome is the same object the sibling route returns, carried on the last event. A client that does not need to follow progress should use `/execute`: streaming does not make settlement faster, it makes it observable while it runs.
          *
-         *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice.
+         *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.
          */
         post: {
             parameters: {
@@ -15355,7 +15382,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A query não casou com o schema. */
+                /** @description The query did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -15395,16 +15422,16 @@ export interface paths {
         /**
          * List consumer funding sources, optionally with live balance (deprecated path)
          * @deprecated
-         * @description Alias DEPRECIADO de `GET /v1/funding-sources` (ent#979), mantido por dois releases — **mas com uma diferença de comportamento que o canônico não tem**, e por isso ele não é uma troca de caminho e pronto.
+         * @description DEPRECATED alias of `GET /v1/funding-sources` (ent#979), kept for two releases, **but with a behavioral difference the canonical path does not have**, which is why it is not a path swap and nothing more.
          *
-         *     **`?with_balance=1` funciona AQUI e não no canônico.** Para cada linha `pix-celcoin`, o saldo vivo é buscado no provedor — uma chamada por linha. O caminho canônico suprime isso porque uma listagem de todos os consumidores viraria um leque de N chamadas por requisição. Quando migrar para o canônico, peça saldo por consumidor em vez de pela lista inteira.
+         *     **`?with_balance=1` works HERE and not on the canonical path.** For each `pix-celcoin` row, the live balance is fetched from the provider, one call per row. The canonical path suppresses that because a listing of every consumer would become a fan-out of N calls per request. When you migrate to the canonical path, ask for the balance per consumer instead of for the whole list.
          */
         get: {
             parameters: {
                 query?: {
                     consumer_id?: string;
                     limit?: number;
-                    /** @description `1` ou `true` liga a busca de saldo vivo. Qualquer outro valor não liga. */
+                    /** @description `1` or `true` turns the live balance lookup on. Any other value does not. */
                     with_balance?: string;
                 };
                 header?: never;
@@ -15439,14 +15466,14 @@ export interface paths {
                                 metadata: {
                                     [key: string]: unknown;
                                 } | null;
-                                /** @description Só preenchido com `?with_balance=1`, e só para linhas `pix-celcoin`. Nulo quando não foi pedido, quando a linha é de outro rail, ou quando a consulta ao provedor não respondeu. */
+                                /** @description Only populated with `?with_balance=1`, and only for `pix-celcoin` rows. Null when it was not requested, when the row is on another rail, or when the provider lookup did not answer. */
                                 balance_minor: number | null;
                             }[];
                             unattributed_count: number;
                         };
                     };
                 };
-                /** @description A query não casou com o schema. */
+                /** @description The query did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -17202,7 +17229,7 @@ export interface paths {
         put?: never;
         /**
          * Credit a consumer in the sandbox
-         * @description Credita a conta de sandbox do consumidor direto, sem passar por um Pix. É o atalho para deixar uma carteira de teste com saldo antes de exercitar um fluxo de gasto.
+         * @description Credits the consumer's sandbox account directly, without going through a Pix. It is the shortcut for putting a balance on a test wallet before exercising a spend flow.
          */
         post: {
             parameters: {
@@ -17214,11 +17241,11 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Obrigatório no caminho `/v1/test/*`, onde a rota não tem segmento de consumidor. Ignorado no alias `/v1/consumers/{consumerId}/...`, onde o segmento manda. */
+                        /** @description Required on the `/v1/test/*` path, where the route has no consumer segment. Ignored on the `/v1/consumers/{consumerId}/...` alias, where the segment wins. */
                         consumer_id?: string;
-                        /** @description Centavos de BRL. */
+                        /** @description BRL cents. */
                         amount_minor: number;
-                        /** @description Sobrescreve a conta de sandbox; o padrão é a fonte `pix-celcoin` ativa. */
+                        /** @description Overrides the sandbox account; the default is the active `pix-celcoin` funding source. */
                         account?: string;
                     };
                 };
@@ -17243,7 +17270,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Corpo fora do schema, ou `consumer_id` ausente no caminho `/v1/test/*` (onde ele é obrigatório, porque a rota não tem segmento de consumidor). */
+                /** @description The body is outside the schema, or `consumer_id` is missing on the `/v1/test/*` path (where it is required, because the route has no consumer segment). */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -17263,7 +17290,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Chave de ambiente LIVE. Estas rotas creditam dinheiro de mentira e existem só em ambiente de teste — use uma chave `csk_test_*` num projeto de teste. O ambiente lido vem em `details.environment`. */
+                /** @description A LIVE environment key. These routes credit fake money and exist only in a test environment: use a `csk_test_*` key on a test project. The environment that was read comes in `details.environment`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -17283,7 +17310,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O consumidor não tem conta Celcoin para creditar, ou o provedor de sandbox recusou. */
+                /** @description The consumer has no Celcoin account to credit, or the sandbox provider refused. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -17323,7 +17350,9 @@ export interface paths {
         /**
          * Credit a consumer in the sandbox (deprecated path)
          * @deprecated
-         * @description Alias DEPRECIADO de `POST /v1/test/fund` (ent#979), mantido por dois releases. Uma diferença real: aqui o consumidor vem no SEGMENTO da rota, e o `consumer_id` do corpo é ignorado.\n\nCredita a conta de sandbox do consumidor direto, sem passar por um Pix. É o atalho para deixar uma carteira de teste com saldo antes de exercitar um fluxo de gasto.
+         * @description DEPRECATED alias of `POST /v1/test/fund` (ent#979), kept for two releases. One real difference: here the consumer comes in the route SEGMENT, and the body's `consumer_id` is ignored.
+         *
+         *     Credits the consumer's sandbox account directly, without going through a Pix. It is the shortcut for putting a balance on a test wallet before exercising a spend flow.
          */
         post: {
             parameters: {
@@ -17337,11 +17366,11 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Obrigatório no caminho `/v1/test/*`, onde a rota não tem segmento de consumidor. Ignorado no alias `/v1/consumers/{consumerId}/...`, onde o segmento manda. */
+                        /** @description Required on the `/v1/test/*` path, where the route has no consumer segment. Ignored on the `/v1/consumers/{consumerId}/...` alias, where the segment wins. */
                         consumer_id?: string;
-                        /** @description Centavos de BRL. */
+                        /** @description BRL cents. */
                         amount_minor: number;
-                        /** @description Sobrescreve a conta de sandbox; o padrão é a fonte `pix-celcoin` ativa. */
+                        /** @description Overrides the sandbox account; the default is the active `pix-celcoin` funding source. */
                         account?: string;
                     };
                 };
@@ -17366,7 +17395,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Corpo fora do schema, ou `consumer_id` ausente no caminho `/v1/test/*` (onde ele é obrigatório, porque a rota não tem segmento de consumidor). */
+                /** @description The body is outside the schema, or `consumer_id` is missing on the `/v1/test/*` path (where it is required, because the route has no consumer segment). */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -17386,7 +17415,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Chave de ambiente LIVE. Estas rotas creditam dinheiro de mentira e existem só em ambiente de teste — use uma chave `csk_test_*` num projeto de teste. O ambiente lido vem em `details.environment`. */
+                /** @description A LIVE environment key. These routes credit fake money and exist only in a test environment: use a `csk_test_*` key on a test project. The environment that was read comes in `details.environment`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -17406,7 +17435,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O consumidor não tem conta Celcoin para creditar, ou o provedor de sandbox recusou. */
+                /** @description The consumer has no Celcoin account to credit, or the sandbox provider refused. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -17445,7 +17474,9 @@ export interface paths {
         put?: never;
         /**
          * Mint a sandbox Pix charge to fund a consumer
-         * @description Cunha uma cobrança Pix de sandbox e devolve o copia-e-cola. Nada é creditado aqui: este passo produz o código, e a liquidação é o passo seguinte.\n\nGuarde o `transaction_id` — é ele que a liquidação usa como chave de idempotência.
+         * @description Mints a sandbox Pix charge and returns the copia-e-cola string. Nothing is credited here: this step produces the code, and settlement is the next step.
+         *
+         *     Keep the `transaction_id`: it is what settlement uses as the idempotency key.
          */
         post: {
             parameters: {
@@ -17457,9 +17488,9 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Obrigatório no caminho `/v1/test/*`, onde a rota não tem segmento de consumidor. Ignorado no alias `/v1/consumers/{consumerId}/...`, onde o segmento manda. */
+                        /** @description Required on the `/v1/test/*` path, where the route has no consumer segment. Ignored on the `/v1/consumers/{consumerId}/...` alias, where the segment wins. */
                         consumer_id?: string;
-                        /** @description Centavos de BRL. */
+                        /** @description BRL cents. */
                         amount_minor: number;
                         description?: string;
                     };
@@ -17473,9 +17504,9 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description O código que se paga, como se paga um Pix de verdade. */
+                            /** @description The code that gets paid, the way a real Pix is paid. */
                             pix_copia_e_cola: string;
-                            /** @description A chave de idempotência do passo de liquidação. */
+                            /** @description The idempotency key of the settlement step. */
                             transaction_id: string;
                             pix_key: string;
                             amount_minor: number;
@@ -17486,7 +17517,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Corpo fora do schema, ou `consumer_id` ausente no caminho `/v1/test/*` (onde ele é obrigatório, porque a rota não tem segmento de consumidor). */
+                /** @description The body is outside the schema, or `consumer_id` is missing on the `/v1/test/*` path (where it is required, because the route has no consumer segment). */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -17506,7 +17537,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Chave de ambiente LIVE. Estas rotas creditam dinheiro de mentira e existem só em ambiente de teste — use uma chave `csk_test_*` num projeto de teste. O ambiente lido vem em `details.environment`. */
+                /** @description A LIVE environment key. These routes credit fake money and exist only in a test environment: use a `csk_test_*` key on a test project. The environment that was read comes in `details.environment`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -17526,7 +17557,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O provedor de sandbox recusou a cunhagem. */
+                /** @description The sandbox provider refused the mint. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -17566,7 +17597,11 @@ export interface paths {
         /**
          * Mint a sandbox Pix charge to fund a consumer (deprecated path)
          * @deprecated
-         * @description Alias DEPRECIADO de `POST /v1/test/pix-in` (ent#979), mantido por dois releases. Uma diferença real: aqui o consumidor vem no SEGMENTO da rota, e o `consumer_id` do corpo é ignorado.\n\nCunha uma cobrança Pix de sandbox e devolve o copia-e-cola. Nada é creditado aqui: este passo produz o código, e a liquidação é o passo seguinte.\n\nGuarde o `transaction_id` — é ele que a liquidação usa como chave de idempotência.
+         * @description DEPRECATED alias of `POST /v1/test/pix-in` (ent#979), kept for two releases. One real difference: here the consumer comes in the route SEGMENT, and the body's `consumer_id` is ignored.
+         *
+         *     Mints a sandbox Pix charge and returns the copia-e-cola string. Nothing is credited here: this step produces the code, and settlement is the next step.
+         *
+         *     Keep the `transaction_id`: it is what settlement uses as the idempotency key.
          */
         post: {
             parameters: {
@@ -17580,9 +17615,9 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Obrigatório no caminho `/v1/test/*`, onde a rota não tem segmento de consumidor. Ignorado no alias `/v1/consumers/{consumerId}/...`, onde o segmento manda. */
+                        /** @description Required on the `/v1/test/*` path, where the route has no consumer segment. Ignored on the `/v1/consumers/{consumerId}/...` alias, where the segment wins. */
                         consumer_id?: string;
-                        /** @description Centavos de BRL. */
+                        /** @description BRL cents. */
                         amount_minor: number;
                         description?: string;
                     };
@@ -17596,9 +17631,9 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description O código que se paga, como se paga um Pix de verdade. */
+                            /** @description The code that gets paid, the way a real Pix is paid. */
                             pix_copia_e_cola: string;
-                            /** @description A chave de idempotência do passo de liquidação. */
+                            /** @description The idempotency key of the settlement step. */
                             transaction_id: string;
                             pix_key: string;
                             amount_minor: number;
@@ -17609,7 +17644,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Corpo fora do schema, ou `consumer_id` ausente no caminho `/v1/test/*` (onde ele é obrigatório, porque a rota não tem segmento de consumidor). */
+                /** @description The body is outside the schema, or `consumer_id` is missing on the `/v1/test/*` path (where it is required, because the route has no consumer segment). */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -17629,7 +17664,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Chave de ambiente LIVE. Estas rotas creditam dinheiro de mentira e existem só em ambiente de teste — use uma chave `csk_test_*` num projeto de teste. O ambiente lido vem em `details.environment`. */
+                /** @description A LIVE environment key. These routes credit fake money and exist only in a test environment: use a `csk_test_*` key on a test project. The environment that was read comes in `details.environment`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -17649,7 +17684,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O provedor de sandbox recusou a cunhagem. */
+                /** @description The sandbox provider refused the mint. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -17688,7 +17723,9 @@ export interface paths {
         put?: never;
         /**
          * Settle a sandbox Pix charge and credit the consumer
-         * @description Liquida a cobrança que a cunhagem produziu e credita o consumidor.\n\n**O `transaction_id` é a chave de idempotência**: reenviar a mesma liquidação não credita duas vezes.
+         * @description Settles the charge the mint produced and credits the consumer.
+         *
+         *     **The `transaction_id` is the idempotency key**: re-sending the same settlement does not credit twice.
          */
         post: {
             parameters: {
@@ -17700,10 +17737,10 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Obrigatório no caminho `/v1/test/*`, onde a rota não tem segmento de consumidor. Ignorado no alias `/v1/consumers/{consumerId}/...`, onde o segmento manda. */
+                        /** @description Required on the `/v1/test/*` path, where the route has no consumer segment. Ignored on the `/v1/consumers/{consumerId}/...` alias, where the segment wins. */
                         consumer_id?: string;
                         amount_minor: number;
-                        /** @description O `transaction_id` que a cunhagem devolveu. É a CHAVE DE IDEMPOTÊNCIA do crédito e do espelho na carteira: reenviar a mesma liquidação não credita duas vezes. */
+                        /** @description The `transaction_id` the mint returned. It is the IDEMPOTENCY KEY of the credit and of the wallet mirror: re-sending the same settlement does not credit twice. */
                         transaction_id: string;
                     };
                 };
@@ -17728,7 +17765,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Corpo fora do schema, ou `consumer_id` ausente no caminho `/v1/test/*` (onde ele é obrigatório, porque a rota não tem segmento de consumidor). */
+                /** @description The body is outside the schema, or `consumer_id` is missing on the `/v1/test/*` path (where it is required, because the route has no consumer segment). */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -17748,7 +17785,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Chave de ambiente LIVE. Estas rotas creditam dinheiro de mentira e existem só em ambiente de teste — use uma chave `csk_test_*` num projeto de teste. O ambiente lido vem em `details.environment`. */
+                /** @description A LIVE environment key. These routes credit fake money and exist only in a test environment: use a `csk_test_*` key on a test project. The environment that was read comes in `details.environment`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -17768,7 +17805,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O provedor de sandbox recusou a liquidação. */
+                /** @description The sandbox provider refused the settlement. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -17788,7 +17825,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A conta de sandbox foi creditada e o espelho no livro da carteira falhou — estado dividido, e `details.deposit_id` é por onde reconciliar. */
+                /** @description The sandbox account was credited and the mirror in the wallet ledger failed: split state, and `details.deposit_id` is where to reconcile from. */
                 500: {
                     headers: {
                         [name: string]: unknown;
@@ -17828,7 +17865,11 @@ export interface paths {
         /**
          * Settle a sandbox Pix charge and credit the consumer (deprecated path)
          * @deprecated
-         * @description Alias DEPRECIADO de `POST /v1/test/settle-pix-in` (ent#979), mantido por dois releases. Uma diferença real: aqui o consumidor vem no SEGMENTO da rota, e o `consumer_id` do corpo é ignorado.\n\nLiquida a cobrança que a cunhagem produziu e credita o consumidor.\n\n**O `transaction_id` é a chave de idempotência**: reenviar a mesma liquidação não credita duas vezes.
+         * @description DEPRECATED alias of `POST /v1/test/settle-pix-in` (ent#979), kept for two releases. One real difference: here the consumer comes in the route SEGMENT, and the body's `consumer_id` is ignored.
+         *
+         *     Settles the charge the mint produced and credits the consumer.
+         *
+         *     **The `transaction_id` is the idempotency key**: re-sending the same settlement does not credit twice.
          */
         post: {
             parameters: {
@@ -17842,10 +17883,10 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Obrigatório no caminho `/v1/test/*`, onde a rota não tem segmento de consumidor. Ignorado no alias `/v1/consumers/{consumerId}/...`, onde o segmento manda. */
+                        /** @description Required on the `/v1/test/*` path, where the route has no consumer segment. Ignored on the `/v1/consumers/{consumerId}/...` alias, where the segment wins. */
                         consumer_id?: string;
                         amount_minor: number;
-                        /** @description O `transaction_id` que a cunhagem devolveu. É a CHAVE DE IDEMPOTÊNCIA do crédito e do espelho na carteira: reenviar a mesma liquidação não credita duas vezes. */
+                        /** @description The `transaction_id` the mint returned. It is the IDEMPOTENCY KEY of the credit and of the wallet mirror: re-sending the same settlement does not credit twice. */
                         transaction_id: string;
                     };
                 };
@@ -17870,7 +17911,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Corpo fora do schema, ou `consumer_id` ausente no caminho `/v1/test/*` (onde ele é obrigatório, porque a rota não tem segmento de consumidor). */
+                /** @description The body is outside the schema, or `consumer_id` is missing on the `/v1/test/*` path (where it is required, because the route has no consumer segment). */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -17890,7 +17931,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Chave de ambiente LIVE. Estas rotas creditam dinheiro de mentira e existem só em ambiente de teste — use uma chave `csk_test_*` num projeto de teste. O ambiente lido vem em `details.environment`. */
+                /** @description A LIVE environment key. These routes credit fake money and exist only in a test environment: use a `csk_test_*` key on a test project. The environment that was read comes in `details.environment`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -17910,7 +17951,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O provedor de sandbox recusou a liquidação. */
+                /** @description The sandbox provider refused the settlement. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -17930,7 +17971,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A conta de sandbox foi creditada e o espelho no livro da carteira falhou — estado dividido, e `details.deposit_id` é por onde reconciliar. */
+                /** @description The sandbox account was credited and the mirror in the wallet ledger failed: split state, and `details.deposit_id` is where to reconcile from. */
                 500: {
                     headers: {
                         [name: string]: unknown;
@@ -20714,7 +20755,9 @@ export interface paths {
         /**
          * Initiate a bank consent (legacy path)
          * @deprecated
-         * @description DEPRECATED alias of `POST /v1/bank-consents` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.\n\nEverything the canonical path says still holds here, including the two that cost money to learn late: the BANK IS CALLED BEFORE THE ROW IS WRITTEN, so a refusal after that point leaves a bank-side consent with nothing of ours pointing at it; and one open consent per consumer per bank per organization, which a sibling project can be holding.
+         * @description DEPRECATED alias of `POST /v1/bank-consents` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.
+         *
+         *     Everything the canonical path says still holds here, including the two that cost money to learn late: the BANK IS CALLED BEFORE THE ROW IS WRITTEN, so a refusal after that point leaves a bank-side consent with nothing of ours pointing at it; and one open consent per consumer per bank per organization, which a sibling project can be holding.
          */
         post: {
             parameters: {
@@ -22354,16 +22397,16 @@ export interface paths {
         /**
          * Export audit events, with a signed manifest (deprecated path)
          * @deprecated
-         * @description Alias DEPRECIADO de `GET /v1/audit-events/export` (ent#979), mantido por dois releases. Mesmo handler, mesmo escopo; um `{orgId}` que não é o da credencial é recusado.
+         * @description DEPRECATED alias of `GET /v1/audit-events/export` (ent#979), kept for two releases. Same handler, same scope; an `{orgId}` that is not the credential's own is refused.
          *
-         *     A resposta é TRANSMITIDA linha a linha, com o manifesto assinado no fim — o manifesto cobre o escopo (inclusive os estreitamentos aplicados), não só o conteúdo. Detalhe completo no caminho canônico.
+         *     The response is STREAMED row by row, with the signed manifest at the end: the manifest covers the scope (including the narrowings applied), not just the content. Full detail on the canonical path.
          */
         get: {
             parameters: {
                 query: {
-                    /** @description Início da janela, ISO 8601. Obrigatório. */
+                    /** @description Start of the window, ISO 8601. Required. */
                     from: string;
-                    /** @description Fim da janela, ISO 8601. Obrigatório. */
+                    /** @description End of the window, ISO 8601. Required. */
                     to: string;
                     agent_id?: string;
                 };
@@ -22397,7 +22440,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Query fora do schema, data não ISO 8601, ou `from` depois de `to`. Corpo cru. */
+                /** @description Query outside the schema, a date that is not ISO 8601, or `from` after `to`. Bare body. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -22412,7 +22455,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A credencial não pode exportar auditoria desta organização. Corpo cru. */
+                /** @description The credential cannot export this organization's audit events. Bare body. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -22424,7 +22467,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A janela passa do teto de linhas; estreite-a. Corpo cru. */
+                /** @description The window goes past the row ceiling; narrow it. Bare body. */
                 413: {
                     headers: {
                         [name: string]: unknown;
@@ -22460,12 +22503,12 @@ export interface paths {
          * @deprecated
          * @description DEPRECATED alias of `GET /v1/approvals` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.
          *
-         *     **Sem `status`, você recebe só as `pending`** — não todas. Peça `status=approved,denied` para ver o que já foi decidido. A resposta é um array, sem envelope e sem cursor. Um `{orgId}` que não é o da credencial é 404 antes de qualquer leitura.
+         *     **Without `status` you get only the `pending` ones**, not all of them. Ask for `status=approved,denied` to see what has already been decided. The response is an array, with no envelope and no cursor. An `{orgId}` that is not the credential's own is 404 before any read.
          */
         get: {
             parameters: {
                 query?: {
-                    /** @description Separado por vírgula; o padrão é `pending`. */
+                    /** @description Comma-separated; the default is `pending`. */
                     status?: string;
                     limit?: number | null;
                 };
@@ -22517,7 +22560,7 @@ export interface paths {
                         }[];
                     };
                 };
-                /** @description A query não casou com o schema. Corpo cru. */
+                /** @description The query did not match the schema. Bare body. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -22568,7 +22611,7 @@ export interface paths {
          * @deprecated
          * @description DEPRECATED alias of `POST /v1/approvals/{id}/decide` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.
          *
-         *     `reason` é obrigatório nos dois sentidos, até 8000 caracteres, e só espaço em branco é recusado. Decidir exige uma PESSOA: uma credencial de portador sozinha leva `bearer_token_cannot_decide`. Já decidida é 409 e expirada é 410, as duas com a aprovação completa no corpo.
+         *     `reason` is required in both directions, up to 8000 characters, and whitespace alone is refused. Deciding requires a PERSON: a bearer credential on its own gets `bearer_token_cannot_decide`. Already decided is 409 and expired is 410, both with the full approval in the body.
          */
         post: {
             parameters: {
@@ -22630,7 +22673,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Corpo fora do schema. `reason_invalid` quando o problema é o motivo. Corpo cru. */
+                /** @description Body outside the schema. `reason_invalid` when the reason is the problem. Bare body. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -22647,7 +22690,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Quem chamou não pode decidir: só credencial de portador, token de usuário ausente/inválido/divergente, ou pessoa abaixo de admin. Corpo cru. */
+                /** @description The caller cannot decide: a bearer credential alone, a user token that is missing/invalid/mismatched, or a person below admin. Bare body. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -22661,7 +22704,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Não existe, ou é de outra organização. Corpo cru. */
+                /** @description Does not exist, or belongs to another organization. Bare body. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -22673,7 +22716,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Já decidida; a aprovação completa vem junto. Corpo cru. */
+                /** @description Already decided; the full approval comes with it. Bare body. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -22717,7 +22760,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Expirou antes de alguém decidir; a aprovação completa vem junto. Corpo cru. */
+                /** @description Expired before anyone decided; the full approval comes with it. Bare body. */
                 410: {
                     headers: {
                         [name: string]: unknown;
@@ -22761,7 +22804,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Limite de tentativas. `retry_after_seconds` diz quanto esperar. Corpo cru. */
+                /** @description Attempt rate limit. `retry_after_seconds` says how long to wait. Bare body. */
                 429: {
                     headers: {
                         [name: string]: unknown;
@@ -22774,7 +22817,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Verificação de token de usuário não configurada neste deployment. Corpo cru. */
+                /** @description User token verification is not configured on this deployment. Bare body. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -22896,7 +22939,7 @@ export interface paths {
          * @deprecated
          * @description DEPRECATED alias of `GET /v1/approvals/health` (ent#979), kept for two releases. Same handler, same `approvals:read` scope.
          *
-         *     The operator snapshot behind a queue alarm: how many approvals are pending for this org and how long the oldest has been waiting. `status` is the literal `ok` and carries no verdict, so alert on `oldest_pending_age_seconds` rather than on it. Both counters are null or zero on an empty queue.
+         *     The operator snapshot behind a queue alarm: how many approvals are pending for this org and how long the oldest has been waiting. `status` is a verdict on the sweeps only (`degraded` when `last_sweep_at` is null or older than 30 minutes, `status_reason` says which), never on queue depth, so alert on `oldest_pending_age_seconds` for that. Both counters are null or zero on an empty queue.
          *
          *     `last_sweep_at` is PLATFORM-WIDE, not per org: it is the last run of the expiry and orphan sweeps across the deployment. A stale value there means approvals may be sitting past their `expires_at` without being marked expired anywhere, which is a different fault from a deep queue.
          *
@@ -22921,7 +22964,12 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            status: "ok";
+                            status: "ok" | "degraded";
+                            /**
+                             * @description Why `status` is `degraded`; null exactly when it is `ok`.
+                             * @enum {string|null}
+                             */
+                            status_reason: "sweep_never_ran" | "sweep_stale" | null;
                             pending_count: number;
                             /** @description Null when nothing is pending. Rounded to whole seconds. */
                             oldest_pending_age_seconds: number | null;
@@ -24616,13 +24664,13 @@ export interface paths {
         put?: never;
         /**
          * Create a paywall
-         * @description Cria um paywall x402 na frente de uma origem sua.
+         * @description Creates an x402 paywall in front of an origin of yours.
          *
-         *     **O `slug` é global.** O índice de unicidade cobre só o slug, então ele é por ordem de chegada entre TODOS os tenants — e um já tomado volta como `slug_conflict`, mesmo que ninguém da sua organização o use.
+         *     **The `slug` is global.** The uniqueness index covers the slug alone, so it is first-come across ALL tenants, and one already taken comes back as `slug_conflict`, even if nobody in your organization uses it.
          *
-         *     **A `upstream_url` é resolvida aqui, não só validada.** O gateway busca essa origem a cada chamada paga, então um nome que não resolve, ou que resolve para endereço privado ou de metadados, é recusado na criação em vez de virar uma busca na hora do pedido.
+         *     **The `upstream_url` is resolved here, not only validated.** The gateway fetches that origin on every paid call, so a name that does not resolve, or that resolves to a private or metadata address, is refused at creation instead of becoming a fetch at request time.
          *
-         *     **Pede papel `admin` na organização**, para um membro não abrir superfície de cobrança sozinho.
+         *     **Requires the `admin` role in the organization**, so that a member cannot open a billing surface on their own.
          */
         post: {
             parameters: {
@@ -24634,26 +24682,26 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Minúsculas, dígitos, `_` e `-`. É a chave pública do gateway e é ÚNICA GLOBALMENTE, não por projeto: um slug tomado por outro tenant é recusado com `slug_conflict`. */
+                        /** @description Lowercase letters, digits, `_` and `-`. It is the public gateway key and it is UNIQUE GLOBALLY, not per project: a slug taken by another tenant is refused with `slug_conflict`. */
                         slug: string;
                         name: string;
                         /**
                          * Format: uri
-                         * @description A origem que o gateway busca a cada chamada paga. O host é RESOLVIDO na criação, não só lido: um nome público cujo A aponta para 169.254.169.254 é o ataque que essa checagem existe para fechar, e um nome que não resolve é 400 aqui em vez de uma busca na hora do pedido.
+                         * @description The origin the gateway fetches on every paid call. The host is RESOLVED at creation time, not merely parsed: a public name whose A record points at 169.254.169.254 is the attack this check exists to close, and a name that does not resolve is 400 here instead of a fetch at request time.
                          */
                         upstream_url: string;
-                        /** @description USDC decimal, e.g. `"0.001"`. Até 6 casas. */
+                        /** @description USDC decimal, e.g. `"0.001"`. Up to 6 decimal places. */
                         price: string;
                         currency?: string;
-                        /** @description Obrigatório quando `payto.kind` é `provisioned`: é a carteira que recebe. */
+                        /** @description Required when `payto.kind` is `provisioned`: it is the wallet that receives. */
                         consumer_id?: string;
                         description?: string;
                         category?: string;
-                        /** @description Os métodos HTTP que o paywall cobre. Ausente = todos; um método fora da lista leva 405 no gateway. */
+                        /** @description The HTTP methods this paywall fronts. Absent means every method; a method outside the list gets 405 at the gateway. */
                         methods?: string[];
-                        /** @description `flat`, `tiered`, `dynamic` ou `metered`. */
+                        /** @description `flat`, `tiered`, `dynamic` or `metered`. */
                         pricing_model?: string;
-                        /** @description Para `tiered`. Os limites `up_to` sobem estritamente e o ÚLTIMO é obrigatoriamente aberto (`up_to: null`). */
+                        /** @description For `tiered`. The `up_to` bounds increase strictly and the LAST one is required to be open (`up_to: null`). */
                         pricing_tiers?: {
                             /** @description EXCLUSIVE upper bound on the paywall's cumulative settled call count for which this tier's price applies: the gateway quotes the first tier whose `up_to` is null or strictly greater than the settled volume. The last tier carries null, meaning unbounded. */
                             up_to: number | null;
@@ -24662,10 +24710,10 @@ export interface paths {
                         }[];
                         /**
                          * Format: uri
-                         * @description Para `dynamic`: o gateway faz GET aqui por pedido e cota o preço devolvido.
+                         * @description For `dynamic`: the gateway GETs this per request and quotes the price it returns.
                          */
                         dynamic_price_url?: string;
-                        /** @description Para `metered`. */
+                        /** @description For `metered`. */
                         metered_config?: {
                             /** @description Metering label ('complexity', 'tokens', 'time', 'units'). Informational: the price is base times the reported multiplier whatever the label says. */
                             basis: string;
@@ -24681,7 +24729,7 @@ export interface paths {
                         payto: {
                             /** @enum {string} */
                             kind: "byo" | "provisioned";
-                            /** @description Endereço EVM `0x…`, obrigatório em `byo` e ignorado em `provisioned`. */
+                            /** @description EVM address `0x…`, required for `byo` and ignored for `provisioned`. */
                             address?: string;
                         };
                     };
@@ -24763,7 +24811,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O corpo não passou. Os códigos dizem qual regra: `invalid_body` (schema ou preço fora do formato USDC), `invalid_upstream_url` (não resolve, ou resolve para host privado), `slug_conflict` (o slug já existe, globalmente), `invalid_payto` (`byo` sem endereço EVM, ou `provisioned` sem `consumer_id`), `invalid_tiers` (limites que não sobem, ou último limitado), `pricing_model_unsupported`, `invalid_dynamic_price_url`, e os três de `metered` — desligado no deployment, sem `payto` provisionado (o reembolso sai de uma carteira nossa), ou configuração inválida. */
+                /** @description The body did not pass. The codes say which rule: `invalid_body` (schema, or a price outside the USDC format), `invalid_upstream_url` (does not resolve, or resolves to a private host), `slug_conflict` (the slug already exists, globally), `invalid_payto` (`byo` without an EVM address, or `provisioned` without `consumer_id`), `invalid_tiers` (bounds that do not increase, or a bounded last one), `pricing_model_unsupported`, `invalid_dynamic_price_url`, and the three of `metered`: turned off in the deployment, no provisioned `payto` (the refund leaves a wallet of ours), or an invalid config. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -25018,9 +25066,9 @@ export interface paths {
         head?: never;
         /**
          * Update a paywall
-         * @description Altera nome, origem, preço ou o estado ativo. Só os campos enviados mudam.
+         * @description Changes name, origin, price or the active state. Only the fields sent change.
          *
-         *     O `slug` NÃO está aqui: ele é a chave pública que os pagadores já usam, e trocá-lo quebraria todo cliente apontado para o antigo. Pede papel `admin`.
+         *     The `slug` is NOT here: it is the public key payers already use, and changing it would break every client pointed at the old one. Requires the `admin` role.
          */
         patch: {
             parameters: {
@@ -25118,7 +25166,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Corpo vazio ou fora do schema, preço fora do formato USDC, ou origem que não resolve para um host público. */
+                /** @description Empty body or a body outside the schema, a price outside the USDC format, or an origin that does not resolve to a public host. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -27231,14 +27279,14 @@ export interface paths {
         };
         /**
          * List registered agents
-         * @description Os agentes registrados na organização, mais recentes primeiro.
+         * @description The agents registered in the organization, most recent first.
          *
-         *     **A linha traz `has_principal`, não `principal_ref`.** A referência do principal aponta para o documento provado no KYC e não sai no wire; o booleano responde a pergunta que um operador faz — este agente tem principal vinculado? — sem publicar o valor.
+         *     **The row carries `has_principal`, not `principal_ref`.** The principal reference points at the document proved in KYC and does not go on the wire; the boolean answers the question an operator asks (does this agent have a principal bound?) without publishing the value.
          */
         get: {
             parameters: {
                 query?: {
-                    /** @description 1 a 200; o padrão é 50. */
+                    /** @description 1 to 200; the default is 50. */
                     limit?: number;
                     status?: "active" | "suspended" | "retired" | "revoked" | "unregistered";
                 };
@@ -27256,13 +27304,13 @@ export interface paths {
                     content: {
                         "application/json": {
                             agents: {
-                                /** @description O DID do agente. */
+                                /** @description The agent's DID. */
                                 did: string;
                                 agent_id: string;
                                 display_name: string | null;
                                 /** @enum {string} */
                                 status: "active" | "suspended" | "retired" | "revoked" | "unregistered";
-                                /** @description Se há principal vinculado. NUNCA a referência — veja a nota acima. */
+                                /** @description Whether a principal is bound. NEVER the reference itself; see the note above. */
                                 has_principal: boolean;
                                 /** Format: date-time */
                                 created_at: string;
@@ -27270,7 +27318,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A query não casou com o schema. */
+                /** @description The query did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -28461,9 +28509,9 @@ export interface paths {
         head?: never;
         /**
          * Update a webhook endpoint
-         * @description Altera nome, URL e estado de uma assinatura. Só os campos enviados mudam; os outros ficam como estão.
+         * @description Changes the name, URL and status of a subscription. Only the fields sent change; the others stay as they are.
          *
-         *     A `webhook_url` passa pela mesma checagem de sintaxe da criação — HTTPS, e nada de host de loopback, privado ou de metadados. O DNS é reconferido no despacho, então passar aqui não promete que ela resolva publicamente depois.
+         *     The `webhook_url` goes through the same syntax check as the create call: HTTPS, and no loopback, private or metadata host. DNS is rechecked at dispatch, so passing here does not promise that it resolves publicly later.
          */
         patch: {
             parameters: {
@@ -28482,7 +28530,7 @@ export interface paths {
                         /** Format: uri */
                         webhook_url?: string;
                         /**
-                         * @description Só `active` e `paused` são definíveis. `error` existe na leitura mas é do despachante: ele o escreve sozinho quando um endpoint auto-pausa depois de entregas mortas consecutivas, e um patch não o alcança.
+                         * @description Only `active` and `paused` are settable. `error` shows up on read but belongs to the dispatcher: it writes that value on its own when an endpoint auto-pauses after enough consecutive dead deliveries, and a patch cannot reach it.
                          * @enum {string}
                          */
                         status?: "active" | "paused";
@@ -28522,7 +28570,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O corpo não casou com o schema (inclusive o corpo vazio), ou a `webhook_url` foi recusada pela checagem de sintaxe. */
+                /** @description The body did not match the schema (the empty body included), or the `webhook_url` was refused by the syntax check. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -28731,9 +28779,9 @@ export interface paths {
          * @deprecated
          * @description DEPRECATED alias of `PATCH /v1/webhook-endpoints/{id}` (ent#979), kept for two releases. Same handler, same required scope, same request and same responses; switch the path and nothing else changes. The canonical path is described in this document too.
          *
-         *     Altera nome, URL e estado de uma assinatura. Só os campos enviados mudam; os outros ficam como estão.
+         *     Changes the name, URL and status of a subscription. Only the fields sent change; the others stay as they are.
          *
-         *     A `webhook_url` passa pela mesma checagem de sintaxe da criação — HTTPS, e nada de host de loopback, privado ou de metadados. O DNS é reconferido no despacho, então passar aqui não promete que ela resolva publicamente depois.
+         *     The `webhook_url` goes through the same syntax check as the create call: HTTPS, and no loopback, private or metadata host. DNS is rechecked at dispatch, so passing here does not promise that it resolves publicly later.
          */
         patch: {
             parameters: {
@@ -28752,7 +28800,7 @@ export interface paths {
                         /** Format: uri */
                         webhook_url?: string;
                         /**
-                         * @description Só `active` e `paused` são definíveis. `error` existe na leitura mas é do despachante: ele o escreve sozinho quando um endpoint auto-pausa depois de entregas mortas consecutivas, e um patch não o alcança.
+                         * @description Only `active` and `paused` are settable. `error` shows up on read but belongs to the dispatcher: it writes that value on its own when an endpoint auto-pauses after enough consecutive dead deliveries, and a patch cannot reach it.
                          * @enum {string}
                          */
                         status?: "active" | "paused";
@@ -28792,7 +28840,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description O corpo não casou com o schema (inclusive o corpo vazio), ou a `webhook_url` foi recusada pela checagem de sintaxe. */
+                /** @description The body did not match the schema (the empty body included), or the `webhook_url` was refused by the syntax check. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -28847,9 +28895,9 @@ export interface paths {
         put?: never;
         /**
          * Deliver a synthetic event to a webhook endpoint
-         * @description Publica um evento sintético nesta assinatura e entrega na hora, para você ver a requisição chegar do outro lado sem esperar um evento real.
+         * @description Publishes a synthetic event on this subscription and delivers it at once, so you can watch the request arrive on the other side without waiting for a real event.
          *
-         *     O endpoint precisa estar `active`: um pausado é recusado com 409 em vez de enfileirar em silêncio. O corpo entregue carrega `test: true` e o `trigger_id`, escritos pelo servidor DEPOIS do seu `payload`, então esses dois marcadores não são falsificáveis pelo chamador.
+         *     The endpoint has to be `active`: a paused one is refused with 409 rather than queued in silence. The delivered body carries `test: true` and the `trigger_id`, written by the server AFTER your `payload`, so those two markers cannot be forged by the caller.
          */
         post: {
             parameters: {
@@ -28864,9 +28912,9 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Ponto-separado minúsculo, mesma forma que o `event` de uma assinatura. Ausente, o evento sintético sai como `trigger.test_fire`. */
+                        /** @description Dot separated lowercase, the same shape as a subscription's `event`. When absent, the synthetic event goes out as `trigger.test_fire`. */
                         event_type?: string;
-                        /** @description Campos EXTRA no corpo do evento. Eles não reescrevem os marcadores: o servidor grava `test: true`, `trigger_id` e `requested_at` POR ÚLTIMO, então um assinante que decide por `test` nunca recebe um disparo de teste disfarçado de real. */
+                        /** @description EXTRA fields in the event body. They do not overwrite the markers: the server writes `test: true`, `trigger_id` and `requested_at` LAST, so a subscriber that decides on `test` never receives a test fire disguised as a real one. */
                         payload?: {
                             [key: string]: unknown;
                         };
@@ -28882,20 +28930,20 @@ export interface paths {
                     content: {
                         "application/json": {
                             trigger_id: string;
-                            /** @description O evento sintético, persistido para a entrega ter um alvo real. */
+                            /** @description The synthetic event, persisted so the delivery has a real target. */
                             event_id: string;
-                            /** @description Nulo quando o despacho não chegou a registrar uma tentativa. */
+                            /** @description Null when the dispatch never got as far as recording an attempt. */
                             delivery_id: string | null;
-                            /** @description O desfecho da tentativa, como o despachante o escreveu. */
+                            /** @description The outcome of the attempt, as the dispatcher wrote it. */
                             status: string;
-                            /** @description O status HTTP que o assinante devolveu, ou nulo quando não houve resposta. */
+                            /** @description The HTTP status the subscriber answered, or null when there was no response. */
                             response_status: number | null;
-                            /** @description A causa da falha, na mesma forma do histórico de entregas. */
+                            /** @description Why the attempt failed, in the same form as the delivery history. */
                             error: string | null;
                         };
                     };
                 };
-                /** @description O corpo não casou com o schema. */
+                /** @description The body did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -28935,7 +28983,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A assinatura não está `active`. O estado atual vem em `details.status`. */
+                /** @description The subscription is not `active`. Its current status comes back in `details.status`. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -28977,9 +29025,9 @@ export interface paths {
          * @deprecated
          * @description DEPRECATED alias of `POST /v1/webhook-endpoints/{id}/test-fire` (ent#979), kept for two releases. Same handler, same required scope, same request and same responses; switch the path and nothing else changes. The canonical path is described in this document too.
          *
-         *     Publica um evento sintético nesta assinatura e entrega na hora, para você ver a requisição chegar do outro lado sem esperar um evento real.
+         *     Publishes a synthetic event on this subscription and delivers it at once, so you can watch the request arrive on the other side without waiting for a real event.
          *
-         *     O endpoint precisa estar `active`: um pausado é recusado com 409 em vez de enfileirar em silêncio. O corpo entregue carrega `test: true` e o `trigger_id`, escritos pelo servidor DEPOIS do seu `payload`, então esses dois marcadores não são falsificáveis pelo chamador.
+         *     The endpoint has to be `active`: a paused one is refused with 409 rather than queued in silence. The delivered body carries `test: true` and the `trigger_id`, written by the server AFTER your `payload`, so those two markers cannot be forged by the caller.
          */
         post: {
             parameters: {
@@ -28994,9 +29042,9 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Ponto-separado minúsculo, mesma forma que o `event` de uma assinatura. Ausente, o evento sintético sai como `trigger.test_fire`. */
+                        /** @description Dot separated lowercase, the same shape as a subscription's `event`. When absent, the synthetic event goes out as `trigger.test_fire`. */
                         event_type?: string;
-                        /** @description Campos EXTRA no corpo do evento. Eles não reescrevem os marcadores: o servidor grava `test: true`, `trigger_id` e `requested_at` POR ÚLTIMO, então um assinante que decide por `test` nunca recebe um disparo de teste disfarçado de real. */
+                        /** @description EXTRA fields in the event body. They do not overwrite the markers: the server writes `test: true`, `trigger_id` and `requested_at` LAST, so a subscriber that decides on `test` never receives a test fire disguised as a real one. */
                         payload?: {
                             [key: string]: unknown;
                         };
@@ -29012,20 +29060,20 @@ export interface paths {
                     content: {
                         "application/json": {
                             trigger_id: string;
-                            /** @description O evento sintético, persistido para a entrega ter um alvo real. */
+                            /** @description The synthetic event, persisted so the delivery has a real target. */
                             event_id: string;
-                            /** @description Nulo quando o despacho não chegou a registrar uma tentativa. */
+                            /** @description Null when the dispatch never got as far as recording an attempt. */
                             delivery_id: string | null;
-                            /** @description O desfecho da tentativa, como o despachante o escreveu. */
+                            /** @description The outcome of the attempt, as the dispatcher wrote it. */
                             status: string;
-                            /** @description O status HTTP que o assinante devolveu, ou nulo quando não houve resposta. */
+                            /** @description The HTTP status the subscriber answered, or null when there was no response. */
                             response_status: number | null;
-                            /** @description A causa da falha, na mesma forma do histórico de entregas. */
+                            /** @description Why the attempt failed, in the same form as the delivery history. */
                             error: string | null;
                         };
                     };
                 };
-                /** @description O corpo não casou com o schema. */
+                /** @description The body did not match the schema. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -29065,7 +29113,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A assinatura não está `active`. O estado atual vem em `details.status`. */
+                /** @description The subscription is not `active`. Its current status comes back in `details.status`. */
                 409: {
                     headers: {
                         [name: string]: unknown;
