@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 6462dfe7722070516b0a0a1832f6b21ccd4beffb5f11a3b7e6909e369daea610, fetched 2026-09-19T00:39:37.947Z
+// Source: openapi-snapshot.json (sha256 ae6379f3d1e6a5e0d55182aef0daa9042c6c895effa4c163a1d64a28f135f77e, fetched 2026-09-19T03:16:58.849Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -240,6 +240,8 @@ export const API_OPERATIONS = [
   { method: "delete", path: "/v1/paywalls/{id}", body: null, accept: null },
   { method: "patch", path: "/v1/paywalls/{id}", body: "application/json", accept: "application/json" },
   { method: "get", path: "/v1/paywalls/{id}/stats", body: null, accept: "application/json" },
+  { method: "post", path: "/v1/payables", body: "application/json", accept: "application/json" },
+  { method: "get", path: "/v1/payables/{payableId}", body: null, accept: "application/json" },
   { method: "get", path: "/v1/projects", body: null, accept: "application/json" },
   { method: "post", path: "/v1/projects", body: "application/json", accept: "application/json" },
   { method: "get", path: "/v1/projects/{id}", body: null, accept: "application/json" },

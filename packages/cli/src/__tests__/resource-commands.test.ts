@@ -124,6 +124,8 @@ const PINNED_COMMANDS = [
   "consumer-payments execute → POST /v1/consumer-payments/execute",
   "consumer-payments execute-stream → POST /v1/consumer-payments/execute-stream",
   "catalog search → POST /v1/tools/search",
+  "payables create → POST /v1/payables",
+  "payables get → GET /v1/payables/{payableId}",
   "test fund → POST /v1/test/fund",
   "test pix-in → POST /v1/test/pix-in",
   "test settle-pix-in → POST /v1/test/settle-pix-in",

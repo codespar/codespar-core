@@ -1,5 +1,13 @@
 # @codespar/cli — changelog
 
+## 0.11.3 — 2026-09-19
+
+### Added
+
+- `codespar payables create` e `codespar payables get`, derivados do documento
+  servido quando as duas operações entraram nele. Nada foi escrito à mão: o
+  grupo é uma linha em `PUBLISHED_GROUPS` e os comandos saem do spec.
+
 ## 0.10.0 — 2026-09-14
 
 ### Changed

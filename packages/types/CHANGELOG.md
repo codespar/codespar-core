@@ -1,5 +1,15 @@
 # @codespar/types — CHANGELOG
 
+## 0.11.1 — 2026-09-19
+
+### Fixed
+
+- `SHOP_STATUS_READY_FIXTURE.pix_copia_e_cola` é um BR Code que um leitor
+  aceita. O valor anterior declarava 36 caracteres para uma chave de 11 e
+  fechava com `6304ABCD` no lugar do CRC, então a API o recusa desde a
+  codespar-enterprise#1427 (`carrier_crc_invalid`), e um leitor tolerante
+  extraía dele uma chave que não é de ninguém.
+
 ## 0.11.0 — 2026-09-14
 
 ### Changed
