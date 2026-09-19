@@ -162,6 +162,14 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     description: "Catalog: search it for a capability by intent",
   },
   {
+    // Chegou ao documento servido com o payable estruturado (ent#1467). Publicado
+    // e não excetuado, pela mesma regra das duas famílias acima: a exceção é para
+    // família sem uso terminal, e um payable termina numa conta a pagar de alguém.
+    name: "payables",
+    prefix: "/v1/payables",
+    description: "Payables: submit one (structured or manual), read its state and trail",
+  },
+  {
     name: "test",
     prefix: "/v1/test",
     description:
