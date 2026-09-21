@@ -81,6 +81,51 @@ async function main() {
 
     console.log("hosted-runtime smoke OK — mock round-trip matched fixture");
     console.log("  data:", got);
+  } finally {
+    await session.close();
+  }
+
+  return await sessaoSemServidor(cs);
+}
+
+/**
+ * Uma sessão SEM servidor, rodando uma meta-tool.
+ *
+ * É a forma que a CLI manda: as quinze meta-tools são server-less, e
+ * `codespar discover`, `charge`, `ledger`, `issue`, `tool <nome>`,
+ * `payment-status`, `ship`, `wizard` e `verification-status` abrem a sessão
+ * com `servers: []`. Em 21/09/2026 a API passou a exigir `minItems: 1` e os
+ * NOVE responderam `400 invalid_body` para todo mundo que instalava o pacote
+ * (ent#1566 fechou). Este smoke existia e não pegou: criava a única sessão que
+ * tinha com `servers: ["asaas"]`, a forma que funcionava, e o `paths:` do
+ * workflow nem incluía `packages/cli/**`.
+ *
+ * Um smoke que só exercita a forma que funciona não é smoke. Este exercita a
+ * que os clientes reais mandam.
+ */
+async function sessaoSemServidor(cs) {
+  let session;
+  try {
+    session = await cs.create("hosted-runtime-smoke-meta", { servers: [] });
+  } catch (err) {
+    console.error(
+      "error: a sessão sem servidor foi recusada. É a forma que nove comandos " +
+        "da CLI mandam, e ela precisa continuar aceita.",
+    );
+    console.error("  ", err instanceof CodesparApiError ? `${err.status}: ${err.message}` : err);
+    return 1;
+  }
+
+  try {
+    const result = await session.execute("codespar_discover", {
+      use_case: "issue an NF-e for a service",
+      limit: 1,
+    });
+    if (!result.success) {
+      console.error("error: a meta-tool falhou numa sessão sem servidor:", result.error);
+      return 1;
+    }
+    console.log("hosted-runtime smoke OK — meta-tool numa sessão sem servidor");
     return 0;
   } finally {
     await session.close();
