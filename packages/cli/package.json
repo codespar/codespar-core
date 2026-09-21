@@ -46,7 +46,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@codespar/sdk": "^0.12.0 || ^0.13.0 || ^0.14.0 || ^0.15.0 || ^0.16.0",
+    "@codespar/sdk": "^0.16.1",
     "commander": "^13.0.0"
   },
   "devDependencies": {
