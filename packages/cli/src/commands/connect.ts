@@ -99,19 +99,22 @@ export async function startConnectCommand(
   process.stdout.write(`\n  ${res.authorize_url}\n\n`);
   info(`Link expires ${new Date(res.expires_at).toLocaleString()}`);
 
-  // Auto-open when we're in an interactive terminal — matches what devs
-  // expect from `gh auth login` / `vercel login` / etc. In CI or piped
-  // runs stdout is not a TTY, so we skip and let the caller grab the
-  // URL from the printed output. `--no-open` also skips explicitly.
-  const shouldOpen =
-    opts.open !== false && Boolean(process.stdout.isTTY);
+  // TRES ESTADOS, e nao dois. `--open` esta documentada como "Force-open the
+  // link", entao ela FORCA: antes o teste de TTY vinha depois e anulava a
+  // flag, e num stdout redirecionado `--open` nao abria nada e nao dizia
+  // nada. Sem flag nenhuma, o TTY decide, que e o que `gh auth login` faz.
+  // `--no-open` nunca abre, e nesse caso a dica de passar `--open` era
+  // conselho para quem acabou de recusar.
+  const forcado = opts.open === true;
+  const recusado = opts.open === false;
+  const shouldOpen = forcado || (!recusado && Boolean(process.stdout.isTTY));
 
   if (shouldOpen) {
     await openInBrowser(res.authorize_url).catch(() => {
       // Silent fail — user can copy/paste from stdout.
     });
     info("Opened in your default browser. If nothing appeared, copy the URL above.");
-  } else if (!opts.open) {
+  } else if (!recusado) {
     info("Tip: pass --open on a future run to launch the link automatically.");
   }
 }

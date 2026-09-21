@@ -272,7 +272,7 @@ describe("hand-written REST paths", () => {
       offSpec,
       [
         "A path written by hand in the CLI is not an operation of the served OpenAPI",
-        "document, and it is not one of the ten already known.",
+        `document, and it is not one of the ${OFF_SPEC_PATHS.length} already known.`,
         "",
         "DO NOT close this by appending the path to OFF_SPEC_PATHS. That list is a debt",
         "register with a downward ratchet, not an allowlist. Dispatch through the",

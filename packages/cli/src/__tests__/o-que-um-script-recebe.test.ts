@@ -180,3 +180,71 @@ describe("a tela avisa quando ela não é o dado", () => {
     expect(erro.join("")).not.toMatch(/clipped/);
   });
 });
+
+describe("`--open` do connect é uma ordem, não uma sugestão", () => {
+  it("força mesmo com o stdout redirecionado", async () => {
+    const { startConnectCommand } = await import("../commands/connect.js");
+    const abertas: string[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({ authorize_url: "https://example.test/auth", expires_at: "2026-09-21T12:00:00Z" }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    vi.spyOn(process.stdout, "write").mockImplementation((chunk: unknown) => {
+      abertas.push(String(chunk));
+      return true;
+    });
+    const avisos: string[] = [];
+    vi.spyOn(process.stderr, "write").mockImplementation((chunk: unknown) => {
+      avisos.push(String(chunk));
+      return true;
+    });
+    // Sem TTY, que é o caso em que a flag era anulada.
+    const tty = process.stdout.isTTY;
+    Object.defineProperty(process.stdout, "isTTY", { value: false, configurable: true });
+
+    try {
+      await startConnectCommand(
+        new ApiClient({ apiKey: "csk_test_x", baseUrl: "https://api.test.dev" }),
+        "stripe",
+        { open: true },
+      );
+      // Não dá para exigir que um navegador abra dentro do teste; o que se
+      // exige é que a CLI TENTE, e a tentativa se anuncia.
+      expect(avisos.join("")).toMatch(/Opened in your default browser/);
+      expect(avisos.join("")).not.toMatch(/Tip: pass --open/);
+    } finally {
+      Object.defineProperty(process.stdout, "isTTY", { value: tty, configurable: true });
+    }
+  });
+
+  it("CONTROLE: com `--no-open` não abre e não sugere abrir", async () => {
+    const { startConnectCommand } = await import("../commands/connect.js");
+    vi.spyOn(globalThis, "fetch").mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({ authorize_url: "https://example.test/auth", expires_at: "2026-09-21T12:00:00Z" }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const avisos: string[] = [];
+    vi.spyOn(process.stderr, "write").mockImplementation((chunk: unknown) => {
+      avisos.push(String(chunk));
+      return true;
+    });
+
+    await startConnectCommand(
+      new ApiClient({ apiKey: "csk_test_x", baseUrl: "https://api.test.dev" }),
+      "stripe",
+      { open: false },
+    );
+
+    expect(avisos.join("")).not.toMatch(/Opened in your default browser/);
+    expect(avisos.join("")).not.toMatch(/Tip: pass --open/);
+  });
+});

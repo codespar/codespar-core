@@ -1,12 +1,67 @@
 # @codespar/cli — changelog
 
-## 0.11.3 — 2026-09-19
+## 0.11.3 — nao publicada
+
+### Fixed
+
+- `codespar login --api-key <chave>` nao funcionava e saia **0**. A flag esta
+  declarada na raiz e em `login`, e o commander entrega o valor a raiz, entao
+  a acao lia `undefined` e caia no prompt; com stdin em EOF o processo saia
+  zero sem gravar nada. `init` sem TTY tinha o mesmo desenho. Os dois agora
+  recusam com exit 1 (#158).
+- `codespar execute` saia **0** quando a ferramenta respondia `success: false`,
+  enquanto `codespar tool` saia 1 para a mesma resposta (#158).
+- `ledger` recusava duas das cinco acoes publicadas e a recusa do `charge`
+  nomeava tres dos quatro metodos: o vocabulario passa a ser lido de
+  `@codespar/types` (#158).
+- `login` ignorava a base URL do arquivo de config, e variavel de ambiente
+  VAZIA vencia o arquivo (#158).
+- Os comandos escritos a mao chamavam cinco rotas depreciadas:
+  `/v1/connect/start`, `/v1/consents/init`, `/v1/servers` e
+  `/v1/servers/{id}/auth-schema` (#160).
+- Com `--json`, uma falha escrevia zero byte no stdout. Agora escreve um
+  documento com `error.kind`; cinco comandos que ignoravam a flag passam a
+  responder; `logs tail --json` virou NDJSON; e a tabela avisa quando corta
+  uma celula (#161).
 
 ### Added
 
 - `codespar payables create` e `codespar payables get`, derivados do documento
   servido quando as duas operações entraram nele. Nada foi escrito à mão: o
   grupo é uma linha em `PUBLISHED_GROUPS` e os comandos saem do spec.
+- `codespar consents get` e `codespar consents submit`, pelo mesmo caminho,
+  quando o snapshot subiu para 280 operacoes (#159).
+
+### Changed
+
+- O grupo `triggers` aponta para `/v1/webhook-endpoints`. As 12 grafias de
+  comando sao as mesmas; o que muda e a rota, porque `/v1/triggers` esta 12 de
+  12 depreciada no documento servido (#159).
+- Um comando derivado de rota depreciada passa a dizer `(deprecated)` no
+  `--help` (#159).
+
+## 0.11.2 — 2026-09-14
+
+### Fixed
+
+- A 0.11.0 publicada nao subia: `codespar --help` abortava com
+  `cannot add command 'tools' as already have command 'tools'`, porque o grupo
+  derivado colidia com o comando escrito a mao. O grupo virou `catalog` (#151).
+- O portao de boot tinha orcamento implicito e derrubava o proprio publish
+  (#152).
+
+## 0.11.1 — nao publicada
+
+## 0.11.0 — 2026-09-14
+
+### Added
+
+- Comandos por grupo de recurso e as 15 meta-tools, derivados da superficie
+  publicada (core#125).
+
+### Known issue
+
+- Esta versao esta no npm e NAO SOBE: ver 0.11.2.
 
 ## 0.10.0 — 2026-09-14
 
