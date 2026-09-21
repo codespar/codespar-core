@@ -1,6 +1,7 @@
 import { CodeSpar } from "@codespar/sdk";
 import type { LedgerArgs, LedgerResult } from "@codespar/sdk";
 import { CliError } from "../config.js";
+import { metaToolActions } from "../surface.js";
 import { info, json, success } from "../output.js";
 import { resolveMetaInput } from "./meta-input.js";
 
@@ -56,8 +57,13 @@ export async function ledgerCommand(opts: LedgerCommandOptions): Promise<void> {
 }
 
 export function validateLedgerArgs(args: LedgerArgs): void {
-  if (!args.action || !["entry", "balance", "account"].includes(args.action)) {
-    throw new CliError("ledger.action must be one of: entry, balance, account.");
+  // A lista sai de `@codespar/types`, nao de uma copia: `receipt` e
+  // `receipts` ja eram publicadas e a copia aqui as recusava antes de a
+  // requisicao sair, enquanto `codespar tool codespar_ledger --action
+  // receipt` respondia.
+  const published = metaToolActions("codespar_ledger");
+  if (!args.action || !published.includes(args.action)) {
+    throw new CliError(`ledger.action must be one of: ${published.join(", ")}.`);
   }
   if (args.action === "entry") {
     if (!args.asset) throw new CliError("ledger.asset is required when action=entry.");

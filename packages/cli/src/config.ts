@@ -21,10 +21,14 @@ const CONFIG_DIR = join(homedir(), ".codespar");
 const CONFIG_FILE = join(CONFIG_DIR, "config.json");
 
 export async function loadConfig(): Promise<CliConfig> {
+  // `|| undefined` e nao `??`: uma variavel exportada VAZIA (`export
+  // CODESPAR_BASE_URL=`, comum num `env` de CI) chega como string vazia, que
+  // `??` deixa passar. O resultado era um cliente com base URL vazia em vez
+  // do que esta no arquivo.
   const fromEnv: CliConfig = {
-    apiKey: process.env.CODESPAR_API_KEY,
-    project: process.env.CODESPAR_PROJECT,
-    baseUrl: process.env.CODESPAR_BASE_URL,
+    apiKey: process.env.CODESPAR_API_KEY || undefined,
+    project: process.env.CODESPAR_PROJECT || undefined,
+    baseUrl: process.env.CODESPAR_BASE_URL || undefined,
   };
 
   let fromFile: CliConfig = {};

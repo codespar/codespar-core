@@ -326,7 +326,20 @@ export function metaToolDefinition(name: string): SharedMetaToolDefinition | und
  * `check_type`, codespar_discover on `use_case`).
  */
 export function metaToolActions(name: string): readonly string[] {
-  return metaToolDefinition(name)?.contract.enums?.action ?? [];
+  return metaToolEnum(name, "action");
+}
+
+/**
+ * O vocabulario fechado de QUALQUER propriedade de uma meta-tool
+ * (`codespar_charge.method`, `codespar_ledger.action`), ou vazio quando a
+ * propriedade nao publica lista. Existe para que nenhuma lista seja copiada
+ * para dentro de um comando: copia envelhece calada quando o enum cresce.
+ */
+export function metaToolEnum(name: string, property: string): readonly string[] {
+  const enums = metaToolDefinition(name)?.contract.enums as
+    | Record<string, readonly string[]>
+    | undefined;
+  return enums?.[property] ?? [];
 }
 
 /* ── Coverage gate ────────────────────────────────────────────────── */

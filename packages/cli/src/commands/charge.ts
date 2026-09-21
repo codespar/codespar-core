@@ -1,6 +1,7 @@
 import { CodeSpar } from "@codespar/sdk";
 import type { ChargeArgs, ChargeResult } from "@codespar/sdk";
 import { CliError } from "../config.js";
+import { metaToolEnum } from "../surface.js";
 import { info, json, success } from "../output.js";
 import { resolveMetaInput } from "./meta-input.js";
 
@@ -53,7 +54,7 @@ export async function chargeCommand(opts: ChargeCommandOptions): Promise<void> {
   }
 }
 
-function validateChargeArgs(args: ChargeArgs): void {
+export function validateChargeArgs(args: ChargeArgs): void {
   if (typeof args.amount !== "number") {
     throw new CliError("charge.amount must be a number (major units).");
   }
@@ -61,7 +62,11 @@ function validateChargeArgs(args: ChargeArgs): void {
     throw new CliError("charge.currency is required (e.g. BRL).");
   }
   if (!args.method) {
-    throw new CliError("charge.method is required (pix | boleto | card).");
+    // A lista sai do enum publicado: escrita a mao, ela dizia tres de quatro
+    // e ensinava que `wallet` nao existia.
+    throw new CliError(
+      `charge.method is required (${metaToolEnum("codespar_charge", "method").join(" | ")}).`,
+    );
   }
   if (!args.buyer || typeof args.buyer !== "object" || !args.buyer.name) {
     throw new CliError("charge.buyer.name is required.");

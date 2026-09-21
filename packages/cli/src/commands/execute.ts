@@ -31,17 +31,19 @@ export async function executeCommand(toolName: string, opts: ExecuteOptions): Pr
   try {
     const result = await session.execute(toolName, input);
 
-    if (opts.json) {
-      json(result);
-      return;
+    // O envelope sai ANTES da recusa, inclusive em `--json`: quem le por
+    // maquina precisa do corpo, e quem encadeia com `&&` precisa do codigo de
+    // saida. Antes o comando escrevia "Tool call failed" no stderr e RETORNAVA,
+    // entao a mesma resposta saia 0 aqui e 1 por `codespar tool <nome>`.
+    if (opts.json) json(result);
+    else {
+      if (result.success) success(`${toolName} succeeded in ${result.duration ?? "?"}ms`);
+      process.stdout.write(JSON.stringify(result, null, 2) + "\n");
     }
 
-    if (result.success) {
-      success(`${toolName} succeeded in ${result.duration ?? "?"}ms`);
-    } else {
-      process.stderr.write(`Tool call failed: ${result.error ?? "unknown error"}\n`);
+    if (!result.success) {
+      throw new CliError(`${toolName} failed: ${result.error ?? "unknown error"}`);
     }
-    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
   } finally {
     await session.close();
   }

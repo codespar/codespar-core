@@ -1,6 +1,6 @@
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
-import { saveConfig, CliError } from "../config.js";
+import { loadConfig, saveConfig, CliError } from "../config.js";
 import { ApiClient } from "../api.js";
 import { success, info } from "../output.js";
 
@@ -49,6 +49,14 @@ export async function loginCommand(opts: LoginOptions): Promise<void> {
   let apiKey = opts.apiKey;
 
   if (!apiKey) {
+    // Sem TTY a promessa do readline nunca resolve, o processo fica sem
+    // trabalho pendente e o Node sai 0: o passo de CI fica verde e o comando
+    // seguinte diz "Not logged in". Recusar aqui e a unica saida honesta.
+    if (!input.isTTY) {
+      throw new CliError(
+        "No terminal to prompt on. Pass `--api-key <key>`, or set CODESPAR_API_KEY and skip login.",
+      );
+    }
     info("Get your API key at https://codespar.dev/dashboard/settings?tab=api-keys");
     apiKey = (await promptSecret("API key: ")).trim();
   }
@@ -60,7 +68,11 @@ export async function loginCommand(opts: LoginOptions): Promise<void> {
     );
   }
 
-  const baseUrl = opts.baseUrl ?? process.env.CODESPAR_BASE_URL ?? "https://api.codespar.dev";
+  // Pela mesma cadeia de todo mundo (flag > env > arquivo > padrao), que e o
+  // que `loadConfig()` ja faz. Lendo so a env, o `login` pulava o arquivo que
+  // ELE MESMO grava: depois de `login --base-url <staging>`, um `login` seco
+  // validava a chave contra producao.
+  const baseUrl = opts.baseUrl ?? (await loadConfig()).baseUrl ?? "https://api.codespar.dev";
 
   // Validate before saving so we don't persist a typo.
   const client = new ApiClient({ apiKey, baseUrl });
