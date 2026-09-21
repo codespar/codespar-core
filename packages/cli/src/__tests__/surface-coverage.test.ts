@@ -214,12 +214,12 @@ describe("auditSurface controls", () => {
  * make one, and it is named to be visible at the call site.
  */
 const OFF_SPEC_PATHS = [
-  // POST, answers 400 to an unauthenticated probe (a declared body it did
-  // not get), so the route is there and the document is behind.
-  "/v1/consents/{}/submit",
   // POST, answers 401 to an unauthenticated probe.
   "/v1/consumers/{}/wallet/transfer",
 ];
+// Retirada em 21/09: `/v1/consents/{}/submit` era debito porque o documento
+// nao a declarava. O refresh do snapshot a trouxe, e `mandate create` passou a
+// chama-la pela tabela gerada. A catraca desce, nunca sobe.
 
 function sourceFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

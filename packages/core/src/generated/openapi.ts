@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 ae6379f3d1e6a5e0d55182aef0daa9042c6c895effa4c163a1d64a28f135f77e, fetched 2026-09-19T03:16:58.849Z
+// Source: openapi-snapshot.json (sha256 f5e5800ada7b9cbab05c63dae285725f9839aff288cd08f988d37f81f74b5fc6, fetched 2026-09-21T01:59:02.055Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -13959,7 +13959,9 @@ export interface paths {
          * Start a hosted consent
          * @description Starts a hosted consent for a consumer mandate. The partner's backend calls this with its API key and gets a one-shot token carrying the intent the consumer is about to authorize (purpose, total and per-transaction caps, currency, mandate TTL and the merchant, withdrawal and DDA allowlists that will be signed into the mandate). The partner composes the URL of the hosted consent page from the token and hands it to the consumer.
          *
-         *     The consumer signs on the hosted page. The mandate is created server-side when the consumer submits there: the consumer's secret is provisioned, the mandate is signed with it, the funding source and the consent record are written and the token is consumed, in one transaction. The API key never signs, and the page's own calls are not operations of this document: nothing a partner can call with a key produces a signed mandate.
+         *     The mandate is created server-side when the consent is submitted: the consumer's secret is provisioned, the mandate is signed with it, the funding source and the consent record are written and the token is consumed, in one transaction. The API key never signs — nothing a partner can call WITH A KEY produces a signed mandate.
+         *
+         *     `surface` decides who runs that ceremony, and it is fixed here, at creation. `hosted` (the default): hand `consent_url` to the consumer and our page does the rest. `partner`: you render your own screen and call `GET /v1/consents/{token}` and `POST /v1/consents/{token}/submit` yourself, both described in this document, and the submit must carry an `attestation` saying who witnessed the human and when. That block is signed into the mandate, which is what keeps the two surfaces distinguishable in an audit instead of collapsing into an IP address that would be your server's either way.
          *
          *     `intent.merchant_allowlist` defaults to `["*"]`, an explicit wildcard bounded by the caps, purpose and expiry; pass concrete Pix keys to narrow it. `intent.withdrawal_allowlist` and `intent.dda_allowlist` are deliberately NOT defaulted: absent means the mandate authorizes no cash-out and no DDA registration, which is a different thing from a wildcard, and `"*"` is refused in both. `callback_url`, when given, is returned to the hosted page at submit time so the partner's backend can receive the signed mandate.
          *
@@ -14015,6 +14017,11 @@ export interface paths {
                         };
                         /** Format: uri */
                         callback_url?: string;
+                        /**
+                         * @default hosted
+                         * @enum {string}
+                         */
+                        surface?: "hosted" | "partner";
                     };
                 };
             };
@@ -14030,6 +14037,13 @@ export interface paths {
                             token: string;
                             /** @description ISO 8601. The token expires 24 hours after this call; a consumer opening the link after that sees an expired consent and nothing is created. This is the TOKEN's TTL, not the mandate's: the mandate's own TTL is `intent.mandate_ttl_seconds`, counted from the moment the consumer signs. */
                             expires_at: string;
+                            /**
+                             * @description Echo of the requested surface, which is fixed for this token's life. `hosted`: the consumer signs on the page at `consent_url` and the submit must NOT carry an attestation. `partner`: you render the screen and call `GET /v1/consents/{token}` and `POST /v1/consents/{token}/submit` yourself, and the submit MUST carry `attestation`.
+                             * @enum {string}
+                             */
+                            surface: "hosted" | "partner";
+                            /** @description The hosted page for this token, composed from the server's configured base. Hand it to the consumer on the `hosted` surface. It is returned on `partner` too, where it is a usable fallback: the same token also answers on the page. */
+                            consent_url: string;
                         };
                     };
                 };
@@ -14077,7 +14091,9 @@ export interface paths {
          *
          *     Starts a hosted consent for a consumer mandate. The partner's backend calls this with its API key and gets a one-shot token carrying the intent the consumer is about to authorize (purpose, total and per-transaction caps, currency, mandate TTL and the merchant, withdrawal and DDA allowlists that will be signed into the mandate). The partner composes the URL of the hosted consent page from the token and hands it to the consumer.
          *
-         *     The consumer signs on the hosted page. The mandate is created server-side when the consumer submits there: the consumer's secret is provisioned, the mandate is signed with it, the funding source and the consent record are written and the token is consumed, in one transaction. The API key never signs, and the page's own calls are not operations of this document: nothing a partner can call with a key produces a signed mandate.
+         *     The mandate is created server-side when the consent is submitted: the consumer's secret is provisioned, the mandate is signed with it, the funding source and the consent record are written and the token is consumed, in one transaction. The API key never signs — nothing a partner can call WITH A KEY produces a signed mandate.
+         *
+         *     `surface` decides who runs that ceremony, and it is fixed here, at creation. `hosted` (the default): hand `consent_url` to the consumer and our page does the rest. `partner`: you render your own screen and call `GET /v1/consents/{token}` and `POST /v1/consents/{token}/submit` yourself, both described in this document, and the submit must carry an `attestation` saying who witnessed the human and when. That block is signed into the mandate, which is what keeps the two surfaces distinguishable in an audit instead of collapsing into an IP address that would be your server's either way.
          *
          *     `intent.merchant_allowlist` defaults to `["*"]`, an explicit wildcard bounded by the caps, purpose and expiry; pass concrete Pix keys to narrow it. `intent.withdrawal_allowlist` and `intent.dda_allowlist` are deliberately NOT defaulted: absent means the mandate authorizes no cash-out and no DDA registration, which is a different thing from a wildcard, and `"*"` is refused in both. `callback_url`, when given, is returned to the hosted page at submit time so the partner's backend can receive the signed mandate.
          *
@@ -14133,6 +14149,11 @@ export interface paths {
                         };
                         /** Format: uri */
                         callback_url?: string;
+                        /**
+                         * @default hosted
+                         * @enum {string}
+                         */
+                        surface?: "hosted" | "partner";
                     };
                 };
             };
@@ -14148,6 +14169,13 @@ export interface paths {
                             token: string;
                             /** @description ISO 8601. The token expires 24 hours after this call; a consumer opening the link after that sees an expired consent and nothing is created. This is the TOKEN's TTL, not the mandate's: the mandate's own TTL is `intent.mandate_ttl_seconds`, counted from the moment the consumer signs. */
                             expires_at: string;
+                            /**
+                             * @description Echo of the requested surface, which is fixed for this token's life. `hosted`: the consumer signs on the page at `consent_url` and the submit must NOT carry an attestation. `partner`: you render the screen and call `GET /v1/consents/{token}` and `POST /v1/consents/{token}/submit` yourself, and the submit MUST carry `attestation`.
+                             * @enum {string}
+                             */
+                            surface: "hosted" | "partner";
+                            /** @description The hosted page for this token, composed from the server's configured base. Hand it to the consumer on the `hosted` surface. It is returned on `partner` too, where it is a usable fallback: the same token also answers on the page. */
+                            consent_url: string;
                         };
                     };
                 };
@@ -14161,6 +14189,286 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consents/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a pending consent
+         * @description Returns what a human needs to see before authorizing: the org, the agent and the intent that will be signed. No credential — the token in the URL is the authentication, and it is the same token on both surfaces.
+         *
+         *     The hosted page calls this to render itself. On the `partner` surface you call it to render your own screen, and `surface` in the response tells you which you are on.
+         *
+         *     It never returns a secret, a mandate or a provisioned id: nothing here signs anything. A token that was already used answers 409 and an expired one 410, so the screen can say which happened.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The consent is pending and these are its human-readable parts. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            token: string;
+                            /** @description The org's display name, for the screen. `An organization` when it cannot be read. */
+                            org_name: string;
+                            /** @description The agent the mandate will authorize. */
+                            agent_id: string;
+                            /** @description What the partner passed at creation, to help the consumer recognize the request. */
+                            consumer_email_hint: string | null;
+                            /** @description The intent as it was minted: purpose, caps, currency, mandate TTL and the allowlists that will be signed. Show it — this is what the human is authorizing. */
+                            intent: {
+                                [key: string]: unknown;
+                            };
+                            /** @description ISO 8601. After this the token answers 410. */
+                            expires_at: string;
+                            /** @description Legal values for `rail` on the submit below. */
+                            rails_supported: string[];
+                            /**
+                             * @description The surface this token was opened for. `partner` means the submit requires `attestation`; `hosted` means it refuses one. Read it before submitting rather than assuming: the org chose it when it created the consent.
+                             * @enum {string}
+                             */
+                            surface: "hosted" | "partner";
+                        };
+                    };
+                };
+                /** @description No such token. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The token was already submitted. One-shot by construction (a partial unique index on the pending state), so this is what a replay gets. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "consent_already_resolved";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The token expired. Start a new consent. */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "consent_expired";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consents/{token}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit a consent and receive the signed mandate
+         * @description Consumes the token and returns the signed consumer mandate. In one transaction: the consumer's secret is provisioned if this is their first consent, the funding source is created from `provider_token` (encrypted through the vault, never stored in the clear), the consent record is written with the IP and user-agent of THIS call, the mandate is signed with the consumer's secret and the token is consumed. No credential: the token is the authentication, and it is one-shot.
+         *
+         *     WHO may call it is decided by the surface the org chose at creation, and the two are not interchangeable:
+         *
+         *     - `hosted` — the consumer's browser submits from our page. `attestation` is REFUSED (400 `attestation_not_accepted`): our page witnessed the act, and the IP and user-agent on the consent record are the consumer's.
+         *     - `partner` — your server submits. `attestation` is REQUIRED (400 `attestation_required`): the IP and user-agent recorded are your server's, so the only statement about the human is yours. It is signed into the mandate as `consent_attestation` and cannot be edited afterwards without breaking the signature.
+         *
+         *     `attestation.method` says how the human authorized: `partner_session` (an authenticated session in your product), `in_person`, or `verified_code` (a code YOU issued and verified). `asserted_at` is the instant you say they authorized, in Unix seconds. `reference` is your own record id, `[A-Za-z0-9_-]{1,120}`, and never personal data — it is joined into the signed string, so the character set is the schema's, not a suggestion.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        consumer_id: string;
+                        /** @enum {string} */
+                        rail: "pix-consent" | "card-token" | "ted-debit-auth" | "usd-ach-debit" | "usdc-onchain";
+                        provider_token: string;
+                        display_label?: string;
+                        attestation?: {
+                            /** @enum {string} */
+                            method: "partner_session" | "in_person" | "verified_code";
+                            asserted_at: number;
+                            reference?: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description The mandate is signed and stored, and the token is spent. Store the mandate and its signature: both are presented on every spend. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            mandate_id: string;
+                            /** @description The signed consumer mandate. Store it server-side with its signature; the agent presents both on every spend. */
+                            mandate: {
+                                [key: string]: unknown;
+                            };
+                            /** @description HMAC of the mandate's canonical payload, hex. */
+                            signature: string;
+                            /** @description The `callback_url` given at creation, echoed so the caller can post the mandate on. */
+                            callback_url: string | null;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema (`invalid_body`, with the Zod issues in `details.issues`), or the attestation does not match the token's surface: `attestation_required` on `partner` without one, `attestation_not_accepted` on `hosted` with one. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "attestation_required" | "attestation_not_accepted";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No such token. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The token was already submitted, or a concurrent submit won the race. Nothing was created twice: the loser rolls back whole. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "consent_already_resolved" | "consent_race";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The token expired. Start a new consent. */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "consent_expired";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;

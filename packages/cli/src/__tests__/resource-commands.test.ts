@@ -121,6 +121,8 @@ const PINNED_COMMANDS = [
   "charges cancel → POST /v1/charges/{chargeId}/cancel",
   "consents create → POST /v1/consents",
   "consents init → POST /v1/consents/init",
+  "consents get → GET /v1/consents/{token}",
+  "consents submit → POST /v1/consents/{token}/submit",
   "consumer-payments execute → POST /v1/consumer-payments/execute",
   "consumer-payments execute-stream → POST /v1/consumer-payments/execute-stream",
   "catalog search → POST /v1/tools/search",

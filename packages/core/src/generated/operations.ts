@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 ae6379f3d1e6a5e0d55182aef0daa9042c6c895effa4c163a1d64a28f135f77e, fetched 2026-09-19T03:16:58.849Z
+// Source: openapi-snapshot.json (sha256 f5e5800ada7b9cbab05c63dae285725f9839aff288cd08f988d37f81f74b5fc6, fetched 2026-09-21T01:59:02.055Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -156,6 +156,8 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/connections/subaccount/{id}/status", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/consents", body: "application/json", accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/consents/init", body: "application/json", accept: "application/json", deprecated: true },
+  { method: "get", path: "/v1/consents/{token}", body: null, accept: "application/json", deprecated: false },
+  { method: "post", path: "/v1/consents/{token}/submit", body: "application/json", accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/consumers/mandates/{id}/spend", body: "application/json", accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/consumer-payments/execute", body: "application/json", accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/consumer-payments/execute-stream", body: "application/json", accept: "text/event-stream", deprecated: false },
