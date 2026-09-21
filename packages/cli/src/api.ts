@@ -8,6 +8,34 @@ import type {
 import { CliError } from "./config.js";
 import { VERSION } from "./version.js";
 
+/**
+ * An answer from the API that was not 2xx.
+ *
+ * WHY IT IS A SUBCLASS OF CliError. It prints exactly like any other refusal:
+ * one red line on stderr, no stack. What changes is what a script gets. The
+ * eleven commands on this client used to report every 401, 404 and 500 as
+ * `kind: "cli"` — the kind that means "the CLI refused before reaching the
+ * API" — with the status readable only by parsing the message, while the
+ * generated resource commands, which go through the SDK's client, answered
+ * the same 401 with `kind: "api"`, `status` and `body`. One binary, one
+ * `--json`, two contracts, and `kind` separating nothing. Measured on
+ * 0.11.3: `wallet`, `servers list`, `sessions list` and `whoami` all said
+ * `cli` for a 401; `consumers list` said `api` with `status: 401`.
+ */
+export class HttpError extends CliError {
+  readonly status: number;
+  readonly code?: string;
+  readonly body?: unknown;
+
+  constructor(message: string, opts: { status: number; code?: string; body?: unknown }) {
+    super(message);
+    this.name = "HttpError";
+    this.status = opts.status;
+    this.code = opts.code;
+    this.body = opts.body;
+  }
+}
+
 export interface ApiClientConfig {
   apiKey: string;
   baseUrl: string;
@@ -180,27 +208,45 @@ export class ApiClient {
     }
 
     if (!res.ok) {
-      let detail = "";
+      // Read the body ONCE. The first version called `res.json()` and, in the
+      // catch, `res.text()` — which always throws after json() has consumed
+      // the stream, so a non-JSON error body arrived as an empty detail.
+      const raw = await res.text().catch(() => "");
+      let detail = raw;
+      let body: unknown = raw === "" ? undefined : raw;
+      let code: string | undefined;
       try {
         // The API returns either `{ message }` or the nested envelope
         // `{ error: { code, message } }` (newer routes). Handle both so the
         // human-readable message surfaces instead of "[object Object]".
-        const errBody = (await res.json()) as {
+        const errBody = JSON.parse(raw) as {
+          code?: string;
           message?: string;
           error?: string | { code?: string; message?: string };
         };
-        const nested =
-          typeof errBody.error === "object" && errBody.error ? errBody.error : null;
-        detail =
-          errBody.message ??
-          nested?.message ??
-          (typeof errBody.error === "string" ? errBody.error : "") ??
-          "";
+        if (errBody && typeof errBody === "object") {
+          body = errBody;
+          const nested =
+            typeof errBody.error === "object" && errBody.error ? errBody.error : null;
+          code =
+            errBody.code ??
+            nested?.code ??
+            (typeof errBody.error === "string" ? errBody.error : undefined);
+          detail =
+            errBody.message ??
+            nested?.message ??
+            (typeof errBody.error === "string" ? errBody.error : "") ??
+            "";
+        }
       } catch {
-        detail = await res.text().catch(() => "");
+        // Not JSON: the raw text is the detail, and the body as read.
       }
       const prefix = `${method} ${url.pathname} → ${res.status}`;
-      throw new CliError(detail ? `${prefix}: ${detail}` : prefix);
+      throw new HttpError(detail ? `${prefix}: ${detail}` : prefix, {
+        status: res.status,
+        code,
+        body,
+      });
     }
 
     if (res.status === 204) return undefined;

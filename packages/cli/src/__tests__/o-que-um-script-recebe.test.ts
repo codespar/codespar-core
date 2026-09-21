@@ -24,7 +24,9 @@
  */
 
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { mkdtempSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -35,16 +37,40 @@ import { ApiClient } from "../api.js";
 
 const BIN = join(dirname(fileURLToPath(import.meta.url)), "../../dist/index.js");
 
-function roda(args: string[], cwd?: string) {
+function roda(args: string[], cwd?: string, ambiente: Record<string, string> = {}) {
   const casa = mkdtempSync(join(tmpdir(), "codespar-script-"));
   const r = spawnSync(process.execPath, [BIN, ...args], {
     cwd: cwd ?? casa,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
     timeout: 30_000,
-    env: { ...process.env, HOME: casa, USERPROFILE: casa, CODESPAR_API_KEY: "", CODESPAR_BASE_URL: "" },
+    env: { ...process.env, HOME: casa, USERPROFILE: casa, CODESPAR_API_KEY: "", CODESPAR_BASE_URL: "", ...ambiente },
   });
   return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "", casa };
+}
+
+/**
+ * A versao assincrona de `roda`.
+ *
+ * ⚠️ `spawnSync` NAO serve quando o servidor que a CLI vai chamar mora neste
+ * mesmo processo: ele bloqueia o event loop do teste, o servidor nunca
+ * responde, e o filho morre no timeout com `status: null`. Custou duas
+ * execucoes de 30s ate a mensagem dizer isso.
+ */
+function rodaAsync(args: string[], ambiente: Record<string, string> = {}) {
+  const casa = mkdtempSync(join(tmpdir(), "codespar-script-"));
+  return new Promise<{ status: number | null; stdout: string; stderr: string }>((pronto) => {
+    const filho = spawn(process.execPath, [BIN, ...args], {
+      cwd: casa,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, HOME: casa, USERPROFILE: casa, CODESPAR_API_KEY: "", CODESPAR_BASE_URL: "", ...ambiente },
+    });
+    let stdout = "";
+    let stderr = "";
+    filho.stdout.on("data", (d) => (stdout += String(d)));
+    filho.stderr.on("data", (d) => (stderr += String(d)));
+    filho.on("close", (status) => pronto({ status, stdout, stderr }));
+  });
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -67,6 +93,83 @@ describe("a falha também é um documento", () => {
     expect(r.status).toBe(1);
     expect(r.stdout).toBe("");
     expect(r.stderr).toContain("Not logged in");
+  }, 40_000);
+});
+
+/**
+ * `kind` existe para um script ramificar sem interpretar prosa, e so vale se
+ * separar as duas causas: a CLI recusou, ou a API respondeu erro. Medido na
+ * 0.11.3 publicada, nao separava. `wallet`, `servers list`, `sessions list` e
+ * `whoami` devolviam `kind: "cli"` para um 401, sem `status` e sem `body`,
+ * porque o cliente proprio da CLI transformava toda resposta nao-2xx em
+ * CliError; `consumers list`, que passa pelo cliente gerado do SDK, devolvia
+ * `kind: "api"` com `status: 401`. Um binario, uma flag, dois contratos.
+ *
+ * Os dois casos abaixo sao um o controle do outro: mesma flag, mesmo comando
+ * de familia, e o `kind` tem de mudar conforme a causa.
+ */
+describe("um 401 da API nao e uma recusa da CLI", () => {
+  async function servidorQue(status: number, corpo: unknown) {
+    const servidor = createServer((_req, res) => {
+      res.writeHead(status, { "content-type": "application/json" });
+      res.end(JSON.stringify(corpo));
+    });
+    await new Promise<void>((pronto) => servidor.listen(0, "127.0.0.1", pronto));
+    const { port } = servidor.address() as AddressInfo;
+    return { servidor, base: `http://127.0.0.1:${port}` };
+  }
+
+  it("com a API respondendo 401, o documento diz `api` e carrega status e body", async () => {
+    const { servidor, base } = await servidorQue(401, { error: "unauthorized", message: "unauthorized" });
+    try {
+      const r = await rodaAsync(["--json", "wallet", "consumer_0000"], {
+        CODESPAR_API_KEY: "csk_test_x",
+        CODESPAR_BASE_URL: base,
+      });
+
+      expect(r.status).toBe(1);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.error.kind).toBe("api");
+      expect(doc.error.status).toBe(401);
+      expect(doc.error.body).toEqual({ error: "unauthorized", message: "unauthorized" });
+      // A linha humana nao muda: uma linha, sem pilha.
+      expect(r.stderr).toContain("401");
+    } finally {
+      servidor.close();
+    }
+  }, 40_000);
+
+  it("CONTROLE: sem chave nenhuma, a mesma chamada continua `cli`, e sem status", () => {
+    const r = roda(["--json", "wallet", "consumer_0000"]);
+
+    expect(r.status).toBe(1);
+    const doc = JSON.parse(r.stdout);
+    expect(doc.error.kind).toBe("cli");
+    expect(doc.error.status).toBeUndefined();
+  }, 40_000);
+
+  it("um corpo que nao e JSON vira detail e body sem quebrar o documento", async () => {
+    const servidor = createServer((_req, res) => {
+      res.writeHead(502, { "content-type": "text/plain" });
+      res.end("bad gateway");
+    });
+    await new Promise<void>((pronto) => servidor.listen(0, "127.0.0.1", pronto));
+    const { port } = servidor.address() as AddressInfo;
+    try {
+      const r = await rodaAsync(["--json", "wallet", "consumer_0000"], {
+        CODESPAR_API_KEY: "csk_test_x",
+        CODESPAR_BASE_URL: `http://127.0.0.1:${port}`,
+      });
+
+      expect(r.status).toBe(1);
+      const doc = JSON.parse(r.stdout);
+      expect(doc.error.kind).toBe("api");
+      expect(doc.error.status).toBe(502);
+      expect(doc.error.body).toBe("bad gateway");
+      expect(doc.error.message).toContain("bad gateway");
+    } finally {
+      servidor.close();
+    }
   }, 40_000);
 });
 

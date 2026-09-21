@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { CodesparApiError, TimeoutError } from "@codespar/sdk";
-import { ApiClient } from "./api.js";
+import { ApiClient, HttpError } from "./api.js";
 import { CliError, loadConfig, requireApiKey } from "./config.js";
 import { loginCommand, whoamiCommand } from "./commands/login.js";
 import { listServersCommand, showServerCommand } from "./commands/servers.js";
@@ -701,7 +701,18 @@ async function main() {
   } catch (err) {
     if (err instanceof CliError) {
       process.stderr.write(`${c.red("✗")} ${err.message}\n`);
-      falhou("cli", err.message);
+      // An HTTP answer is a CliError for the human (one line, no stack) and an
+      // `api` failure for a script, with the status and the body it can branch
+      // on. `cli` keeps its meaning: the CLI refused before the network.
+      if (err instanceof HttpError) {
+        falhou("api", err.message, {
+          status: err.status,
+          ...(err.code === undefined ? {} : { code: err.code }),
+          ...(err.body === undefined ? {} : { body: err.body }),
+        });
+      } else {
+        falhou("cli", err.message);
+      }
       process.exit(1);
     }
     // The generated REST client answers with its own error types. Print the
@@ -714,6 +725,7 @@ async function main() {
       }
       falhou("api", err.message, {
         ...(err.status === undefined ? {} : { status: err.status }),
+        ...(err.code === undefined ? {} : { code: err.code }),
         ...(err.body === undefined ? {} : { body: err.body }),
       });
       process.exit(1);
