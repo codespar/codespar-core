@@ -1,11 +1,22 @@
 # @codespar/sdk — CHANGELOG
 
-## 0.16.1 — 2026-09-19
+## 0.16.1 — 2026-09-21
+
+### Added
+
+- `API_OPERATIONS` rows carry `deprecated`, and `ApiOperationRef` declares it.
+  The document marks an operation as dead and nothing downstream could read
+  that mark: the CLI derived 22 commands onto buried routes without knowing.
+  55 of the 280 rows are `deprecated: true`.
+- Four operations the document gained since the last refresh:
+  `GET /v1/consents/{token}`, `POST /v1/consents/{token}/submit`,
+  `POST /v1/payables` and `GET /v1/payables/{payableId}`. The typed client
+  reaches 280.
 
 ### Changed
 
 - The OpenAPI snapshot is re-fetched from the served document
-  (276 operations, unchanged). The two consumer-spend endpoints now
+  (276 → 280 operations). The two consumer-spend endpoints now
   answer 422 with `carrier_crc_invalid`, `carrier_malformed` or
   `carrier_format_unsupported` when the payee is a Pix copia-e-cola that
   fails its own check (codespar-enterprise#1427), and the generated types

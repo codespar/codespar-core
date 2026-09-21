@@ -1,6 +1,6 @@
 # @codespar/cli — changelog
 
-## 0.11.3 — nao publicada
+## 0.11.3 — 2026-09-21
 
 ### Fixed
 
@@ -23,6 +23,13 @@
   documento com `error.kind`; cinco comandos que ignoravam a flag passam a
   responder; `logs tail --json` virou NDJSON; e a tabela avisa quando corta
   uma celula (#161).
+
+### Changed
+
+- Exige `@codespar/sdk` `^0.16.1`. A faixa anterior aceitava de `^0.12.0` a
+  `^0.16.0`, e a partir desta versao a CLI LE `deprecated` da tabela de
+  operacoes, que so existe da 0.16.1 em diante. Com uma SDK mais velha as
+  marcas de rota morta sumiam em silencio e os comandos novos nao apareciam.
 
 ### Added
 
