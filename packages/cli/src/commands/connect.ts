@@ -78,7 +78,10 @@ export async function startConnectCommand(
   // a hosted UI. Users with a real app should pass --redirect-uri.
   const redirectUri = opts.redirectUri ?? "http://localhost:3000/connect/success";
 
-  const res = await client.post("/v1/connect/start", {
+  // `/v1/connect/start` esta depreciada no documento servido, que a descreve
+  // como "DEPRECATED alias of `POST /v1/connections/start`": mesmo handler,
+  // mesma exigencia de grant, mesmo corpo de quatro campos.
+  const res = await client.post("/v1/connections/start", {
     body: {
       server_id: server,
       user_id: userId,

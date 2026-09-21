@@ -21,13 +21,21 @@ import {
 } from "../commands/sessions.js";
 import { listToolsCommand, showToolCommand } from "../commands/tools.js";
 
-/** Every path the six commands used to call, and none of them exists. */
+/**
+ * Paths these commands must never request. The first five never existed; the
+ * last two exist and the served document buries them as DEPRECATED aliases
+ * (`GET /v1/servers` of `GET /v1/providers`, and the auth-schema pair), which
+ * is the same defect from the reader's side: the call works today and stops
+ * working when the alias is dropped.
+ */
 const DEAD_PATHS = [
   "/v1/tools",
   "/v1/logs/stream",
   "/v1/sessions/s_1/close",
   "/v1/sessions/s_1/logs",
   "/v1/servers/adyen",
+  "/v1/servers",
+  "/v1/servers/adyen/auth-schema",
 ];
 
 interface Call {
@@ -41,7 +49,7 @@ const calls: Call[] = [];
 /** Answer each path with a payload of the shape the document declares. */
 function serve(url: URL): unknown {
   const path = url.pathname;
-  if (path === "/v1/servers") {
+  if (path === "/v1/providers") {
     return {
       total: 2,
       filtered: 2,
@@ -54,7 +62,7 @@ function serve(url: URL): unknown {
   if (/^\/v1\/servers\/[^/]+\/tools$/.test(path)) {
     return { server_id: "adyen", total: 2, tools: [{ name: "accept_dispute", description: "Accept" }, { name: "refund", description: null }] };
   }
-  if (/^\/v1\/servers\/[^/]+\/auth-schema$/.test(path)) {
+  if (/^\/v1\/providers\/[^/]+\/auth-schema$/.test(path)) {
     return {
       server_id: "adyen",
       auth_type: "api_key",
@@ -133,15 +141,15 @@ describe("the commands that used to call a route that does not exist", () => {
   it("assembles one server from the catalog, its tools and its auth schema", async () => {
     await showServerCommand(client(), "adyen", {});
     expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([
-      "GET /v1/servers",
+      "GET /v1/providers",
       "GET /v1/servers/adyen/tools",
-      "GET /v1/servers/adyen/auth-schema",
+      "GET /v1/providers/adyen/auth-schema",
     ]);
   });
 
   it("refuses an id the catalog does not carry, without calling the per-server routes", async () => {
     await expect(showServerCommand(client(), "ghost", {})).rejects.toThrow(/No server with id "ghost"/);
-    expect(calls.map((c) => c.path)).toEqual(["/v1/servers"]);
+    expect(calls.map((c) => c.path)).toEqual(["/v1/providers"]);
   });
 
   it("closes a session with the documented DELETE", async () => {
@@ -171,7 +179,7 @@ describe("the commands that used to call a route that does not exist", () => {
 describe("the commands that read a field the payload does not carry", () => {
   it("lists servers out of `servers`, and passes the filters the document declares", async () => {
     await listServersCommand(client(), { category: "psp", country: "BR", q: "pix" });
-    expect(calls[0]?.path).toBe("/v1/servers");
+    expect(calls[0]?.path).toBe("/v1/providers");
     const params = new URLSearchParams(calls[0]?.search);
     expect([...params]).toEqual([
       ["category", "psp"],
