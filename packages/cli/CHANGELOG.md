@@ -1,6 +1,6 @@
 # @codespar/cli — changelog
 
-## 0.12.1 — nao publicada
+## 0.12.1 — 2026-09-21
 
 ### Fixed
 
