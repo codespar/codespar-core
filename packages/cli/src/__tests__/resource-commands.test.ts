@@ -103,18 +103,18 @@ const PINNED_COMMANDS = [
   "wallets custody → GET /v1/wallets/{id}/custody",
   "wallets transfer → POST /v1/wallets/{id}/transfer",
   "wallets statement-import → POST /v1/wallets/{id}/statement-import",
-  "triggers list → GET /v1/triggers",
-  "triggers create → POST /v1/triggers",
-  "triggers get → GET /v1/triggers/{id}",
-  "triggers delete → DELETE /v1/triggers/{id}",
-  "triggers update → PATCH /v1/triggers/{id}",
-  "triggers test-fire → POST /v1/triggers/{id}/test-fire",
-  "triggers rotate-secret → POST /v1/triggers/{id}/rotate-secret",
-  "triggers list-deliveries → GET /v1/triggers/{id}/deliveries",
-  "triggers get-deliveries → GET /v1/triggers/{id}/deliveries/{delivery_id}",
-  "triggers dlq → GET /v1/triggers/{id}/dlq",
-  "triggers retry-pending → POST /v1/triggers/retry-pending",
-  "triggers deliveries-redeliver → POST /v1/triggers/deliveries/{delivery_id}/redeliver",
+  "triggers list → GET /v1/webhook-endpoints",
+  "triggers create → POST /v1/webhook-endpoints",
+  "triggers get → GET /v1/webhook-endpoints/{id}",
+  "triggers delete → DELETE /v1/webhook-endpoints/{id}",
+  "triggers update → PATCH /v1/webhook-endpoints/{id}",
+  "triggers test-fire → POST /v1/webhook-endpoints/{id}/test-fire",
+  "triggers rotate-secret → POST /v1/webhook-endpoints/{id}/rotate-secret",
+  "triggers list-deliveries → GET /v1/webhook-endpoints/{id}/deliveries",
+  "triggers get-deliveries → GET /v1/webhook-endpoints/{id}/deliveries/{delivery_id}",
+  "triggers dlq → GET /v1/webhook-endpoints/{id}/dlq",
+  "triggers retry-pending → POST /v1/webhook-endpoints/retry-pending",
+  "triggers deliveries-redeliver → POST /v1/webhook-endpoints/deliveries/{delivery_id}/redeliver",
   "charges list → GET /v1/charges",
   "charges create → POST /v1/charges",
   "charges get → GET /v1/charges/{chargeId}",
@@ -146,9 +146,11 @@ describe("derived resource commands", () => {
   });
 
   it("disambiguates a shared suffix with the verb, and leaves a unique one bare", () => {
-    expect(commandNamed("triggers", "list-deliveries").path).toBe("/v1/triggers/{id}/deliveries");
+    expect(commandNamed("triggers", "list-deliveries").path).toBe(
+      "/v1/webhook-endpoints/{id}/deliveries",
+    );
     expect(commandNamed("triggers", "get-deliveries").path).toBe(
-      "/v1/triggers/{id}/deliveries/{delivery_id}",
+      "/v1/webhook-endpoints/{id}/deliveries/{delivery_id}",
     );
     expect(commandNamed("triggers", "dlq").method).toBe("get");
   });

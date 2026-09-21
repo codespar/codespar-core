@@ -230,7 +230,11 @@ for (const { spec, commands } of derivedSurface()) {
   for (const command of commands) {
     const sub = group
       .command(command.name)
-      .description(`${command.method.toUpperCase()} ${command.path}`)
+      // A marca vem do documento servido, nao de uma lista aqui. Sem ela, os
+      // comandos derivados de rota morta se anunciavam iguais aos vivos.
+      .description(
+        `${command.method.toUpperCase()} ${command.path}${command.deprecated ? " (deprecated)" : ""}`,
+      )
       .option("-q, --query <key=value>", "Query parameter (repeatable)", collect, [])
       .option("--timeout <ms>", "Per-request timeout in milliseconds");
     for (const param of command.params) sub.argument(`<${param}>`);
