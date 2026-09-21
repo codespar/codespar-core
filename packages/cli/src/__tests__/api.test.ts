@@ -13,6 +13,54 @@ function mockFetch(impl: (url: URL, init: Init) => Response | Promise<Response>)
 
 afterEach(() => vi.restoreAllMocks());
 
+/**
+ * `Content-Type: application/json` só quando há corpo.
+ *
+ * O header era incondicional, e a API recusa uma requisição que se anuncia
+ * como JSON e chega vazia. Medido em 21/09/2026 contra `api.codespar.dev` com
+ * a CLI 0.12.0 do npm:
+ *
+ *   codespar sessions close ses_...
+ *   ✗ DELETE /v1/sessions/ses_... → 400: Body cannot be empty when
+ *     content-type is set to 'application/json'
+ *
+ * Fechar sessão era o único comando deste cliente que manda DELETE, então era
+ * o único que morria. O cliente gerado do SDK já fazia o certo: medido contra
+ * um servidor local, `consumers delete-pix-keys` sai sem content-type nenhum.
+ *
+ * ⚠️ CONTROLE. Um teste que só exigisse "não manda no DELETE" passaria se
+ * alguém removesse o header de vez, e aí todo POST quebraria. Os dois casos
+ * estão aqui.
+ */
+describe("Content-Type acompanha o corpo, não o método", () => {
+  async function headersDe(chamada: (c: ApiClient) => Promise<unknown>) {
+    let captured: Record<string, string> = {};
+    mockFetch((_url, init) => {
+      captured = init.headers;
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    });
+    const client = new ApiClient({ apiKey: "csk_test_x", baseUrl: "https://api.x.dev" });
+    await chamada(client);
+    return captured;
+  }
+
+  it("um DELETE sem corpo não se anuncia como JSON", async () => {
+    const h = await headersDe((c) => c.delete("/v1/sessions/{id}", { path: { id: "ses_1" } }));
+    expect(h["Content-Type"]).toBeUndefined();
+    expect(h.Authorization).toBe("Bearer csk_test_x");
+  });
+
+  it("um GET sem corpo também não", async () => {
+    const h = await headersDe((c) => c.get("/v1/sessions"));
+    expect(h["Content-Type"]).toBeUndefined();
+  });
+
+  it("CONTROLE: um POST com corpo continua se anunciando como JSON", async () => {
+    const h = await headersDe((c) => c.post("/v1/sessions", { body: { servers: [] } }));
+    expect(h["Content-Type"]).toBe("application/json");
+  });
+});
+
 describe("ApiClient", () => {
   it("sends Authorization + a versioned User-Agent + x-codespar-project when project is set", async () => {
     let captured: Record<string, string> = {};

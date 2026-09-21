@@ -174,9 +174,24 @@ export class ApiClient {
 
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.config.apiKey}`,
-      "Content-Type": "application/json",
       "User-Agent": `codespar-cli/${VERSION}`,
     };
+    // Content-Type SO quando ha corpo.
+    //
+    // O header era incondicional, e a API recusa uma requisicao que se anuncia
+    // como JSON e chega vazia. Medido em 21/09/2026 contra `api.codespar.dev`
+    // com a CLI 0.12.0 do npm:
+    //
+    //   codespar sessions close ses_...
+    //   ✗ DELETE /v1/sessions/ses_... → 400: Body cannot be empty when
+    //     content-type is set to 'application/json'
+    //
+    // Fechar sessao era o unico comando deste cliente que manda DELETE, entao
+    // era o unico que morria; os GET passavam porque a checagem so vale para
+    // metodo que pode carregar corpo. O cliente gerado do SDK ja fazia o
+    // certo: medido contra um servidor local, `consumers delete-pix-keys` sai
+    // sem content-type nenhum. Um binario, dois clientes, dois comportamentos.
+    if (options.body !== undefined) headers["Content-Type"] = "application/json";
     if (this.config.project) headers["x-codespar-project"] = this.config.project;
     for (const [key, value] of Object.entries(options.header ?? {})) {
       if (value !== undefined && value !== null) headers[key] = String(value);

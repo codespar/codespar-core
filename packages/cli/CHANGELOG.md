@@ -1,5 +1,18 @@
 # @codespar/cli — changelog
 
+## 0.12.1 — nao publicada
+
+### Fixed
+
+- `codespar sessions close` respondia 400 e nao fechava nada. O cliente
+  proprio da CLI punha `Content-Type: application/json` em TODA requisicao, e
+  a API recusa uma que se anuncia como JSON e chega vazia:
+  `DELETE /v1/sessions/{id} → 400: Body cannot be empty when content-type is
+  set to 'application/json'`. Era o unico comando deste cliente que manda
+  DELETE, entao era o unico que morria; os GET passavam porque a checagem so
+  vale para metodo que pode carregar corpo. O cliente gerado do SDK ja fazia o
+  certo. O header agora acompanha o corpo, nao o metodo.
+
 ## 0.12.0 — 2026-09-21
 
 ### Fixed
