@@ -1,5 +1,16 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.2 — nao publicada
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido (232 rotas, 280 operacoes,
+  as mesmas). Duas mudancas de forma entraram: `POST /v1/sessions` deixou de
+  exigir `servers` com pelo menos um elemento, porque uma sessao que so roda
+  meta-tool nao tem servidor a anexar (ent#1566), e o corpo de mandato ganhou
+  `periodic_cap` com `window` (`day` | `month`) e `cap_minor`, que ja estava no
+  servido e faltava aqui.
+
 ## 0.16.1 — 2026-09-21
 
 ### Added

@@ -1,7 +1,7 @@
 {
   "name": "@codespar/sdk",
-  "version": "0.16.1",
-  "description": "Commerce SDK for AI agents — sessions, managed auth, Complete Loop orchestration for Latin American APIs",
+  "version": "0.16.2",
+  "description": "Commerce SDK for AI agents \u2014 sessions, managed auth, Complete Loop orchestration for Latin American APIs",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 f5e5800ada7b9cbab05c63dae285725f9839aff288cd08f988d37f81f74b5fc6, fetched 2026-09-21T01:59:02.055Z
+// Source: openapi-snapshot.json (sha256 212b83ba9647de03cfcbae6ce0040519bb9c8809be9aa1c22a75692fa11e43c7, fetched 2026-09-21T22:13:48.438Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -14002,6 +14002,11 @@ export interface paths {
                             merchant_pin_kind?: "pix-key" | "merchant-id" | "mcc";
                             withdrawal_allowlist?: string[];
                             dda_allowlist?: string[];
+                            periodic_cap?: {
+                                /** @enum {string} */
+                                window: "day" | "month";
+                                cap_minor: number;
+                            };
                             slots?: {
                                 /** @enum {string} */
                                 currency: "BRL" | "USD" | "MXN" | "COP" | "ARS" | "USDC" | "BRLA";
@@ -14134,6 +14139,11 @@ export interface paths {
                             merchant_pin_kind?: "pix-key" | "merchant-id" | "mcc";
                             withdrawal_allowlist?: string[];
                             dda_allowlist?: string[];
+                            periodic_cap?: {
+                                /** @enum {string} */
+                                window: "day" | "month";
+                                cap_minor: number;
+                            };
                             slots?: {
                                 /** @enum {string} */
                                 currency: "BRL" | "USD" | "MXN" | "COP" | "ARS" | "USDC" | "BRLA";
@@ -25645,7 +25655,7 @@ export interface paths {
          *
          *     Every field carries its provenance in `from`. Amounts are integer centavos (`*_minor`). `rail_quote` is refused by name: the amount and the payee of a payment come from the rail, never from a request. `attribution.credential_id` is set to the API key the request authenticated with; a different value is refused.
          *
-         *     **Every payable this endpoint creates is `NEEDS_REVIEW` for now.** The amount, payee and due-date checks (`amount_matches_rail`, `beneficiary_document_matches_supplier`, `due_date_state`, and `pix_key_owner_matches_supplier` when the payable carries a Pix BR Code) always block `READY`, because the amount and the payee of a payment come from the payment rail, and the rail consult is not wired to this endpoint yet. They appear in `review.review_by` with cause `required_not_implemented`. No check can be left without an answer in this release, so `VALIDATING` is not returned either.
+         *     **The amount and the payee come from the rail, never from what was sent.** `amount_matches_rail`, `beneficiary_document_matches_supplier` and `due_date_state` run against a consult of the boleto on the payable, and they block `READY` whether or not they answered. A consult that could not be made — no connected payment provider, a provider that did not answer — leaves them `indisponivel` and the payable `NEEDS_REVIEW`, named under `review.review_by`. `pix_key_owner_matches_supplier` is not consulted in this release and blocks a payable carrying a Pix BR Code with cause `required_not_implemented`. `VALIDATING` is never returned: nothing re-runs a validation yet, so a check with no answer goes to a person rather than waiting.
          *
          *     **Status.** Two fields answer two questions. `review.validation_status` is what the checks alone say: `REJECTED` (a check that rejects failed), `NEEDS_REVIEW` (a check failed, or a required check has no answer it can have), `VALIDATING` (a required, implemented check did not answer and will be retried) or `VALIDATED` (every required check passed). `status` is what the payable may do: `READY` only from `VALIDATED` with no review trigger open, and `NEEDS_REVIEW` when a trigger is open. The trigger this API evaluates is `new_supplier`: this project has no executed payable for the supplier's document, or the payable names no supplier document. It is evaluated per project, never across projects.
          *
@@ -26822,7 +26832,7 @@ export interface paths {
         };
         /**
          * Read a payable
-         * @description The payable, its `status`, the outcome of every check in `validation`, and why it has that status in `review`. Reading never re-runs a check or changes the status. **Every payable this endpoint creates is `NEEDS_REVIEW` for now.** The amount, payee and due-date checks (`amount_matches_rail`, `beneficiary_document_matches_supplier`, `due_date_state`, and `pix_key_owner_matches_supplier` when the payable carries a Pix BR Code) always block `READY`, because the amount and the payee of a payment come from the payment rail, and the rail consult is not wired to this endpoint yet. They appear in `review.review_by` with cause `required_not_implemented`. No check can be left without an answer in this release, so `VALIDATING` is not returned either.
+         * @description The payable, its `status`, the outcome of every check in `validation`, and why it has that status in `review`. Reading never re-runs a check or changes the status. **The amount and the payee come from the rail, never from what was sent.** `amount_matches_rail`, `beneficiary_document_matches_supplier` and `due_date_state` run against a consult of the boleto on the payable, and they block `READY` whether or not they answered. A consult that could not be made — no connected payment provider, a provider that did not answer — leaves them `indisponivel` and the payable `NEEDS_REVIEW`, named under `review.review_by`. `pix_key_owner_matches_supplier` is not consulted in this release and blocks a payable carrying a Pix BR Code with cause `required_not_implemented`. `VALIDATING` is never returned: nothing re-runs a validation yet, so a check with no answer goes to a person rather than waiting.
          *
          *     **Status.** Two fields answer two questions. `review.validation_status` is what the checks alone say: `REJECTED` (a check that rejects failed), `NEEDS_REVIEW` (a check failed, or a required check has no answer it can have), `VALIDATING` (a required, implemented check did not answer and will be retried) or `VALIDATED` (every required check passed). `status` is what the payable may do: `READY` only from `VALIDATED` with no review trigger open, and `NEEDS_REVIEW` when a trigger is open. The trigger this API evaluates is `new_supplier`: this project has no executed payable for the supplier's document, or the payable names no supplier document. It is evaluated per project, never across projects.
          *

@@ -1,8 +1,8 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-09-21T01:59:02.055Z",
-    "sha256": "f5e5800ada7b9cbab05c63dae285725f9839aff288cd08f988d37f81f74b5fc6",
+    "fetched_at": "2026-09-21T22:13:48.438Z",
+    "sha256": "212b83ba9647de03cfcbae6ce0040519bb9c8809be9aa1c22a75692fa11e43c7",
     "etag": null,
     "last_modified": null,
     "info": {
@@ -2486,7 +2486,6 @@
                         "type": "string",
                         "minLength": 1
                       },
-                      "minItems": 1,
                       "maxItems": 20
                     },
                     "user_id": {
@@ -26368,6 +26367,26 @@
                           },
                           "maxItems": 20
                         },
+                        "periodic_cap": {
+                          "type": "object",
+                          "properties": {
+                            "window": {
+                              "type": "string",
+                              "enum": [
+                                "day",
+                                "month"
+                              ]
+                            },
+                            "cap_minor": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            }
+                          },
+                          "required": [
+                            "window",
+                            "cap_minor"
+                          ]
+                        },
                         "slots": {
                           "type": "array",
                           "items": {
@@ -26633,6 +26652,26 @@
                             "maxLength": 40
                           },
                           "maxItems": 20
+                        },
+                        "periodic_cap": {
+                          "type": "object",
+                          "properties": {
+                            "window": {
+                              "type": "string",
+                              "enum": [
+                                "day",
+                                "month"
+                              ]
+                            },
+                            "cap_minor": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            }
+                          },
+                          "required": [
+                            "window",
+                            "cap_minor"
+                          ]
                         },
                         "slots": {
                           "type": "array",
@@ -49285,7 +49324,7 @@
       "/v1/payables": {
         "post": {
           "summary": "Create a payable from a partner's record or a person's form",
-          "description": "A payable is an obligation to pay somebody. This endpoint takes one as structured data: `attribution.channel` is `structured` for a partner system's record and `manual` for a form a person filled in. Both go through the same schema and the same deterministic checks, so the same payable sent through either channel ends in the same status with the same validation. `upload` is refused, because this endpoint takes no file yet.\n\nEvery field carries its provenance in `from`. Amounts are integer centavos (`*_minor`). `rail_quote` is refused by name: the amount and the payee of a payment come from the rail, never from a request. `attribution.credential_id` is set to the API key the request authenticated with; a different value is refused.\n\n**Every payable this endpoint creates is `NEEDS_REVIEW` for now.** The amount, payee and due-date checks (`amount_matches_rail`, `beneficiary_document_matches_supplier`, `due_date_state`, and `pix_key_owner_matches_supplier` when the payable carries a Pix BR Code) always block `READY`, because the amount and the payee of a payment come from the payment rail, and the rail consult is not wired to this endpoint yet. They appear in `review.review_by` with cause `required_not_implemented`. No check can be left without an answer in this release, so `VALIDATING` is not returned either.\n\n**Status.** Two fields answer two questions. `review.validation_status` is what the checks alone say: `REJECTED` (a check that rejects failed), `NEEDS_REVIEW` (a check failed, or a required check has no answer it can have), `VALIDATING` (a required, implemented check did not answer and will be retried) or `VALIDATED` (every required check passed). `status` is what the payable may do: `READY` only from `VALIDATED` with no review trigger open, and `NEEDS_REVIEW` when a trigger is open. The trigger this API evaluates is `new_supplier`: this project has no executed payable for the supplier's document, or the payable names no supplier document. It is evaluated per project, never across projects.\n\n**Why things are in review.** `review.review_by` lists each check that sends the payable to a person and its `cause`: `check_failed`, `retries_exhausted` or `required_not_implemented`. `review.review_triggers` lists the open triggers. `review.not_covered` lists checks that did not run and do not block `READY` in this release (`supplier_registry`, `bank_details_changed`).\n\n**What fails a check.** A carrier that fails its own check digits (`carrier_check_digits`) or a duplicate (`duplicate_document`) is `REJECTED` and not stored. A document number with wrong check digits, an NF-e key that disagrees with the printed fields, or totals that do not add up (`arithmetic`, one centavo of tolerance per comparison) is `check_failed`. The total is composed the way an NF-e composes vNF: `subtotal_minor` minus `discount_minor` and `tax_relief_deducted_minor`, plus `taxes_added_minor`, `freight_minor`, `insurance_minor` and `other_charges_minor`. `taxes_included_minor` is informational and in no sum.\n\n**Duplicates.** A payable is a duplicate when another payable of the SAME project that is open or already paid shares a duplicity axis with it: `document_hash`, the boleto (a 47- or 48-digit linha digitável and the 44-digit barcode it expands from are the same boleto), the Pix txid, the NF-e access key, or the supplier document together with invoice number and série. The answer is 409 `payable_duplicate` and nothing is stored; `details.existing_payable_id` names the payable that holds the axis. A payable in another project never collides and is never named.\n\n**Idempotency.** Send an `Idempotency-Key` header to make a retry safe. The same key with the same body answers 200 with `idempotent_replay: true` and the payable as it is now, never a duplicate. The same key with a different body answers 409 `idempotency_key_conflict`. Without a key, a retry of a create that succeeded answers `payable_duplicate` naming the payable it created.\n\nScope: `payables:write`.",
+          "description": "A payable is an obligation to pay somebody. This endpoint takes one as structured data: `attribution.channel` is `structured` for a partner system's record and `manual` for a form a person filled in. Both go through the same schema and the same deterministic checks, so the same payable sent through either channel ends in the same status with the same validation. `upload` is refused, because this endpoint takes no file yet.\n\nEvery field carries its provenance in `from`. Amounts are integer centavos (`*_minor`). `rail_quote` is refused by name: the amount and the payee of a payment come from the rail, never from a request. `attribution.credential_id` is set to the API key the request authenticated with; a different value is refused.\n\n**The amount and the payee come from the rail, never from what was sent.** `amount_matches_rail`, `beneficiary_document_matches_supplier` and `due_date_state` run against a consult of the boleto on the payable, and they block `READY` whether or not they answered. A consult that could not be made — no connected payment provider, a provider that did not answer — leaves them `indisponivel` and the payable `NEEDS_REVIEW`, named under `review.review_by`. `pix_key_owner_matches_supplier` is not consulted in this release and blocks a payable carrying a Pix BR Code with cause `required_not_implemented`. `VALIDATING` is never returned: nothing re-runs a validation yet, so a check with no answer goes to a person rather than waiting.\n\n**Status.** Two fields answer two questions. `review.validation_status` is what the checks alone say: `REJECTED` (a check that rejects failed), `NEEDS_REVIEW` (a check failed, or a required check has no answer it can have), `VALIDATING` (a required, implemented check did not answer and will be retried) or `VALIDATED` (every required check passed). `status` is what the payable may do: `READY` only from `VALIDATED` with no review trigger open, and `NEEDS_REVIEW` when a trigger is open. The trigger this API evaluates is `new_supplier`: this project has no executed payable for the supplier's document, or the payable names no supplier document. It is evaluated per project, never across projects.\n\n**Why things are in review.** `review.review_by` lists each check that sends the payable to a person and its `cause`: `check_failed`, `retries_exhausted` or `required_not_implemented`. `review.review_triggers` lists the open triggers. `review.not_covered` lists checks that did not run and do not block `READY` in this release (`supplier_registry`, `bank_details_changed`).\n\n**What fails a check.** A carrier that fails its own check digits (`carrier_check_digits`) or a duplicate (`duplicate_document`) is `REJECTED` and not stored. A document number with wrong check digits, an NF-e key that disagrees with the printed fields, or totals that do not add up (`arithmetic`, one centavo of tolerance per comparison) is `check_failed`. The total is composed the way an NF-e composes vNF: `subtotal_minor` minus `discount_minor` and `tax_relief_deducted_minor`, plus `taxes_added_minor`, `freight_minor`, `insurance_minor` and `other_charges_minor`. `taxes_included_minor` is informational and in no sum.\n\n**Duplicates.** A payable is a duplicate when another payable of the SAME project that is open or already paid shares a duplicity axis with it: `document_hash`, the boleto (a 47- or 48-digit linha digitável and the 44-digit barcode it expands from are the same boleto), the Pix txid, the NF-e access key, or the supplier document together with invoice number and série. The answer is 409 `payable_duplicate` and nothing is stored; `details.existing_payable_id` names the payable that holds the axis. A payable in another project never collides and is never named.\n\n**Idempotency.** Send an `Idempotency-Key` header to make a retry safe. The same key with the same body answers 200 with `idempotent_replay: true` and the payable as it is now, never a duplicate. The same key with a different body answers 409 `idempotency_key_conflict`. Without a key, a retry of a create that succeeded answers `payable_duplicate` naming the payable it created.\n\nScope: `payables:write`.",
           "parameters": [
             {
               "schema": {
@@ -54208,7 +54247,7 @@
       "/v1/payables/{payableId}": {
         "get": {
           "summary": "Read a payable",
-          "description": "The payable, its `status`, the outcome of every check in `validation`, and why it has that status in `review`. Reading never re-runs a check or changes the status. **Every payable this endpoint creates is `NEEDS_REVIEW` for now.** The amount, payee and due-date checks (`amount_matches_rail`, `beneficiary_document_matches_supplier`, `due_date_state`, and `pix_key_owner_matches_supplier` when the payable carries a Pix BR Code) always block `READY`, because the amount and the payee of a payment come from the payment rail, and the rail consult is not wired to this endpoint yet. They appear in `review.review_by` with cause `required_not_implemented`. No check can be left without an answer in this release, so `VALIDATING` is not returned either.\n\n**Status.** Two fields answer two questions. `review.validation_status` is what the checks alone say: `REJECTED` (a check that rejects failed), `NEEDS_REVIEW` (a check failed, or a required check has no answer it can have), `VALIDATING` (a required, implemented check did not answer and will be retried) or `VALIDATED` (every required check passed). `status` is what the payable may do: `READY` only from `VALIDATED` with no review trigger open, and `NEEDS_REVIEW` when a trigger is open. The trigger this API evaluates is `new_supplier`: this project has no executed payable for the supplier's document, or the payable names no supplier document. It is evaluated per project, never across projects.\n\n**Why things are in review.** `review.review_by` lists each check that sends the payable to a person and its `cause`: `check_failed`, `retries_exhausted` or `required_not_implemented`. `review.review_triggers` lists the open triggers. `review.not_covered` lists checks that did not run and do not block `READY` in this release (`supplier_registry`, `bank_details_changed`).\n\nA payable of another project, of another organization and an id that is not a payable id all answer the same 404.\n\nScope: `payables:read`.",
+          "description": "The payable, its `status`, the outcome of every check in `validation`, and why it has that status in `review`. Reading never re-runs a check or changes the status. **The amount and the payee come from the rail, never from what was sent.** `amount_matches_rail`, `beneficiary_document_matches_supplier` and `due_date_state` run against a consult of the boleto on the payable, and they block `READY` whether or not they answered. A consult that could not be made — no connected payment provider, a provider that did not answer — leaves them `indisponivel` and the payable `NEEDS_REVIEW`, named under `review.review_by`. `pix_key_owner_matches_supplier` is not consulted in this release and blocks a payable carrying a Pix BR Code with cause `required_not_implemented`. `VALIDATING` is never returned: nothing re-runs a validation yet, so a check with no answer goes to a person rather than waiting.\n\n**Status.** Two fields answer two questions. `review.validation_status` is what the checks alone say: `REJECTED` (a check that rejects failed), `NEEDS_REVIEW` (a check failed, or a required check has no answer it can have), `VALIDATING` (a required, implemented check did not answer and will be retried) or `VALIDATED` (every required check passed). `status` is what the payable may do: `READY` only from `VALIDATED` with no review trigger open, and `NEEDS_REVIEW` when a trigger is open. The trigger this API evaluates is `new_supplier`: this project has no executed payable for the supplier's document, or the payable names no supplier document. It is evaluated per project, never across projects.\n\n**Why things are in review.** `review.review_by` lists each check that sends the payable to a person and its `cause`: `check_failed`, `retries_exhausted` or `required_not_implemented`. `review.review_triggers` lists the open triggers. `review.not_covered` lists checks that did not run and do not block `READY` in this release (`supplier_registry`, `bank_details_changed`).\n\nA payable of another project, of another organization and an id that is not a payable id all answer the same 404.\n\nScope: `payables:read`.",
           "parameters": [
             {
               "schema": {
