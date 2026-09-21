@@ -2,11 +2,12 @@ import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { loadConfig, saveConfig, CliError } from "../config.js";
 import { ApiClient } from "../api.js";
-import { success, info } from "../output.js";
+import { success, info, json } from "../output.js";
 
 interface LoginOptions {
   apiKey?: string;
   baseUrl?: string;
+  json?: boolean;
 }
 
 /**
@@ -84,6 +85,10 @@ export async function loginCommand(opts: LoginOptions): Promise<void> {
   if (me.organization?.name) {
     info(`Organization: ${me.organization.name}`);
   }
+  // Com `--json` o script recebe o mesmo documento que `whoami` devolve, mais
+  // a base URL que ficou gravada. Antes recebia zero byte no stdout e tinha de
+  // ler o `✓` do stderr para saber que deu certo.
+  if (opts.json) json({ ...me, base_url: baseUrl });
 }
 
 export async function whoamiCommand(client: ApiClient, asJson: boolean): Promise<void> {
