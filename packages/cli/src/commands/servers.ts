@@ -10,7 +10,8 @@ interface ListOptions {
 }
 
 export async function listServersCommand(client: ApiClient, opts: ListOptions): Promise<void> {
-  const data = await client.get("/v1/servers", {
+  // `/v1/servers` e o alias depreciado de `GET /v1/providers` (ent#979).
+  const data = await client.get("/v1/providers", {
     query: { category: opts.category, country: opts.country, q: opts.q },
   });
 
@@ -55,7 +56,7 @@ export async function showServerCommand(
 ): Promise<void> {
   if (!id) throw new CliError("Server id is required. Example: `codespar servers show stripe`");
 
-  const catalog = await client.get("/v1/servers");
+  const catalog = await client.get("/v1/providers");
   const server = catalog.servers.find((s) => s.id === id);
   if (!server) {
     throw new CliError(
@@ -65,7 +66,10 @@ export async function showServerCommand(
 
   const [tools, auth] = await Promise.all([
     client.get("/v1/servers/{id}/tools", { path: { id } }),
-    client.get("/v1/servers/{id}/auth-schema", { path: { id } }),
+    // O par vivo do auth-schema mora sob `providers` e chama o parametro de
+    // `slug`; o documento diz que os dois sao "the catalog primary key", entao
+    // o valor que a CLI ja tem serve.
+    client.get("/v1/providers/{slug}/auth-schema", { path: { slug: id } }),
   ]);
 
   if (opts.json) {

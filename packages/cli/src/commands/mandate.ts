@@ -201,7 +201,9 @@ export async function mandateCreateCommand(opts: MandateCreateOptions): Promise<
 
   // 1. Mint the consent token (authed). slots ride along in the intent.
   //    The body is built inline so the document checks every field of it.
-  const init = await client.post("/v1/consents/init", {
+  // `/v1/consents/init` e o alias depreciado de `POST /v1/consents` (ent#979):
+  // mesmo handler, mesmo escopo, mesmo pedido e mesmas respostas.
+  const init = await client.post("/v1/consents", {
     body: {
       agent_id: opts.agent,
       intent: {
