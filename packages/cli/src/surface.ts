@@ -30,6 +30,8 @@ export interface OperationRow {
   path: string;
   /** Request body content type, or null when the operation takes no body. */
   body: string | null;
+  /** The served document marks the operation as dead. */
+  deprecated: boolean;
 }
 
 /** Every operation of the served document, as plain rows. */
@@ -37,6 +39,7 @@ export const OPERATIONS: readonly OperationRow[] = API_OPERATIONS.map((row) => (
   method: row.method as HttpMethod,
   path: row.path as string,
   body: row.body as string | null,
+  deprecated: row.deprecated as boolean,
 }));
 
 /* ── Census ───────────────────────────────────────────────────────── */
@@ -59,7 +62,10 @@ export function census(
   operations: readonly OperationRow[] = OPERATIONS,
 ): Map<string, OperationRow[]> {
   const groups = new Map<string, OperationRow[]>();
-  for (const op of operations) {
+  // Familia sem nenhuma operacao viva sai do censo: cobrar comando para ela
+  // seria cobrar que a CLI cresca para dentro de uma rota que o documento ja
+  // enterrou. `/v1/triggers` e o caso que motivou a regra, 12 de 12 mortas.
+  for (const op of operations.filter((o) => !o.deprecated)) {
     const key = censusGroup(op.path);
     const bucket = groups.get(key);
     if (bucket) bucket.push(op);
@@ -118,9 +124,16 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     description: "Wallets: balances, ledger, funding sources, execute, transfer, custody",
   },
   {
+    // ⚠️ O PREFIXO NAO E `/v1/triggers`, e a razao esta no documento servido:
+    // as 12 operacoes de `/v1/triggers` estao marcadas `deprecated`, 12 de 12,
+    // e quem esta vivo e `/v1/webhook-endpoints`, com as mesmas 12. Os nomes
+    // de comando saem iguais dos dois lados (`list`, `create`, `test-fire`,
+    // `rotate-secret`, `list-deliveries`, `dlq`, `retry-pending`...), entao o
+    // que estava no script de alguem continua valendo e passa a bater na rota
+    // viva.
     name: "triggers",
-    prefix: "/v1/triggers",
-    description: "Triggers (webhooks): endpoints, deliveries, DLQ, secret rotation, redelivery",
+    prefix: "/v1/webhook-endpoints",
+    description: "Webhook endpoints: deliveries, DLQ, secret rotation, redelivery",
   },
   // Both families below arrived in the served document when packages/core
   // refreshed openapi-snapshot.json to 221 operations (core#143). They are
@@ -189,6 +202,8 @@ export interface DerivedCommand {
   params: string[];
   /** True when the operation declares a request body. */
   acceptsBody: boolean;
+  /** The served document marks this route as dead. */
+  deprecated: boolean;
 }
 
 export interface DerivedGroup {
@@ -287,6 +302,7 @@ export function deriveGroup(
       path: op.path,
       params,
       acceptsBody: op.body !== null,
+      deprecated: op.deprecated,
     };
   });
 
@@ -362,6 +378,14 @@ export interface SurfaceException {
  * `surface-coverage.test.ts` asserts the document still declares no
  * `/v1/admin/*` operation, and goes red the day it does.
  */
+/**
+ * ⚠️ FAMILIA MORTA NAO PRECISA DE EXCECAO. O censo so conta operacao viva,
+ * entao uma familia 100% `deprecated` nao aparece aqui — foi assim que saiu
+ * daqui a entrada de `webhook-endpoints`, que dizia ser "the older path
+ * family" de `triggers` quando o documento servido diz o contrario: quem esta
+ * marcada morta, 12 de 12, e `/v1/triggers`. Saiu tambem a de `connect`,
+ * `evaluations`, `audit`, `ofb`, `kyc` e `issuer`, todas sem uma operacao viva.
+ */
 export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
   "(non-v1) .well-known": {
     reason:
@@ -406,10 +430,6 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
     reason: "Covered by the pre-existing `codespar connect list|start|revoke` commands.",
     since: "2026-09-10",
   },
-  connect: {
-    reason: "POST /v1/connect/start is what `codespar connect start` calls.",
-    since: "2026-09-10",
-  },
   whoami: {
     reason: "Covered by the pre-existing `codespar whoami` command.",
     since: "2026-09-10",
@@ -421,11 +441,6 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
   },
   "meta-tools": {
     reason: "POST /v1/meta-tools/discover is what `codespar discover` calls.",
-    since: "2026-09-10",
-  },
-  "webhook-endpoints": {
-    reason:
-      "The same ten operations as `triggers`, under the older path family. The CLI publishes the canonical `triggers` name only; wiring both would double the surface for one backend.",
     since: "2026-09-10",
   },
   mandates: {
@@ -453,16 +468,8 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
     reason: "Policy evaluation log. Not in onda 4 of the matrix.",
     since: "2026-09-10",
   },
-  evaluations: {
-    reason: "Evaluation log alias. Not in onda 4 of the matrix.",
-    since: "2026-09-10",
-  },
   "audit-events": {
     reason: "Audit event stream, incidents and config. Not in onda 4 of the matrix.",
-    since: "2026-09-10",
-  },
-  audit: {
-    reason: "Audit event alias. Not in onda 4 of the matrix.",
     since: "2026-09-10",
   },
   approvals: {
@@ -493,10 +500,6 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
     reason: "Agent registration and key rotation. Security-sensitive; wants its own design pass, not a derived command.",
     since: "2026-09-10",
   },
-  ofb: {
-    reason: "Open Finance Brasil consent lifecycle. Browser redirect flow; not in onda 4 of the matrix.",
-    since: "2026-09-10",
-  },
   "bank-consents": {
     reason: "Single bank-consent read, alias of the ofb family. Not in onda 4 of the matrix.",
     since: "2026-09-10",
@@ -509,16 +512,8 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
     reason: "Single account-application read. Belongs with the admin/account family that has no served routes yet.",
     since: "2026-09-10",
   },
-  kyc: {
-    reason: "GET /v1/kyc/onboard/{proposalId}/status. Reachable as `codespar tool codespar_kyc --action status`.",
-    since: "2026-09-10",
-  },
   cards: {
     reason: "Single card read. Reachable as `codespar tool codespar_issue --action card-get`.",
-    since: "2026-09-10",
-  },
-  issuer: {
-    reason: "Issuer-side card read, alias of the cards family. Same meta-tool covers it.",
     since: "2026-09-10",
   },
   "funding-sources": {
@@ -556,7 +551,7 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
 };
 
 /** How many exceptions the gate expects. Lower it when one goes away. */
-export const EXCEPTION_PIN = 45;
+export const EXCEPTION_PIN = 38;
 
 export type ViolationKind =
   | "uncovered-group"

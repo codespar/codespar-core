@@ -100,6 +100,10 @@ export function operationTable(document) {
     path: route,
     body: requestContentType(operation),
     accept: acceptContentType(operation),
+    // O documento marca a operacao; sem isto na tabela, quem gera comando a
+    // partir dela nao tem como saber que a rota morreu. Foi assim que a CLI
+    // publicou 12 comandos para `/v1/triggers`, 12 de 12 depreciadas.
+    deprecated: operation.deprecated === true,
   }));
 }
 
@@ -179,7 +183,8 @@ export async function renderGenerated(snapshot) {
   const rows = table.map(
     (op) =>
       `  { method: ${JSON.stringify(op.method)}, path: ${JSON.stringify(op.path)}, ` +
-      `body: ${JSON.stringify(op.body)}, accept: ${JSON.stringify(op.accept)} },`,
+      `body: ${JSON.stringify(op.body)}, accept: ${JSON.stringify(op.accept)}, ` +
+      `deprecated: ${op.deprecated} },`,
   );
   const operations =
     generatedHeader(snapshot, "npm run spec:generate (in packages/core)") +

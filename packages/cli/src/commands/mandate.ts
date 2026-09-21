@@ -1,4 +1,5 @@
 import { ApiClient } from "../api.js";
+import type { ApiOperation } from "@codespar/sdk";
 import { CliError } from "../config.js";
 import { info, json, kv, success } from "../output.js";
 
@@ -114,6 +115,38 @@ function parseSlots(specs: string[]): MandateSlotInput[] {
  * Prints the mandate id you then hand to `codespar spend`, and (multi-slot) the
  * `codespar wallet` view.
  */
+/**
+ * Os trilhos que o corpo do consent submit aceita. A lista esta escrita aqui
+ * porque enum de spec nao sobrevive a compilacao, e `RAIL_CONFERE` abaixo a
+ * amarra ao tipo gerado nas DUAS direcoes: sobra ou falta um trilho e o
+ * pacote nao compila. `--rail` aceitava string livre e o `offSpec` nao
+ * conferia nada; o primeiro valor errado so aparecia como 400 do servidor.
+ */
+const RAILS_DO_SUBMIT = [
+  "pix-consent",
+  "card-token",
+  "ted-debit-auth",
+  "usd-ach-debit",
+  "usdc-onchain",
+] as const;
+
+type RailDoSubmit = (typeof RAILS_DO_SUBMIT)[number];
+type RailDoCorpo = NonNullable<
+  NonNullable<ApiOperation<"/v1/consents/{token}/submit", "post">["requestBody"]>
+>["content"]["application/json"]["rail"];
+type Confere<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
+const RAIL_CONFERE: Confere<RailDoSubmit, RailDoCorpo> = true;
+void RAIL_CONFERE;
+
+function railDoSubmit(valor: string): RailDoSubmit {
+  if (!(RAILS_DO_SUBMIT as readonly string[]).includes(valor)) {
+    throw new CliError(
+      `--rail "${valor}" is outside what the consent submit accepts: ${RAILS_DO_SUBMIT.join(" | ")}.`,
+    );
+  }
+  return valor as RailDoSubmit;
+}
+
 export async function mandateCreateCommand(opts: MandateCreateOptions): Promise<void> {
   if (!opts.consumer) throw new CliError("--consumer <id> is required.");
   if (!opts.agent) throw new CliError("--agent <id> is required.");
@@ -189,18 +222,18 @@ export async function mandateCreateCommand(opts: MandateCreateOptions): Promise<
   //    For a multi-slot mandate the backend derives one funding source per slot
   //    from intent.slots; the rail/provider_token here only satisfy the submit
   //    schema (a valid rail value), so the --rail default is fine.
-  // `POST /v1/consents/{token}/submit` answers in production but the served
-  // OpenAPI document does not declare it, so this call cannot be checked by
-  // the generated table. It is one of the two entries in OFF_SPEC_PATHS.
-  const submit = await client.offSpec<Record<string, unknown>>(
-    "POST",
-    `/v1/consents/${encodeURIComponent(init.token)}/submit`,
-    {
+  // O documento servido passou a declarar `POST /v1/consents/{token}/submit`
+  // (refresh de 21/09), entao a chamada deixa de ser `offSpec`: caminho e
+  // corpo passam a ser conferidos pela tabela gerada, e a divida saiu de
+  // OFF_SPEC_PATHS.
+  const submit = (await client.post("/v1/consents/{token}/submit", {
+    path: { token: init.token },
+    body: {
       consumer_id: opts.consumer,
-      rail: opts.rail,
+      rail: railDoSubmit(opts.rail),
       provider_token: opts.providerToken ?? `${opts.rail}:${opts.consumer}`,
     },
-  );
+  })) as Record<string, unknown>;
 
   if (opts.json) {
     json(submit);
