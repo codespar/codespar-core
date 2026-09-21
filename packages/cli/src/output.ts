@@ -72,6 +72,18 @@ export function json(value: unknown): void {
   process.stdout.write(JSON.stringify(value, null, 2) + "\n");
 }
 
+/**
+ * One value, one line, no indentation: NDJSON.
+ *
+ * `json()` is right for a command that answers ONE document. A stream answers
+ * many, and pretty-printing them back to back produces something no parser
+ * reads whole: `jq` tolerates the concatenation, `JSON.parse` of the stream
+ * does not. One compact object per line is what a tail is supposed to emit.
+ */
+export function jsonLine(value: unknown): void {
+  process.stdout.write(JSON.stringify(value) + "\n");
+}
+
 /** Info message to stderr (keeps stdout clean for scripting). */
 export function info(msg: string): void {
   process.stderr.write(`${c.blue("ℹ")} ${msg}\n`);
@@ -88,10 +100,17 @@ function isScalar(v: unknown): boolean {
   return v === null || ["string", "number", "boolean"].includes(typeof v);
 }
 
+const LARGURA_MAXIMA = 40;
+
+function tamanhoDoValor(v: unknown): number {
+  if (v === null || v === undefined) return 1;
+  return (typeof v === "string" ? v : JSON.stringify(v)).length;
+}
+
 function cell(v: unknown): string {
   if (v === null || v === undefined) return "-";
   const s = typeof v === "string" ? v : JSON.stringify(v);
-  return s.length <= 40 ? s : s.slice(0, 39) + "…";
+  return s.length <= LARGURA_MAXIMA ? s : s.slice(0, LARGURA_MAXIMA - 1) + "…";
 }
 
 /** The array inside a single-collection envelope (`{ data: [...] }`), if any. */
@@ -166,9 +185,21 @@ function renderList(list: readonly unknown[]): void {
     shown,
     rows.map((row) => shown.map((k) => cell(row[k]))),
   );
-  if (columns.length > shown.length) {
-    process.stderr.write(
-      c.dim(`(${columns.length - shown.length} more field(s) per row — use --json)\n`),
-    );
+  // O AVISO TAMBEM CONTA O QUE FOI CORTADO. Ele so falava de coluna
+  // escondida, e uma celula cortada e a mesma perda com menos sinal: um
+  // copia-e-cola do Pix ou um endereco on-chain saem com reticencias e nada
+  // diz que faltou pedaco. Quem le por maquina nunca deveria estar aqui, mas
+  // quem le no terminal precisa saber que a tela nao e o dado.
+  const cortadas = rows.reduce(
+    (total, row) => total + shown.filter((k) => tamanhoDoValor(row[k]) > LARGURA_MAXIMA).length,
+    0,
+  );
+  const escondidas = columns.length - shown.length;
+  const partes = [
+    escondidas > 0 ? `${escondidas} more field(s) per row` : "",
+    cortadas > 0 ? `${cortadas} value(s) clipped to ${LARGURA_MAXIMA} characters` : "",
+  ].filter(Boolean);
+  if (partes.length) {
+    process.stderr.write(c.dim(`(${partes.join(", ")} — use --json)\n`));
   }
 }

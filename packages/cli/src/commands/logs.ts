@@ -1,6 +1,6 @@
 import type { ApiClient } from "../api.js";
 import { CliError } from "../config.js";
-import { c, isoTime, json } from "../output.js";
+import { c, isoTime, jsonLine } from "../output.js";
 
 /**
  * The project's tool-call log.
@@ -125,7 +125,9 @@ function sleep(ms: number): Promise<void> {
 
 function printRow(row: ToolCallRow, asJson: boolean): void {
   if (asJson) {
-    json(row);
+    // NDJSON: um objeto por linha. Com `json()` cada linha saia indentada em
+    // varias, e o fluxo inteiro deixava de ser parseavel de uma vez.
+    jsonLine(row);
     return;
   }
 

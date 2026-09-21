@@ -119,6 +119,7 @@ export async function startConnectCommand(
 interface RevokeOptions {
   user?: string;
   id?: string;
+  json?: boolean;
 }
 
 /**
@@ -151,6 +152,7 @@ export async function revokeConnectCommand(
 
   await client.post("/v1/connections/{id}/revoke", { path: { id: connectionId } });
   success(`Revoked connection ${connectionId}.`);
+  if (opts.json) json({ revoked: true, connection_id: connectionId });
 }
 
 /**

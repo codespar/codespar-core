@@ -108,10 +108,15 @@ export async function showSessionCommand(
   }
 }
 
-export async function closeSessionCommand(client: ApiClient, id: string): Promise<void> {
+export async function closeSessionCommand(
+  client: ApiClient,
+  id: string,
+  opts: { json?: boolean } = {},
+): Promise<void> {
   if (!id) throw new CliError("Session id is required.");
   // `DELETE /v1/sessions/{id}` is the documented close. The old
   // `POST /v1/sessions/{id}/close` was never a route (core#130).
   const closed = await client.delete("/v1/sessions/{id}", { path: { id } });
   success(`Session ${closed.id} ${closed.status}${closed.closed_at ? ` at ${closed.closed_at}` : ""}.`);
+  if (opts.json) json(closed);
 }

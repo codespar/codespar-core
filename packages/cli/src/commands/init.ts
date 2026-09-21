@@ -4,7 +4,7 @@ import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CliError } from "../config.js";
-import { c, info, success } from "../output.js";
+import { c, info, json, success } from "../output.js";
 
 /**
  * Project scaffolder. Copies a template from packages/cli/templates/<slug>
@@ -51,6 +51,7 @@ const TEMPLATES: Template[] = [
 interface InitOptions {
   template?: string;
   yes?: boolean;
+  json?: boolean;
 }
 
 export async function initCommand(name: string, opts: InitOptions): Promise<void> {
@@ -85,6 +86,12 @@ export async function initCommand(name: string, opts: InitOptions): Promise<void
 
   process.stdout.write("\n");
   success(`Created ${name}/`);
+  // Sem isto, `codespar init x --json` escrevia um roteiro de proximos passos
+  // no stdout, que e justamente onde quem automatiza espera um documento.
+  if (opts.json) {
+    json({ created: name, template: template.slug, path: target });
+    return;
+  }
   process.stdout.write(
     [
       "",

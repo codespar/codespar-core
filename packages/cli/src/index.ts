@@ -39,7 +39,7 @@ import {
 } from "./commands/meta-tool.js";
 import { runResourceCommand } from "./commands/resource.js";
 import { derivedSurface, metaToolNames } from "./surface.js";
-import { c } from "./output.js";
+import { c, json } from "./output.js";
 import { printBanner } from "./banner.js";
 import { VERSION } from "./version.js";
 
@@ -95,7 +95,7 @@ program
     // `login --help`, que e onde a pessoa procura a flag; o valor se le dos
     // dois lados.
     const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
-    await loginCommand({ apiKey: opts.apiKey ?? root.apiKey, baseUrl: root.baseUrl });
+    await loginCommand({ apiKey: opts.apiKey ?? root.apiKey, baseUrl: root.baseUrl, json: rootJsonFlag() });
   });
 
 program
@@ -112,8 +112,9 @@ program
   .action(async () => {
     const { saveConfig } = await import("./config.js");
     await saveConfig({ apiKey: undefined });
-    const { success } = await import("./output.js");
+    const { success, json: asJson } = await import("./output.js");
     success("Logged out.");
+    if (rootJsonFlag()) asJson({ logged_out: true });
   });
 
 // ============ servers ============
@@ -308,7 +309,7 @@ sessions
   .description("Close an active session")
   .action(async (id: string) => {
     const client = await authedClient();
-    await closeSessionCommand(client, id);
+    await closeSessionCommand(client, id, { json: rootJsonFlag() });
   });
 
 // ============ connect ============
@@ -350,7 +351,7 @@ connect
   .option("-u, --user <id>", "User id when revoking by server (default: cli-user)")
   .action(async (connectionOrServer: string, opts: { user?: string }) => {
     const client = await authedClient();
-    await revokeConnectCommand(client, connectionOrServer, opts);
+    await revokeConnectCommand(client, connectionOrServer, { ...opts, json: rootJsonFlag() });
   });
 
 // ============ meta-tool sugar (SDK 0.9.0) ============
@@ -660,7 +661,7 @@ program
   .option("-t, --template <slug>", "Template slug (pix-agent, ecommerce-checkout, streaming-chat, multi-tenant)")
   .option("-y, --yes", "Use default template without prompting")
   .action(async (name: string, opts: { template?: string; yes?: boolean }) => {
-    await initCommand(name, opts);
+    await initCommand(name, { ...opts, json: rootJsonFlag() });
   });
 
 // ============ global error handling ============
@@ -677,11 +678,30 @@ async function main() {
     printBanner(VERSION);
   }
 
+  /**
+   * O QUE UM SCRIPT RECEBE QUANDO DA ERRADO.
+   *
+   * Com `--json`, o sucesso saia um documento no stdout e a falha saia ZERO
+   * byte no stdout e prosa no stderr. Todo consumidor tinha de tratar "stdout
+   * vazio" como caso especial e depois ler frase humana para saber o que
+   * houve. Agora a falha tambem e um documento, com `kind` para ramificar sem
+   * interpretar texto, e a linha humana continua no stderr para quem esta
+   * olhando. Os codigos de saida nao mudam.
+   */
+  const falhou = (
+    kind: "cli" | "api" | "timeout" | "internal",
+    message: string,
+    extra: Record<string, unknown> = {},
+  ): void => {
+    if (hasJsonFlag) json({ error: { kind, message, ...extra } });
+  };
+
   try {
     await program.parseAsync(process.argv);
   } catch (err) {
     if (err instanceof CliError) {
       process.stderr.write(`${c.red("✗")} ${err.message}\n`);
+      falhou("cli", err.message);
       process.exit(1);
     }
     // The generated REST client answers with its own error types. Print the
@@ -689,18 +709,24 @@ async function main() {
     // would hide the one thing the caller needs, which is what the API said.
     if (err instanceof CodesparApiError) {
       process.stderr.write(`${c.red("✗")} ${err.message}\n`);
-      if (err.body !== undefined) {
+      if (err.body !== undefined && !hasJsonFlag) {
         process.stderr.write(JSON.stringify(err.body, null, 2) + "\n");
       }
+      falhou("api", err.message, {
+        ...(err.status === undefined ? {} : { status: err.status }),
+        ...(err.body === undefined ? {} : { body: err.body }),
+      });
       process.exit(1);
     }
     if (err instanceof TimeoutError) {
       process.stderr.write(`${c.red("✗")} ${err.message}\n`);
+      falhou("timeout", err.message);
       process.exit(1);
     }
     // Unexpected error — show stack so we can debug.
     process.stderr.write(`${c.red("✗ internal error:")}\n`);
     process.stderr.write(String((err as Error).stack ?? err) + "\n");
+    falhou("internal", String((err as Error).message ?? err));
     process.exit(2);
   }
 }
