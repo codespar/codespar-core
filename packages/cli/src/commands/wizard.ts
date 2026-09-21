@@ -21,12 +21,24 @@ interface WizardCommandOptions {
  * server_id, "status" with one). The CLI takes the server-id as the
  * positional argument; pass nothing to list all connections.
  */
+/**
+ * As acoes que o assistente aceita. A lista existe em runtime porque uniao de
+ * tipo nao sobrevive a compilacao, e `ACOES_CONFEREM` a amarra ao tipo do SDK
+ * nas duas direcoes: sobra ou falta uma acao e o pacote nao compila. Escrita
+ * a mao e solta, ela era a mesma armadilha do `ledger`, que recusava duas
+ * acoes que a ferramenta publicava.
+ */
+const ACOES = ["list", "status", "initiate"] as const;
+type Confere<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
+const ACOES_CONFEREM: Confere<(typeof ACOES)[number], NonNullable<ConnectionWizardOptions["action"]>> = true;
+void ACOES_CONFEREM;
+
 export async function wizardCommand(
   serverId: string | undefined,
   opts: WizardCommandOptions,
 ): Promise<void> {
-  if (opts.action && !["list", "status", "initiate"].includes(opts.action)) {
-    throw new CliError("--action must be one of: list, status, initiate.");
+  if (opts.action && !(ACOES as readonly string[]).includes(opts.action)) {
+    throw new CliError(`--action must be one of: ${ACOES.join(", ")}.`);
   }
   if (opts.environment && !["live", "test"].includes(opts.environment)) {
     throw new CliError("--environment must be 'live' or 'test'.");
