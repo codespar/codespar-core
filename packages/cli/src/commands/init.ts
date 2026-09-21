@@ -111,6 +111,14 @@ async function pickTemplate(opts: InitOptions): Promise<Template> {
 
   if (opts.yes) return TEMPLATES[0];
 
+  // Mesma armadilha do `login`: sem TTY o menu e impresso, a pergunta nunca
+  // volta e o processo sai 0 sem escrever um arquivo.
+  if (!stdin.isTTY) {
+    throw new CliError(
+      "No terminal to prompt on. Re-run with `--yes` for the default template, or pass `--template <slug>`.",
+    );
+  }
+
   // Interactive pick
   process.stdout.write(c.bold("Choose a template:\n\n"));
   TEMPLATES.forEach((t, i) => {

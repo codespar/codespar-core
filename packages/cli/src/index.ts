@@ -89,8 +89,13 @@ program
   .description("Authenticate and save your API key to ~/.codespar/config.json")
   .option("--api-key <key>", "API key (prompts if omitted)")
   .action(async (opts: { apiKey?: string }) => {
-    const root = program.opts<{ baseUrl?: string }>();
-    await loginCommand({ apiKey: opts.apiKey, baseUrl: root.baseUrl });
+    // `--api-key` esta declarada aqui E na raiz. Medido no commander 13.1.0:
+    // com o mesmo nome nos dois niveis o valor vai SEMPRE para a raiz, nas
+    // duas ordens, e `opts.apiKey` chega `undefined`. A declaracao fica pelo
+    // `login --help`, que e onde a pessoa procura a flag; o valor se le dos
+    // dois lados.
+    const root = program.opts<{ apiKey?: string; baseUrl?: string }>();
+    await loginCommand({ apiKey: opts.apiKey ?? root.apiKey, baseUrl: root.baseUrl });
   });
 
 program

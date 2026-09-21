@@ -49,6 +49,14 @@ export async function loginCommand(opts: LoginOptions): Promise<void> {
   let apiKey = opts.apiKey;
 
   if (!apiKey) {
+    // Sem TTY a promessa do readline nunca resolve, o processo fica sem
+    // trabalho pendente e o Node sai 0: o passo de CI fica verde e o comando
+    // seguinte diz "Not logged in". Recusar aqui e a unica saida honesta.
+    if (!input.isTTY) {
+      throw new CliError(
+        "No terminal to prompt on. Pass `--api-key <key>`, or set CODESPAR_API_KEY and skip login.",
+      );
+    }
     info("Get your API key at https://codespar.dev/dashboard/settings?tab=api-keys");
     apiKey = (await promptSecret("API key: ")).trim();
   }
