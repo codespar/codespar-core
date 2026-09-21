@@ -1,5 +1,23 @@
 # @codespar/cli — changelog
 
+## 0.12.0 — nao publicada
+
+### Fixed
+
+- `error.kind` nao separava nada. A 0.11.3 respondia `kind: "cli"` — que
+  significa "a CLI recusou antes de chegar na API" — para todo 401, 404 e 500
+  recebido pelos onze comandos escritos a mao, sem `status` e sem `body`,
+  enquanto os comandos gerados, que passam pelo cliente do SDK, respondiam
+  `kind: "api"` com os dois campos. Um binario, uma flag, dois contratos, e o
+  campo que existe para um script ramificar sem interpretar prosa nao servia
+  para isso. Medido na 0.11.3 publicada: `whoami`, `wallet`, `servers list` e
+  `sessions list` diziam `cli`; `consumers list` dizia `api`. Agora os dois
+  caminhos respondem `api` com `status`, `code` quando a API manda, e `body`.
+  A linha humana no stderr nao muda.
+- O corpo de uma resposta de erro era lido duas vezes: `res.json()` consumia o
+  fluxo e o `catch` chamava `res.text()`, que sempre falha depois disso, entao
+  um corpo que nao fosse JSON chegava como detalhe vazio. Agora le uma vez.
+
 ## 0.11.3 — 2026-09-21
 
 ### Fixed
