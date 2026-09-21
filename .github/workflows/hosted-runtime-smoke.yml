@@ -6,6 +6,9 @@ on:
       - 'packages/core/**'
       - 'packages/types/**'
       - 'packages/python/**'
+      # A CLI e o caller que manda `servers: []`. Sem ela aqui, uma mudanca
+      # na CLI nunca dispara o unico job que fala com a API servida.
+      - 'packages/cli/**'
       - 'scripts/hosted-smoke.mjs'
       - '.github/workflows/hosted-runtime-smoke.yml'
   workflow_dispatch:
