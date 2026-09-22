@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 212b83ba9647de03cfcbae6ce0040519bb9c8809be9aa1c22a75692fa11e43c7, fetched 2026-09-21T22:13:48.438Z
+// Source: openapi-snapshot.json (sha256 fb565d27129d401af20e17fa173f9f7ee4422d2b77278d94f095f0b6e5f63ee3, fetched 2026-09-22T00:28:23.295Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -14361,7 +14361,7 @@ export interface paths {
          *     - `hosted` — the consumer's browser submits from our page. `attestation` is REFUSED (400 `attestation_not_accepted`): our page witnessed the act, and the IP and user-agent on the consent record are the consumer's.
          *     - `partner` — your server submits. `attestation` is REQUIRED (400 `attestation_required`): the IP and user-agent recorded are your server's, so the only statement about the human is yours. It is signed into the mandate as `consent_attestation` and cannot be edited afterwards without breaking the signature.
          *
-         *     `attestation.method` says how the human authorized: `partner_session` (an authenticated session in your product), `in_person`, or `verified_code` (a code YOU issued and verified). `asserted_at` is the instant you say they authorized, in Unix seconds. `reference` is your own record id, `[A-Za-z0-9_-]{1,120}`, and never personal data — it is joined into the signed string, so the character set is the schema's, not a suggestion.
+         *     `attestation.method` says how the human authorized: `partner_session` (an authenticated session in your product), `in_person`, `verified_code` (a code YOU issued and verified), or `partner_biometric` (YOU ran a biometric check at the moment of the act). `partner_biometric` is not a flavour of `partner_session`: in a dispute a session says someone was logged in and a biometric says a body was present. We capture and verify no biometric ourselves — this records what YOU assert, sealed by the mandate signature so it cannot be edited afterwards; the evidence behind it stays with you. `asserted_at` is the instant you say they authorized, in Unix seconds. `reference` is your own record id, `[A-Za-z0-9_-]{1,120}`, and never personal data — it is joined into the signed string, so the character set is the schema's, not a suggestion.
          */
         post: {
             parameters: {
@@ -14382,7 +14382,7 @@ export interface paths {
                         display_label?: string;
                         attestation?: {
                             /** @enum {string} */
-                            method: "partner_session" | "in_person" | "verified_code";
+                            method: "partner_session" | "in_person" | "verified_code" | "partner_biometric";
                             asserted_at: number;
                             reference?: string;
                         };

@@ -1,6 +1,6 @@
 # @codespar/sdk — CHANGELOG
 
-## 0.16.2 — nao publicada
+## 0.16.2 — 2026-09-21
 
 ### Changed
 
@@ -10,6 +10,11 @@
   meta-tool nao tem servidor a anexar (ent#1566), e o corpo de mandato ganhou
   `periodic_cap` com `window` (`day` | `month`) e `cap_minor`, que ja estava no
   servido e faltava aqui.
+- `attestation.method`, em `POST /v1/consents/{token}/submit`, ganhou um quarto
+  valor: `partner_biometric`. A uniao gerada passa a ser
+  `"partner_session" | "in_person" | "verified_code" | "partner_biometric"`.
+  Subiu na API entre as 22:13 e as 00:26 de 21/09 e o portao de frescor pegou
+  na mesma noite.
 
 ## 0.16.1 — 2026-09-21
 
