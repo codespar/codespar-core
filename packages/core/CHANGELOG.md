@@ -1,6 +1,6 @@
 # @codespar/sdk — CHANGELOG
 
-## 0.16.2 — nao publicada
+## 0.16.2 — 2026-09-21
 
 ### Changed
 
