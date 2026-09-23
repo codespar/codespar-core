@@ -457,20 +457,39 @@ mandate
   .option(
     "--resolver <url>",
     "Network mode: resolver consulted for any DID whose did:web document is unreachable. " +
-      "Without it, only DIDs under the API host's own domain fall back to the API.",
+      "Without it, only DIDs under the deployment's identity hosts fall back to the API.",
+  )
+  .option(
+    "--did-domain <host>",
+    "Identity host the API's DID route may answer for (repeatable). Built in: the API host, " +
+      "plus id.codespar.dev for the default API.",
+    collect,
+    [],
   )
   .action(
     async (
       token: string,
-      opts: { agentPubkey?: string; issuerPubkey?: string; issuerDid?: string; resolver?: string },
+      opts: {
+        agentPubkey?: string;
+        issuerPubkey?: string;
+        issuerDid?: string;
+        resolver?: string;
+        didDomain: string[];
+      },
     ) => {
       // Offline verification needs no API key — resolve the base URL (whose
-      // DID route serves the API's own domain) from flags/env/config without
-      // requiring auth.
+      // DID route serves the deployment's identity hosts) from flags/env/config
+      // without requiring auth.
       const config = await loadConfig();
       const root = program.opts<{ baseUrl?: string }>();
       const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
-      await mandateVerifyCommand(token, { ...opts, baseUrl, json: rootJsonFlag() });
+      const { didDomain, ...rest } = opts;
+      await mandateVerifyCommand(token, {
+        ...rest,
+        didDomains: didDomain,
+        baseUrl,
+        json: rootJsonFlag(),
+      });
     },
   );
 

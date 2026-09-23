@@ -22,6 +22,8 @@ export interface MandateVerifyOptions {
    * did:web document is unreachable. Opt-in; announced on stderr when used.
    */
   resolver?: string;
+  /** Identity hosts the API's DID route may serve, beyond the built-in ones (`--did-domain`). */
+  didDomains?: string[];
   baseUrl: string;
   json?: boolean;
 }
@@ -33,8 +35,9 @@ interface SigResult {
   status: SigStatus;
   /** The verificationMethod / key id that verified the signature (or was tried). */
   kid?: string;
-  /** Where the public key came from: "flag" | "did:web" | "fallback" | "resolver" | "-". */
-  source: string;
+  /** Where the public key came from: "flag" | "did:web" | "fallback" | "resolver"; null when
+   *  nothing supplied one; "-" when no signature was present. */
+  source: string | null;
   detail?: string;
 }
 
@@ -62,6 +65,20 @@ function announceSource(did: string, resolved: DidResolution): void {
   }
 }
 
+/** `--resolver` must be an absolute http(s) URL; anything else is a typo, not a resolver. */
+function parseResolverUrl(raw: string): string {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    throw new CliError(`--resolver must be an absolute http(s) URL, got ${JSON.stringify(raw)}.`);
+  }
+  if (u.protocol !== "https:" && u.protocol !== "http:") {
+    throw new CliError(`--resolver must be an http(s) URL, got ${u.protocol}//.`);
+  }
+  return u.toString();
+}
+
 /** Try a signature against a set of candidate keys; first hit wins. */
 function verifyAgainst(
   signingString: string,
@@ -84,8 +101,9 @@ function verifyAgainst(
  * Network mode (no pubkey flags): resolve the agent + issuer public keys from
  * their did:web documents and verify. The domain named in the DID is the
  * authority; the configured API's DID route is consulted only for a DID under
- * the API's own domain whose document is unreachable, and `--resolver <url>`
- * opts into a resolver for any DID, announced on stderr when it is the source.
+ * one of the deployment's identity hosts whose document is unreachable, and
+ * `--resolver <url>` opts into a resolver for any DID, announced on stderr
+ * when it is the source. The two DIDs resolve in parallel.
  *
  * A signature the token carries must verify for an overall pass. In offline mode
  * a signature with no supplied key is "skipped" (not proven, not failed); at
@@ -117,6 +135,20 @@ export async function mandateVerifyCommand(
 
   const agentKid = t.kid ?? m.agent_kid ?? undefined;
   const agentDid = agentKid ? agentDidFromKid(agentKid) : undefined;
+  const issuerDid = opts.issuerDid ?? (agentDid ? platformIssuerDid(agentDid) : null);
+  const resolverUrl = opts.resolver === undefined ? undefined : parseResolverUrl(opts.resolver);
+
+  // Network mode resolves both DIDs at once: sequentially, two unreachable
+  // documents with a resolver and a fallback each are four timeouts in a row.
+  const resolveOpts = { baseUrl: opts.baseUrl, resolverUrl, didDomains: opts.didDomains };
+  const [agentResolved, issuerResolved] = offline
+    ? [null, null]
+    : await Promise.all([
+        t.agent_sig && agentDid
+          ? resolveDidKeys(agentDid, { ...resolveOpts, preferredKid: agentKid })
+          : null,
+        t.issuer_sig && issuerDid ? resolveDidKeys(issuerDid, resolveOpts) : null,
+      ]);
 
   // ── Agent signature ──────────────────────────────────────────────
   const agent: SigResult = { present: Boolean(t.agent_sig), status: "skipped", source: "-" };
@@ -134,21 +166,17 @@ export async function mandateVerifyCommand(
         agent.detail = "no --agent-pubkey supplied";
       }
     } else {
-      agent.source = "did:web";
-      if (!agentDid) {
+      if (!agentDid || !agentResolved) {
         agent.status = "failed";
+        agent.source = null;
         agent.detail = "token carries no agent_kid to resolve";
       } else {
-        const resolved = await resolveDidKeys(agentDid, {
-          baseUrl: opts.baseUrl,
-          preferredKid: agentKid,
-          resolverUrl: opts.resolver,
-        });
+        const resolved = agentResolved;
+        agent.source = resolved.source;
         if (resolved.keys.length === 0) {
           agent.status = "failed";
           agent.detail = `could not resolve ${agentDid}: ${resolved.detail}`;
         } else {
-          agent.source = resolved.source ?? "did:web";
           announceSource(agentDid, resolved);
           const hit = verifyAgainst(signingString, t.agent_sig, resolved.keys);
           agent.status = hit ? "verified" : "failed";
@@ -173,23 +201,19 @@ export async function mandateVerifyCommand(
         issuer.detail = "no --issuer-pubkey supplied";
       }
     } else {
-      issuer.source = "did:web";
-      const issuerDid = opts.issuerDid ?? (agentDid ? platformIssuerDid(agentDid) : null);
-      if (!issuerDid) {
+      if (!issuerDid || !issuerResolved) {
         issuer.status = "failed";
+        issuer.source = null;
         issuer.detail = "no issuer DID (pass --issuer-did)";
       } else {
         // The envelope names the agent kid, not the issuer's, so try every
         // Ed25519 key the issuer document publishes.
-        const resolved = await resolveDidKeys(issuerDid, {
-          baseUrl: opts.baseUrl,
-          resolverUrl: opts.resolver,
-        });
+        const resolved = issuerResolved;
+        issuer.source = resolved.source;
         if (resolved.keys.length === 0) {
           issuer.status = "failed";
           issuer.detail = `could not resolve ${issuerDid}: ${resolved.detail}`;
         } else {
-          issuer.source = resolved.source ?? "did:web";
           announceSource(issuerDid, resolved);
           const hit = verifyAgainst(signingString, t.issuer_sig, resolved.keys);
           issuer.status = hit ? "verified" : "failed";
@@ -295,7 +319,7 @@ function sigJson(r: SigResult): Record<string, unknown> {
     present: r.present,
     status: r.present ? r.status : "absent",
     kid: r.kid ?? null,
-    source: r.source === "-" ? null : r.source,
+    source: r.source === "-" ? null : (r.source ?? null),
     detail: r.detail ?? null,
   };
 }

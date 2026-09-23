@@ -95,9 +95,14 @@ afterEach(() => {
   process.exitCode = undefined;
 });
 
+interface Sig {
+  status: string;
+  source: string | null;
+  detail?: string;
+}
 interface Out {
   verified: boolean;
-  signatures: { agent_sig: { status: string; source: string; detail?: string } };
+  signatures: { agent_sig: Sig; issuer_sig: Sig };
 }
 
 describe("codespar mandate verify — key sources in network mode", () => {
@@ -128,8 +133,67 @@ describe("codespar mandate verify — key sources in network mode", () => {
     expect(out.verified).toBe(false);
     expect(out.signatures.agent_sig.status).toBe("failed");
     expect(out.signatures.agent_sig.detail).toContain("could not be fetched");
+    // No source supplied a key: the JSON says so instead of a pre-set "did:web".
+    expect(out.signatures.agent_sig.source).toBeNull();
     expect(asked).not.toContain(apiFallbackUrl(AGENT_DID, base));
     expect(process.exitCode).toBe(1);
+  });
+
+  it("--did-domain lets a non-default API answer for the fixture's identity host", async () => {
+    const base = "https://api.staging.codespar.dev";
+    answers = {
+      [AGENT_URL]: { status: 503 },
+      [apiFallbackUrl(AGENT_DID, base)]: { status: 200, body: AGENT_DOC },
+      [ISSUER_URL]: { status: 200, body: ISSUER_DOC },
+    };
+    await mandateVerifyCommand(TOKEN, { baseUrl: base, didDomains: ["id.codespar.dev"], json: true });
+    const out = JSON.parse(stdout) as Out;
+    expect(out.verified).toBe(true);
+    expect(out.signatures.agent_sig.source).toBe("fallback");
+  });
+
+  it("a resolver that knows only the agent does not switch off the API route for the issuer", async () => {
+    const base = "https://api.codespar.dev";
+    const resolver = "https://resolver.example";
+    answers = {
+      [AGENT_URL]: { status: 503 },
+      [apiFallbackUrl(AGENT_DID, resolver)]: { status: 200, body: AGENT_DOC },
+      [ISSUER_URL]: { status: 503 },
+      // The resolver has no issuer document; the API's own route does.
+      [apiFallbackUrl(ISSUER_DID, base)]: { status: 200, body: ISSUER_DOC },
+    };
+    await mandateVerifyCommand(TOKEN, { baseUrl: base, resolver, json: true });
+    const out = JSON.parse(stdout) as Out;
+    expect(out.verified).toBe(true);
+    expect(out.signatures.agent_sig.source).toBe("resolver");
+    expect(out.signatures.issuer_sig.source).toBe("fallback");
+    expect(asked).toContain(apiFallbackUrl(ISSUER_DID, resolver));
+  });
+
+  it("--resolver must be an absolute http(s) URL", async () => {
+    for (const bad of ["resolver.example", "ftp://resolver.example", "/v1"]) {
+      await expect(
+        mandateVerifyCommand(TOKEN, { baseUrl: "https://api.codespar.dev", resolver: bad, json: true }),
+      ).rejects.toThrow(/--resolver must be an/);
+    }
+    expect(asked).toEqual([]);
+  });
+
+  it("agent and issuer resolve in parallel", async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    globalThis.fetch = (async (url: string | URL) => {
+      asked.push(String(url));
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((r) => setTimeout(r, 20));
+      inFlight -= 1;
+      const body = String(url) === AGENT_URL ? AGENT_DOC : ISSUER_DOC;
+      return new Response(JSON.stringify(body), { status: 200 });
+    }) as unknown as typeof fetch;
+    await mandateVerifyCommand(TOKEN, { baseUrl: "https://api.codespar.dev", json: true });
+    expect((JSON.parse(stdout) as Out).verified).toBe(true);
+    expect(maxInFlight).toBe(2);
   });
 
   it("--resolver: keys come from the resolver, the source says so and stderr warns", async () => {
