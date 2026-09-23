@@ -333,13 +333,26 @@ describe("formatViolations", () => {
 /** A fake backend: maps `execute(tool, input)` to the ToolResult it returns. */
 type FakeExecute = (tool: string, input: Record<string, unknown>) => ToolResult;
 
+/** The 201 body a conforming runtime returns for the kit's session-create. */
+const CREATED_OK = {
+  id: "ses_fake",
+  status: "active",
+  user_id: "conformance-suite",
+  servers: [] as string[],
+  created_at: "2026-09-23T12:00:00.000Z",
+};
+
 /** Install a `fetch` stub that routes session-create/execute/delete to a
- *  fake backend's `execute`. Returns a teardown. */
-function installFakeBackend(execute: FakeExecute): () => void {
+ *  fake backend's `execute`. Returns a teardown. `create` overrides the
+ *  session-create answer (a conforming 201 by default). */
+function installFakeBackend(
+  execute: FakeExecute,
+  create: { status: number; body: unknown } = { status: 201, body: CREATED_OK },
+): () => void {
   const stub = vi.fn(async (url: string | URL, init?: RequestInit) => {
     const u = String(url);
     if (u.endsWith("/v1/sessions") && init?.method === "POST") {
-      return jsonResponse({ id: "sess_fake", status: "active" });
+      return jsonResponse(create.body, create.status);
     }
     if (u.includes("/execute")) {
       const body = JSON.parse(String(init?.body ?? "{}")) as {
@@ -358,9 +371,9 @@ function installFakeBackend(execute: FakeExecute): () => void {
   };
 }
 
-function jsonResponse(body: unknown): Response {
+function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
-    status: 200,
+    status,
     headers: { "Content-Type": "application/json" },
   });
 }
@@ -452,6 +465,22 @@ describe("runMetaToolConformanceSuite against a fake backend", () => {
     expect(failures, JSON.stringify(failures, null, 2)).toEqual([]);
     // Sanity: it actually registered cases (3 actions + 2 error legs).
     expect(results.length).toBe(5);
+  });
+
+  it("fails every case when the 201 body carries only { id, status }", async () => {
+    // The session the kit opens is the one the SDK would build: a runtime
+    // that omits user_id, servers or created_at fails before any action
+    // runs, instead of the kit passing on a session the SDK could not use.
+    teardown = installFakeBackend(conformingShop, {
+      status: 201,
+      body: { id: "ses_fake", status: "active" },
+    });
+    const results = await runSuiteAndCollect("codespar_shop");
+    expect(results.length).toBe(5);
+    for (const r of results) {
+      expect(r.passed, r.name).toBe(false);
+      expect(r.error, r.name).toContain("user_id");
+    }
   });
 
   it("fails the wire-shape case when an action returns the wrong shape", async () => {
