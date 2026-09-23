@@ -12,6 +12,9 @@
  *                            and typeless value-keyword properties added;
  *   nested-allOf-typeless    object properties wrapped in a typeless `allOf`,
  *                            plus a typeless two-member `allOf` property;
+ *   array-default-ref-*      an array property whose items are `$ref: "#"`
+ *                            and which carries a default (2020-12
+ *                            `prefixItems` and draft-07 `additionalItems`);
  *   self-refs                a property that is `$ref: "#"` beside its own
  *                            constraints, and a property referring to its
  *                            parent beside its own constraints.
@@ -132,6 +135,24 @@ export function variants(input: Json): Variant[] {
     allOf: [{ properties: { x: { type: "string" } }, required: ["x"] }, { properties: { y: { type: "number" } } }],
   };
   out.push({ kind: "nested-allOf-typeless", schema: nested });
+
+  const text = JSON.stringify(root);
+  const uses2020 = ["prefixItems", "dependentRequired", "dependentSchemas", "unevaluatedProperties", "unevaluatedItems", "minContains", "maxContains", "$dynamicRef"].some((k) => text.includes(`"${k}"`));
+  const uses07Arrays = text.includes('"additionalItems"');
+
+  const arrayDefault2020 = clone(root);
+  (arrayDefault2020.properties as Json).__arr = { type: "array", prefixItems: [{ $ref: "#" }], default: [{}] };
+  if (!uses07Arrays) out.push({ kind: "array-default-ref-2020", schema: arrayDefault2020 });
+
+  const arrayDefault07 = clone(root);
+  (arrayDefault07.properties as Json).__arr = {
+    type: "array",
+    items: [{ type: "string" }],
+    additionalItems: { $ref: "#" },
+    default: ["a", {}],
+  };
+  // draft-07's array `items` has no meaning in 2020-12; keep this variant on draft-07.
+  if (!uses2020) out.push({ kind: "array-default-ref-07", schema: arrayDefault07 });
 
   const selfRefs = clone(root);
   const sp = selfRefs.properties as Json;

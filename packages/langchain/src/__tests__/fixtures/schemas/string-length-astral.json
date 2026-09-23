@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "one": {
+      "type": "string",
+      "maxLength": 1
+    },
+    "two": {
+      "type": "string",
+      "minLength": 2
+    }
+  }
+}

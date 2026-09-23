@@ -71,6 +71,10 @@ function strings(s: Record<string, unknown>): unknown[] {
   const fmt = typeof s.format === "string" ? FORMAT_SAMPLES[s.format] ?? [] : [];
   const out = [...fmt.slice(0, 1), base, "", "a".repeat(Math.max(min - 1, 0)), "A1"];
   if (max !== undefined) out.push("a".repeat(max), "a".repeat(max + 1));
+  // Astral characters at the bounds: JSON Schema counts code points, not UTF-16 units.
+  const astral = "\u{1F600}";
+  out.push(astral, astral.repeat(Math.max(min - 1, 0)), astral.repeat(Math.max(min, 1)));
+  if (max !== undefined) out.push(astral.repeat(max), astral.repeat(max + 1));
   out.push(...fmt.slice(1));
   return out;
 }

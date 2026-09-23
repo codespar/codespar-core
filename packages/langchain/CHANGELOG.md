@@ -102,6 +102,18 @@
   keywords accepts it too.
 
 ### Fixed during review, found by the differential test
+- A `default` on a field reaching a `$ref` still parsed the field during
+  conversion (an array whose items are `$ref: "#"`), and overflowed the
+  stack. Nothing is parsed while converting now: a defaulted field is
+  optional, and an omitted key is filled with the default only when the
+  field accepts it — checked on the first parse that needs it, and
+  remembered. The default is inserted as written, not parsed again, so a
+  default that contains its own schema is not filled with itself forever.
+- `minLength`/`maxLength` counted UTF-16 units, so one emoji had length 2;
+  they count code points, as JSON Schema does.
+- A root `type: ["object", "null"]` was marked as having an untranslated
+  branch; only a non-object branch that is itself untranslated is marked.
+- `format` on a node without `type` is carried in the description too.
 - A root `$ref` replaced the root with its target and dropped the root's
   own `properties`/`required`/`description`; the root is now converted as
   it is. An `allOf` member or `oneOf` branch was re-checked against the

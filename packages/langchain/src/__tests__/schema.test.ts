@@ -400,7 +400,7 @@ describe("jsonSchemaToZod — review findings", () => {
     });
     expect(ok(s, {})).toBe(true);
     expect(s.parse({})).toEqual({ country: "BR" });
-    expect(shapeOf(s).note).toBeInstanceOf(z.ZodOptional);
+    expect(shapeOf(s).note!.isOptional()).toBe(true);
     expect(shapeOf(s).note!.description).toBe("Free text (default: null)");
   });
 
@@ -628,7 +628,8 @@ describe("jsonSchemaToZod — differential findings", () => {
       anyOf: [{ type: "object", properties: { a: { type: "string" } }, required: ["a"] }, { type: "string" }],
     });
     expect(Object.keys(shapeOf(s))).toEqual(["a"]);
-    expect(toolInputObject(s).description).toBe("(schema construct not translated: root union has a non-object branch)");
+    // The string branch is fully translated and irrelevant to an object input: no mark.
+    expect(toolInputObject(s).description).toBeUndefined();
     expect(ok(s, { a: "x" })).toBe(true);
     expect(ok(s, {})).toBe(false);
   });
@@ -770,6 +771,49 @@ describe("jsonSchemaToZod — widened differential findings", () => {
       ],
     });
     expect(shapeOf(s).id!.description).toBe("Payment id Prefixed pay_");
+  });
+});
+
+describe("jsonSchemaToZod — third pass", () => {
+  it("an array default whose items are $ref: \"#\" converts and parses without recursing (2020-12 and draft-07)", () => {
+    for (const [t, valid] of [
+      [{ type: "array", prefixItems: [{ $ref: "#" }], default: [{}] }, [{ t: [] }]],
+      [{ type: "array", items: [{ type: "string" }], additionalItems: { $ref: "#" }, default: ["a", {}] }, ["a", { t: ["b"] }]],
+    ] as const) {
+      const schema = { type: "object", properties: { t } } as JsonSchema;
+      expect(() => jsonSchemaToZod(schema)).not.toThrow();
+      const s = jsonSchemaToZod(schema);
+      expect(() => s.parse({})).not.toThrow();
+      expect(s.parse({})).toEqual({ t: t.default });
+      expect(ok(s, { t: valid })).toBe(true);
+      expect(ok(s, { t: 1 })).toBe(false);
+    }
+  });
+
+  it("minLength/maxLength count code points, as JSON Schema does", () => {
+    const s = jsonSchemaToZod({
+      type: "object",
+      properties: { one: { type: "string", maxLength: 1 }, two: { type: "string", minLength: 2 } },
+    });
+    expect(ok(s, { one: "\u{1F600}" })).toBe(true);
+    expect(ok(s, { one: "\u{1F600}\u{1F600}" })).toBe(false);
+    expect(ok(s, { two: "\u{1F600}" })).toBe(false);
+    expect(ok(s, { two: "\u{1F600}\u{1F600}" })).toBe(true);
+  });
+
+  it("a root type [object, null] is not marked; an untranslated non-object branch is", () => {
+    const nullable = jsonSchemaToZod({ type: ["object", "null"], properties: { a: { type: "string" } } });
+    expect(toolInputObject(nullable).description).toBeUndefined();
+    expect(Object.keys(shapeOf(nullable))).toEqual(["a"]);
+    const marked = jsonSchemaToZod({
+      anyOf: [{ type: "object", properties: { a: { type: "string" } } }, { not: { type: "object" } }],
+    });
+    expect(toolInputObject(marked).description).toContain("root union has an untranslated non-object branch");
+  });
+
+  it("format on a node without type is carried in the description", () => {
+    const s = jsonSchemaToZod({ type: "object", properties: { when: { format: "date-time", description: "When" } } });
+    expect(shapeOf(s).when!.description).toBe("When (format: date-time)");
   });
 });
 

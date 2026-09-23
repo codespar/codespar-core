@@ -237,8 +237,6 @@ function compilePattern(pattern: string): RegExp | null {
 
 function stringSchema(schema: JsonSchema): z.ZodTypeAny {
   let s = z.string();
-  if (typeof schema.minLength === "number") s = s.min(schema.minLength);
-  if (typeof schema.maxLength === "number") s = s.max(schema.maxLength);
   let untranslatedPattern: string | null = null;
   if (typeof schema.pattern === "string") {
     const re = compilePattern(schema.pattern);
@@ -247,10 +245,21 @@ function stringSchema(schema: JsonSchema): z.ZodTypeAny {
     else untranslatedPattern = schema.pattern;
   }
   let out: z.ZodTypeAny = s;
-  // `format` is an annotation unless a validator opts in, and zod's format
-  // checks are stricter than JSON Schema's in places (case, quoted local
-  // parts, URIs that are not URLs): enforcing them would reject valid input.
-  if (typeof schema.format === "string") out = annotate(out, `(format: ${schema.format})`);
+  // JSON Schema counts code points; zod's .min()/.max() count UTF-16 units,
+  // which puts an emoji at length 2.
+  const min = typeof schema.minLength === "number" ? schema.minLength : undefined;
+  const max = typeof schema.maxLength === "number" ? schema.maxLength : undefined;
+  if (min !== undefined || max !== undefined) {
+    out = out.superRefine((v, issues) => {
+      const length = Array.from(v as string).length;
+      if (min !== undefined && length < min) {
+        issues.addIssue({ code: z.ZodIssueCode.custom, message: `must have at least ${min} characters` });
+      }
+      if (max !== undefined && length > max) {
+        issues.addIssue({ code: z.ZodIssueCode.custom, message: `must have at most ${max} characters` });
+      }
+    });
+  }
   if (untranslatedPattern !== null) out = markUntranslated(out, `pattern ${JSON.stringify(untranslatedPattern)}`);
   return out;
 }
@@ -349,20 +358,6 @@ function admitsUndefined(field: z.ZodTypeAny, seen = new Set<z.ZodTypeAny>()): b
   return false;
 }
 
-/** Whether a Zod tree reaches a lazy `$ref`: such a tree must not be parsed while converting. */
-function reachesLazy(field: z.ZodTypeAny, seen = new Set<z.ZodTypeAny>()): boolean {
-  if (seen.has(field)) return false;
-  seen.add(field);
-  if (field instanceof z.ZodLazy) return true;
-  const children: z.ZodTypeAny[] = [];
-  if (field instanceof z.ZodObject) children.push(...(Object.values(field.shape) as z.ZodTypeAny[]));
-  for (const v of Object.values(field._def as Record<string, unknown>)) {
-    if (v instanceof z.ZodType) children.push(v);
-    else if (Array.isArray(v)) children.push(...v.filter((x): x is z.ZodTypeAny => x instanceof z.ZodType));
-  }
-  return children.some((c) => reachesLazy(c, seen));
-}
-
 /**
  * `required` may name keys `properties` does not declare (the "one of these
  * must be present" idiom inside anyOf). Presence is the constraint.
@@ -401,7 +396,7 @@ function objectSchema(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
       field = field.refine((v) => v !== undefined, { message: "Required" });
       if (desc) field = field.describe(desc);
     }
-    shape[key] = isRequired || field instanceof z.ZodDefault ? field : field.optional();
+    shape[key] = isRequired || DEFAULTS.has(field) ? field : field.optional();
   }
   const base = z.object(shape);
   const extra = schema.additionalProperties;
@@ -435,15 +430,41 @@ function byType(type: string, schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
   }
 }
 
+/** A defaulted field's parts, so `allOf` can intersect two of them on their types. */
+const DEFAULTS = new WeakMap<z.ZodTypeAny, { inner: z.ZodTypeAny; value: unknown }>();
+
 /**
- * `default` is an annotation in JSON Schema. It becomes a Zod default only
- * when the field accepts it — checked only for a field that reaches no
- * `$ref`, since parsing one mid-conversion recurses; otherwise the field
- * stays optional and the description carries the value.
+ * `default` is an annotation in JSON Schema. The field becomes optional and
+ * the description carries the value; an omitted key is filled with it only
+ * when the field accepts it. That check runs on the first parse that needs
+ * it, and is remembered: during conversion a `$ref` may still be under
+ * construction, and parsing through it then recurses forever.
  */
 function applyDefault(field: z.ZodTypeAny, value: unknown): z.ZodTypeAny {
-  if (!reachesLazy(field) && field.safeParse(value).success) return field.default(value as never);
-  return annotate(field, `(default: ${JSON.stringify(value)})`);
+  const inner = annotate(field, `(default: ${JSON.stringify(value)})`);
+  let accepted: boolean | undefined;
+  let checking = false;
+  const copy = () => JSON.parse(JSON.stringify(value)) as unknown;
+  // The default goes into the output as written, not parsed again: a default
+  // that contains the same schema (an item that is `$ref: "#"`) would
+  // otherwise be filled with itself forever. While the acceptance check
+  // runs, nested omissions stay omitted for the same reason.
+  const defaulted = inner.optional().transform((parsed) => {
+    if (parsed !== undefined) return parsed;
+    if (accepted === undefined) {
+      if (checking) return undefined;
+      checking = true;
+      try {
+        accepted = inner.safeParse(copy()).success;
+      } finally {
+        checking = false;
+      }
+    }
+    return accepted ? copy() : undefined;
+  });
+  const described = inner.description ? defaulted.describe(inner.description) : defaulted;
+  DEFAULTS.set(described, { inner, value });
+  return described;
 }
 
 /** Convert any JSON Schema fragment to the Zod type that accepts the same values. */
@@ -463,6 +484,10 @@ export function convert(schema: JsonSchema, ctx: Ctx, opts: ConvertOptions = {})
     if (existing === undefined) field = field.describe(schema.description);
     else if (existing.startsWith("(")) field = field.describe(`${schema.description} ${existing}`);
   }
+  // `format` is advisory: zod's format checks are stricter than a JSON Schema
+  // validator's in places (case, quoted local parts, URNs), so enforcing them
+  // would reject valid input. It rides in the description, typed or not.
+  if (typeof schema.format === "string") field = annotate(field, `(format: ${schema.format})`);
   const unsupported = MARKED_KEYWORDS.filter((k) => schema[k] !== undefined);
   if (unsupported.length > 0) field = markUntranslated(field, unsupported.join(", "));
   if (schema.nullable === true) field = field.nullable();
@@ -487,9 +512,8 @@ function reference(ref: string, ctx: Ctx): z.ZodTypeAny {
 
 /** A field with its optionality and default lifted off, so two can be intersected on their types. */
 function lift(field: z.ZodTypeAny): { inner: z.ZodTypeAny; optional: boolean; default?: unknown } {
-  if (field instanceof z.ZodDefault) {
-    return { inner: field._def.innerType as z.ZodTypeAny, optional: true, default: field._def.defaultValue() };
-  }
+  const defaulted = DEFAULTS.get(field);
+  if (defaulted) return { inner: defaulted.inner, optional: true, default: defaulted.value };
   if (field instanceof z.ZodOptional) return { inner: field.unwrap(), optional: true };
   return { inner: field, optional: false };
 }
@@ -510,7 +534,7 @@ function intersectFields(fa: z.ZodTypeAny, fb: z.ZodTypeAny): z.ZodTypeAny {
   const defaults = [la, lb].filter((l) => "default" in l).map((l) => l.default);
   if (defaults.length === 0) return inner.optional();
   if (defaults.length === 1 || canonical(defaults[0]) === canonical(defaults[1])) {
-    return inner.default(defaults[0] as never);
+    return applyDefault(inner, defaults[0]);
   }
   return annotate(inner.optional(), `(defaults differ: ${defaults.map((d) => JSON.stringify(d)).join(", ")})`);
 }
@@ -689,7 +713,9 @@ function unwrapNeutral(field: z.ZodTypeAny, seen = new Set<z.ZodTypeAny>()): z.Z
   for (let i = 0; i < 16; i++) {
     if (seen.has(current)) return current;
     seen.add(current);
-    if (current instanceof z.ZodLazy) current = current.schema;
+    const defaulted = DEFAULTS.get(current);
+    if (defaulted) current = defaulted.inner;
+    else if (current instanceof z.ZodLazy) current = current.schema;
     else if (current instanceof z.ZodDefault) current = current._def.innerType;
     else if (current instanceof z.ZodNullable || current instanceof z.ZodOptional) current = current.unwrap();
     else return current;
@@ -720,7 +746,9 @@ function unionSurface(options: z.ZodTypeAny[]): { surface: AnyObject | null; non
     if (NON_OBJECT.has(option)) continue;
     const object = objectUnder(unwrapNeutral(option));
     if (object) objects.push(object);
-    else nonObjectBranch = true;
+    // A branch that only accepts non-objects is irrelevant to an object
+    // input; it is worth a mark only when it is itself untranslated.
+    else if (option.description?.includes(MARKER)) nonObjectBranch = true;
   }
   if (objects.length === 0) return { surface: null, nonObjectBranch };
   const fields = new Map<string, z.ZodTypeAny[]>();
@@ -762,7 +790,9 @@ export function jsonSchemaToZod(schema: JsonSchema): ToolInputSchema {
   const absorb = (candidate: AnyObject) => {
     object = object ? mergeShapes(object, candidate) : candidate;
   };
-  for (const part of flattenIntersection(converted)) {
+  const parts = flattenIntersection(converted);
+  const hasObject = parts.some((p) => objectUnder(p) !== null);
+  for (const part of parts) {
     const under = objectUnder(part);
     if (under) {
       absorb(under);
@@ -775,11 +805,11 @@ export function jsonSchemaToZod(schema: JsonSchema): ToolInputSchema {
       if (surface) {
         absorb(surface);
         rules.push(part);
-        if (nonObjectBranch) notes.add("root union has a non-object branch");
+        if (nonObjectBranch) notes.add("root union has an untranslated non-object branch");
         continue;
       }
     }
-    notes.add(object || flattenIntersection(converted).some((p) => objectUnder(p)) ? "root intersects a non-object schema" : "root schema is not an object");
+    notes.add(hasObject ? "root intersects a non-object schema" : "root schema is not an object");
   }
 
   let result: AnyObject = object ?? z.object({}).passthrough();

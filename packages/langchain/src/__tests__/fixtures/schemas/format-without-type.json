@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "when": {
+      "format": "date-time",
+      "description": "When"
+    }
+  }
+}
