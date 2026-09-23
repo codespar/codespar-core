@@ -669,7 +669,9 @@ logs
 // Both commands delegate to the agent directory's own npm scripts, so the
 // output — and the exit code — are the agent's. `agent run` in particular
 // must equal `npm start -- --input` in that directory (spec v5.1.1 §15).
-const agent = program.command("agent").description("Run an agent directory built on @codespar/agent-core");
+const agent = program
+  .command("agent")
+  .description("Run an agent directory: reads its agent.yaml (schema 1) and delegates to the directory's own npm start");
 
 agent
   .command("run <dir>")

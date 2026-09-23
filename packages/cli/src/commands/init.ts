@@ -106,7 +106,7 @@ export function loadKitTemplates(templatesRoot: string = resolveTemplatesDir()):
       slug,
       label: `${slug} ${entry.version}`,
       description: entry.description,
-      framework: `agent-starter-kits @ ${shortCommit}, @codespar/agent-core`,
+      framework: `agent-starter-kits @ ${shortCommit}, agent-core vendored`,
       kind: "kit",
       nextSteps: entry.next_steps,
     }));

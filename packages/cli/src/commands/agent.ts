@@ -2,11 +2,17 @@
  * `codespar agent run <dir>` and `codespar eval <dir>`: the CLI as the home
  * of the agent commands (agent-starter-kits, spec v5.1.1 §14.4–14.5).
  *
- * Neither command re-implements the runtime. An agent directory built on
- * `@codespar/agent-core` already carries its own entry (`npm start`) and its
- * own gates (`npm run check`, `npm run eval`); the CLI resolves the
- * directory's manifest, refuses what is not a `schema: 1` agent, and
- * delegates to those scripts with the same arguments. That is what makes
+ * Neither command re-implements the runtime. An agent directory carries its
+ * own entry (`npm start`) and its own gates (`npm run check`, `npm run
+ * eval`); the CLI resolves the directory's manifest, refuses what is not a
+ * `schema: 1` agent, and delegates to those scripts with the same arguments.
+ *
+ * NAO cite `@codespar/agent-core` no texto que o usuario le. O pacote nao
+ * esta publicado no npm: ele mora em `packages/agent-core` do repo
+ * `codespar/agent-starter-kits`, e `init --template` o VENDORIZA dentro do
+ * projeto gerado (#173). Mandar instalar um pacote que responde 404 e
+ * exatamente a falha que estas mensagens existem para evitar. O contrato e
+ * o `agent.yaml` mais o `npm start`, e e isso que elas dizem. That is what makes
  * `codespar agent run <dir> --input X` and `npm start -- --input X` the same
  * command: one process, one output.
  */
@@ -68,7 +74,7 @@ export function resolveAgentDir(input: string): ResolvedAgent {
   const manifestPath = join(dir, "agent.yaml");
   if (!existsSync(manifestPath)) {
     throw new CliError(
-      `${dir} has no agent.yaml. \`codespar agent run\` and \`codespar eval\` take an agent directory built on @codespar/agent-core (schema: 1).`,
+      `${dir} has no agent.yaml. \`codespar agent run\` and \`codespar eval\` take a directory that has an agent.yaml (schema: 1) and an \`npm start\`. \`codespar init --template bills-agent\` scaffolds one; the kits live in codespar/agent-starter-kits.`,
       { code: "agent_manifest_missing" },
     );
   }
@@ -112,7 +118,7 @@ export function resolveAgentDir(input: string): ResolvedAgent {
 function requireScript(agent: ResolvedAgent, script: string): void {
   if (!agent.scripts[script]) {
     throw new CliError(
-      `${agent.dir}/package.json has no \`${script}\` script. An agent directory delegates to \`npm run ${script}\`; add it, or run inside an agent built on @codespar/agent-core.`,
+      `${agent.dir}/package.json has no \`${script}\` script. An agent directory delegates to \`npm run ${script}\`; add the script, or point the command at a directory that has one (the kits in codespar/agent-starter-kits do).`,
       { code: "agent_script_missing" },
     );
   }
