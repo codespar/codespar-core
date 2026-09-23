@@ -8,7 +8,16 @@ import {
   verifyEd25519,
   type DecodedToken,
 } from "../mandate-codec.js";
-import { resolveDidKeys, type DidKey, type DidResolution } from "../did.js";
+import {
+  DidConfigError,
+  didWebParts,
+  parseBaseUrl,
+  parseIdentityHost,
+  resolveDidKeys,
+  type DidKey,
+  type DidResolution,
+  type DidSource,
+} from "../did.js";
 
 export interface MandateVerifyOptions {
   /** Raw 32-byte Ed25519 agent public key (hex). Presence forces offline mode. */
@@ -35,17 +44,15 @@ interface SigResult {
   status: SigStatus;
   /** The verificationMethod / key id that verified the signature (or was tried). */
   kid?: string;
-  /** Where the public key came from: "flag" | "did:web" | "fallback" | "resolver"; null when
-   *  nothing supplied one; "-" when no signature was present. */
-  source: string | null;
+  /** Where the public key came from; null when nothing supplied one. */
+  source: DidSource | "flag" | null;
   detail?: string;
 }
 
-/** did:web platform issuer DID derived from an agent DID's host segment. */
+/** did:web platform issuer DID: the agent DID's validated host segment, alone. */
 function platformIssuerDid(agentDid: string): string | null {
-  if (!agentDid.startsWith("did:web:")) return null;
-  const host = agentDid.slice("did:web:".length).split(":")[0];
-  return host ? `did:web:${host}` : null;
+  const parts = didWebParts(agentDid);
+  return parts ? `did:web:${parts.hostSegment}` : null;
 }
 
 /**
@@ -65,18 +72,14 @@ function announceSource(did: string, resolved: DidResolution): void {
   }
 }
 
-/** `--resolver` must be an absolute http(s) URL; anything else is a typo, not a resolver. */
-function parseResolverUrl(raw: string): string {
-  let u: URL;
+/** Turn a configuration error from the DID layer into a CliError naming the flag. */
+function cliConfig<T>(flag: string, fn: () => T): T {
   try {
-    u = new URL(raw);
-  } catch {
-    throw new CliError(`--resolver must be an absolute http(s) URL, got ${JSON.stringify(raw)}.`);
+    return fn();
+  } catch (err) {
+    if (err instanceof DidConfigError) throw new CliError(`${flag}: ${err.message}.`);
+    throw err;
   }
-  if (u.protocol !== "https:" && u.protocol !== "http:") {
-    throw new CliError(`--resolver must be an http(s) URL, got ${u.protocol}//.`);
-  }
-  return u.toString();
 }
 
 /** Try a signature against a set of candidate keys; first hit wins. */
@@ -136,11 +139,20 @@ export async function mandateVerifyCommand(
   const agentKid = t.kid ?? m.agent_kid ?? undefined;
   const agentDid = agentKid ? agentDidFromKid(agentKid) : undefined;
   const issuerDid = opts.issuerDid ?? (agentDid ? platformIssuerDid(agentDid) : null);
-  const resolverUrl = opts.resolver === undefined ? undefined : parseResolverUrl(opts.resolver);
+  // Validate every URL and host before any request, so a typo is a CliError
+  // and never a rejection inside the parallel resolution below.
+  const resolverUrl =
+    opts.resolver === undefined
+      ? undefined
+      : cliConfig("--resolver", () => parseBaseUrl(opts.resolver!, "--resolver").toString());
+  const didDomains = (opts.didDomains ?? []).map((h) =>
+    cliConfig("--did-domain", () => parseIdentityHost(h)),
+  );
+  if (!offline) cliConfig("--base-url", () => parseBaseUrl(opts.baseUrl, "--base-url"));
 
   // Network mode resolves both DIDs at once: sequentially, two unreachable
   // documents with a resolver and a fallback each are four timeouts in a row.
-  const resolveOpts = { baseUrl: opts.baseUrl, resolverUrl, didDomains: opts.didDomains };
+  const resolveOpts = { baseUrl: opts.baseUrl, resolverUrl, didDomains };
   const [agentResolved, issuerResolved] = offline
     ? [null, null]
     : await Promise.all([
@@ -151,7 +163,7 @@ export async function mandateVerifyCommand(
       ]);
 
   // ── Agent signature ──────────────────────────────────────────────
-  const agent: SigResult = { present: Boolean(t.agent_sig), status: "skipped", source: "-" };
+  const agent: SigResult = { present: Boolean(t.agent_sig), status: "skipped", source: null };
   if (t.agent_sig) {
     if (offline) {
       if (opts.agentPubkey) {
@@ -187,7 +199,7 @@ export async function mandateVerifyCommand(
   }
 
   // ── Issuer signature ─────────────────────────────────────────────
-  const issuer: SigResult = { present: Boolean(t.issuer_sig), status: "skipped", source: "-" };
+  const issuer: SigResult = { present: Boolean(t.issuer_sig), status: "skipped", source: null };
   if (t.issuer_sig) {
     if (offline) {
       if (opts.issuerPubkey) {
@@ -309,7 +321,7 @@ function sigLine(r: SigResult): string {
   if (!r.present) return c.gray("– absent (not in token)");
   const bits = [statusMark(r.status)];
   if (r.kid) bits.push(c.gray(`kid ${r.kid}`));
-  if (r.source && r.source !== "-") bits.push(c.gray(`via ${r.source}`));
+  if (r.source) bits.push(c.gray(`via ${r.source}`));
   if (r.detail) bits.push(c.gray(`(${r.detail})`));
   return bits.join("  ");
 }
@@ -319,7 +331,7 @@ function sigJson(r: SigResult): Record<string, unknown> {
     present: r.present,
     status: r.present ? r.status : "absent",
     kid: r.kid ?? null,
-    source: r.source === "-" ? null : (r.source ?? null),
+    source: r.source,
     detail: r.detail ?? null,
   };
 }

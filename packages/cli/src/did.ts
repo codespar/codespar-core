@@ -24,6 +24,18 @@
  * `mandate-codec.ts` so the offline verifier path stays pure and network-free.
  */
 
+/** The base URL the CLI ships pointed at, whose identity host is known. */
+export const DEFAULT_BASE_URL = "https://api.codespar.dev";
+const DEFAULT_IDENTITY_HOST = "id.codespar.dev";
+
+/** A configuration value this module cannot work with: a URL or host that is not one. */
+export class DidConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DidConfigError";
+  }
+}
+
 /** A raw Ed25519 key pulled from a DID document's verificationMethod. */
 export interface DidKey {
   /** The verificationMethod id (`<did>#<n>`). */
@@ -42,8 +54,10 @@ interface DidDocument {
   verificationMethod?: JsonWebKey2020[];
 }
 
-/** A did:web host segment after decoding: letters, digits, `.`/`-`, optional port. */
-const HOST_RE = /^[a-z0-9.-]+(:\d+)?$/;
+/** A host: a DNS name or a bracketed IPv6 literal. No port, no path. */
+const HOST_RE = /^([a-z0-9.-]+|\[[0-9a-f:.]+\])$/;
+/** A did:web host segment after decoding: a host with an optional port. */
+const AUTHORITY_RE = /^([a-z0-9.-]+|\[[0-9a-f:.]+\])(:\d+)?$/;
 
 function decodeSegment(segment: string): string | null {
   try {
@@ -53,40 +67,51 @@ function decodeSegment(segment: string): string | null {
   }
 }
 
-/**
- * The host of a `did:web` identifier: the first segment, percent-decoded,
- * lowercased, validated as a bare host (a decoded `/`, `@`, `?` or the like
- * is rejected — `did:web:evil.example%2F.trusted.example` names no host), and
- * returned without its port. Null for a non-did:web or malformed input.
- */
-export function didWebHost(did: string): string | null {
-  return didWebParts(did)?.host ?? null;
-}
-
-interface DidWebParts {
-  /** Host without port. */
+/** The validated parts of a `did:web` identifier. */
+export interface DidWebParts {
+  /** Host without port, lowercased (`[::1]` for an IPv6 literal). */
   host: string;
   /** Host with the decoded `%3A` port, for the URL. */
   authority: string;
+  /** The host segment exactly as written in the DID, for deriving sibling DIDs. */
+  hostSegment: string;
   path: string[];
 }
 
-function didWebParts(did: string): DidWebParts | null {
+/**
+ * Parse and validate a `did:web` identifier. The first segment must
+ * percent-decode to a host with an optional port (a decoded `/`, `@`, `?` or
+ * the like is rejected — `did:web:evil.example%2F.trusted.example` names no
+ * host); every path segment must decode to a non-empty name that is not `.`
+ * or `..` and carries no `/`, so no DID maps to a URL outside its own path.
+ * Null for a non-did:web or malformed input, including invalid
+ * percent-encoding.
+ */
+export function didWebParts(did: string): DidWebParts | null {
   if (!did.startsWith("did:web:")) return null;
   const rest = did.slice("did:web:".length);
   if (rest.length === 0) return null;
   const segments = rest.split(":");
-  const first = decodeSegment(segments[0]!);
+  const hostSegment = segments[0]!;
+  const first = decodeSegment(hostSegment);
   if (first === null) return null;
   const authority = first.toLowerCase();
-  if (!HOST_RE.test(authority)) return null;
+  if (!AUTHORITY_RE.test(authority)) return null;
   const path: string[] = [];
   for (const seg of segments.slice(1)) {
     const decoded = decodeSegment(seg);
-    if (decoded === null || decoded.length === 0 || decoded.includes("/")) return null;
+    if (decoded === null || decoded.length === 0 || decoded === "." || decoded === "..") {
+      return null;
+    }
+    if (decoded.includes("/")) return null;
     path.push(decoded);
   }
-  return { host: authority.replace(/:\d+$/, ""), authority, path };
+  return { host: authority.replace(/:\d+$/, ""), authority, hostSegment, path };
+}
+
+/** The host of a `did:web` identifier (see {@link didWebParts}); null when malformed. */
+export function didWebHost(did: string): string | null {
+  return didWebParts(did)?.host ?? null;
 }
 
 /**
@@ -94,9 +119,8 @@ function didWebParts(did: string): DidWebParts | null {
  *   did:web:id.codespar.dev            → https://id.codespar.dev/.well-known/did.json
  *   did:web:id.codespar.dev:org:agent  → https://id.codespar.dev/org/agent/did.json
  * Colon-separated path segments become URL path segments; a `%3A` in the domain
- * segment decodes to a port. Returns null for a non-did:web input, a malformed
- * percent-encoding, or a host segment that decodes to something other than a
- * host.
+ * segment decodes to a port. Returns null for a non-did:web or malformed input
+ * (see {@link didWebParts}).
  */
 export function didWebToUrl(did: string): string | null {
   const parts = didWebParts(did);
@@ -108,40 +132,71 @@ export function didWebToUrl(did: string): string | null {
 }
 
 /**
- * The `/v1/agents/<did>/did.json` route under a base URL. The base may carry
- * a path; a trailing `/v1` is not doubled (`https://x/v1` → `https://x/v1/agents/…`).
+ * Parse a base URL the way the rest of the CLI does: only its origin counts,
+ * a path on it is ignored. Throws {@link DidConfigError} when it is not an
+ * absolute http(s) URL.
  */
-export function apiFallbackUrl(did: string, baseUrl: string): string {
-  const u = new URL(baseUrl);
-  let path = u.pathname.replace(/\/+$/, "");
-  if (path.endsWith("/v1")) path = path.slice(0, -"/v1".length);
-  return `${u.origin}${path}/v1/agents/${encodeURIComponent(did)}/did.json`;
+export function parseBaseUrl(raw: string, what = "base URL"): URL {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    throw new DidConfigError(`${what} must be an absolute http(s) URL, got ${JSON.stringify(raw)}`);
+  }
+  if (u.protocol !== "https:" && u.protocol !== "http:") {
+    throw new DidConfigError(`${what} must be an http(s) URL, got ${u.protocol}//`);
+  }
+  return u;
 }
 
-/** The base URL the CLI ships pointed at, whose identity host is known. */
-export const DEFAULT_BASE_URL = "https://api.codespar.dev";
-const DEFAULT_IDENTITY_HOST = "id.codespar.dev";
+/**
+ * The `/v1/agents/<did>/did.json` route at a base URL's origin. A path on the
+ * base URL is ignored, as every other CLI request ignores it.
+ */
+export function apiFallbackUrl(did: string, baseUrl: string): string {
+  const origin = parseBaseUrl(baseUrl).origin;
+  return `${origin}/v1/agents/${encodeURIComponent(did)}/did.json`;
+}
+
+/**
+ * Normalise a configured identity host: a bare host or a URL, lowercased,
+ * without scheme, port, path or trailing slash. Throws {@link DidConfigError}
+ * when what remains is not a host.
+ */
+export function parseIdentityHost(raw: string): string {
+  let value = raw.trim().toLowerCase();
+  if (value.includes("://")) {
+    try {
+      value = new URL(value).hostname;
+    } catch {
+      throw new DidConfigError(`identity host must be a host or URL, got ${JSON.stringify(raw)}`);
+    }
+  } else {
+    value = value.replace(/\/.*$/, "");
+    if (!value.startsWith("[")) value = value.replace(/:\d+$/, "");
+    else value = value.replace(/\](:\d+)?$/, "]");
+  }
+  if (!HOST_RE.test(value)) {
+    throw new DidConfigError(`identity host must be a host or URL, got ${JSON.stringify(raw)}`);
+  }
+  return value;
+}
 
 /**
  * The hosts whose DID documents the API at `baseUrl` may serve: the API's own
  * host, exactly; `id.codespar.dev` only when the base URL is the shipped
- * default; and whatever the caller configured (`--did-domain`). Nothing is
- * derived from domain labels — with `https://runtime.com.br` that would make
- * every `did:web:*.com.br` the runtime's own.
+ * default; and whatever the caller configured (`--did-domain`, config
+ * `didDomains`). Nothing is derived from domain labels — with
+ * `https://runtime.com.br` that would make every `did:web:*.com.br` the
+ * runtime's own. Throws {@link DidConfigError} on a base URL or configured
+ * host it cannot parse.
  */
 export function identityHosts(baseUrl: string, configured: string[] = []): string[] {
   const hosts = new Set<string>();
-  try {
-    const host = new URL(baseUrl).hostname.toLowerCase();
-    if (host) hosts.add(host);
-    if (host === new URL(DEFAULT_BASE_URL).hostname) hosts.add(DEFAULT_IDENTITY_HOST);
-  } catch {
-    // An unparseable base URL answers for nothing.
-  }
-  for (const h of configured) {
-    const v = h.trim().toLowerCase();
-    if (v) hosts.add(v);
-  }
+  const host = parseBaseUrl(baseUrl).hostname.toLowerCase();
+  hosts.add(host);
+  if (host === new URL(DEFAULT_BASE_URL).hostname) hosts.add(DEFAULT_IDENTITY_HOST);
+  for (const h of configured) hosts.add(parseIdentityHost(h));
   return [...hosts];
 }
 
@@ -231,6 +286,14 @@ export interface DidResolution {
   tried: string[];
 }
 
+type Outcome = "unreachable" | "keyless";
+
+function describe(what: string, url: string, outcome: Outcome): string {
+  return outcome === "unreachable"
+    ? `${what} at ${url} could not be fetched`
+    : `${what} at ${url} answered a document with no Ed25519 key`;
+}
+
 /**
  * Resolve a `did:web` identifier to its Ed25519 public keys.
  *
@@ -240,6 +303,9 @@ export interface DidResolution {
  * fetched standard document without keys ends the resolution with no keys.
  * Keys matching `preferredKid` are ordered first so the caller can verify
  * against the exact signing key when the token names one.
+ *
+ * Throws {@link DidConfigError} before any request when `baseUrl`,
+ * `resolverUrl` or a configured identity host cannot be parsed.
  */
 export async function resolveDidKeys(
   did: string,
@@ -247,7 +313,10 @@ export async function resolveDidKeys(
 ): Promise<DidResolution> {
   const baseUrl = opts.baseUrl ?? DEFAULT_BASE_URL;
   const timeoutMs = opts.timeoutMs ?? 15_000;
+  const hosts = identityHosts(baseUrl, opts.didDomains);
+  if (opts.resolverUrl !== undefined) parseBaseUrl(opts.resolverUrl, "resolver URL");
   const tried: string[] = [];
+  const reasons: string[] = [];
 
   const ordered = (keys: DidKey[]): DidKey[] => {
     if (opts.preferredKid) {
@@ -263,51 +332,65 @@ export async function resolveDidKeys(
     detail: `${keys.length} Ed25519 key(s) from ${url}`,
     tried,
   });
-  const none = (detail: string): DidResolution => ({ keys: [], source: null, detail, tried });
-  const keysAt = async (url: string): Promise<DidKey[]> => {
+  const none = (extra?: string): DidResolution => ({
+    keys: [],
+    source: null,
+    detail: [...reasons, ...(extra ? [extra] : [])].join("; "),
+    tried,
+  });
+  const consult = async (
+    what: string,
+    url: string,
+  ): Promise<{ keys: DidKey[]; outcome: Outcome | "keys" }> => {
     tried.push(url);
     const fetched = await fetchDocument(url, timeoutMs);
-    return fetched.kind === "document" ? keysFromDocument(fetched.doc) : [];
+    if (fetched.kind === "absent") {
+      reasons.push(describe(what, url, "unreachable"));
+      return { keys: [], outcome: "unreachable" };
+    }
+    const keys = keysFromDocument(fetched.doc);
+    if (keys.length === 0) {
+      reasons.push(describe(what, url, "keyless"));
+      return { keys, outcome: "keyless" };
+    }
+    return { keys, outcome: "keys" };
   };
 
   const standard = didWebToUrl(did);
   if (!standard) {
-    if (!did.startsWith("did:web:")) return none(`${did} is not a did:web identifier`);
-    return none(`${did} is not a well-formed did:web identifier`);
-  }
-
-  tried.push(standard);
-  const fetched = await fetchDocument(standard, timeoutMs);
-  if (fetched.kind === "document") {
-    const keys = keysFromDocument(fetched.doc);
-    if (keys.length > 0) return found("did:web", keys, standard);
-    return none(
-      `the DID document at ${standard} carries no Ed25519 key — that is the domain's ` +
-        `answer, so no other source was consulted`,
+    reasons.push(
+      did.startsWith("did:web:")
+        ? `${did} is not a well-formed did:web identifier`
+        : `${did} is not a did:web identifier`,
     );
+    return none();
   }
 
-  if (opts.resolverUrl) {
+  const primary = await consult("the DID document", standard);
+  if (primary.outcome === "keys") return found("did:web", primary.keys, standard);
+  if (primary.outcome === "keyless") {
+    return none("that is the domain's answer, so no other source was consulted");
+  }
+
+  if (opts.resolverUrl !== undefined) {
     const url = apiFallbackUrl(did, opts.resolverUrl);
-    const keys = await keysAt(url);
-    if (keys.length > 0) return found("resolver", keys, url);
+    const viaResolver = await consult("the resolver", url);
+    if (viaResolver.outcome === "keys") return found("resolver", viaResolver.keys, url);
   }
 
   if (isOwnDid(did, baseUrl, opts.didDomains)) {
     const url = apiFallbackUrl(did, baseUrl);
-    const keys = await keysAt(url);
-    if (keys.length > 0) return found("fallback", keys, url);
-    return none(`none of ${tried.join(", ")} returned a document with an Ed25519 key`);
+    const viaApi = await consult("the API route", url);
+    if (viaApi.outcome === "keys") return found("fallback", viaApi.keys, url);
+    return none();
   }
 
   const host = didWebHost(did) ?? did;
-  const hosts = identityHosts(baseUrl, opts.didDomains).join(", ");
-  const resolverNote = opts.resolverUrl
-    ? `the resolver returned no document with an Ed25519 key; `
-    : `pass --resolver <url> to opt into a resolver; `;
   return none(
-    `the DID document at ${standard} could not be fetched; ${resolverNote}` +
-      `${host} is not one of this deployment's identity hosts (${hosts}), so the API was not ` +
-      `consulted for it (--did-domain <host> declares one)`,
+    `${host} is not one of this deployment's identity hosts (${hosts.join(", ")}), so the API ` +
+      `was not consulted for it` +
+      (opts.resolverUrl === undefined
+        ? ` (--resolver <url> opts into a resolver; --did-domain <host> declares an identity host)`
+        : ` (--did-domain <host> declares an identity host)`),
   );
 }

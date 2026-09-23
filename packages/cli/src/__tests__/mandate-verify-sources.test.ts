@@ -179,6 +179,32 @@ describe("codespar mandate verify — key sources in network mode", () => {
     expect(asked).toEqual([]);
   });
 
+  it("--did-domain must be a host or URL", async () => {
+    await expect(
+      mandateVerifyCommand(TOKEN, {
+        baseUrl: "https://api.codespar.dev",
+        didDomains: ["not a host"],
+        json: true,
+      }),
+    ).rejects.toThrow(/--did-domain: identity host must be a host or URL/);
+    expect(asked).toEqual([]);
+  });
+
+  it("--did-domain accepts a URL and normalises it to the host", async () => {
+    const base = "https://api.staging.codespar.dev";
+    answers = {
+      [AGENT_URL]: { status: 503 },
+      [apiFallbackUrl(AGENT_DID, base)]: { status: 200, body: AGENT_DOC },
+      [ISSUER_URL]: { status: 200, body: ISSUER_DOC },
+    };
+    await mandateVerifyCommand(TOKEN, {
+      baseUrl: base,
+      didDomains: ["https://ID.codespar.dev:8443/"],
+      json: true,
+    });
+    expect((JSON.parse(stdout) as Out).signatures.agent_sig.source).toBe("fallback");
+  });
+
   it("agent and issuer resolve in parallel", async () => {
     let inFlight = 0;
     let maxInFlight = 0;

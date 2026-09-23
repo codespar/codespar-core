@@ -11,14 +11,20 @@
   user could not see that it had. Now the domain named in the DID is the
   authority: the API's route is consulted only for a DID under one of the
   deployment's identity hosts — an explicit list: the API host itself,
-  `id.codespar.dev` when the API is the default one, and `--did-domain`
-  — and only when the standard document could not be fetched; a fetched
-  document without an Ed25519 key ends the resolution with an explicit
-  failure. The failure detail names the URL that did not answer and why
+  `id.codespar.dev` when the API is the default one, and the configured
+  `didDomains` / `--did-domain` — and only when the standard document
+  could not be fetched; a fetched document without an Ed25519 key ends the
+  resolution with an explicit failure. The failure detail says, per URL,
+  whether it could not be fetched or answered without a key, and why
   nothing else was tried. The agent and issuer DIDs resolve in parallel.
-- A did:web host segment that percent-decodes to something other than a
-  host (`%2F`, `%40`, …) or that is not valid percent-encoding is rejected
-  as a malformed DID instead of being mapped to a URL or crashing.
+- A did:web identifier is validated before it is mapped to a URL: a host
+  segment that percent-decodes to something other than a host (`%2F`,
+  `%40`, …), invalid percent-encoding, and a path segment that is empty,
+  `.` or `..` are malformed DIDs instead of URLs outside the DID's own
+  path or a crash. A bracketed IPv6 host with a port is accepted.
+- The DID route is built on the base URL's origin, as every other CLI
+  request is; a path on `--base-url` no longer changes which endpoint the
+  verify command hits.
 
 ### Added
 
@@ -28,10 +34,13 @@
   resolver, the CLI says so on stderr; the `source` column reads
   `resolver` (or `fallback` for the API's own route) instead of `did:web`,
   and is `null` when no source supplied a key. The flag must be an
-  absolute http(s) URL; a trailing `/v1` on it is not doubled.
-- `codespar mandate verify --did-domain <host>` (repeatable): declare an
-  identity host the API's DID route may answer for, e.g. `id.codespar.dev`
-  against a non-default API.
+  absolute http(s) URL; only its origin is used.
+- `codespar mandate verify --did-domain <host>` (repeatable), config
+  `didDomains` and `CODESPAR_DID_DOMAINS` (comma-separated): declare the
+  identity hosts the API's DID route may answer for, e.g.
+  `id.codespar.dev` against a staging or self-hosted API. A value may be a
+  bare host or a URL; it is normalised to the host, and anything that is
+  not a host is refused.
 
 ## 0.14.0 — 2026-09-23
 

@@ -24,6 +24,7 @@ import { chargeCommand } from "./commands/charge.js";
 import { spendCommand } from "./commands/spend.js";
 import { mandateCreateCommand } from "./commands/mandate.js";
 import { mandateVerifyCommand } from "./commands/mandate-verify.js";
+import { DEFAULT_BASE_URL } from "./did.js";
 import { mandateRevokeCommand } from "./commands/mandate-revoke.js";
 import { agentRunCommand, evalCommand } from "./commands/agent.js";
 import { walletCommand } from "./commands/wallet.js";
@@ -66,7 +67,7 @@ async function resolveAuth(): Promise<{ apiKey: string; baseUrl: string; project
   const root = program.opts<{ apiKey?: string; baseUrl?: string; project?: string }>();
   return {
     apiKey: root.apiKey ?? requireApiKey(config),
-    baseUrl: root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev",
+    baseUrl: root.baseUrl ?? config.baseUrl ?? DEFAULT_BASE_URL,
     project: root.project ?? config.project,
   };
 }
@@ -461,8 +462,8 @@ mandate
   )
   .option(
     "--did-domain <host>",
-    "Identity host the API's DID route may answer for (repeatable). Built in: the API host, " +
-      "plus id.codespar.dev for the default API.",
+    "Identity host the API's DID route may answer for (repeatable; adds to config didDomains / " +
+      "CODESPAR_DID_DOMAINS). Built in: the API host, plus id.codespar.dev for the default API.",
     collect,
     [],
   )
@@ -482,11 +483,11 @@ mandate
       // without requiring auth.
       const config = await loadConfig();
       const root = program.opts<{ baseUrl?: string }>();
-      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
+      const baseUrl = root.baseUrl ?? config.baseUrl ?? DEFAULT_BASE_URL;
       const { didDomain, ...rest } = opts;
       await mandateVerifyCommand(token, {
         ...rest,
-        didDomains: didDomain,
+        didDomains: [...(config.didDomains ?? []), ...didDomain],
         baseUrl,
         json: rootJsonFlag(),
       });

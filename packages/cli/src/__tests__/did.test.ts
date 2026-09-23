@@ -1,10 +1,13 @@
 import { describe, it, expect, afterEach } from "vitest";
 import {
+  DidConfigError,
   apiFallbackUrl,
   didWebHost,
+  didWebParts,
   didWebToUrl,
   identityHosts,
   isOwnDid,
+  parseIdentityHost,
   resolveDidKeys,
 } from "../did.js";
 
@@ -45,13 +48,30 @@ describe("did:web URL mapping", () => {
     expect(didWebToUrl("did:web:id.codespar.dev:org%ZZ:a1")).toBeNull();
   });
 
-  it("does not double a trailing /v1 on the base URL", () => {
+  it("uses only the base URL's origin, as every other CLI request does", () => {
     expect(apiFallbackUrl("did:web:id.codespar.dev", "https://resolver.example/v1")).toBe(
       "https://resolver.example/v1/agents/did%3Aweb%3Aid.codespar.dev/did.json",
     );
-    expect(apiFallbackUrl("did:web:id.codespar.dev", "https://resolver.example/base/")).toBe(
-      "https://resolver.example/base/v1/agents/did%3Aweb%3Aid.codespar.dev/did.json",
+    expect(apiFallbackUrl("did:web:id.codespar.dev", "https://x.example/api/")).toBe(
+      "https://x.example/v1/agents/did%3Aweb%3Aid.codespar.dev/did.json",
     );
+    expect(() => apiFallbackUrl("did:web:id.codespar.dev", "x.example")).toThrow(DidConfigError);
+    expect(() => apiFallbackUrl("did:web:id.codespar.dev", "ftp://x.example")).toThrow(DidConfigError);
+  });
+
+  it("rejects path segments that would leave the DID's own path", () => {
+    expect(didWebToUrl("did:web:id.codespar.dev:..:..:admin")).toBeNull();
+    expect(didWebToUrl("did:web:id.codespar.dev:.:a1")).toBeNull();
+    expect(didWebToUrl("did:web:id.codespar.dev:%2E%2E:a1")).toBeNull();
+    expect(didWebToUrl("did:web:id.codespar.dev::a1")).toBeNull();
+    expect(didWebToUrl("did:web:id.codespar.dev:a%2Fb")).toBeNull();
+  });
+
+  it("accepts a bracketed IPv6 host with an optional port", () => {
+    expect(didWebToUrl("did:web:%5B%3A%3A1%5D%3A8080")).toBe("https://[::1]:8080/.well-known/did.json");
+    expect(didWebToUrl("did:web:%5B%3A%3A1%5D:org:a1")).toBe("https://[::1]/org/a1/did.json");
+    expect(didWebHost("did:web:%5B%3A%3A1%5D%3A8080")).toBe("[::1]");
+    expect(didWebParts("did:web:%5B%3A%3A1%5D%3A8080")?.hostSegment).toBe("%5B%3A%3A1%5D%3A8080");
   });
 
   it("builds the api.codespar.dev fallback with the full DID url-encoded", () => {
@@ -81,14 +101,32 @@ describe("identity-host scoping", () => {
     expect(identityHosts("https://api.staging.codespar.dev")).toEqual(["api.staging.codespar.dev"]);
     expect(identityHosts("https://runtime.com.br")).toEqual(["runtime.com.br"]);
     expect(identityHosts("http://localhost:3000")).toEqual(["localhost"]);
-    expect(identityHosts("not a url")).toEqual([]);
+  });
+
+  it("identityHosts refuses a base URL it cannot parse instead of answering for nothing", () => {
+    expect(() => identityHosts("not a url")).toThrow(DidConfigError);
+    expect(() => identityHosts("api.codespar.dev")).toThrow(/absolute http\(s\) URL/);
+  });
+
+  it("parseIdentityHost accepts a bare host or a URL and normalises to the host", () => {
+    expect(parseIdentityHost(" ID.codespar.dev ")).toBe("id.codespar.dev");
+    expect(parseIdentityHost("localhost:3000")).toBe("localhost");
+    expect(parseIdentityHost("https://id.codespar.dev")).toBe("id.codespar.dev");
+    expect(parseIdentityHost("https://id.codespar.dev:8443/path")).toBe("id.codespar.dev");
+    expect(parseIdentityHost("id.codespar.dev/")).toBe("id.codespar.dev");
+    expect(parseIdentityHost("[::1]:8080")).toBe("[::1]");
+  });
+
+  it("parseIdentityHost refuses what is not a host", () => {
+    for (const bad of ["", "   ", "id codespar dev", "id.codespar.dev%2F", "user@id.codespar.dev", "://x"]) {
+      expect(() => parseIdentityHost(bad), bad).toThrow(DidConfigError);
+    }
   });
 
   it("identityHosts adds the configured hosts, normalised", () => {
-    expect(identityHosts("https://api.staging.codespar.dev", [" ID.codespar.dev ", ""])).toEqual([
-      "api.staging.codespar.dev",
-      "id.codespar.dev",
-    ]);
+    expect(
+      identityHosts("https://api.staging.codespar.dev", [" ID.codespar.dev ", "https://id.other.example:8443/"]),
+    ).toEqual(["api.staging.codespar.dev", "id.codespar.dev", "id.other.example"]);
   });
 
   it("isOwnDid: equal to an identity host or under it at a label boundary", () => {
@@ -252,7 +290,10 @@ describe("resolveDidKeys", () => {
     const r = await resolveDidKeys(OWN_DID, { baseUrl: BASE });
     expect(r.keys).toEqual([]);
     expect(stub.asked).toEqual([STANDARD_OWN]);
-    expect(r.detail).toContain("carries no Ed25519 key");
+    expect(r.detail).toBe(
+      `the DID document at ${STANDARD_OWN} answered a document with no Ed25519 key; ` +
+        "that is the domain's answer, so no other source was consulted",
+    );
   });
 
   it("an explicit resolver is used for a third-party DID whose document is unreachable, and reported as the source", async () => {
@@ -291,7 +332,44 @@ describe("resolveDidKeys", () => {
     const r = await resolveDidKeys(THIRD_DID, { baseUrl: BASE, resolverUrl: resolver });
     expect(r.keys).toEqual([]);
     expect(r.tried).toEqual([STANDARD_THIRD, apiFallbackUrl(THIRD_DID, resolver)]);
-    expect(r.detail).toContain("the resolver returned no document with an Ed25519 key");
+    expect(r.detail).toContain(
+      `the resolver at ${apiFallbackUrl(THIRD_DID, resolver)} could not be fetched`,
+    );
+    expect(r.detail).not.toContain("--resolver <url>");
+  });
+
+  it("the failure detail tells 'could not be fetched' from 'answered without a key', per URL", async () => {
+    const resolver = "https://resolver.example";
+    const viaResolver = apiFallbackUrl(OWN_DID, resolver);
+    const fallback = apiFallbackUrl(OWN_DID, BASE);
+    const stub = stubFetch({
+      [STANDARD_OWN]: { status: 503 },
+      [viaResolver]: { status: 200, body: { id: OWN_DID, verificationMethod: [] } },
+      [fallback]: { status: 404 },
+    });
+    restore = stub.restore;
+    const r = await resolveDidKeys(OWN_DID, { baseUrl: BASE, resolverUrl: resolver });
+    expect(r.keys).toEqual([]);
+    expect(r.detail).toBe(
+      `the DID document at ${STANDARD_OWN} could not be fetched; ` +
+        `the resolver at ${viaResolver} answered a document with no Ed25519 key; ` +
+        `the API route at ${fallback} could not be fetched`,
+    );
+  });
+
+  it("refuses an unparseable resolver URL or base URL before any request, with a typed error", async () => {
+    const stub = stubFetch({ [STANDARD_OWN]: { status: 200, body: didDocument(OWN_DID) } });
+    restore = stub.restore;
+    await expect(
+      resolveDidKeys(OWN_DID, { baseUrl: BASE, resolverUrl: "resolver.example" }),
+    ).rejects.toBeInstanceOf(DidConfigError);
+    await expect(resolveDidKeys(OWN_DID, { baseUrl: "api.codespar.dev" })).rejects.toBeInstanceOf(
+      DidConfigError,
+    );
+    await expect(
+      resolveDidKeys(OWN_DID, { baseUrl: BASE, didDomains: ["not a host"] }),
+    ).rejects.toBeInstanceOf(DidConfigError);
+    expect(stub.asked).toEqual([]);
   });
 
   it("an explicit resolver does not pre-empt a standard document that answers", async () => {

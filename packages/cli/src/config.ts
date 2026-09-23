@@ -1,11 +1,13 @@
 import { readFile, writeFile, mkdir, chmod } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { DEFAULT_BASE_URL } from "./did.js";
 
 /**
  * CLI config resolution order (first match wins):
  *   1. Command-line flags (`--api-key`, `--project`, `--base-url`) handled by each command
- *   2. Environment variables (`CODESPAR_API_KEY`, `CODESPAR_PROJECT`, `CODESPAR_BASE_URL`)
+ *   2. Environment variables (`CODESPAR_API_KEY`, `CODESPAR_PROJECT`, `CODESPAR_BASE_URL`,
+ *      `CODESPAR_DID_DOMAINS`)
  *   3. Config file at `~/.codespar/config.json`
  *
  * Writes go through `saveConfig()` which chmods the file to 0600 to keep
@@ -15,6 +17,23 @@ export interface CliConfig {
   apiKey?: string;
   project?: string;
   baseUrl?: string;
+  /**
+   * Identity hosts the API's DID route may answer for in `mandate verify`
+   * (`CODESPAR_DID_DOMAINS`, comma-separated; or `didDomains` in the file).
+   * Set once for a staging or self-hosted API instead of `--did-domain` on
+   * every call.
+   */
+  didDomains?: string[];
+}
+
+/** Split a comma-separated env value into trimmed, non-empty entries. */
+export function parseDidDomains(raw: string | undefined): string[] | undefined {
+  if (!raw) return undefined;
+  const list = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return list.length > 0 ? list : undefined;
 }
 
 const CONFIG_DIR = join(homedir(), ".codespar");
@@ -29,6 +48,7 @@ export async function loadConfig(): Promise<CliConfig> {
     apiKey: process.env.CODESPAR_API_KEY || undefined,
     project: process.env.CODESPAR_PROJECT || undefined,
     baseUrl: process.env.CODESPAR_BASE_URL || undefined,
+    didDomains: parseDidDomains(process.env.CODESPAR_DID_DOMAINS),
   };
 
   let fromFile: CliConfig = {};
@@ -43,7 +63,12 @@ export async function loadConfig(): Promise<CliConfig> {
   return {
     apiKey: fromEnv.apiKey ?? fromFile.apiKey,
     project: fromEnv.project ?? fromFile.project,
-    baseUrl: fromEnv.baseUrl ?? fromFile.baseUrl ?? "https://api.codespar.dev",
+    baseUrl: fromEnv.baseUrl ?? fromFile.baseUrl ?? DEFAULT_BASE_URL,
+    didDomains:
+      fromEnv.didDomains ??
+      (Array.isArray(fromFile.didDomains)
+        ? fromFile.didDomains.filter((h): h is string => typeof h === "string")
+        : undefined),
   };
 }
 
