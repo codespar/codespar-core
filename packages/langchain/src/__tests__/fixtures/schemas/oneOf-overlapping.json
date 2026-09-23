@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

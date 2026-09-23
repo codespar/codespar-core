@@ -1,0 +1,7 @@
+{
+  "type": "object",
+  "properties": {
+    "forbidden": false,
+    "anything": true
+  }
+}

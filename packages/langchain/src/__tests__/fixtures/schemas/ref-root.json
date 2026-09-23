@@ -1,0 +1,16 @@
+{
+  "$ref": "#/definitions/Input",
+  "definitions": {
+    "Input": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "amount"
+      ]
+    }
+  }
+}

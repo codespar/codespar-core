@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        }
+      ]
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

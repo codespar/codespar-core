@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "array",
+      "items": false
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

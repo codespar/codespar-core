@@ -1,0 +1,603 @@
+{
+  "source": "codespar/mcp-dev-latam @codespar/mcp-nuvem-fiscal (MIT)",
+  "tools": [
+    {
+      "name": "mcp-nuvem-fiscal",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "ambiente": {
+            "type": "number",
+            "enum": [
+              1,
+              2
+            ],
+            "description": "1=Produção, 2=Homologação"
+          },
+          "natureza_operacao": {
+            "type": "string",
+            "description": "Nature of the operation (e.g. 'Venda de mercadoria')"
+          },
+          "emitente": {
+            "type": "object",
+            "description": "Issuer data (CNPJ, IE, address, etc.)"
+          },
+          "destinatario": {
+            "type": "object",
+            "description": "Recipient data (CPF/CNPJ, address, etc.)"
+          },
+          "itens": {
+            "type": "array",
+            "description": "Array of items (product, quantity, value, taxes)"
+          },
+          "pagamento": {
+            "type": "object",
+            "description": "Payment information"
+          }
+        },
+        "required": [
+          "ambiente",
+          "natureza_operacao",
+          "emitente",
+          "destinatario",
+          "itens",
+          "pagamento"
+        ]
+      }
+    },
+    {
+      "name": "get_nfe",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "NF-e ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "cancel_nfe",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "NF-e ID"
+          },
+          "justificativa": {
+            "type": "string",
+            "description": "Cancellation reason (min 15 chars)"
+          }
+        },
+        "required": [
+          "id",
+          "justificativa"
+        ]
+      }
+    },
+    {
+      "name": "create_nfse",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "ambiente": {
+            "type": "number",
+            "enum": [
+              1,
+              2
+            ],
+            "description": "1=Produção, 2=Homologação"
+          },
+          "prestador": {
+            "type": "object",
+            "description": "Service provider data (CNPJ, IM, address)"
+          },
+          "tomador": {
+            "type": "object",
+            "description": "Service taker data (CPF/CNPJ, address)"
+          },
+          "servico": {
+            "type": "object",
+            "description": "Service details (code, description, value, taxes)"
+          }
+        },
+        "required": [
+          "ambiente",
+          "prestador",
+          "tomador",
+          "servico"
+        ]
+      }
+    },
+    {
+      "name": "get_nfse",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "NFS-e ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "cancel_nfse",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "NFS-e ID"
+          },
+          "justificativa": {
+            "type": "string",
+            "description": "Cancellation reason"
+          }
+        },
+        "required": [
+          "id",
+          "justificativa"
+        ]
+      }
+    },
+    {
+      "name": "create_nfce",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "ambiente": {
+            "type": "number",
+            "enum": [
+              1,
+              2
+            ],
+            "description": "1=Produção, 2=Homologação"
+          },
+          "emitente": {
+            "type": "object",
+            "description": "Issuer data (CNPJ, IE, address)"
+          },
+          "itens": {
+            "type": "array",
+            "description": "Array of items (product, quantity, value, taxes)"
+          },
+          "pagamento": {
+            "type": "object",
+            "description": "Payment information"
+          }
+        },
+        "required": [
+          "ambiente",
+          "emitente",
+          "itens",
+          "pagamento"
+        ]
+      }
+    },
+    {
+      "name": "consult_cnpj",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "description": "CNPJ number (14 digits, numbers only)"
+          }
+        },
+        "required": [
+          "cnpj"
+        ]
+      }
+    },
+    {
+      "name": "consult_cep",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "cep": {
+            "type": "string",
+            "description": "CEP number (8 digits, numbers only)"
+          }
+        },
+        "required": [
+          "cep"
+        ]
+      }
+    },
+    {
+      "name": "register_company",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "cpf_cnpj": {
+            "type": "string",
+            "description": "CPF or CNPJ of the company"
+          },
+          "nome_razao_social": {
+            "type": "string",
+            "description": "Company legal name"
+          },
+          "nome_fantasia": {
+            "type": "string",
+            "description": "Trade name"
+          },
+          "inscricao_estadual": {
+            "type": "string",
+            "description": "State registration (IE)"
+          },
+          "inscricao_municipal": {
+            "type": "string",
+            "description": "Municipal registration (IM)"
+          },
+          "endereco": {
+            "type": "object",
+            "description": "Address data (logradouro, numero, bairro, cidade, uf, cep)"
+          }
+        },
+        "required": [
+          "cpf_cnpj",
+          "nome_razao_social"
+        ]
+      }
+    },
+    {
+      "name": "create_cte",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "ambiente": {
+            "type": "number",
+            "enum": [
+              1,
+              2
+            ],
+            "description": "1=Produção, 2=Homologação"
+          },
+          "tipo": {
+            "type": "number",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "description": "0=Normal, 1=Complementar, 2=Anulação, 3=Substituto"
+          },
+          "emitente": {
+            "type": "object",
+            "description": "Issuer data (CNPJ, IE, address)"
+          },
+          "remetente": {
+            "type": "object",
+            "description": "Sender data (CPF/CNPJ, address)"
+          },
+          "destinatario": {
+            "type": "object",
+            "description": "Recipient data (CPF/CNPJ, address)"
+          },
+          "valores": {
+            "type": "object",
+            "description": "Service values (total, receive, taxes)"
+          },
+          "modal": {
+            "type": "string",
+            "enum": [
+              "rodoviario",
+              "aereo",
+              "aquaviario",
+              "ferroviario",
+              "dutoviario"
+            ],
+            "description": "Transport mode"
+          }
+        },
+        "required": [
+          "ambiente",
+          "emitente",
+          "remetente",
+          "destinatario",
+          "valores"
+        ]
+      }
+    },
+    {
+      "name": "get_cte",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "CT-e ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "cancel_cte",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "CT-e ID"
+          },
+          "justificativa": {
+            "type": "string",
+            "description": "Cancellation reason (min 15 chars)"
+          }
+        },
+        "required": [
+          "id",
+          "justificativa"
+        ]
+      }
+    },
+    {
+      "name": "create_mdfe",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "ambiente": {
+            "type": "number",
+            "enum": [
+              1,
+              2
+            ],
+            "description": "1=Produção, 2=Homologação"
+          },
+          "emitente": {
+            "type": "object",
+            "description": "Issuer data (CNPJ, IE, address)"
+          },
+          "modal": {
+            "type": "string",
+            "enum": [
+              "rodoviario",
+              "aereo",
+              "aquaviario",
+              "ferroviario"
+            ],
+            "description": "Transport mode"
+          },
+          "documentos": {
+            "type": "array",
+            "description": "Array of linked documents (NF-e/CT-e keys)"
+          },
+          "percurso": {
+            "type": "array",
+            "description": "Route UFs (array of state codes)"
+          },
+          "veiculos": {
+            "type": "object",
+            "description": "Vehicle data (plate, RNTRC, etc.)"
+          }
+        },
+        "required": [
+          "ambiente",
+          "emitente",
+          "modal",
+          "documentos"
+        ]
+      }
+    },
+    {
+      "name": "get_nfe_events",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "NF-e ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "cancel_nfce",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "NFC-e ID"
+          },
+          "justificativa": {
+            "type": "string",
+            "description": "Cancellation reason (min 15 chars)"
+          }
+        },
+        "required": [
+          "id",
+          "justificativa"
+        ]
+      }
+    },
+    {
+      "name": "send_correction_letter_nfe",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "NF-e ID"
+          },
+          "correcao": {
+            "type": "string",
+            "description": "Correction text (min 15 chars, max 1000)"
+          },
+          "sequencia": {
+            "type": "number",
+            "description": "Sequence number (1-20), defaults to 1"
+          }
+        },
+        "required": [
+          "id",
+          "correcao"
+        ]
+      }
+    },
+    {
+      "name": "send_correction_letter_cte",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "CT-e ID"
+          },
+          "correcoes": {
+            "type": "array",
+            "description": "Array of corrections (grupoAlterado, campoAlterado, valorAlterado, nroItemAlterado)"
+          },
+          "sequencia": {
+            "type": "number",
+            "description": "Sequence number (1-20), defaults to 1"
+          }
+        },
+        "required": [
+          "id",
+          "correcoes"
+        ]
+      }
+    },
+    {
+      "name": "get_nfe_batch",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Batch (lote) ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "get_mdfe",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "MDF-e ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "cancel_mdfe",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "MDF-e ID"
+          },
+          "justificativa": {
+            "type": "string",
+            "description": "Cancellation reason (min 15 chars)"
+          }
+        },
+        "required": [
+          "id",
+          "justificativa"
+        ]
+      }
+    },
+    {
+      "name": "close_mdfe",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "MDF-e ID"
+          },
+          "uf": {
+            "type": "string",
+            "description": "UF code where manifesto is being closed (e.g. 'SP')"
+          },
+          "municipio": {
+            "type": "string",
+            "description": "IBGE code of closing municipality"
+          },
+          "dataEncerramento": {
+            "type": "string",
+            "description": "Closing date (ISO 8601)"
+          }
+        },
+        "required": [
+          "id",
+          "uf",
+          "municipio"
+        ]
+      }
+    },
+    {
+      "name": "list_empresas",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "top": {
+            "type": "number",
+            "description": "Maximum number of records to return"
+          },
+          "skip": {
+            "type": "number",
+            "description": "Number of records to skip (pagination)"
+          },
+          "cpf_cnpj": {
+            "type": "string",
+            "description": "Filter by CPF or CNPJ"
+          }
+        }
+      }
+    },
+    {
+      "name": "upload_certificate",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "cpf_cnpj": {
+            "type": "string",
+            "description": "Company CPF or CNPJ (identifier)"
+          },
+          "certificado": {
+            "type": "string",
+            "description": "Certificate .pfx file encoded as base64"
+          },
+          "senha": {
+            "type": "string",
+            "description": "Certificate password"
+          }
+        },
+        "required": [
+          "cpf_cnpj",
+          "certificado",
+          "senha"
+        ]
+      }
+    }
+  ]
+}

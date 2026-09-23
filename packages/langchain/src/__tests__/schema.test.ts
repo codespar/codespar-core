@@ -13,9 +13,15 @@ import {
   WALLET_DEFINITION,
 } from "@codespar/types";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
+  MARKED_KEYWORDS,
   jsonSchemaToZod,
   jsonSchemaToZodType,
+  renderKeywordTable,
+  toolInputObject,
   toolInputShape,
   type JsonSchema,
   type ToolInputSchema,
@@ -96,7 +102,9 @@ describe("jsonSchemaToZod — each construct", () => {
 
   it("anyOf / oneOf → union; a null branch → nullable", () => {
     const amount = objectWith({ oneOf: [{ type: "number" }, { type: "string" }] });
-    expect(amount.shape.v).toBeInstanceOf(z.ZodUnion);
+    // oneOf carries its exactly-one rule over the union.
+    expect(amount.shape.v).toBeInstanceOf(z.ZodEffects);
+    expect((amount.shape.v as z.ZodEffects<z.ZodTypeAny>).innerType()).toBeInstanceOf(z.ZodUnion);
     expect(ok(amount, { v: 150 })).toBe(true);
     expect(ok(amount, { v: "150.00" })).toBe(true);
     expect(ok(amount, { v: true })).toBe(false);
@@ -139,7 +147,8 @@ describe("jsonSchemaToZod — each construct", () => {
     expect(ok(s, { node: { value: 1, next: { value: 2 } } })).toBe(true);
     expect(ok(s, { node: { value: 1, next: { value: "2" } } })).toBe(false);
     expect(ok(s, { node: { value: 1 }, addr: "a@b.co" })).toBe(true);
-    expect(ok(s, { node: { value: 1 }, addr: "nope" })).toBe(false);
+    // `format` is advisory: carried in the description, not enforced.
+    expect(ok(s, { node: { value: 1 }, addr: "nope" })).toBe(true);
   });
 
   it("nullable and type: [..., 'null'] → nullable", () => {
@@ -169,14 +178,20 @@ describe("jsonSchemaToZod — each construct", () => {
     expect(ok(s, { v: "a" })).toBe(false);
     expect(ok(s, { v: "abcde" })).toBe(false);
     expect(ok(s, { v: "AB" })).toBe(false);
-    expect(ok(objectWith({ type: "string", format: "email" }), { v: "x@y.co" })).toBe(true);
-    expect(ok(objectWith({ type: "string", format: "email" }), { v: "x" })).toBe(false);
-    expect(ok(objectWith({ type: "string", format: "uri" }), { v: "https://x.example/p" })).toBe(true);
-    expect(ok(objectWith({ type: "string", format: "uri" }), { v: "x" })).toBe(false);
-    expect(ok(objectWith({ type: "string", format: "date-time" }), { v: "2026-09-23T12:00:00-03:00" })).toBe(true);
-    expect(ok(objectWith({ type: "string", format: "date-time" }), { v: "yesterday" })).toBe(false);
-    expect(ok(objectWith({ type: "string", format: "date" }), { v: "2026-09-23" })).toBe(true);
-    expect(ok(objectWith({ type: "string", format: "uuid" }), { v: "not-a-uuid" })).toBe(false);
+    // `format` is advisory: JSON Schema treats it as an annotation, and zod's
+    // checks are stricter than a JSON Schema validator's in places (a
+    // lowercase "t" in a date-time, a quoted e-mail local part, a URN).
+    for (const [format, lenient] of [
+      ["email", '"a b"@x.co'],
+      ["date-time", "2026-09-23t12:00:00z"],
+      ["uri", "urn:isbn:0451450523"],
+      ["uuid", "not-a-uuid"],
+    ] as const) {
+      const f = objectWith({ type: "string", format });
+      expect(ok(f, { v: lenient }), format).toBe(true);
+      expect(ok(f, { v: 1 }), format).toBe(false);
+      expect(shapeOf(f).v!.description, format).toBe(`(format: ${format})`);
+    }
     // An advisory format is not a constraint.
     expect(ok(objectWith({ type: "string", format: "cpf" }), { v: "anything" })).toBe(true);
   });
@@ -409,7 +424,9 @@ describe("jsonSchemaToZod — review findings", () => {
       additionalProperties: false,
       allOf: [{ properties: { id: { type: "string", pattern: "^pay_" } } }],
     });
-    expect(s).toBeInstanceOf(z.ZodObject);
+    // The strict member is re-checked as a rule, judging only its own keys.
+    expect(s).toBeInstanceOf(z.ZodEffects);
+    expect(Object.keys(shapeOf(s))).toEqual(["id"]);
     expect(ok(s, { id: "pay_1" })).toBe(true);
     expect(ok(s, {})).toBe(false);
     expect(ok(s, { id: "x" })).toBe(false);
@@ -419,16 +436,18 @@ describe("jsonSchemaToZod — review findings", () => {
     expect(ok(clash, { a: 1 })).toBe(false);
     expect(ok(clash, { a: "1" })).toBe(false);
     expect(ok(clash, {})).toBe(true);
-    // Disjoint members: every key, each as declared.
+    // Disjoint members: every key. A member's additionalProperties judges the
+    // keys it does not declare — including the other member's keys.
     const disjoint = jsonSchemaToZod({
       allOf: [
         { properties: { a: { type: "number" } }, required: ["a"] },
-        { properties: { b: { type: "string" } }, additionalProperties: { type: "boolean" } },
+        { properties: { b: { type: "string" } }, additionalProperties: { type: ["boolean", "number"] } },
       ],
     });
     expect(Object.keys(shapeOf(disjoint))).toEqual(["a", "b"]);
     expect(ok(disjoint, { a: 1, extra: true })).toBe(true);
     expect(ok(disjoint, { a: 1, extra: "no" })).toBe(false);
+    expect(ok(disjoint, { a: 1, b: "s" })).toBe(true);
   });
 
   it("a root union of object branches shows every branch's keys and enforces the union", () => {
@@ -535,6 +554,133 @@ describe("jsonSchemaToZod — review findings", () => {
     expect(ok(s, { v: 5 })).toBe(true);
     const inclusive = objectWith({ type: "number", minimum: 0, exclusiveMinimum: false });
     expect(ok(inclusive, { v: 0 })).toBe(true);
+  });
+});
+
+describe("jsonSchemaToZod — differential findings", () => {
+  const LIST: JsonSchema = {
+    type: "object",
+    properties: { head: { $ref: "#/$defs/node" } },
+    required: ["head"],
+    $defs: {
+      node: {
+        type: "object",
+        properties: { value: { type: "number" }, next: { anyOf: [{ $ref: "#/$defs/node" }, { type: "null" }] } },
+        required: ["value", "next"],
+      },
+    },
+  };
+
+  it("a self-referencing definition behind anyOf and a $ref with a default convert and parse without recursing", () => {
+    const s = jsonSchemaToZod(LIST);
+    expect(ok(s, { head: { value: 1, next: { value: 2, next: null } } })).toBe(true);
+    expect(ok(s, { head: { value: 1, next: { value: "2", next: null } } })).toBe(false);
+    expect(ok(s, { head: { value: 1 } })).toBe(false);
+    const withDefault = jsonSchemaToZod({
+      type: "object",
+      properties: { node: { $ref: "#/$defs/node", default: { value: 1 } } },
+      $defs: { node: { type: "object", properties: { value: { type: "number" }, next: { $ref: "#/$defs/node" } }, required: ["value"] } },
+    });
+    // The default reaches a $ref, so it is not checked mid-conversion: it rides in the description.
+    expect(shapeOf(withDefault).node!.description).toBe('(default: {"value":1})');
+    expect(ok(withDefault, {})).toBe(true);
+    expect(ok(withDefault, { node: { value: "x" } })).toBe(false);
+  });
+
+  it("a key that is literal in every branch but not distinct is not a discriminator", () => {
+    const branches = [
+      { type: "object", properties: { version: { const: 1 }, kind: { const: "a" } }, required: ["version", "kind"] },
+      { type: "object", properties: { version: { const: 1 }, kind: { const: "b" } }, required: ["version", "kind"] },
+    ];
+    expect(() => jsonSchemaToZodType({ oneOf: branches })).not.toThrow();
+    expect(jsonSchemaToZodType({ oneOf: branches })).toBeInstanceOf(z.ZodDiscriminatedUnion);
+    const s = objectWith({ oneOf: branches });
+    expect(ok(s, { v: { version: 1, kind: "b" } })).toBe(true);
+    expect(ok(s, { v: { version: 2, kind: "b" } })).toBe(false);
+    const noDistinctKey = objectWith({
+      oneOf: [
+        { type: "object", properties: { version: { const: 1 }, a: { type: "number" } }, required: ["a"] },
+        { type: "object", properties: { version: { const: 1 }, b: { type: "number" } }, required: ["b"] },
+      ],
+    });
+    expect(ok(noDistinctKey, { v: { a: 1 } })).toBe(true);
+    // Both branches match: oneOf rejects.
+    expect(ok(noDistinctKey, { v: { a: 1, b: 2 } })).toBe(false);
+  });
+
+  it("prefixItems constrain the positions present; length and uniqueness always apply", () => {
+    const s = objectWith({
+      type: "array",
+      prefixItems: [{ type: "string" }, { type: "number" }, { type: "boolean" }],
+      maxItems: 2,
+      uniqueItems: true,
+    });
+    expect(ok(s, { v: [] })).toBe(true);
+    expect(ok(s, { v: ["a"] })).toBe(true);
+    expect(ok(s, { v: ["a", 1] })).toBe(true);
+    expect(ok(s, { v: [1] })).toBe(false);
+    expect(ok(s, { v: ["a", 1, true] })).toBe(false);
+    expect(ok(objectWith({ type: "array", prefixItems: [{ type: "number" }, { type: "number" }], uniqueItems: true }), { v: [1, 1] })).toBe(false);
+  });
+
+  it("a root union with an object and a non-object branch keeps the object's keys, marked for what it is", () => {
+    const s = jsonSchemaToZod({
+      anyOf: [{ type: "object", properties: { a: { type: "string" } }, required: ["a"] }, { type: "string" }],
+    });
+    expect(Object.keys(shapeOf(s))).toEqual(["a"]);
+    expect(toolInputObject(s).description).toBe("(schema construct not translated: root union has a non-object branch)");
+    expect(ok(s, { a: "x" })).toBe(true);
+    expect(ok(s, {})).toBe(false);
+  });
+
+  it("anyOf and oneOf on the same node both apply", () => {
+    const s = objectWith({ anyOf: [{ type: "number" }, { type: "string" }], oneOf: [{ type: "string" }, { type: "integer" }] });
+    expect(ok(s, { v: "x" })).toBe(true);
+    expect(ok(s, { v: 2 })).toBe(true);
+    expect(ok(s, { v: 1.5 })).toBe(false);
+    expect(ok(s, { v: true })).toBe(false);
+  });
+
+  it("properties without type constrain objects only; any other value passes", () => {
+    const s = objectWith({ properties: { a: { type: "string" } }, required: ["a"] });
+    for (const other of ["s", 1, null, [1], true]) expect(ok(s, { v: other }), JSON.stringify(other)).toBe(true);
+    expect(ok(s, { v: { a: "x" } })).toBe(true);
+    expect(ok(s, { v: {} })).toBe(false);
+    expect(ok(s, { v: { a: 1 } })).toBe(false);
+    expect(ok(s, {})).toBe(false);
+  });
+
+  it("each allOf member's additionalProperties judges only its own keys", () => {
+    const s = jsonSchemaToZod({
+      type: "object",
+      properties: { id: { type: "string" } },
+      additionalProperties: false,
+      allOf: [{ properties: { extra: { type: "string" } } }],
+    });
+    // JSON Schema: `extra` is not declared by the strict schema, so it is rejected.
+    expect(ok(s, { id: "x" })).toBe(true);
+    expect(ok(s, { id: "x", extra: "y" })).toBe(false);
+  });
+
+  it("boolean subschemas: false forbids the key, true allows anything", () => {
+    const s = jsonSchemaToZod({ type: "object", properties: { forbidden: false, anything: true } });
+    expect(ok(s, { anything: [1, "x"] })).toBe(true);
+    expect(ok(s, { forbidden: 1 })).toBe(false);
+  });
+});
+
+describe("the declared subset", () => {
+  it("the README table is rendered from the map the converter uses", () => {
+    const readme = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../README.md"), "utf8");
+    const table = /<!-- keyword-table:start -->\n([\s\S]*?)\n<!-- keyword-table:end -->/.exec(readme)?.[1];
+    expect(table).toBe(renderKeywordTable());
+  });
+
+  it("every marked keyword is marked where it appears", () => {
+    for (const keyword of MARKED_KEYWORDS) {
+      const s = objectWith({ type: "object", [keyword]: keyword === "dependentRequired" ? {} : { type: "string" } });
+      expect(shapeOf(s).v!.description ?? "", keyword).toContain(`schema construct not translated: ${keyword}`);
+    }
   });
 });
 

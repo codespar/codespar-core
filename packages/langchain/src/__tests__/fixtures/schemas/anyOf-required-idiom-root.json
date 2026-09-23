@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "properties": {
+    "pix_key": {
+      "type": "string"
+    },
+    "account": {
+      "type": "object"
+    },
+    "v": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "v"
+  ],
+  "anyOf": [
+    {
+      "required": [
+        "pix_key"
+      ]
+    },
+    {
+      "required": [
+        "account"
+      ]
+    }
+  ]
+}

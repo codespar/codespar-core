@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "integer",
+      "multipleOf": 5
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

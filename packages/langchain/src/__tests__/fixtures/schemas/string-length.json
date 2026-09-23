@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 4
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

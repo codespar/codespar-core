@@ -78,6 +78,10 @@ export async function handleToolCall(
 }
 
 export {
+  KEYWORD_SUPPORT,
+  MARKED_KEYWORDS,
+  renderKeywordTable,
+  type KeywordSupport,
   jsonSchemaToZod,
   jsonSchemaToZodType,
   toolInputObject,

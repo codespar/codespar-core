@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "object",
+      "properties": {
+        "a": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "a"
+      ],
+      "patternProperties": {
+        "^x": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

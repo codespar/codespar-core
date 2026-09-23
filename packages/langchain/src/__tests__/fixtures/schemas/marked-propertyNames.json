@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z]+$"
+      }
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

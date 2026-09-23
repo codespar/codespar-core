@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "properties": {
+    "method": {
+      "type": "string",
+      "enum": [
+        "card",
+        "pix"
+      ]
+    },
+    "card_token": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "method"
+  ],
+  "if": {
+    "properties": {
+      "method": {
+        "const": "card"
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "card_token"
+    ]
+  }
+}

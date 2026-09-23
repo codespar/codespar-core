@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "array",
+      "contains": {
+        "type": "number"
+      }
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

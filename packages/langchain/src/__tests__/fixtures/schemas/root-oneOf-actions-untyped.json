@@ -1,0 +1,34 @@
+{
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "pay"
+        },
+        "amount": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "action",
+        "amount"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "refund"
+        },
+        "payment_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "payment_id"
+      ]
+    }
+  ]
+}

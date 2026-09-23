@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "properties": {
+    "node": {
+      "$ref": "#/definitions/node"
+    }
+  },
+  "required": [
+    "node"
+  ],
+  "definitions": {
+    "node": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "next": {
+          "$ref": "#/definitions/node"
+        }
+      },
+      "required": [
+        "value"
+      ]
+    }
+  }
+}

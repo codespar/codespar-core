@@ -78,7 +78,43 @@
   nested required field is now rejected before the call, with a Zod
   error, instead of reaching the API. See the README.
 
+- `format` is advisory: carried in the description as `(format: …)`, not
+  enforced. zod's checks are stricter than a JSON Schema validator's in
+  places (a lowercase `t` in a date-time, a quoted e-mail local part, a
+  URN), so enforcing them rejected valid input.
+
 ### Added
 
 - `jsonSchemaToZodType(schema, root?)`: convert any fragment, not only an
   object root.
+- `KEYWORD_SUPPORT` (keyword → `translated` / `advisory` / `marked`),
+  `MARKED_KEYWORDS` and `renderKeywordTable()`: the declared subset, the
+  map the converter reads. The README's table is rendered from it and a
+  test keeps them equal.
+- A differential test holds the converter to a JSON Schema validator
+  (ajv, draft-07 and 2020-12, formats in "fast" mode) over three corpora:
+  the meta-tool input schemas, a fixture per supported keyword and edge
+  case, and 104 tool schemas from five MCP servers of the LATAM catalog.
+  For every generated input, Zod never rejects what ajv accepts, and
+  accepts what ajv rejects only when ajv without the advisory and marked
+  keywords accepts it too.
+
+### Fixed during review, found by the differential test
+
+- A self-referencing definition behind `anyOf` (a linked list's
+  `next: anyOf[$ref node, null]`), or a `$ref` with a `default`, recursed
+  until the stack overflowed: nothing is parsed while converting any more.
+  Whether a required field admits `undefined` is decided from the tree,
+  and a default on a field that reaches a `$ref` stays in the description.
+- A literal key shared by every `oneOf` branch but with a repeated value
+  (`version: 1` in both) made the conversion throw, taking every tool
+  with it; a discriminated union is used only when the values are
+  distinct. `oneOf` enforces "exactly one branch" otherwise.
+- `prefixItems` required every position; a shorter array is valid, and
+  `minItems`/`maxItems`/`uniqueItems` apply to tuples too.
+- `properties`/`required` without `type` rejected non-object values, which
+  JSON Schema accepts.
+- An `allOf` member's `additionalProperties` now judges only the keys that
+  member declares, as JSON Schema does. `false` / `true` subschemas are
+  honoured. Siblings of `$ref` apply. A root union with a non-object branch
+  keeps its object branches' keys and says what it is.

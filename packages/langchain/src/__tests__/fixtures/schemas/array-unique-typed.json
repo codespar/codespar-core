@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

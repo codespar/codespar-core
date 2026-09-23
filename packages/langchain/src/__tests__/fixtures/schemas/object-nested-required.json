@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "object",
+      "properties": {
+        "country": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "country"
+      ]
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

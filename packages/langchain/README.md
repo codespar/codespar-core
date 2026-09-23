@@ -37,6 +37,29 @@ const tools = await getTools(session);
 
 ## Schema fidelity
 
+### Declared subset
+
+What the converter does with each JSON Schema keyword. *translated*: the
+Zod schema accepts exactly what the keyword accepts. *advisory*: an
+annotation, carried in the description and not enforced (JSON Schema
+treats these as annotations too). *marked*: not expressed; the field's
+description says `(schema construct not translated: …)` and the Zod schema
+may accept more than the keyword would, never less. A keyword outside the
+table is ignored, as a non-strict JSON Schema validator ignores it. The
+table is rendered from the same map the converter reads, and a test keeps
+them equal; a differential test against a JSON Schema validator (ajv)
+holds the converter to it.
+
+<!-- keyword-table:start -->
+| Support | Keywords |
+|---|---|
+| translated | `type`, `properties`, `required`, `additionalProperties`, `items`, `prefixItems`, `additionalItems`, `enum`, `const`, `anyOf`, `oneOf`, `allOf`, `$ref`, `$defs`, `definitions`, `nullable`, `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf`, `minLength`, `maxLength`, `pattern`, `minItems`, `maxItems`, `uniqueItems` |
+| advisory | `description`, `title`, `default`, `examples`, `format`, `$schema`, `$id`, `$anchor`, `$comment`, `readOnly`, `writeOnly`, `deprecated`, `contentMediaType`, `contentEncoding` |
+| marked | `not`, `if`, `then`, `else`, `patternProperties`, `propertyNames`, `dependentSchemas`, `dependentRequired`, `dependencies`, `contains`, `minContains`, `maxContains`, `minProperties`, `maxProperties`, `unevaluatedProperties`, `unevaluatedItems`, `$dynamicRef` |
+<!-- keyword-table:end -->
+
+### What this means for a LangChain user
+
 Each tool's `schema` is the Zod form of the `input_schema` the API
 declares, converted without changing its meaning: `enum` is a closed
 vocabulary, a nested object keeps its own `required`, `anyOf`/`oneOf` is
@@ -76,8 +99,12 @@ LangChain validates a tool call's arguments against `schema` before
   become `z.unknown()` (a required one still has to be present). The value
   is passed to the API as sent; the API validates the untranslated rule;
 - a `default` becomes a Zod default only when the field accepts it (a
-  `null` default on a string does not); otherwise the field stays optional
-  and the description carries the value.
+  `null` default on a string does not; a default on a field that reaches a
+  `$ref` is not checked); otherwise the field stays optional and the
+  description carries the value;
+- `format` is advisory: zod's format checks are stricter than a JSON Schema
+  validator's in places, so enforcing them would reject valid input. The
+  description carries `(format: …)`.
 
 ## Need more?
 

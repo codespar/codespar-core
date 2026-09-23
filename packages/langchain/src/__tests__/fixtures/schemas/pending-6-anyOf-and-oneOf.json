@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    }
+  },
+  "required": [
+    "v"
+  ]
+}
