@@ -1,4 +1,5 @@
 import { createInterface } from "node:readline/promises";
+import { DEFAULT_BASE_URL } from "../did.js";
 import { stdin as input, stdout as output } from "node:process";
 import { loadConfig, saveConfig, CliError } from "../config.js";
 import { ApiClient } from "../api.js";
@@ -73,7 +74,7 @@ export async function loginCommand(opts: LoginOptions): Promise<void> {
   // que `loadConfig()` ja faz. Lendo so a env, o `login` pulava o arquivo que
   // ELE MESMO grava: depois de `login --base-url <staging>`, um `login` seco
   // validava a chave contra producao.
-  const baseUrl = opts.baseUrl ?? (await loadConfig()).baseUrl ?? "https://api.codespar.dev";
+  const baseUrl = opts.baseUrl ?? (await loadConfig()).baseUrl ?? DEFAULT_BASE_URL;
 
   // Validate before saving so we don't persist a typo.
   const client = new ApiClient({ apiKey, baseUrl });

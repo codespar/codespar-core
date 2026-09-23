@@ -24,6 +24,7 @@ import { chargeCommand } from "./commands/charge.js";
 import { spendCommand } from "./commands/spend.js";
 import { mandateCreateCommand } from "./commands/mandate.js";
 import { mandateVerifyCommand } from "./commands/mandate-verify.js";
+import { DEFAULT_BASE_URL } from "./did.js";
 import { mandateRevokeCommand } from "./commands/mandate-revoke.js";
 import { agentRunCommand, evalCommand } from "./commands/agent.js";
 import { walletCommand } from "./commands/wallet.js";
@@ -66,7 +67,7 @@ async function resolveAuth(): Promise<{ apiKey: string; baseUrl: string; project
   const root = program.opts<{ apiKey?: string; baseUrl?: string; project?: string }>();
   return {
     apiKey: root.apiKey ?? requireApiKey(config),
-    baseUrl: root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev",
+    baseUrl: root.baseUrl ?? config.baseUrl ?? DEFAULT_BASE_URL,
     project: root.project ?? config.project,
   };
 }
@@ -454,17 +455,42 @@ mandate
     "--issuer-did <did>",
     "Issuer DID for network mode (default: did:web derived from the agent DID host)",
   )
+  .option(
+    "--resolver <url>",
+    "Network mode: resolver consulted for any DID whose did:web document is unreachable. " +
+      "Without it, only DIDs under the deployment's identity hosts fall back to the API.",
+  )
+  .option(
+    "--did-domain <host>",
+    "Identity host the API's DID route may answer for (repeatable; adds to config didDomains / " +
+      "CODESPAR_DID_DOMAINS). Built in: the API host, plus id.codespar.dev for the default API.",
+    collect,
+    [],
+  )
   .action(
     async (
       token: string,
-      opts: { agentPubkey?: string; issuerPubkey?: string; issuerDid?: string },
+      opts: {
+        agentPubkey?: string;
+        issuerPubkey?: string;
+        issuerDid?: string;
+        resolver?: string;
+        didDomain: string[];
+      },
     ) => {
-      // Offline verification needs no API key — resolve the base URL (for the
-      // network fallback) from flags/env/config without requiring auth.
+      // Offline verification needs no API key — resolve the base URL (whose
+      // DID route serves the deployment's identity hosts) from flags/env/config
+      // without requiring auth.
       const config = await loadConfig();
       const root = program.opts<{ baseUrl?: string }>();
-      const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";
-      await mandateVerifyCommand(token, { ...opts, baseUrl, json: rootJsonFlag() });
+      const baseUrl = root.baseUrl ?? config.baseUrl ?? DEFAULT_BASE_URL;
+      const { didDomain, ...rest } = opts;
+      await mandateVerifyCommand(token, {
+        ...rest,
+        didDomains: [...(config.didDomains ?? []), ...didDomain],
+        baseUrl,
+        json: rootJsonFlag(),
+      });
     },
   );
 

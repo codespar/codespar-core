@@ -1,5 +1,47 @@
 # @codespar/cli — changelog
 
+## 0.14.1 — 2026-09-23
+
+### Fixed
+
+- `codespar mandate verify` in network mode no longer consults the
+  configured API's DID route for a DID under another domain. The route was
+  tried for every DID whose standard did:web document was unreachable or
+  keyless, so the API could answer for an identity it does not own, and the
+  user could not see that it had. Now the domain named in the DID is the
+  authority: the API's route is consulted only for a DID under one of the
+  deployment's identity hosts — an explicit list: the API host itself,
+  `id.codespar.dev` when the API is the default one, and the configured
+  `didDomains` / `--did-domain` — and only when the standard document
+  could not be fetched; a fetched document without an Ed25519 key ends the
+  resolution with an explicit failure. The failure detail says, per URL,
+  whether it could not be fetched or answered without a key, and why
+  nothing else was tried. The agent and issuer DIDs resolve in parallel.
+- A did:web identifier is validated before it is mapped to a URL: a host
+  segment that percent-decodes to something other than a host (`%2F`,
+  `%40`, …), invalid percent-encoding, and a path segment that is empty,
+  `.` or `..` are malformed DIDs instead of URLs outside the DID's own
+  path or a crash. A bracketed IPv6 host with a port is accepted.
+- The DID route is built on the base URL's origin, as every other CLI
+  request is; a path on `--base-url` no longer changes which endpoint the
+  verify command hits.
+
+### Added
+
+- `codespar mandate verify --resolver <url>`: opt into a resolver for any
+  DID whose did:web document is unreachable. Additive: a miss there still
+  falls through to the identity-host rule. When a key came from the
+  resolver, the CLI says so on stderr; the `source` column reads
+  `resolver` (or `fallback` for the API's own route) instead of `did:web`,
+  and is `null` when no source supplied a key. The flag must be an
+  absolute http(s) URL; only its origin is used.
+- `codespar mandate verify --did-domain <host>` (repeatable), config
+  `didDomains` and `CODESPAR_DID_DOMAINS` (comma-separated): declare the
+  identity hosts the API's DID route may answer for, e.g.
+  `id.codespar.dev` against a staging or self-hosted API. A value may be a
+  bare host or a URL; it is normalised to the host, and anything that is
+  not a host is refused.
+
 ## 0.14.0 — 2026-09-23
 
 ### Added
