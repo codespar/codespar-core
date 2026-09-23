@@ -36,11 +36,34 @@
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
 import { tools as getSessionTools } from "@codespar/sdk";
 
-/** Claude tool definition (matches Anthropic.Tool from @anthropic-ai/sdk). */
+/**
+ * Claude tool definition, estruturalmente atribuivel a `Anthropic.Tool`.
+ *
+ * ⚠️ `type: "object"` E O PONTO, e ele faltava. O `input_schema` da Anthropic e
+ * `{ type: "object"; properties?: unknown | null; required?: string[] | null;
+ * [k: string]: unknown }`, e este tipo declarava so `Record<string, unknown>`.
+ * O resultado: `ClaudeTool[]` nao era atribuivel a `ToolUnion[]`, entao passar
+ * a saida de `getTools()` direto para `claude.messages.create({ tools })` — que
+ * e o uso que o exemplo no topo deste arquivo mostra e que a doc publica —
+ * reprovava no `tsc`. Em runtime sempre funcionou.
+ *
+ * O indice de sobra (`[key: string]: unknown`) fica porque o JSON Schema que o
+ * servidor manda pode trazer `$schema`, `additionalProperties` e afins, e
+ * remove-los seria mentir sobre o que vai no fio.
+ *
+ * Nao importamos o tipo da Anthropic de proposito: este pacote nao depende de
+ * `@anthropic-ai/sdk`, e a compatibilidade aqui e ESTRUTURAL. O teste
+ * `atribuivel-ao-sdk-da-anthropic` fixa isso com uma copia da declaracao deles.
+ */
 export interface ClaudeTool {
   name: string;
   description: string;
-  input_schema: Record<string, unknown>;
+  input_schema: {
+    type: "object";
+    properties?: Record<string, unknown> | null;
+    required?: string[] | null;
+    [key: string]: unknown;
+  };
 }
 
 /**
@@ -57,7 +80,10 @@ export function toClaudeTool(tool: Tool): ClaudeTool {
   return {
     name: tool.name,
     description: tool.description,
-    input_schema: tool.input_schema,
+    // O espalhamento vem ANTES: assim `type` e GARANTIDO, nao afirmado. Um
+    // schema que ja diga `type: "object"` continua igual; um que nao diga passa
+    // a dizer, que e o que a Anthropic exige e o que ele sempre foi na pratica.
+    input_schema: { ...tool.input_schema, type: "object" },
   };
 }
 
@@ -68,9 +94,14 @@ export function toClaudeTool(tool: Tool): ClaudeTool {
  */
 export async function handleToolUse(
   session: Session,
-  toolUse: { name: string; input: Record<string, unknown> },
+  // ⚠️ `input` e `unknown`, e nao `Record<string, unknown>`, porque e assim que
+  // o `ToolUseBlock` da Anthropic o declara. Com o tipo estreito, passar o
+  // bloco direto — o uso que o exemplo no topo mostra — reprovava no `tsc`.
+  toolUse: { name: string; input?: unknown },
 ): Promise<ToolResult> {
-  return session.execute(toolUse.name, toolUse.input);
+  const input = toolUse.input;
+  const params = input !== null && typeof input === "object" ? (input as Record<string, unknown>) : {};
+  return session.execute(toolUse.name, params);
 }
 
 /**
