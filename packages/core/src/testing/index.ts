@@ -8,6 +8,12 @@ export type { ToolResult };
 export interface FakeSessionOptions {
   /** When true, unregistered tool names resolve to {success:true,data:{}} instead of throwing. */
   lenient?: boolean;
+  /** Quem a sessao representa. Default `"user_fake"`. */
+  userId?: string;
+  /** Os servidores que ela alcanca. Default `[]`. */
+  servers?: string[];
+  /** Quando ela nasceu. Default uma data fixa, para o teste ser deterministico. */
+  createdAt?: Date;
 }
 
 type FakeSessionResponse =
@@ -21,6 +27,11 @@ export function fakeSession(
   const session: Session = {
     id: "ses_fake",
     status: "active",
+    userId: options.userId ?? "user_fake",
+    servers: options.servers ?? [],
+    // Data FIXA, nao `new Date()`: mock com relogio faz teste que passa hoje e
+    // reprova amanha, e a snapshot de quem usa o kit muda sozinha.
+    createdAt: options.createdAt ?? new Date("2026-01-01T00:00:00.000Z"),
     mcp: { url: "https://example.invalid/mcp", headers: {} },
 
     async execute(toolName, params): Promise<ToolResult> {

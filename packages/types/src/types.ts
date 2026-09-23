@@ -45,6 +45,24 @@ export interface SessionBase {
 /* ── Codespar-specific session (extends base) ──────────────────── */
 
 export interface Session extends SessionBase {
+  /**
+   * Quem a sessao representa, o que ela alcanca, e quando nasceu.
+   *
+   * Os tres sao escritos sem condicao em `createSession` (session.ts), e
+   * estavam fora desta interface. A pagina `api/sdk/client` da doc chegava a
+   * DOCUMENTAR a lacuna ("the object the SDK builds also has, untyped on the
+   * interface: userId, servers, createdAt"), e o quickstart precisava de um
+   * cast para imprimir `session.servers`. Objeto que sempre tem o campo e tipo
+   * que nao o declara e uma armadilha silenciosa: o editor nao completa, o
+   * `tsc` reprova o uso correto, e quem le a doc acha que inventamos o campo.
+   *
+   * ⚠️ `tools()` e `findTools()` continuam FORA de proposito. Elas sao internas
+   * e as funcoes livres `tools(session)` / `findTools(session)` sao a API
+   * publica, conforme o comentario em createSession.
+   */
+  readonly userId: string;
+  readonly servers: string[];
+  readonly createdAt: Date;
   proxyExecute(request: ProxyRequest, opts?: CallOptions): Promise<ProxyResult>;
   authorize(
     serverId: string,
