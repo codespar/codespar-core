@@ -1,6 +1,6 @@
 # @codespar/langchain — changelog
 
-## 0.4.7 — 2026-09-23
+## 0.5.0 — 2026-09-23
 
 ### Fixed
 
@@ -37,16 +37,20 @@
 
 ### Changed
 
+- **Breaking (types):** `jsonSchemaToZod` returns, and
+  `CodeSparLangChainTool.schema` is, `ToolInputSchema` — a `ZodObject`, or
+  a `ZodEffects` over one when the root schema carries `anyOf`/`oneOf`/
+  `allOf` beside its `properties`. Code that read `tool.schema.shape`
+  directly no longer type-checks; use `toolInputShape(tool.schema)` for
+  the properties or `toolInputObject(tool.schema)` for the object. At
+  runtime the value is a plain `ZodObject` for every schema without a root
+  combinator, and LangChain accepts both forms. This is the minor bump.
 - Unknown keys on an object without `additionalProperties: false` now pass
   through to the API instead of being stripped; that is what the schema
   declares. LangChain validates a tool's input against its Zod schema
   before `invoke`, so an enum value outside the vocabulary or a missing
   nested required field is now rejected before the call, with a Zod
   error, instead of reaching the API. See the README.
-- `jsonSchemaToZod` and `CodeSparLangChainTool.schema` are typed
-  `ToolInputSchema`: a `ZodObject`, or a `ZodEffects` over one when the
-  root schema carries a combinator beside its properties. Code that read
-  `schema.shape` directly narrows first or uses `toolInputShape(schema)`.
 
 ### Added
 

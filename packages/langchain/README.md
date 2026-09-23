@@ -50,9 +50,11 @@ LangChain validates a tool call's arguments against `schema` before
   schema says `additionalProperties: false` (then the object is strict);
 - a root schema that carries `anyOf`/`oneOf`/`allOf` beside its
   `properties` (the "one of these keys is required" idiom) yields a
-  `ZodEffects` over the object rather than a bare `ZodObject`; LangChain
-  accepts both, and `toolInputShape(tool.schema)` reaches the properties
-  in either form;
+  `ZodEffects` over the object rather than a bare `ZodObject`. LangChain
+  accepts both. Since 0.5.0 `tool.schema` is therefore typed
+  `ToolInputSchema` (`ZodObject | ZodEffects<ZodObject>`): read the
+  properties with `toolInputShape(tool.schema)` and the object with
+  `toolInputObject(tool.schema)` rather than `tool.schema.shape`;
 - a construct the converter does not translate (`not`, `if`/`then`/`else`,
   `patternProperties`, a non-local `$ref`, …) becomes `z.unknown()` and its
   description ends with `(schema construct not translated: …)`. The value
