@@ -47,8 +47,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { RegistryError, fetchPackageDocument } from "./npm-registry.mjs";
 
-const REGISTRY = process.env.NPM_CONFIG_REGISTRY ?? "https://registry.npmjs.org";
 
 // ---------------------------------------------------------------------------
 // Pure comparison — no network, no npm. This is the part the self-test
@@ -247,11 +247,14 @@ function packLocal(pkgDir, scratch) {
  * a check that cannot see the registry must not report "clean".
  */
 async function fetchPublished(name, version, scratch) {
-  const url = `${REGISTRY}/${name.replace("/", "%2f")}`;
-  const res = await fetch(url, { headers: { accept: "application/json" } });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new CheckError(`registry returned ${res.status} for ${name} (${url})`);
-  const doc = await res.json();
+  let doc;
+  try {
+    doc = await fetchPackageDocument(name);
+  } catch (err) {
+    if (err instanceof RegistryError) throw new CheckError(err.message);
+    throw err;
+  }
+  if (!doc) return null;
 
   const entry = doc.versions?.[version];
   if (!entry) return null;

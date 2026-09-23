@@ -252,19 +252,26 @@ export async function postSessionChecked(
   }
 }
 
-// Builds a minimal SessionBase from raw fetch calls so the contract suite
-// can run against any backend that implements the codespar session API.
-async function openSession(
-  baseUrl: string,
-  apiKey: string,
-  opts?: ContractSuiteOptions,
-): Promise<SessionBase> {
-  const headers: Record<string, string> = {
+/** The request headers every session call sends. */
+export function sessionHeaders(apiKey: string): Record<string, string> {
+  return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${apiKey}`,
   };
+}
 
-  const raw = await postSessionChecked(baseUrl, headers, buildSessionCreateBody(opts));
+/**
+ * Build a minimal `SessionBase` over raw fetch calls from a 201 body that
+ * already passed {@link assertCreatedSessionShape}, so a conformance test
+ * can drive any backend that implements the codespar session API without
+ * `@codespar/sdk`. Shared by the session contract suite and the meta-tool
+ * conformance kit.
+ */
+export function buildMinimalSession(
+  baseUrl: string,
+  headers: Record<string, string>,
+  raw: CreatedSessionBody,
+): SessionBase {
   const state = { id: raw.id, status: raw.status };
 
   return {
@@ -333,6 +340,16 @@ async function openSession(
       state.status = "closed";
     },
   };
+}
+
+async function openSession(
+  baseUrl: string,
+  apiKey: string,
+  opts?: ContractSuiteOptions,
+): Promise<SessionBase> {
+  const headers = sessionHeaders(apiKey);
+  const raw = await postSessionChecked(baseUrl, headers, buildSessionCreateBody(opts));
+  return buildMinimalSession(baseUrl, headers, raw);
 }
 
 /**

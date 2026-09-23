@@ -135,7 +135,8 @@ describe("runContractSuite leg registration", () => {
  *     that returns only `{ id, status }` must fail every leg, not pass on a
  *     session the SDK could not use;
  *   - the `GET /v1/sessions/:id/connections` body — `servers` entries carry
- *     `id` + `connected`, and `tools` is present, because the SDK caches it.
+ *     `id` + `connected`; `tools` is not part of `SessionBase`, so it is
+ *     only checked when present (it must then be an array).
  * ─────────────────────────────────────────────────────────────── */
 
 /** The 201 body a conforming runtime returns for the suite's session-create. */

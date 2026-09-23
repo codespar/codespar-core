@@ -2,34 +2,32 @@
  * Resolve which published @codespar/sdk the hosted-runtime smoke installs.
  *
  * Prints one version to stdout; diagnostics go to stderr as workflow
- * commands. The workspace version is read from packages/core/package.json.
+ * commands. The workspace version is read from packages/core/package.json
+ * and the registry through scripts/npm-registry.mjs.
  *
  * SMOKE_SDK_MODE selects how strictly the published version must match:
  *
  *   exact        — the workspace version must be on the registry. Used on
- *                  push to main and on manual runs: main is what the
- *                  publish ceremony ships, so "not published" there is a
- *                  real finding.
- *   at-or-below  — install the newest published version that is <= the
+ *                  manual runs and after the Publish workflow completes,
+ *                  which is the only moment the exact version is known to
+ *                  exist: the publish happens after the bump merges, so
+ *                  neither a PR nor the push to main can require it.
+ *   at-or-below  — install the newest published release at or below the
  *                  workspace version, with a ::warning:: when it is older.
- *                  Used on pull requests: a release PR bumps the version
- *                  before `npm publish` runs, so an exact pin would fail
- *                  every release PR on a 404 and turn the job red as a
- *                  matter of routine.
+ *                  Used on pull requests and on push to main.
  *
- * A registry that cannot be reached is reported as such, not as "not
- * published": the two need different fixes.
+ * A package document 404 is "nothing published" (a real answer); a registry
+ * that cannot be reached is reported as such. The two need different fixes.
  */
 
-import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { RegistryError, publishedVersions } from "./npm-registry.mjs";
 
-const PACKAGE = "@codespar/sdk";
-const HERE = dirname(fileURLToPath(import.meta.url));
+export const PACKAGE = "@codespar/sdk";
 
-function parse(v) {
+export function parseRelease(v) {
   const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(v);
   return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
 }
@@ -41,58 +39,70 @@ function compare(a, b) {
   return 0;
 }
 
-function fail(message) {
-  console.error(`::error::${message}`);
-  process.exit(1);
+/**
+ * Pure choice: given the mode, the workspace version and the published
+ * release list, return `{ version }`, `{ version, warning }` or `{ error }`.
+ */
+export function pickVersion(mode, workspace, published) {
+  if (mode !== "exact" && mode !== "at-or-below") {
+    return { error: `SMOKE_SDK_MODE must be "exact" or "at-or-below", got ${JSON.stringify(mode)}` };
+  }
+  const wanted = parseRelease(workspace);
+  if (!wanted) return { error: `packages/core/package.json declares a non-release version: ${workspace}` };
+
+  if (published.includes(workspace)) return { version: workspace };
+
+  if (published.length === 0) {
+    return { error: `${PACKAGE} has never been published to the registry` };
+  }
+  if (mode === "exact") {
+    return {
+      error:
+        `${PACKAGE}@${workspace} is not on the registry. The workspace declares ${workspace}; ` +
+        `publish it before this job can prove anything about the current SDK.`,
+    };
+  }
+  const candidates = published
+    .map((v) => [v, parseRelease(v)])
+    .filter(([, p]) => p && compare(p, wanted) < 0)
+    .sort((a, b) => compare(a[1], b[1]));
+  if (candidates.length === 0) {
+    return { error: `no published ${PACKAGE} release is at or below the workspace version ${workspace}` };
+  }
+  const [version] = candidates[candidates.length - 1];
+  return {
+    version,
+    warning:
+      `${PACKAGE}@${workspace} is not published yet; smoke runs against ${version}, ` +
+      `the newest release at or below it. After the Publish workflow this job requires the exact version.`,
+  };
 }
 
-const mode = process.env.SMOKE_SDK_MODE ?? "exact";
-if (mode !== "exact" && mode !== "at-or-below") {
-  fail(`SMOKE_SDK_MODE must be "exact" or "at-or-below", got ${JSON.stringify(mode)}`);
+export async function main() {
+  const HERE = dirname(fileURLToPath(import.meta.url));
+  const workspace = JSON.parse(
+    readFileSync(resolve(HERE, "../packages/core/package.json"), "utf8"),
+  ).version;
+
+  let published;
+  try {
+    published = await publishedVersions(PACKAGE);
+  } catch (err) {
+    if (!(err instanceof RegistryError)) throw err;
+    console.error(`::error::${err.message} — a registry or network error, not a publish gap`);
+    return 1;
+  }
+
+  const pick = pickVersion(process.env.SMOKE_SDK_MODE ?? "exact", workspace, published);
+  if (pick.error) {
+    console.error(`::error::${pick.error}`);
+    return 1;
+  }
+  if (pick.warning) console.error(`::warning::${pick.warning}`);
+  process.stdout.write(`${pick.version}\n`);
+  return 0;
 }
 
-const workspace = JSON.parse(
-  readFileSync(resolve(HERE, "../packages/core/package.json"), "utf8"),
-).version;
-const wanted = parse(workspace);
-if (!wanted) fail(`packages/core/package.json declares a non-release version: ${workspace}`);
-
-let published;
-try {
-  const out = execFileSync("npm", ["view", PACKAGE, "versions", "--json"], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  published = JSON.parse(out);
-  if (typeof published === "string") published = [published];
-} catch (err) {
-  const lines = (err.stderr ?? err.message ?? "").toString().trim().split("\n");
-  const detail = lines.find((l) => /code |E[A-Z]{3,}|E\d{3}/.test(l)) ?? lines[0] ?? "";
-  fail(`could not read ${PACKAGE} versions from the registry (network or registry error, not a publish gap): ${detail}`);
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.exit(await main());
 }
-
-if (published.includes(workspace)) {
-  process.stdout.write(`${workspace}\n`);
-  process.exit(0);
-}
-
-if (mode === "exact") {
-  fail(
-    `${PACKAGE}@${workspace} is not on the registry. The workspace declares ${workspace}; ` +
-      `publish it before this job can prove anything about the current SDK.`,
-  );
-}
-
-const candidates = published
-  .map((v) => [v, parse(v)])
-  .filter(([, p]) => p && compare(p, wanted) < 0)
-  .sort((a, b) => compare(a[1], b[1]));
-if (candidates.length === 0) {
-  fail(`no published ${PACKAGE} release is at or below the workspace version ${workspace}`);
-}
-const [pick] = candidates[candidates.length - 1];
-console.error(
-  `::warning::${PACKAGE}@${workspace} is not published yet; smoke runs against ${pick}, ` +
-    `the newest release at or below it. On main this job requires the exact version.`,
-);
-process.stdout.write(`${pick}\n`);

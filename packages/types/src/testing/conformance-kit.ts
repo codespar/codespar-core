@@ -1,6 +1,11 @@
 import { describe, it, expect, afterEach } from "vitest";
-import type { ToolResult } from "../index.js";
-import { postSessionChecked, validateBaseUrl } from "./contract-suite.js";
+import type { SessionBase, ToolResult } from "../index.js";
+import {
+  buildMinimalSession,
+  postSessionChecked,
+  sessionHeaders,
+  validateBaseUrl,
+} from "./contract-suite.js";
 import {
   META_TOOL_CONTRACTS,
   type ContractedToolName,
@@ -246,69 +251,24 @@ export function checkMalformedError(
 
 /* ── Live-backend session plumbing ───────────────────────────────
  *
- * Mirrors the openSession helper in contract-suite.ts: build a minimal
- * session from raw fetch calls so the kit runs against any backend that
- * implements the codespar session API. Only the two methods the kit needs
- * (execute, close) are built — base-URL validation is shared with the
- * session contract suite.
+ * The session the kit drives is the one the session contract suite builds:
+ * the same 201 assertion on open and the same minimal `SessionBase` over
+ * raw fetch calls. Only `execute` and `close` are used here.
  * ─────────────────────────────────────────────────────────────── */
 
-interface MinimalSession {
-  readonly id: string;
-  execute(toolName: string, params: Record<string, unknown>): Promise<ToolResult>;
-  close(): Promise<void>;
-}
+type MinimalSession = Pick<SessionBase, "id" | "execute" | "close">;
 
 async function openSession(
   baseUrl: string,
   apiKey: string,
   servers: string[],
 ): Promise<MinimalSession> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
-  };
-
-  // Same 201 contract the session suite pins: the kit must not run its
-  // cases on a session the SDK could not have built.
+  const headers = sessionHeaders(apiKey);
   const raw = await postSessionChecked(baseUrl, headers, {
     servers,
     user_id: "conformance-suite",
   });
-
-  return {
-    get id() {
-      return raw.id;
-    },
-    async execute(
-      toolName: string,
-      params: Record<string, unknown>,
-    ): Promise<ToolResult> {
-      const r = await fetch(`${baseUrl}/v1/sessions/${raw.id}/execute`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ tool: toolName, input: params }),
-      });
-      if (!r.ok) {
-        const body = await r.text();
-        return {
-          success: false,
-          data: null,
-          error: `${r.status}: ${body}`,
-          duration: 0,
-          server: "",
-          tool: toolName,
-        };
-      }
-      return (await r.json()) as ToolResult;
-    },
-    async close(): Promise<void> {
-      await fetch(`${baseUrl}/v1/sessions/${raw.id}`, {
-        method: "DELETE",
-        headers,
-      });
-    },
-  };
+  return buildMinimalSession(baseUrl, headers, raw);
 }
 
 /** Build the action input the kit posts: the action rule's sample input
