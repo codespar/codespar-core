@@ -1,8 +1,8 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-09-23T16:38:33.921Z",
-    "sha256": "d4506b600d906848d9154a56e1e89402f23e06e0a76421288c101706ba1aa70c",
+    "fetched_at": "2026-09-23T23:05:33.042Z",
+    "sha256": "5a7f86d6fdf069c1e2ea7c0adef59362087f01c1e849bd8630305408ff6c152b",
     "etag": null,
     "last_modified": null,
     "info": {
@@ -11542,6 +11542,15 @@
                               ],
                               "description": "The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet."
                             },
+                            "cde": {
+                              "type": "string",
+                              "enum": [
+                                "ingested",
+                                "not_ingested",
+                                "not_configured"
+                              ],
+                              "description": "Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed."
+                            },
                             "created_at": {
                               "type": "string",
                               "format": "date-time"
@@ -11555,6 +11564,7 @@
                             "network",
                             "status",
                             "token_id",
+                            "cde",
                             "created_at"
                           ]
                         }
@@ -11837,6 +11847,15 @@
                                 ],
                                 "description": "The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet."
                               },
+                              "cde": {
+                                "type": "string",
+                                "enum": [
+                                  "ingested",
+                                  "not_ingested",
+                                  "not_configured"
+                                ],
+                                "description": "Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed."
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -11850,6 +11869,7 @@
                               "network",
                               "status",
                               "token_id",
+                              "cde",
                               "created_at"
                             ]
                           }
@@ -11952,6 +11972,15 @@
                                 ],
                                 "description": "The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet."
                               },
+                              "cde": {
+                                "type": "string",
+                                "enum": [
+                                  "ingested",
+                                  "not_ingested",
+                                  "not_configured"
+                                ],
+                                "description": "Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed."
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -11965,6 +11994,7 @@
                               "network",
                               "status",
                               "token_id",
+                              "cde",
                               "created_at"
                             ],
                             "description": "PRESENT ONLY when `state` is `issued` AND the flow already points at a card row. In every other case the key is absent rather than null. Null inside that case means the card row did not resolve under this org and project."
@@ -12048,6 +12078,15 @@
                             ],
                             "description": "The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet."
                           },
+                          "cde": {
+                            "type": "string",
+                            "enum": [
+                              "ingested",
+                              "not_ingested",
+                              "not_configured"
+                            ],
+                            "description": "Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed."
+                          },
                           "created_at": {
                             "type": "string",
                             "format": "date-time"
@@ -12061,6 +12100,7 @@
                           "network",
                           "status",
                           "token_id",
+                          "cde",
                           "created_at"
                         ]
                       }
@@ -12170,6 +12210,15 @@
                             ],
                             "description": "The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet."
                           },
+                          "cde": {
+                            "type": "string",
+                            "enum": [
+                              "ingested",
+                              "not_ingested",
+                              "not_configured"
+                            ],
+                            "description": "Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed."
+                          },
                           "created_at": {
                             "type": "string",
                             "format": "date-time"
@@ -12183,6 +12232,7 @@
                           "network",
                           "status",
                           "token_id",
+                          "cde",
                           "created_at"
                         ],
                         "description": "PRESENT ONLY when `state` is `issued` AND the flow already points at a card row. In every other case the key is absent rather than null. Null inside that case means the card row did not resolve under this org and project."
@@ -12599,6 +12649,15 @@
                             ],
                             "description": "The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet."
                           },
+                          "cde": {
+                            "type": "string",
+                            "enum": [
+                              "ingested",
+                              "not_ingested",
+                              "not_configured"
+                            ],
+                            "description": "Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed."
+                          },
                           "created_at": {
                             "type": "string",
                             "format": "date-time"
@@ -12612,6 +12671,7 @@
                           "network",
                           "status",
                           "token_id",
+                          "cde",
                           "created_at"
                         ]
                       },
@@ -12707,6 +12767,15 @@
                                 ],
                                 "description": "The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet."
                               },
+                              "cde": {
+                                "type": "string",
+                                "enum": [
+                                  "ingested",
+                                  "not_ingested",
+                                  "not_configured"
+                                ],
+                                "description": "Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed."
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -12720,6 +12789,7 @@
                               "network",
                               "status",
                               "token_id",
+                              "cde",
                               "created_at"
                             ],
                             "description": "PRESENT ONLY when `state` is `issued` AND the flow already points at a card row. In every other case the key is absent rather than null. Null inside that case means the card row did not resolve under this org and project."
@@ -15584,6 +15654,15 @@
                             ],
                             "description": "The card-data-environment token id, null until the mint flow allocates one. Allocation happens BEFORE the card material is ingested, so a token id with no material behind it is a recorded failure rather than a silent gap. It is the handle a PCI-scoped surface exchanges for card material; no card material is reachable through this API with it."
                           },
+                          "cde": {
+                            "type": "string",
+                            "enum": [
+                              "ingested",
+                              "not_ingested",
+                              "not_configured"
+                            ],
+                            "description": "Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed."
+                          },
                           "created_at": {
                             "type": "string",
                             "format": "date-time"
@@ -15597,6 +15676,7 @@
                           "network",
                           "status",
                           "token_id",
+                          "cde",
                           "created_at"
                         ]
                       },
@@ -15689,6 +15769,15 @@
                                 ],
                                 "description": "The card-data-environment token id, null until the mint flow allocates one. Allocation happens BEFORE the card material is ingested, so a token id with no material behind it is a recorded failure rather than a silent gap. It is the handle a PCI-scoped surface exchanges for card material; no card material is reachable through this API with it."
                               },
+                              "cde": {
+                                "type": "string",
+                                "enum": [
+                                  "ingested",
+                                  "not_ingested",
+                                  "not_configured"
+                                ],
+                                "description": "Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed."
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -15702,6 +15791,7 @@
                               "network",
                               "status",
                               "token_id",
+                              "cde",
                               "created_at"
                             ],
                             "description": "Present ONLY when the flow reached `issued` AND carries a card row id. It is then the card itself, or null if that row could not be read back. On every other state the key is absent rather than null, so `\"card\" in body` and `body.card !== null` are different questions."
@@ -15966,6 +16056,15 @@
                                   "null"
                                 ]
                               },
+                              "cde": {
+                                "type": "string",
+                                "enum": [
+                                  "ingested",
+                                  "not_ingested",
+                                  "not_configured"
+                                ],
+                                "description": "Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed."
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -15979,6 +16078,7 @@
                               "network",
                               "status",
                               "token_id",
+                              "cde",
                               "created_at"
                             ]
                           }
@@ -16098,6 +16198,15 @@
                               "null"
                             ]
                           },
+                          "cde": {
+                            "type": "string",
+                            "enum": [
+                              "ingested",
+                              "not_ingested",
+                              "not_configured"
+                            ],
+                            "description": "Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed."
+                          },
                           "created_at": {
                             "type": "string",
                             "format": "date-time"
@@ -16111,6 +16220,7 @@
                           "network",
                           "status",
                           "token_id",
+                          "cde",
                           "created_at"
                         ]
                       }
@@ -28604,7 +28714,7 @@
         },
         "post": {
           "summary": "Issue a charge",
-          "description": "Issues an inbound charge: the buyer pays the merchant. The RAIL IS A FIELD, not a path. `method: \"pix\"` mints an immediate Pix that hands back its copy-and-paste string right away and expires in about an hour. `method: \"boleto\"` WITH a `due_date` issues a cobrança com vencimento: ONE receivable the payer settles either as a boleto (barcode and linha digitável) or by Pix. One debt, two payable legs, never two documents.\n\n**The cobrança com vencimento answers `PROCESSING` with `payable: false` and no document.** The instrument registers with the clearing house first. Subscribe to `commerce.charge.created` rather than polling for a barcode that is not late, only not made yet. `commerce.charge.paid` is the event that means the funds arrived, by either leg.\n\n**`idempotency_key` is REQUIRED for that combination**, and it is checked before anything reaches the issuer. A repeat with the same key returns the charge already issued, or its still-open reservation, instead of a second receivable the same debtor could pay twice. Send it as the `Idempotency-Key` header, as the body's `idempotency_key`, or as both with the SAME value; two different values are refused rather than one silently winning.\n\nAn agreement in N instalments is N cobranças, one per parcela, each with its own `due_date` and its own key. There is no single instalment charge.\n\n**Each refusal names a `reason`, and the reason is what to branch on.** The two error `code` values (`invalid_args`, `provider_error`) are too coarse: they cover six different situations, and reading them as one would turn `not found` into `bad request`.\n\n| reason | status | what it means |\n|---|---|---|\n| `charge_id_missing` | 400 | the call named no charge |\n| `project_scope_missing` | 400 | the credential is not project-scoped, and a charge belongs to one project |\n| `charge_not_found` | 404 | no charge under that id FOR THIS TENANT |\n| `issuance_unconfirmed` | 409 | the key holds a reservation whose create never got an answer |\n| `already_payment_notified` | 409 | the clearing house already notified a payment |\n| `not_cancellable_in_this_state` | 409 | the issuer accepts a cancellation only in some states |\n| `provider_status_unreadable` | 502 | the issuer did not answer the read |\n| `provider_cancel_failed` | 502 | the issuer refused the withdrawal |\n\n`charge_not_found` is deliberately the SAME answer for an id that belongs to another project and for an id that exists nowhere. Telling those apart would be an oracle about another tenant over a string anyone can guess.",
+          "description": "Issues an inbound charge: the buyer pays the merchant. The RAIL IS A FIELD, not a path. `method: \"pix\"` mints an immediate Pix that hands back its copy-and-paste string right away and expires in about an hour. `method: \"boleto\"` WITH a `due_date` issues a cobrança com vencimento: ONE receivable the payer settles either as a boleto (barcode and linha digitável) or by Pix. One debt, two payable legs, never two documents.\n\n**The cobrança com vencimento answers `PROCESSING` with `payable: false` and no document.** The instrument registers with the clearing house first. Subscribe to `commerce.charge.created` rather than polling for a barcode that is not late, only not made yet. `commerce.charge.paid` is the event that means the funds arrived, by either leg.\n\n**`idempotency_key` is REQUIRED for that combination**, and it is checked before anything reaches the issuer. A repeat with the same key returns the charge already issued, or its still-open reservation, instead of a second receivable the same debtor could pay twice. Send it as the `Idempotency-Key` header, as the body's `idempotency_key`, or as both with the SAME value; two different values are refused rather than one silently winning.\n\n**`consumer_id` is REQUIRED for a `boleto` too**: it names the merchant-side consumer the receivable settles into, and its wallet is what the payment credits. Without it there is nothing to settle into and the call is refused with `consumer_id_required` before anything is sent. In a test project any stable id of your own works: the project's shared-sandbox receiver stands in for the consumer's account at the issuer (the consumer is never onboarded there), and `POST /v1/test/charges/{chargeId}/pay` settles the charge into that consumer's wallet.\n\nAn agreement in N instalments is N cobranças, one per parcela, each with its own `due_date` and its own key. There is no single instalment charge.\n\n**Each refusal names a `reason`, and the reason is what to branch on.** The two error `code` values (`invalid_args`, `provider_error`) are too coarse: they cover six different situations, and reading them as one would turn `not found` into `bad request`.\n\n| reason | status | what it means |\n|---|---|---|\n| `charge_id_missing` | 400 | the call named no charge |\n| `project_scope_missing` | 400 | the credential is not project-scoped, and a charge belongs to one project |\n| `consumer_id_required` | 400 | a `boleto` create named no `consumer_id`, so there is no wallet for the receivable to settle into |\n| `charge_not_found` | 404 | no charge under that id FOR THIS TENANT |\n| `charge_reference_ambiguous` | 409 | the reference is one charge's id AND another's idempotency key; query by the charge id |\n| `issuance_unconfirmed` | 409 | the key holds a reservation whose create never got an answer |\n| `already_payment_notified` | 409 | the clearing house already notified a payment |\n| `not_cancellable_in_this_state` | 409 | the issuer accepts a cancellation only in some states |\n| `provider_status_unreadable` | 502 | the issuer did not answer the read |\n| `provider_cancel_failed` | 502 | the issuer refused the withdrawal |\n\n`charge_not_found` is deliberately the SAME answer for an id that belongs to another project and for an id that exists nowhere. Telling those apart would be an oracle about another tenant over a string anyone can guess.",
           "requestBody": {
             "content": {
               "application/json": {
@@ -28614,7 +28724,7 @@
                     "amount": {
                       "type": "number",
                       "exclusiveMinimum": 0,
-                      "description": "In minor units."
+                      "description": "In MAJOR units of `currency`, NOT minor: `12.5` is R$ 12,50 and comes back as `amount_minor: 1250`. Sending `1250` here issues a R$ 1.250,00 charge. This is the one field of the charge family that takes major units; every `*_minor` field, including the response's `amount_minor`, is in centavos."
                     },
                     "currency": {
                       "type": "string",
@@ -28624,6 +28734,10 @@
                     "method": {
                       "type": "string",
                       "description": "`pix`, `boleto`, `card` or `wallet`."
+                    },
+                    "consumer_id": {
+                      "type": "string",
+                      "description": "The merchant-side consumer the charge settles into: its wallet is credited when the debtor pays. REQUIRED for `boleto` (refused with `consumer_id_required` otherwise); optional for the other methods, where an absent value falls back to the session's user when there is one."
                     },
                     "description": {
                       "type": "string"
@@ -28674,7 +28788,7 @@
                       },
                       "status": {
                         "type": "string",
-                        "description": "The provider's state as far as we know it, normalized. Forced to PROCESSING until the issuance is confirmed."
+                        "description": "The provider's state as far as we know it, normalized (`PROCESSING`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`). Forced to PROCESSING until the issuance is confirmed.\n\n**A charge settled by the sandbox payer answers `CONFIRMED` here**, the same value a real payment leaves a live read answering — so a client that polls `status` sees the test payment exactly where it would see a live one. The issuer's homolog account never sees that money and keeps answering PENDING (EXPIRED after the due date); that answer stays in `raw` and is not reported as `status` or as a `status_conflict`, because for a test charge the fixture is the issuer's truth. `settlement: \"confirmed\"` and `local_status: \"settled\"` say the same thing from our side."
                       },
                       "local_status": {
                         "type": "string",
@@ -28692,11 +28806,11 @@
                       },
                       "amount": {
                         "type": "number",
-                        "description": "In units."
+                        "description": "In MAJOR units of `currency`: `12.5` is R$ 12,50. Always `amount_minor / 100`."
                       },
                       "amount_minor": {
                         "type": "integer",
-                        "description": "In minor units."
+                        "description": "In minor units (centavos): `1250` is R$ 12,50."
                       },
                       "due_date": {
                         "type": [
@@ -28777,7 +28891,7 @@
               }
             },
             "400": {
-              "description": "The call is malformed, or the two idempotency keys disagree.",
+              "description": "The call is malformed, names no consumer for a boleto, or the two idempotency keys disagree.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -28790,6 +28904,7 @@
                             "type": "string",
                             "enum": [
                               "charge_idempotency_key_required",
+                              "consumer_id_required",
                               "idempotency_key_conflict"
                             ]
                           },
@@ -28918,7 +29033,7 @@
       "/v1/charges/{chargeId}": {
         "get": {
           "summary": "Read a charge",
-          "description": "Reads a charge this project issued. `chargeId` accepts EITHER the id the create returned OR the caller's own `idempotency_key` — the row is resolved under this credential's org and project, which is what makes another tenant's id simply not found.\n\n**Branch on `payable`, not on `status`.** `payable` is true only when the issuance is confirmed, our row is still open, the provider says PENDING, and at least one payable document exists. A cobrança com vencimento answers PROCESSING with `payable: false` and no document at first, because the instrument registers with the clearing house before it can be paid.\n\nThis read also ARMS the Pix leg's correlation when the provider's answer carries it, which is why `credit_correlation_armed` can flip from a read. Nothing else about it writes: no ledger row, no money.\n\n**Each refusal names a `reason`, and the reason is what to branch on.** The two error `code` values (`invalid_args`, `provider_error`) are too coarse: they cover six different situations, and reading them as one would turn `not found` into `bad request`.\n\n| reason | status | what it means |\n|---|---|---|\n| `charge_id_missing` | 400 | the call named no charge |\n| `project_scope_missing` | 400 | the credential is not project-scoped, and a charge belongs to one project |\n| `charge_not_found` | 404 | no charge under that id FOR THIS TENANT |\n| `issuance_unconfirmed` | 409 | the key holds a reservation whose create never got an answer |\n| `already_payment_notified` | 409 | the clearing house already notified a payment |\n| `not_cancellable_in_this_state` | 409 | the issuer accepts a cancellation only in some states |\n| `provider_status_unreadable` | 502 | the issuer did not answer the read |\n| `provider_cancel_failed` | 502 | the issuer refused the withdrawal |\n\n`charge_not_found` is deliberately the SAME answer for an id that belongs to another project and for an id that exists nowhere. Telling those apart would be an oracle about another tenant over a string anyone can guess.",
+          "description": "Reads a charge this project issued. `chargeId` accepts EITHER the id the create returned (the issuer's charge transaction id) OR the caller's own `idempotency_key` — the row is resolved under this credential's org and project, which is what makes another tenant's id simply not found. A value that is one charge's id AND another charge's key is refused with `charge_reference_ambiguous` rather than answered for whichever came first; query by the charge id in that case. The Pix leg's own transaction id is not a reference here.\n\n**A charge the sandbox payer settled answers `status: \"CONFIRMED\"`** with `settlement: \"confirmed\"` and `local_status: \"settled\"` — see `status` on the response for why the issuer's own PENDING is not reported.\n\n**Branch on `payable`, not on `status`.** `payable` is true only when the issuance is confirmed, our row is still open, the provider says PENDING, and at least one payable document exists. A cobrança com vencimento answers PROCESSING with `payable: false` and no document at first, because the instrument registers with the clearing house before it can be paid.\n\nThis read also ARMS the Pix leg's correlation when the provider's answer carries it, which is why `credit_correlation_armed` can flip from a read. Nothing else about it writes: no ledger row, no money.\n\n**Each refusal names a `reason`, and the reason is what to branch on.** The two error `code` values (`invalid_args`, `provider_error`) are too coarse: they cover six different situations, and reading them as one would turn `not found` into `bad request`.\n\n| reason | status | what it means |\n|---|---|---|\n| `charge_id_missing` | 400 | the call named no charge |\n| `project_scope_missing` | 400 | the credential is not project-scoped, and a charge belongs to one project |\n| `consumer_id_required` | 400 | a `boleto` create named no `consumer_id`, so there is no wallet for the receivable to settle into |\n| `charge_not_found` | 404 | no charge under that id FOR THIS TENANT |\n| `charge_reference_ambiguous` | 409 | the reference is one charge's id AND another's idempotency key; query by the charge id |\n| `issuance_unconfirmed` | 409 | the key holds a reservation whose create never got an answer |\n| `already_payment_notified` | 409 | the clearing house already notified a payment |\n| `not_cancellable_in_this_state` | 409 | the issuer accepts a cancellation only in some states |\n| `provider_status_unreadable` | 502 | the issuer did not answer the read |\n| `provider_cancel_failed` | 502 | the issuer refused the withdrawal |\n\n`charge_not_found` is deliberately the SAME answer for an id that belongs to another project and for an id that exists nowhere. Telling those apart would be an oracle about another tenant over a string anyone can guess.",
           "parameters": [
             {
               "schema": {
@@ -28946,7 +29061,7 @@
                       },
                       "status": {
                         "type": "string",
-                        "description": "The provider's state as far as we know it, normalized. Forced to PROCESSING until the issuance is confirmed."
+                        "description": "The provider's state as far as we know it, normalized (`PROCESSING`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`). Forced to PROCESSING until the issuance is confirmed.\n\n**A charge settled by the sandbox payer answers `CONFIRMED` here**, the same value a real payment leaves a live read answering — so a client that polls `status` sees the test payment exactly where it would see a live one. The issuer's homolog account never sees that money and keeps answering PENDING (EXPIRED after the due date); that answer stays in `raw` and is not reported as `status` or as a `status_conflict`, because for a test charge the fixture is the issuer's truth. `settlement: \"confirmed\"` and `local_status: \"settled\"` say the same thing from our side."
                       },
                       "local_status": {
                         "type": "string",
@@ -28964,11 +29079,11 @@
                       },
                       "amount": {
                         "type": "number",
-                        "description": "In units."
+                        "description": "In MAJOR units of `currency`: `12.5` is R$ 12,50. Always `amount_minor / 100`."
                       },
                       "amount_minor": {
                         "type": "integer",
-                        "description": "In minor units."
+                        "description": "In minor units (centavos): `1250` is R$ 12,50."
                       },
                       "due_date": {
                         "type": [
@@ -29140,7 +29255,7 @@
               }
             },
             "409": {
-              "description": "The charge exists and is not readable in this state.",
+              "description": "The charge exists and is not readable in this state, or the reference names two charges.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -29152,7 +29267,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "issuance_unconfirmed"
+                              "issuance_unconfirmed",
+                              "charge_reference_ambiguous"
                             ]
                           },
                           "message": {
@@ -29235,7 +29351,7 @@
       "/v1/charges/{chargeId}/cancel": {
         "post": {
           "summary": "Withdraw a charge",
-          "description": "Withdraws a charge that has not been paid. Takes no body: the id is the whole request, and it accepts the same two forms the read does.\n\n**This never moves money.** It is not a refund: an unpaid receivable is withdrawn, and a charge whose payment the clearing house already notified is REFUSED with `already_payment_notified` rather than withdrawn. That refusal is the D+1 guard: a boleto paid after the convênio's cut-off is notified on one day and credited on the next business day, so the due date can fall between the two, and withdrawing there would write off a receivable somebody paid.\n\nA charge the issuer already reports as cancelled is a no-op that closes our row, not a second withdrawal.\n\n**Each refusal names a `reason`, and the reason is what to branch on.** The two error `code` values (`invalid_args`, `provider_error`) are too coarse: they cover six different situations, and reading them as one would turn `not found` into `bad request`.\n\n| reason | status | what it means |\n|---|---|---|\n| `charge_id_missing` | 400 | the call named no charge |\n| `project_scope_missing` | 400 | the credential is not project-scoped, and a charge belongs to one project |\n| `charge_not_found` | 404 | no charge under that id FOR THIS TENANT |\n| `issuance_unconfirmed` | 409 | the key holds a reservation whose create never got an answer |\n| `already_payment_notified` | 409 | the clearing house already notified a payment |\n| `not_cancellable_in_this_state` | 409 | the issuer accepts a cancellation only in some states |\n| `provider_status_unreadable` | 502 | the issuer did not answer the read |\n| `provider_cancel_failed` | 502 | the issuer refused the withdrawal |\n\n`charge_not_found` is deliberately the SAME answer for an id that belongs to another project and for an id that exists nowhere. Telling those apart would be an oracle about another tenant over a string anyone can guess.",
+          "description": "Withdraws a charge that has not been paid. Takes no body: the id is the whole request, and it accepts the same two forms the read does.\n\n**This never moves money.** It is not a refund: an unpaid receivable is withdrawn, and a charge whose payment the clearing house already notified is REFUSED with `already_payment_notified` rather than withdrawn. That refusal is the D+1 guard: a boleto paid after the convênio's cut-off is notified on one day and credited on the next business day, so the due date can fall between the two, and withdrawing there would write off a receivable somebody paid.\n\nA charge the issuer already reports as cancelled is a no-op that closes our row, not a second withdrawal.\n\n**Each refusal names a `reason`, and the reason is what to branch on.** The two error `code` values (`invalid_args`, `provider_error`) are too coarse: they cover six different situations, and reading them as one would turn `not found` into `bad request`.\n\n| reason | status | what it means |\n|---|---|---|\n| `charge_id_missing` | 400 | the call named no charge |\n| `project_scope_missing` | 400 | the credential is not project-scoped, and a charge belongs to one project |\n| `consumer_id_required` | 400 | a `boleto` create named no `consumer_id`, so there is no wallet for the receivable to settle into |\n| `charge_not_found` | 404 | no charge under that id FOR THIS TENANT |\n| `charge_reference_ambiguous` | 409 | the reference is one charge's id AND another's idempotency key; query by the charge id |\n| `issuance_unconfirmed` | 409 | the key holds a reservation whose create never got an answer |\n| `already_payment_notified` | 409 | the clearing house already notified a payment |\n| `not_cancellable_in_this_state` | 409 | the issuer accepts a cancellation only in some states |\n| `provider_status_unreadable` | 502 | the issuer did not answer the read |\n| `provider_cancel_failed` | 502 | the issuer refused the withdrawal |\n\n`charge_not_found` is deliberately the SAME answer for an id that belongs to another project and for an id that exists nowhere. Telling those apart would be an oracle about another tenant over a string anyone can guess.",
           "parameters": [
             {
               "schema": {
@@ -29263,7 +29379,7 @@
                       },
                       "status": {
                         "type": "string",
-                        "description": "The provider's state as far as we know it, normalized. Forced to PROCESSING until the issuance is confirmed."
+                        "description": "The provider's state as far as we know it, normalized (`PROCESSING`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`). Forced to PROCESSING until the issuance is confirmed.\n\n**A charge settled by the sandbox payer answers `CONFIRMED` here**, the same value a real payment leaves a live read answering — so a client that polls `status` sees the test payment exactly where it would see a live one. The issuer's homolog account never sees that money and keeps answering PENDING (EXPIRED after the due date); that answer stays in `raw` and is not reported as `status` or as a `status_conflict`, because for a test charge the fixture is the issuer's truth. `settlement: \"confirmed\"` and `local_status: \"settled\"` say the same thing from our side."
                       },
                       "local_status": {
                         "type": "string",
@@ -29281,11 +29397,11 @@
                       },
                       "amount": {
                         "type": "number",
-                        "description": "In units."
+                        "description": "In MAJOR units of `currency`: `12.5` is R$ 12,50. Always `amount_minor / 100`."
                       },
                       "amount_minor": {
                         "type": "integer",
-                        "description": "In minor units."
+                        "description": "In minor units (centavos): `1250` is R$ 12,50."
                       },
                       "due_date": {
                         "type": [
@@ -29471,7 +29587,8 @@
                             "enum": [
                               "issuance_unconfirmed",
                               "already_payment_notified",
-                              "not_cancellable_in_this_state"
+                              "not_cancellable_in_this_state",
+                              "charge_reference_ambiguous"
                             ]
                           },
                           "message": {
@@ -29842,7 +29959,7 @@
               }
             },
             "409": {
-              "description": "The charge exists and cannot be paid: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge already closed (expired or cancelled).",
+              "description": "The charge exists and cannot be paid: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge already closed (expired or cancelled); `charge_reference_ambiguous` is a reference that is one charge's id and another's idempotency key — pay by the charge id.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -29855,7 +29972,8 @@
                             "type": "string",
                             "enum": [
                               "issuance_unconfirmed",
-                              "charge_not_payable"
+                              "charge_not_payable",
+                              "charge_reference_ambiguous"
                             ]
                           },
                           "message": {
@@ -30226,7 +30344,7 @@
               }
             },
             "409": {
-              "description": "The charge exists and cannot be paid: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge already closed (expired or cancelled).",
+              "description": "The charge exists and cannot be paid: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge already closed (expired or cancelled); `charge_reference_ambiguous` is a reference that is one charge's id and another's idempotency key — pay by the charge id.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -30239,7 +30357,8 @@
                             "type": "string",
                             "enum": [
                               "issuance_unconfirmed",
-                              "charge_not_payable"
+                              "charge_not_payable",
+                              "charge_reference_ambiguous"
                             ]
                           },
                           "message": {

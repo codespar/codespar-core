@@ -1,5 +1,34 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.6 — 2026-09-23
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: 285 operacoes, nenhuma
+  rota nova e nenhuma removida. Dez operacoes mudaram de forma ou de texto.
+
+  Familia `charges` (enterprise #1623):
+
+      POST /v1/charges                          `consumer_id` no corpo (opcional;
+                                                REQUIRED para `boleto`, recusa
+                                                `consumer_id_required`); `amount`
+                                                documentado em unidades MAIORES
+                                                (`12.5` = R$ 12,50), nao centavos
+      GET  /v1/charges/{chargeId}               a referencia aceita id da cobranca,
+                                                transaction id do emissor ou
+                                                `idempotency_key`; novo 409
+                                                `charge_reference_ambiguous`
+      POST /v1/charges/{chargeId}/cancel        mesmo 409 novo
+      POST /v1/test/charges/{chargeId}/pay      o pagamento no sandbox vira
+      POST /v1/charges/{chargeId}/sandbox/pay   `status: CONFIRMED` (documentado)
+
+  Familia `cards`: `GET/POST /v1/cards`, `GET /v1/cards/{id}`,
+  `GET/POST /v1/issuer/cards` ganham o campo `cde`
+  (`ingested | not_ingested | not_configured`) na resposta.
+
+- A CLI nao deriva comando novo (97 derivados seguem 97) e nao muda de
+  conteudo: depende de `@codespar/sdk` por faixa.
+
 ## 0.16.5 — 2026-09-23
 
 ### Changed
