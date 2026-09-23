@@ -66,12 +66,13 @@ vocabulary, a nested object keeps its own `required`, `anyOf`/`oneOf` is
 a union (a discriminated one when every branch is an object with a common
 literal key, the action idiom), `allOf` of objects is one object — keys
 only one member declares are taken as is, a key two members declare is
-the intersection of both fields, unknown keys follow the stricter member
+the intersection of both fields, each member's `additionalProperties`
+judges only the keys that member declares
 — and anything else in an `allOf` is an intersection; a local `$ref` is
 resolved, `integer`,
-`minimum`/`maximum`, `minLength`/`maxLength`/`pattern`, the
-`email`/`uri`/`uuid`/`date-time`/`date` formats, `nullable`, `default`
-and `description` are carried over.
+`minimum`/`maximum`, `minLength`/`maxLength`/`pattern`, `nullable`,
+`default` and `description` are carried over; `format` is carried in the
+description and not enforced (see the table below).
 
 LangChain validates a tool call's arguments against `schema` before
 `invoke` runs. So:

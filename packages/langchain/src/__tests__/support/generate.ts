@@ -50,9 +50,13 @@ const FORMAT_SAMPLES: Record<string, unknown[]> = {
 function types(s: Record<string, unknown>): string[] {
   if (Array.isArray(s.type)) return s.type.filter((t): t is string => typeof t === "string");
   if (typeof s.type === "string") return [s.type];
-  if (isObj(s.properties) || Array.isArray(s.required) || s.additionalProperties !== undefined) return ["object"];
-  if (s.items !== undefined || s.prefixItems !== undefined) return ["array"];
-  return [];
+  // Without `type`, every keyword present names a kind worth exercising.
+  const out: string[] = [];
+  if (isObj(s.properties) || Array.isArray(s.required) || s.additionalProperties !== undefined) out.push("object");
+  if (["items", "prefixItems", "minItems", "maxItems", "uniqueItems"].some((k) => s[k] !== undefined)) out.push("array");
+  if (["minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf"].some((k) => s[k] !== undefined)) out.push("number");
+  if (["minLength", "maxLength", "pattern", "format"].some((k) => s[k] !== undefined)) out.push("string");
+  return out;
 }
 
 function strings(s: Record<string, unknown>): unknown[] {
@@ -132,14 +136,39 @@ function objects(s: Record<string, unknown>, root: Record<string, unknown>, dept
   return out;
 }
 
+const MAX_REF_EXPANSIONS = 2;
+let refExpansions = 0;
+const memo = new WeakMap<object, Map<string, unknown[]>>();
+
 /** Candidate values for `schema` (boolean schemas included), canonical first. */
 export function gen(schema: Schema, root: Record<string, unknown>, depth = 0): unknown[] {
   if (schema === undefined || schema === true) return ["any", 1];
   if (schema === false) return [1];
   if (depth > MAX_DEPTH) return [null];
-  const s = schema;
+  const key = `${depth}:${refExpansions}`;
+  const cached = memo.get(schema)?.get(key);
+  if (cached) return cached;
+  const result = genUncached(schema, root, depth);
+  if (!memo.has(schema)) memo.set(schema, new Map());
+  memo.get(schema)!.set(key, result);
+  return result;
+}
+
+function genUncached(s: Record<string, unknown>, root: Record<string, unknown>, depth: number): unknown[] {
   const out: unknown[] = [];
-  if (typeof s.$ref === "string") out.push(...gen(resolve(s.$ref, root), root, depth + 1));
+  if (typeof s.$ref === "string") {
+    // Recursive definitions are followed a bounded number of times.
+    if (refExpansions < MAX_REF_EXPANSIONS) {
+      refExpansions++;
+      try {
+        out.push(...gen(resolve(s.$ref, root), root, depth + 1));
+      } finally {
+        refExpansions--;
+      }
+    } else {
+      out.push({}, null);
+    }
+  }
   if (s.const !== undefined) out.push(s.const, "__other__");
   if (Array.isArray(s.enum)) out.push(...s.enum, "__not_in_enum__");
   for (const key of ["anyOf", "oneOf"] as const) {

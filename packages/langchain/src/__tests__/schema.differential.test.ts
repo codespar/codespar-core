@@ -24,6 +24,7 @@ import { jsonSchemaToZod } from "../schema.js";
 import { KEYWORD_SUPPORT } from "../keywords.js";
 import { rootInputs } from "./support/generate.js";
 import { judge, keywordsIn, withoutLenient } from "./support/oracle.js";
+import { variants } from "./support/variants.js";
 
 type Json = Record<string, unknown>;
 interface Case {
@@ -50,7 +51,11 @@ function corpus(): Case[] {
     const server = JSON.parse(readFileSync(join(mcp, f), "utf8")) as { tools: { name: string; input_schema: Json }[] };
     for (const t of server.tools) cases.push({ corpus: "mcp", name: `${f.replace(/\.json$/, "")}/${t.name}`, schema: t.input_schema });
   }
-  return cases;
+  // Every schema also yields the variants the generator derives from it.
+  return cases.flatMap((c) => [
+    c,
+    ...variants(c.schema).map((v) => ({ ...c, name: `${c.name} [${v.kind}]`, schema: v.schema })),
+  ]);
 }
 
 interface Result {
@@ -62,6 +67,7 @@ interface Result {
   rejectsValid: unknown[];
   acceptsInvalidUnmarked: unknown[];
   acceptsInvalidMarked: number;
+  oracleThrew: number;
   lenientKeywords: string[];
 }
 
@@ -73,6 +79,7 @@ function run(c: Case): Result {
     rejectsValid: [],
     acceptsInvalidUnmarked: [],
     acceptsInvalidMarked: 0,
+    oracleThrew: 0,
     lenientKeywords: [...keywordsIn(c.schema)].filter((k) => KEYWORD_SUPPORT[k] === "advisory" || KEYWORD_SUPPORT[k] === "marked").filter((k) => k !== "description"),
   };
   const strict = judge(c.schema);
@@ -94,7 +101,14 @@ function run(c: Case): Result {
     } catch (err) {
       return { ...result, threw: `parse: ${String(err).slice(0, 120)}` };
     }
-    const a = strict(x);
+    let a: boolean;
+    try {
+      a = strict(x);
+    } catch {
+      // The validator itself could not finish (a degenerate recursive schema): not judged.
+      result.oracleThrew++;
+      continue;
+    }
     if (a && !z) result.rejectsValid.push(x);
     else if (!a && z) {
       if (lenient(x)) result.acceptsInvalidMarked++;

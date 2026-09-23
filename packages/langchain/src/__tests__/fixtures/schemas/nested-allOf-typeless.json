@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "allOf": [
+        {
+          "properties": {
+            "x": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "x"
+          ]
+        },
+        {
+          "properties": {
+            "y": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

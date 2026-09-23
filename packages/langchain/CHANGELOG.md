@@ -16,12 +16,14 @@
   discriminated union when every branch is an object with a common literal
   key), `allOf` (objects → one object: keys only one member declares are
   taken as is, a key two members declare is the intersection of both
-  fields, unknown keys follow the stricter member; anything else → an
-  intersection), local `$ref`, `nullable` and `type: [..,
+  fields, each member's `additionalProperties` judges only the keys that
+  member declares; anything else → an intersection), local `$ref` (its
+  siblings apply, at the root too), `nullable` and `type: [..,
   "null"]`, `integer`, `minimum`/`maximum`/`exclusive*`/`multipleOf`,
-  `minLength`/`maxLength`/`pattern`, the `email`/`uri`/`uuid`/`date-time`/
-  `date` formats, `minItems`/`maxItems`, `prefixItems` (and draft-07
-  `items: [...]`/`additionalItems`) as tuples, draft-4 boolean
+  `minLength`/`maxLength`/`pattern` (on a node without `type` too, where
+  they constrain only values of their kind), `format` as a description
+  note (advisory, not enforced), `minItems`/`maxItems`, `prefixItems` (and
+  draft-07 `items: [...]`/`additionalItems`) as positional checks, draft-4 boolean
   `exclusiveMinimum`/`exclusiveMaximum`, `default` and `description`. A
   combinator beside a schema's own `type`/`properties` constrains it
   further instead of replacing it, and a `required` key `properties` does
@@ -100,6 +102,18 @@
   keywords accepts it too.
 
 ### Fixed during review, found by the differential test
+- A root `$ref` replaced the root with its target and dropped the root's
+  own `properties`/`required`/`description`; the root is now converted as
+  it is. An `allOf` member or `oneOf` branch was re-checked against the
+  parsed object, which already carried defaults from other members, so a
+  strict member rejected a key the caller never sent; rules are checked
+  against the raw input. Value keywords on a node without `type`
+  (`{ minimum: 5 }`) were dropped; they constrain the values of their
+  kind. Two typeless object nodes in an `allOf` lost the non-object values
+  both accept. A `$ref` back to a schema already applying to the same
+  value (`allOf: [{ $ref: "#" }]` on the root) recursed forever; it is
+  marked instead of followed. A key two `allOf` members declare keeps both
+  descriptions.
 
 - A self-referencing definition behind `anyOf` (a linked list's
   `next: anyOf[$ref node, null]`), or a `$ref` with a `default`, recursed

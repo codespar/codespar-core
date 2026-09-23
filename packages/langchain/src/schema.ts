@@ -35,6 +35,18 @@ interface Ctx {
    * a cycle by identity, and a fresh tree per visit is an unbounded walk.
    */
   refs: Map<JsonSchema, z.ZodTypeAny>;
+  /**
+   * The schemas being applied to the current value: entered through `$ref`
+   * or a combinator, not by descending into a property or an item. A `$ref`
+   * back to one of them never reaches new data — every validator loops on
+   * it — so it is marked instead of followed.
+   */
+  sameValue: Set<JsonSchema>;
+}
+
+/** The context for a subschema that applies to a nested value (a property, an item). */
+function descend(ctx: Ctx): Ctx {
+  return { ...ctx, sameValue: new Set() };
 }
 
 interface ConvertOptions {
@@ -86,13 +98,34 @@ function resolveRef(ref: string, root: JsonSchema): JsonSchema | boolean | null 
   return isSchema(node) || typeof node === "boolean" ? node : null;
 }
 
-/** Instances of the "anything but an object" branch, recognised when a union meets an object. */
+/**
+ * Branches of a typeless node that never accept a plain object (its number,
+ * string and array branches, and the branch for the kinds it does not
+ * constrain). Recognised when such a union meets an object.
+ */
 const NON_OBJECT = new WeakSet<z.ZodTypeAny>();
 
-function nonObject(): z.ZodTypeAny {
-  const t = z.custom<unknown>((v) => v === null || typeof v !== "object" || Array.isArray(v));
+function tagNonObject<T extends z.ZodTypeAny>(t: T): T {
   NON_OBJECT.add(t);
   return t;
+}
+
+type Kind = "null" | "boolean" | "number" | "string" | "array" | "object";
+
+function kindOf(v: unknown): Kind {
+  if (v === null) return "null";
+  if (Array.isArray(v)) return "array";
+  if (typeof v === "object") return "object";
+  return typeof v as Kind;
+}
+
+function isPlainObject(v: unknown): boolean {
+  return kindOf(v) === "object";
+}
+
+/** Every value whose kind is not in `constrained`. */
+function otherKinds(constrained: Set<Kind>): z.ZodTypeAny {
+  return tagNonObject(z.custom<unknown>((v) => v !== undefined && !constrained.has(kindOf(v))));
 }
 
 function literal(value: unknown): z.ZodTypeAny {
@@ -133,10 +166,32 @@ function objectUnder(field: z.ZodTypeAny): AnyObject | null {
   const object = asObject(bare);
   if (object) return object;
   const options = unionOptions(bare);
-  if (options && options.length === 2 && options.some((o) => NON_OBJECT.has(o))) {
-    return objectUnder(options.find((o) => !NON_OBJECT.has(o))!);
+  if (options && options.some((o) => NON_OBJECT.has(o))) {
+    const objects = options.filter((o) => !NON_OBJECT.has(o));
+    return objects.length === 1 ? objectUnder(objects[0]!) : null;
   }
   return null;
+}
+
+/** Whether a field accepts some non-object values through a typeless node's branches. */
+function acceptsNonObjects(field: z.ZodTypeAny): boolean {
+  return unionOptions(field)?.some((o) => NON_OBJECT.has(o)) ?? false;
+}
+
+/**
+ * An object that must also pass `rules`, each checked against the RAW input:
+ * after parsing, the object carries defaults other members declared, and a
+ * strict member would reject a key the caller never sent.
+ */
+function withRules(object: AnyObject, rules: z.ZodTypeAny[]): z.ZodTypeAny {
+  if (rules.length === 0) return object;
+  return z.preprocess((raw, issues) => {
+    for (const rule of rules) {
+      const parsed = rule.safeParse(raw);
+      if (!parsed.success) addIssues(issues, parsed.error);
+    }
+    return raw;
+  }, object);
 }
 
 /** A `const`-like value a branch fixes for `key`, if it fixes one. */
@@ -216,7 +271,7 @@ function numberSchema(schema: JsonSchema, integer: boolean): z.ZodTypeAny {
   return n;
 }
 
-/** A subschema position: a schema, or the boolean schemas `true` / `false`. */
+/** A subschema position applying to the same value: a schema, or `true` / `false`. */
 function sub(value: unknown, ctx: Ctx, opts: ConvertOptions = {}): z.ZodTypeAny {
   if (value === false) return z.never();
   if (isSchema(value)) return convert(value, ctx, opts);
@@ -244,13 +299,13 @@ function arraySchema(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
     : Array.isArray(schema.items)
       ? schema.additionalItems
       : schema.items;
-  let base = prefixSource ? z.array(z.unknown()) : z.array(sub(restSource, ctx));
+  let base = prefixSource ? z.array(z.unknown()) : z.array(sub(restSource, descend(ctx)));
   if (typeof schema.minItems === "number") base = base.min(schema.minItems);
   if (typeof schema.maxItems === "number") base = base.max(schema.maxItems);
   let out: z.ZodTypeAny = base;
   if (prefixSource) {
-    const prefix = prefixSource.map((p) => sub(p, ctx));
-    const rest = sub(restSource, ctx);
+    const prefix = prefixSource.map((p) => sub(p, descend(ctx)));
+    const rest = sub(restSource, descend(ctx));
     out = out.superRefine((arr, issues) => {
       (arr as unknown[]).forEach((item, i) => {
         const parsed = (i < prefix.length ? prefix[i]! : rest).safeParse(item);
@@ -340,7 +395,7 @@ function objectSchema(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
     const isRequired = required.has(key);
     // A required property is required: its default is documentation, not
     // a value the caller may omit.
-    let field = sub(prop, ctx, { skipDefault: isRequired });
+    let field = sub(prop, descend(ctx), { skipDefault: isRequired });
     if (isRequired && admitsUndefined(field)) {
       const desc = field.description;
       field = field.refine((v) => v !== undefined, { message: "Required" });
@@ -354,7 +409,7 @@ function objectSchema(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
     extra === false
       ? base.strict()
       : isSchema(extra)
-        ? base.catchall(convert(extra, ctx))
+        ? base.catchall(convert(extra, descend(ctx)))
         : base.passthrough();
   return requireUndeclared(object, [...required].filter((k) => !(k in properties)));
 }
@@ -393,7 +448,14 @@ function applyDefault(field: z.ZodTypeAny, value: unknown): z.ZodTypeAny {
 
 /** Convert any JSON Schema fragment to the Zod type that accepts the same values. */
 export function convert(schema: JsonSchema, ctx: Ctx, opts: ConvertOptions = {}): z.ZodTypeAny {
-  let field = core(schema, ctx);
+  const entered = !ctx.sameValue.has(schema);
+  ctx.sameValue.add(schema);
+  let field: z.ZodTypeAny;
+  try {
+    field = core(schema, ctx);
+  } finally {
+    if (entered) ctx.sameValue.delete(schema);
+  }
   if (typeof schema.description === "string") {
     const existing = field.description;
     // A note set deeper in core() rides behind the schema's own words; a
@@ -413,10 +475,12 @@ function reference(ref: string, ctx: Ctx): z.ZodTypeAny {
   const target = resolveRef(ref, ctx.root);
   if (target === null) return markUntranslated(z.unknown(), `$ref ${ref}`);
   if (typeof target === "boolean") return target ? z.unknown() : z.never();
+  if (ctx.sameValue.has(target)) return markUntranslated(z.unknown(), `$ref ${ref} cycles on the same value`);
   const known = ctx.refs.get(target);
   if (known) return known;
   let converted: z.ZodTypeAny | null = null;
-  const lazy = z.lazy(() => (converted ??= convert(target, ctx)));
+  const at: Ctx = { ...ctx, sameValue: new Set(ctx.sameValue) };
+  const lazy = z.lazy(() => (converted ??= convert(target, at)));
   ctx.refs.set(target, lazy);
   return lazy;
 }
@@ -439,7 +503,9 @@ function lift(field: z.ZodTypeAny): { inner: z.ZodTypeAny; optional: boolean; de
 function intersectFields(fa: z.ZodTypeAny, fb: z.ZodTypeAny): z.ZodTypeAny {
   const la = lift(fa);
   const lb = lift(fb);
-  const inner = z.intersection(la.inner, lb.inner);
+  const descriptions = [...new Set([fa.description, fb.description].filter((d): d is string => !!d))];
+  let inner: z.ZodTypeAny = z.intersection(la.inner, lb.inner);
+  if (descriptions.length > 0) inner = inner.describe(descriptions.join(" "));
   if (!la.optional || !lb.optional) return inner;
   const defaults = [la, lb].filter((l) => "default" in l).map((l) => l.default);
   if (defaults.length === 0) return inner.optional();
@@ -478,27 +544,38 @@ function both(a: z.ZodTypeAny, b: z.ZodTypeAny): z.ZodTypeAny {
   const ao = objectUnder(a);
   const bo = objectUnder(b);
   if (!ao || !bo) return z.intersection(a, b);
-  const merged = mergeShapes(ao, bo);
-  const rules = [a, b].filter((side) => !isPlainOpenObject(side));
-  if (rules.length === 0) return merged;
-  return merged.superRefine((value, issues) => {
-    for (const rule of rules) {
-      const parsed = rule.safeParse(value);
-      if (!parsed.success) addIssues(issues, parsed.error);
-    }
-  });
+  const merged = withRules(
+    mergeShapes(ao, bo),
+    [a, b].filter((side) => !isPlainOpenObject(side)),
+  );
+  // Two typeless nodes both accept some non-objects; so does their conjunction.
+  if (!acceptsNonObjects(a) || !acceptsNonObjects(b)) return merged;
+  const nonObjects = tagNonObject(
+    z.unknown().superRefine((value, issues) => {
+      if (value === undefined || isPlainObject(value)) {
+        issues.addIssue({ code: z.ZodIssueCode.custom, message: "expected a non-object value" });
+        return;
+      }
+      for (const side of [a, b]) {
+        const parsed = side.safeParse(value);
+        if (!parsed.success) addIssues(issues, parsed.error);
+      }
+    }),
+  );
+  return z.union([merged, nonObjects]);
 }
 
 /** `oneOf`: a union whose value must match exactly one branch. */
 function exactlyOne(branches: z.ZodTypeAny[]): z.ZodTypeAny {
   const { type, exclusive } = union(branches);
   if (exclusive) return type;
-  return type.superRefine((value, issues) => {
-    const matches = branches.filter((b) => b.safeParse(value).success).length;
+  return z.preprocess((raw, issues) => {
+    const matches = branches.filter((b) => b.safeParse(raw).success).length;
     if (matches > 1) {
       issues.addIssue({ code: z.ZodIssueCode.custom, message: `matches ${matches} oneOf branches, expected exactly one` });
     }
-  });
+    return raw;
+  }, type);
 }
 
 /** `anyOf` / `oneOf` / `allOf` as one Zod type (all of them apply), or null when the schema has none. */
@@ -527,14 +604,30 @@ function structural(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny | null {
     return union(types.map((t) => byType(t, schema, ctx))).type;
   }
   if (typeof type === "string") return byType(type, schema, ctx);
-  // Without `type`, object keywords constrain objects and every other value passes.
+  // Without `type`, each keyword constrains the values of its own kind and
+  // every other kind passes.
+  const has = (keys: string[]) => keys.some((k) => schema[k] !== undefined);
+  const branches: z.ZodTypeAny[] = [];
+  const constrained = new Set<Kind>();
   if (isSchema(schema.properties) || schema.additionalProperties !== undefined || Array.isArray(schema.required)) {
-    return z.union([objectSchema(schema, ctx), nonObject()]);
+    branches.push(objectSchema(schema, ctx));
+    constrained.add("object");
   }
-  if (schema.items !== undefined || schema.prefixItems !== undefined) {
-    return z.union([arraySchema(schema, ctx), z.custom<unknown>((v) => !Array.isArray(v))]);
+  if (has(["items", "prefixItems", "additionalItems", "minItems", "maxItems", "uniqueItems"])) {
+    branches.push(tagNonObject(arraySchema(schema, ctx)));
+    constrained.add("array");
   }
-  return null;
+  if (has(["minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf"])) {
+    branches.push(tagNonObject(numberSchema(schema, false)));
+    constrained.add("number");
+  }
+  if (has(["minLength", "maxLength", "pattern"])) {
+    branches.push(tagNonObject(stringSchema(schema)));
+    constrained.add("string");
+  }
+  if (branches.length === 0) return null;
+  const all = [...branches, otherKinds(constrained)];
+  return z.union([all[0]!, all[1]!, ...all.slice(2)]);
 }
 
 /** Keywords that constrain a value (anything outside the advisory set). */
@@ -578,7 +671,7 @@ function core(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
  * `additionalProperties`). LangChain accepts both; {@link toolInputShape}
  * reaches the properties in either.
  */
-export type ToolInputSchema = AnyObject | z.ZodEffects<AnyObject>;
+export type ToolInputSchema = AnyObject | z.ZodEffects<AnyObject, unknown, unknown>;
 
 /** The object under a tool input schema, whichever form it takes. */
 export function toolInputObject(schema: ToolInputSchema): AnyObject {
@@ -591,9 +684,11 @@ export function toolInputShape(schema: ToolInputSchema): z.ZodRawShape {
 }
 
 /** Strip the value-neutral wrappers a converted root may carry (lazy, default, nullable, optional). */
-function unwrapNeutral(field: z.ZodTypeAny): z.ZodTypeAny {
+function unwrapNeutral(field: z.ZodTypeAny, seen = new Set<z.ZodTypeAny>()): z.ZodTypeAny {
   let current = field;
   for (let i = 0; i < 16; i++) {
+    if (seen.has(current)) return current;
+    seen.add(current);
     if (current instanceof z.ZodLazy) current = current.schema;
     else if (current instanceof z.ZodDefault) current = current._def.innerType;
     else if (current instanceof z.ZodNullable || current instanceof z.ZodOptional) current = current.unwrap();
@@ -602,10 +697,13 @@ function unwrapNeutral(field: z.ZodTypeAny): z.ZodTypeAny {
   return current;
 }
 
-function flattenIntersection(field: z.ZodTypeAny): z.ZodTypeAny[] {
+function flattenIntersection(field: z.ZodTypeAny, seen = new Set<z.ZodTypeAny>()): z.ZodTypeAny[] {
+  if (seen.has(field)) return [];
+  seen.add(field);
+  // Its own guard: the lazy just recorded here must still be resolved.
   const bare = unwrapNeutral(field);
   if (bare instanceof z.ZodIntersection) {
-    return [...flattenIntersection(bare._def.left), ...flattenIntersection(bare._def.right)];
+    return [...flattenIntersection(bare._def.left, seen), ...flattenIntersection(bare._def.right, seen)];
   }
   return [bare];
 }
@@ -653,14 +751,10 @@ function unionSurface(options: z.ZodTypeAny[]): { surface: AnyObject | null; non
  * contribute an object is named in the description — never silently empty.
  */
 export function jsonSchemaToZod(schema: JsonSchema): ToolInputSchema {
-  const ctx: Ctx = { root: schema, refs: new Map() };
-  let target: JsonSchema = schema;
-  for (let i = 0; i < 16 && typeof target.$ref === "string"; i++) {
-    const resolved = resolveRef(target.$ref, schema);
-    if (!isSchema(resolved)) break;
-    target = resolved;
-  }
-  const converted = convert(target, ctx);
+  const ctx: Ctx = { root: schema, refs: new Map(), sameValue: new Set() };
+  // The root is converted as it is: a root `$ref` resolves lazily and its
+  // siblings apply, as they do at any depth.
+  const converted = convert(schema, ctx);
 
   let object: AnyObject | null = null;
   const rules: z.ZodTypeAny[] = [];
@@ -691,16 +785,10 @@ export function jsonSchemaToZod(schema: JsonSchema): ToolInputSchema {
   let result: AnyObject = object ?? z.object({}).passthrough();
   if (converted.description) result = result.describe(converted.description);
   for (const note of notes) result = markUntranslated(result, note);
-  if (rules.length === 0) return result;
-  return result.superRefine((value, issues) => {
-    for (const rule of rules) {
-      const parsed = rule.safeParse(value);
-      if (!parsed.success) addIssues(issues, parsed.error);
-    }
-  });
+  return withRules(result, rules) as ToolInputSchema;
 }
 
 /** Convert any JSON Schema fragment; `root` (default: the fragment) resolves local `$ref`s. */
 export function jsonSchemaToZodType(schema: JsonSchema, root: JsonSchema = schema): z.ZodTypeAny {
-  return convert(schema, { root, refs: new Map() });
+  return convert(schema, { root, refs: new Map(), sameValue: new Set() });
 }

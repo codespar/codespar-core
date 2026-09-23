@@ -669,6 +669,110 @@ describe("jsonSchemaToZod — differential findings", () => {
   });
 });
 
+describe("jsonSchemaToZod — widened differential findings", () => {
+  it("a root $ref keeps its siblings: properties, required and description apply", () => {
+    const s = jsonSchemaToZod({
+      $ref: "#/$defs/Base",
+      description: "Base plus an extra field",
+      properties: { extra: { type: "string" } },
+      required: ["extra"],
+      $defs: { Base: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } },
+    });
+    expect(Object.keys(shapeOf(s)).sort()).toEqual(["extra", "id"]);
+    expect(toolInputObject(s).description).toBe("Base plus an extra field");
+    expect(ok(s, { id: "x", extra: "y" })).toBe(true);
+    expect(ok(s, { id: "x" })).toBe(false);
+    expect(ok(s, { extra: "y" })).toBe(false);
+  });
+
+  it("a strict member is checked against the raw input, not against defaults another member adds", () => {
+    const viaAllOf = jsonSchemaToZod({
+      allOf: [
+        { type: "object", properties: { a: { type: "string" } }, additionalProperties: false },
+        { properties: { b: { type: "number", default: 5 } } },
+      ],
+    });
+    expect(ok(viaAllOf, { a: "x" })).toBe(true);
+    expect(viaAllOf.parse({ a: "x" })).toEqual({ a: "x", b: 5 });
+    expect(ok(viaAllOf, { a: "x", b: 1 })).toBe(false);
+    const viaOneOf = jsonSchemaToZod({
+      type: "object",
+      properties: { b: { type: "number", default: 5 } },
+      oneOf: [{ type: "object", properties: { a: { type: "string" } }, additionalProperties: false }],
+    });
+    expect(ok(viaOneOf, { a: "x" })).toBe(true);
+    expect(ok(viaOneOf, { a: "x", b: 1 })).toBe(false);
+  });
+
+  it("value keywords on a node without type constrain the values of their kind only", () => {
+    const s = jsonSchemaToZod({
+      type: "object",
+      properties: {
+        n: { minimum: 5, multipleOf: 5 },
+        s: { minLength: 2, pattern: "^a" },
+        a: { maxItems: 1 },
+      },
+    });
+    expect(ok(s, { n: 3 })).toBe(false);
+    expect(ok(s, { n: 10 })).toBe(true);
+    expect(ok(s, { n: "3" })).toBe(true);
+    expect(ok(s, { s: "b" })).toBe(false);
+    expect(ok(s, { s: "ab" })).toBe(true);
+    expect(ok(s, { s: 1 })).toBe(true);
+    expect(ok(s, { a: [1, 2] })).toBe(false);
+    expect(ok(s, { a: {} })).toBe(true);
+  });
+
+  it("two typeless object nodes in an allOf keep the non-object values both accept", () => {
+    const s = objectWith({
+      allOf: [{ properties: { x: { type: "string" } }, required: ["x"] }, { properties: { y: { type: "number" } } }],
+    });
+    expect(ok(s, { v: null })).toBe(true);
+    expect(ok(s, { v: "s" })).toBe(true);
+    expect(ok(s, { v: { x: "a", y: 1 } })).toBe(true);
+    expect(ok(s, { v: { y: 1 } })).toBe(false);
+    expect(ok(s, { v: { x: "a", y: "1" } })).toBe(false);
+  });
+
+  it("a $ref to the root or to a parent beside its own constraints never throws", () => {
+    const toRoot = jsonSchemaToZod({
+      type: "object",
+      properties: { name: { type: "string" }, child: { $ref: "#", required: ["name"] } },
+    });
+    expect(ok(toRoot, { name: "a", child: { name: "b", child: { name: "c" } } })).toBe(true);
+    expect(ok(toRoot, { child: {} })).toBe(false);
+    const toParent = jsonSchemaToZod({
+      type: "object",
+      properties: {
+        node: { type: "object", properties: { k: { type: "string" }, up: { $ref: "#/properties/node", required: ["k"] } } },
+      },
+    });
+    expect(ok(toParent, { node: { up: { k: "x" } } })).toBe(true);
+    expect(ok(toParent, { node: { up: {} } })).toBe(false);
+    // Back to a schema already applying to the same value: every validator
+    // loops on it, so it is marked, not followed.
+    for (const degenerate of [
+      { type: "object", properties: { a: { type: "string" } }, required: ["a"], allOf: [{ $ref: "#" }] },
+      { $ref: "#", properties: { a: { type: "string" } } },
+    ]) {
+      expect(() => jsonSchemaToZod(degenerate as JsonSchema)).not.toThrow();
+      const s = jsonSchemaToZod(degenerate as JsonSchema);
+      expect(() => s.safeParse({ a: "x" })).not.toThrow();
+      expect(ok(s, { a: 1 })).toBe(false);
+    }
+  });
+
+  it("a key two allOf members declare keeps both descriptions", () => {
+    const s = jsonSchemaToZod({
+      allOf: [
+        { properties: { id: { type: "string", description: "Payment id" } } },
+        { properties: { id: { pattern: "^pay_", description: "Prefixed pay_" } } },
+      ],
+    });
+    expect(shapeOf(s).id!.description).toBe("Payment id Prefixed pay_");
+  });
+});
+
 describe("the declared subset", () => {
   it("the README table is rendered from the map the converter uses", () => {
     const readme = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../README.md"), "utf8");
