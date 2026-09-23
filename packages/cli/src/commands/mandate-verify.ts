@@ -8,7 +8,7 @@ import {
   verifyEd25519,
   type DecodedToken,
 } from "../mandate-codec.js";
-import { resolveDidKeys, type DidKey } from "../did.js";
+import { resolveDidKeys, type DidKey, type DidResolution } from "../did.js";
 
 export interface MandateVerifyOptions {
   /** Raw 32-byte Ed25519 agent public key (hex). Presence forces offline mode. */
@@ -17,6 +17,11 @@ export interface MandateVerifyOptions {
   issuerPubkey?: string;
   /** Override the issuer DID (default: did:web derived from the agent DID host). */
   issuerDid?: string;
+  /**
+   * Explicit resolver base URL for network mode: consulted for any DID whose
+   * did:web document is unreachable. Opt-in; announced on stderr when used.
+   */
+  resolver?: string;
   baseUrl: string;
   json?: boolean;
 }
@@ -28,7 +33,7 @@ interface SigResult {
   status: SigStatus;
   /** The verificationMethod / key id that verified the signature (or was tried). */
   kid?: string;
-  /** Where the public key came from: "flag" | "did:web" | "-". */
+  /** Where the public key came from: "flag" | "did:web" | "fallback" | "resolver" | "-". */
   source: string;
   detail?: string;
 }
@@ -38,6 +43,23 @@ function platformIssuerDid(agentDid: string): string | null {
   if (!agentDid.startsWith("did:web:")) return null;
   const host = agentDid.slice("did:web:".length).split(":")[0];
   return host ? `did:web:${host}` : null;
+}
+
+/**
+ * Say on stderr when a key did not come from the DID's own domain. A resolver
+ * is a third party the user opted into; the API route is the deployment's own
+ * service answering for its own domain. Either way the user should see that
+ * the domain itself did not answer.
+ */
+function announceSource(did: string, resolved: DidResolution): void {
+  if (resolved.source === "resolver") {
+    warn(
+      `${did}: keys came from the resolver at ${resolved.tried[resolved.tried.length - 1]}, ` +
+        `not from the domain's did:web document`,
+    );
+  } else if (resolved.source === "fallback") {
+    info(`${did}: did:web document unreachable; keys came from the API's DID route`);
+  }
 }
 
 /** Try a signature against a set of candidate keys; first hit wins. */
@@ -60,7 +82,10 @@ function verifyAgainst(
  * Offline mode (any --agent-pubkey / --issuer-pubkey given): verify the named
  * signatures against the supplied raw Ed25519 keys with zero network calls.
  * Network mode (no pubkey flags): resolve the agent + issuer public keys from
- * their did:web documents (standard route, api.codespar.dev fallback) and verify.
+ * their did:web documents and verify. The domain named in the DID is the
+ * authority; the configured API's DID route is consulted only for a DID under
+ * the API's own domain whose document is unreachable, and `--resolver <url>`
+ * opts into a resolver for any DID, announced on stderr when it is the source.
  *
  * A signature the token carries must verify for an overall pass. In offline mode
  * a signature with no supplied key is "skipped" (not proven, not failed); at
@@ -114,15 +139,18 @@ export async function mandateVerifyCommand(
         agent.status = "failed";
         agent.detail = "token carries no agent_kid to resolve";
       } else {
-        const keys = await resolveDidKeys(agentDid, {
+        const resolved = await resolveDidKeys(agentDid, {
           baseUrl: opts.baseUrl,
           preferredKid: agentKid,
+          resolverUrl: opts.resolver,
         });
-        if (keys.length === 0) {
+        if (resolved.keys.length === 0) {
           agent.status = "failed";
-          agent.detail = `could not resolve ${agentDid}`;
+          agent.detail = `could not resolve ${agentDid}: ${resolved.detail}`;
         } else {
-          const hit = verifyAgainst(signingString, t.agent_sig, keys);
+          agent.source = resolved.source ?? "did:web";
+          announceSource(agentDid, resolved);
+          const hit = verifyAgainst(signingString, t.agent_sig, resolved.keys);
           agent.status = hit ? "verified" : "failed";
           agent.kid = hit?.kid ?? agentKid;
         }
@@ -153,12 +181,17 @@ export async function mandateVerifyCommand(
       } else {
         // The envelope names the agent kid, not the issuer's, so try every
         // Ed25519 key the issuer document publishes.
-        const keys = await resolveDidKeys(issuerDid, { baseUrl: opts.baseUrl });
-        if (keys.length === 0) {
+        const resolved = await resolveDidKeys(issuerDid, {
+          baseUrl: opts.baseUrl,
+          resolverUrl: opts.resolver,
+        });
+        if (resolved.keys.length === 0) {
           issuer.status = "failed";
-          issuer.detail = `could not resolve ${issuerDid}`;
+          issuer.detail = `could not resolve ${issuerDid}: ${resolved.detail}`;
         } else {
-          const hit = verifyAgainst(signingString, t.issuer_sig, keys);
+          issuer.source = resolved.source ?? "did:web";
+          announceSource(issuerDid, resolved);
+          const hit = verifyAgainst(signingString, t.issuer_sig, resolved.keys);
           issuer.status = hit ? "verified" : "failed";
           issuer.kid = hit?.kid;
         }

@@ -454,13 +454,19 @@ mandate
     "--issuer-did <did>",
     "Issuer DID for network mode (default: did:web derived from the agent DID host)",
   )
+  .option(
+    "--resolver <url>",
+    "Network mode: resolver consulted for any DID whose did:web document is unreachable. " +
+      "Without it, only DIDs under the API host's own domain fall back to the API.",
+  )
   .action(
     async (
       token: string,
-      opts: { agentPubkey?: string; issuerPubkey?: string; issuerDid?: string },
+      opts: { agentPubkey?: string; issuerPubkey?: string; issuerDid?: string; resolver?: string },
     ) => {
-      // Offline verification needs no API key — resolve the base URL (for the
-      // network fallback) from flags/env/config without requiring auth.
+      // Offline verification needs no API key — resolve the base URL (whose
+      // DID route serves the API's own domain) from flags/env/config without
+      // requiring auth.
       const config = await loadConfig();
       const root = program.opts<{ baseUrl?: string }>();
       const baseUrl = root.baseUrl ?? config.baseUrl ?? "https://api.codespar.dev";

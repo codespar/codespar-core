@@ -1,5 +1,27 @@
 # @codespar/cli — changelog
 
+## 0.14.1 — 2026-09-23
+
+### Fixed
+
+- `codespar mandate verify` in network mode no longer consults the
+  configured API's DID route for a DID under another domain. The route was
+  tried for every DID whose standard did:web document was unreachable or
+  keyless, so the API could answer for an identity it does not own, and the
+  user could not see that it had. Now the domain named in the DID is the
+  authority: the API's route is consulted only for a DID under the API
+  host's own domain, and only when the standard document could not be
+  fetched; a fetched document without an Ed25519 key ends the resolution
+  with an explicit failure. The failure detail names the URL that did not
+  answer and why nothing else was tried.
+
+### Added
+
+- `codespar mandate verify --resolver <url>`: opt into a resolver for any
+  DID whose did:web document is unreachable. When a key came from it, the
+  CLI says so on stderr; the `source` column reads `resolver` (or
+  `fallback` for the API's own route) instead of `did:web`.
+
 ## 0.14.0 — 2026-09-23
 
 ### Added
