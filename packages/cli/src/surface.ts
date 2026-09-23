@@ -445,7 +445,7 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
   },
   mandates: {
     reason:
-      "Org-scoped mandate lifecycle (pause/resume/revoke). `codespar mandate create|verify` covers issuance and offline verification; the lifecycle verbs are wave-5 work in the matrix.",
+      "Org-scoped mandate lifecycle. `codespar mandate create|verify|revoke` covers issuance, offline verification and revocation (`POST /v1/mandates/{id}/revoke`, dispatched through the typed client, ent#979 canonical spelling); the reads and pause/resume are still to come.",
     since: "2026-09-10",
   },
   orgs: {

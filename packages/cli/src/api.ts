@@ -24,14 +24,12 @@ import { VERSION } from "./version.js";
  */
 export class HttpError extends CliError {
   readonly status: number;
-  readonly code?: string;
   readonly body?: unknown;
 
   constructor(message: string, opts: { status: number; code?: string; body?: unknown }) {
-    super(message);
+    super(message, { code: opts.code });
     this.name = "HttpError";
     this.status = opts.status;
-    this.code = opts.code;
     this.body = opts.body;
   }
 }
