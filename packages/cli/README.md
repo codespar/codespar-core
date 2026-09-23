@@ -84,7 +84,10 @@ codespar init my-agent
 | `triggers <sub>` | Triggers (webhooks): endpoints, deliveries, DLQ, secret rotation, redelivery |
 | `execute <tool>` | Run a single tool call in a throwaway session |
 | `discover <query>` | Search the catalog for tools matching a use case |
+| `agent run <dir>` | Run one turn of an agent directory built on `@codespar/agent-core` (`--input`, `--approve`/`--deny`) through its own `npm start`; same output, same exit code |
+| `eval <dir>` | Run the agent's `npm run check` + `npm run eval` (adversarial suite and scenarios), one line per case; exit 1 on any failure |
 | `mandate create` | Create a consumer mandate — the agent's allowance. `--slot CURRENCY:METHOD:CAP:PER_TX` (repeatable, e.g. `BRL:pix:50000:1500`) for a unified multi-currency wallet; per-currency caps, no FX |
+| `mandate revoke <id>` | Revoke a consumer mandate (`POST /v1/mandates/{id}/revoke`); active or paused → revoked, terminal. `--reason` goes to the evidence row |
 | `wallet <consumer>` | Show the consumer's unified wallet, rolled up per currency |
 | `transfer <consumer>` | Move value between wallet slots (`--from --to --amount [--execute]`); a cross-currency move is a real ramp trade at the real rate, no FX |
 | `spend` | Execute an agentic spend against a mandate (x402 / USDC / Pix, routed by payee) |
