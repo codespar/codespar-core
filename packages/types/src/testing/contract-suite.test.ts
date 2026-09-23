@@ -112,41 +112,85 @@ describe("runContractSuite leg registration", () => {
   });
 });
 
-/* ── Execute-leg assertion against a FAKE backend ────────────────
+/* ── Leg assertions against a FAKE backend ───────────────────────
  *
- * The execute leg drives `codespar_list_tools` (a built-in that always
- * succeeds) and asserts the canonical no-error result: `error: null`. Prove
- * that assertion bites without a real server by running the registered leg
- * body against a stubbed `fetch` that plays a configurable backend, and
- * capturing pass/fail via a mocked Vitest that runs the `it` body with the
- * real `expect`.
+ * `runContractSuite` needs a live backend, so the assertions each leg makes
+ * are proven here by running the registered leg body against a stubbed
+ * `fetch` that plays a configurable backend, under a mocked Vitest that
+ * runs the `it` body with the real `expect` and captures pass/fail.
  *
- * A backend that returns `error: null` on the success passes; a backend
- * that returns a non-null error on the success (e.g. the `error: ""` an OSS
- * runtime used to return — the divergence the old `expect.anything()`
- * masked) fails the leg.
+ * Three surfaces are pinned this way:
+ *
+ *   - the execute leg's canonical no-error result (`error: null`), which an
+ *     earlier `expect.anything()` masked;
+ *   - the `POST /v1/sessions` 201 body every leg opens with — the SDK builds
+ *     its session from `user_id`, `servers` and `created_at`, so a runtime
+ *     that returns only `{ id, status }` must fail every leg, not pass on a
+ *     session the SDK could not use;
+ *   - the `GET /v1/sessions/:id/connections` body — `servers` entries carry
+ *     `id` + `connected`, and `tools` is present, because the SDK caches it.
  * ─────────────────────────────────────────────────────────────── */
 
-/** The ToolResult a fake backend returns for the execute call. */
-type FakeExecuteResult = ToolResult;
+/** A 201 body a conforming runtime returns for `{ servers: [], user_id: "contract-suite" }`. */
+const CREATED_OK = {
+  id: "ses_fake",
+  status: "active",
+  user_id: "contract-suite",
+  servers: [] as string[],
+  created_at: "2026-09-23T12:00:00.000Z",
+};
 
-function jsonResponse(body: unknown): Response {
+/** A connections body a conforming runtime returns: one connected server, no tools. */
+const CONNECTIONS_OK = {
+  servers: [
+    {
+      id: "asaas",
+      name: "Asaas",
+      category: "payments",
+      country: "BR",
+      auth_type: "api_key",
+      connected: true,
+    },
+  ],
+  tools: [] as unknown[],
+};
+
+const EXECUTE_OK: ToolResult = {
+  success: true,
+  data: { tools: [] },
+  error: null,
+  duration: 3,
+  server: "fake-runtime",
+  tool: "codespar_list_tools",
+};
+
+interface FakeBackend {
+  create?: { status?: number; body: unknown };
+  execute?: ToolResult;
+  connections?: { status?: number; body: unknown };
+}
+
+function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
-    status: 200,
+    status,
     headers: { "Content-Type": "application/json" },
   });
 }
 
-/** Stub `fetch`: session-create returns an active session, execute returns
- *  the given result, DELETE closes. Returns a teardown. */
-function installFakeBackend(executeResult: FakeExecuteResult): () => void {
+/** Stub `fetch` with the given backend answers (conforming defaults). Returns a teardown. */
+function installFakeBackend(backend: FakeBackend = {}): () => void {
+  const create = backend.create ?? { status: 201, body: CREATED_OK };
+  const connections = backend.connections ?? { status: 200, body: CONNECTIONS_OK };
   const stub = vi.fn(async (url: string | URL, init?: RequestInit) => {
     const u = String(url);
     if (u.endsWith("/v1/sessions") && init?.method === "POST") {
-      return jsonResponse({ id: "sess_fake", status: "active" });
+      return jsonResponse(create.body, create.status ?? 201);
     }
     if (u.includes("/execute")) {
-      return jsonResponse(executeResult);
+      return jsonResponse(backend.execute ?? EXECUTE_OK);
+    }
+    if (u.endsWith("/connections")) {
+      return jsonResponse(connections.body, connections.status ?? 200);
     }
     return jsonResponse({});
   });
@@ -157,9 +201,12 @@ function installFakeBackend(executeResult: FakeExecuteResult): () => void {
   };
 }
 
-/** Run only the execute leg under a mocked Vitest that executes the `it`
- *  body with the real `expect`, recording whether it passed. */
-async function runExecuteLeg(): Promise<{ passed: boolean; error?: string }> {
+/** Run one leg under a mocked Vitest that executes the `it` body with the
+ *  real `expect`, recording whether it passed. */
+async function runLeg(
+  leg: ContractLeg,
+  servers?: string[],
+): Promise<{ passed: boolean; error?: string }> {
   vi.resetModules();
   const cases: Array<() => Promise<void>> = [];
   const afterEachFns: Array<() => unknown> = [];
@@ -182,7 +229,8 @@ async function runExecuteLeg(): Promise<{ passed: boolean; error?: string }> {
 
   const mod = await import("./contract-suite.js");
   mod.runContractSuite("http://localhost:9999", "csk_test", {
-    legs: ["execute"],
+    legs: [leg],
+    ...(servers ? { servers } : {}),
   });
   try {
     for (const c of cases) await c();
@@ -190,7 +238,13 @@ async function runExecuteLeg(): Promise<{ passed: boolean; error?: string }> {
   } catch (err) {
     return { passed: false, error: err instanceof Error ? err.message : String(err) };
   } finally {
-    for (const a of afterEachFns) await a();
+    for (const a of afterEachFns) {
+      try {
+        await a();
+      } catch {
+        // afterEach closes a session that may never have opened.
+      }
+    }
     vi.doUnmock("vitest");
   }
 }
@@ -202,17 +256,9 @@ describe("runContractSuite execute leg against a fake backend", () => {
     teardown = null;
   });
 
-  const base: Omit<ToolResult, "error"> = {
-    success: true,
-    data: { tools: [] },
-    duration: 3,
-    server: "fake-runtime",
-    tool: "codespar_list_tools",
-  };
-
   it("passes when a success result carries the canonical error: null", async () => {
-    teardown = installFakeBackend({ ...base, error: null });
-    const outcome = await runExecuteLeg();
+    teardown = installFakeBackend({ execute: EXECUTE_OK });
+    const outcome = await runLeg("execute");
     expect(outcome.error ?? "", outcome.error ?? "").toBe("");
     expect(outcome.passed).toBe(true);
   });
@@ -220,15 +266,136 @@ describe("runContractSuite execute leg against a fake backend", () => {
   it("fails when a success result carries a non-null error (the masked divergence)", async () => {
     // An OSS runtime used to return `error: ""` on a success — non-null, so
     // it must now fail the pinned `error: null` assertion.
-    teardown = installFakeBackend({ ...base, error: "" });
-    const outcome = await runExecuteLeg();
+    teardown = installFakeBackend({ execute: { ...EXECUTE_OK, error: "" } });
+    const outcome = await runLeg("execute");
     expect(outcome.passed).toBe(false);
   });
 
   it("fails when a no-error result reports success: false", async () => {
     // `success: true` is now pinned too — list_tools always succeeds.
-    teardown = installFakeBackend({ ...base, success: false, error: null });
-    const outcome = await runExecuteLeg();
+    teardown = installFakeBackend({ execute: { ...EXECUTE_OK, success: false } });
+    const outcome = await runLeg("execute");
     expect(outcome.passed).toBe(false);
+  });
+});
+
+describe("runContractSuite pins the POST /v1/sessions 201 body on every leg", () => {
+  let teardown: (() => void) | null = null;
+  afterEach(() => {
+    teardown?.();
+    teardown = null;
+  });
+
+  it("passes on the full body: id, status, user_id, servers, created_at", async () => {
+    teardown = installFakeBackend();
+    const outcome = await runLeg("close");
+    expect(outcome.error ?? "", outcome.error ?? "").toBe("");
+    expect(outcome.passed).toBe(true);
+  });
+
+  it("fails on a body that carries only { id, status }", async () => {
+    // The shape a runtime used to return: the SDK turned it into an Invalid
+    // Date and undefined `userId` / `servers`, silently.
+    teardown = installFakeBackend({
+      create: { body: { id: "ses_fake", status: "active" } },
+    });
+    const outcome = await runLeg("close");
+    expect(outcome.passed).toBe(false);
+    expect(outcome.error).toContain("user_id");
+  });
+
+  it.each(["user_id", "servers", "created_at"] as const)(
+    "fails when %s is missing",
+    async (field) => {
+      const body: Record<string, unknown> = { ...CREATED_OK };
+      delete body[field];
+      teardown = installFakeBackend({ create: { body } });
+      const outcome = await runLeg("execute");
+      expect(outcome.passed).toBe(false);
+    },
+  );
+
+  it("fails when the status code is not 201", async () => {
+    teardown = installFakeBackend({ create: { status: 200, body: CREATED_OK } });
+    const outcome = await runLeg("execute");
+    expect(outcome.passed).toBe(false);
+    expect(outcome.error).toContain("201");
+  });
+
+  it("fails when user_id is not the one the caller posted", async () => {
+    teardown = installFakeBackend({ create: { body: { ...CREATED_OK, user_id: "other" } } });
+    const outcome = await runLeg("execute");
+    expect(outcome.passed).toBe(false);
+  });
+
+  it("fails when created_at does not parse as a date", async () => {
+    teardown = installFakeBackend({
+      create: { body: { ...CREATED_OK, created_at: "not-a-date" } },
+    });
+    const outcome = await runLeg("execute");
+    expect(outcome.passed).toBe(false);
+    expect(outcome.error).toContain("created_at");
+  });
+
+  it("fails when servers drops an id the caller posted", async () => {
+    teardown = installFakeBackend({ create: { body: { ...CREATED_OK, servers: [] } } });
+    const outcome = await runLeg("execute", ["alpha"]);
+    expect(outcome.passed).toBe(false);
+    expect(outcome.error).toContain("servers");
+  });
+
+  it("passes when servers echoes the posted ids, with or without provisioned extras", async () => {
+    teardown = installFakeBackend({
+      create: { body: { ...CREATED_OK, servers: ["alpha", "default"] } },
+    });
+    const outcome = await runLeg("execute", ["alpha"]);
+    expect(outcome.error ?? "", outcome.error ?? "").toBe("");
+    expect(outcome.passed).toBe(true);
+  });
+});
+
+describe("runContractSuite connections leg pins the GET /connections body", () => {
+  let teardown: (() => void) | null = null;
+  afterEach(() => {
+    teardown?.();
+    teardown = null;
+  });
+
+  it("passes on { servers: [{ id, connected, ... }], tools: [] }", async () => {
+    teardown = installFakeBackend();
+    const outcome = await runLeg("connections");
+    expect(outcome.error ?? "", outcome.error ?? "").toBe("");
+    expect(outcome.passed).toBe(true);
+  });
+
+  it("fails when tools is missing", async () => {
+    // The SDK assigns `payload.tools` into its tool cache; without it the
+    // cache never fills.
+    teardown = installFakeBackend({
+      connections: { body: { servers: CONNECTIONS_OK.servers } },
+    });
+    const outcome = await runLeg("connections");
+    expect(outcome.passed).toBe(false);
+    expect(outcome.error).toContain("tools");
+  });
+
+  it("fails when a server entry lacks connected", async () => {
+    teardown = installFakeBackend({
+      connections: { body: { servers: [{ id: "asaas" }], tools: [] } },
+    });
+    const outcome = await runLeg("connections");
+    expect(outcome.passed).toBe(false);
+    expect(outcome.error).toContain("connected");
+  });
+
+  it("fails when the route answers non-2xx instead of returning []", async () => {
+    // A runtime without the route used to pass this leg: the old client
+    // swallowed the status and returned an empty list.
+    teardown = installFakeBackend({
+      connections: { status: 404, body: { error: "not_found" } },
+    });
+    const outcome = await runLeg("connections");
+    expect(outcome.passed).toBe(false);
+    expect(outcome.error).toContain("404");
   });
 });

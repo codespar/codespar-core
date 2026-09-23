@@ -135,6 +135,84 @@ async function* parseSse(body: ReadableStream<Uint8Array>): AsyncIterable<Stream
   }
 }
 
+/** The fields of the `POST /v1/sessions` 201 body that the SDK reads. */
+export interface CreatedSessionBody {
+  id: string;
+  status: "active" | "closed" | "error";
+  user_id: string;
+  servers: string[];
+  created_at: string;
+}
+
+/** The fields of the `GET /v1/sessions/:id/connections` body that the SDK reads. */
+export interface ConnectionsBody {
+  servers: BaseConnection[];
+  tools: unknown[];
+}
+
+/**
+ * Pin the 201 body to the shape `@codespar/sdk` builds its session from.
+ * The SDK assigns `user_id`, `servers` and `created_at` without checking
+ * them (`createdAt: new Date(data.created_at)`), so a runtime that returns
+ * only `{ id, status }` produces an Invalid Date and undefined fields
+ * rather than an error. Asserting here makes every leg fail loudly on such
+ * a runtime instead of passing on a session the SDK could not use.
+ *
+ * `servers` is checked for containment, not equality: a runtime may
+ * provision defaults on top of what the caller posted, but must not drop
+ * what was posted.
+ */
+export function assertCreatedSessionShape(
+  status: number,
+  body: unknown,
+  posted: { servers: string[]; user_id: string },
+): CreatedSessionBody {
+  expect(status, "POST /v1/sessions must answer 201 Created").toBe(201);
+  expect(
+    body,
+    "201 body must carry id, status: active, the posted user_id, servers and created_at",
+  ).toMatchObject({
+    id: expect.any(String),
+    status: "active",
+    user_id: posted.user_id,
+    servers: expect.any(Array),
+    created_at: expect.any(String),
+  });
+  const raw = body as CreatedSessionBody;
+  for (const id of raw.servers) {
+    expect(typeof id, "servers must be a string[]").toBe("string");
+  }
+  expect(raw.servers, "servers must include every id the caller posted").toEqual(
+    expect.arrayContaining(posted.servers),
+  );
+  expect(
+    Number.isNaN(Date.parse(raw.created_at)),
+    `created_at must parse as a date, got ${JSON.stringify(raw.created_at)}`,
+  ).toBe(false);
+  return raw;
+}
+
+/**
+ * Pin the connections body to what the SDK caches from it: `servers` (each
+ * at least a `BaseConnection`) and `tools`. The SDK assigns `payload.tools`
+ * straight into its tool cache, so a body without it is a cache that never
+ * fills, not an empty catalogue.
+ */
+export function assertConnectionsShape(body: unknown): ConnectionsBody {
+  expect(body, "connections body must carry servers[] and tools[]").toMatchObject({
+    servers: expect.any(Array),
+    tools: expect.any(Array),
+  });
+  const raw = body as ConnectionsBody;
+  for (const c of raw.servers) {
+    expect(c, "each server entry must carry id and connected").toMatchObject({
+      id: expect.any(String),
+      connected: expect.any(Boolean),
+    });
+  }
+  return raw;
+}
+
 // Builds a minimal SessionBase from raw fetch calls so the contract suite
 // can run against any backend that implements the codespar session API.
 async function openSession(
@@ -147,17 +225,18 @@ async function openSession(
     Authorization: `Bearer ${apiKey}`,
   };
 
+  const createBody = buildSessionCreateBody(opts);
   const res = await fetch(`${baseUrl}/v1/sessions`, {
     method: "POST",
     headers,
-    body: JSON.stringify(buildSessionCreateBody(opts)),
+    body: JSON.stringify(createBody),
   });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`session create failed: ${res.status} ${text}`);
   }
-  const raw = (await res.json()) as { id: string; status: string };
-  const state = { id: raw.id, status: raw.status as "active" | "closed" | "error" };
+  const raw = assertCreatedSessionShape(res.status, await res.json(), createBody);
+  const state = { id: raw.id, status: raw.status };
 
   return {
     get id() {
@@ -211,9 +290,11 @@ async function openSession(
     },
     async connections(): Promise<BaseConnection[]> {
       const r = await fetch(`${baseUrl}/v1/sessions/${state.id}/connections`, { headers });
-      if (!r.ok) return [];
-      const payload = (await r.json()) as { servers: BaseConnection[] };
-      return payload.servers;
+      if (!r.ok) {
+        const body = await r.text();
+        throw new Error(`connections failed: ${r.status} ${body}`);
+      }
+      return assertConnectionsShape(await r.json()).servers;
     },
     async close(): Promise<void> {
       await fetch(`${baseUrl}/v1/sessions/${state.id}`, {

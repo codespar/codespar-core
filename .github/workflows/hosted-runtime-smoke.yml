@@ -17,10 +17,12 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     # Validates the published @codespar/sdk against the wire-compatible
-    # runtime hosted at api.codespar.dev. Installs the SDK fresh from
-    # npm (not the workspace source) so a future SDK change that breaks
-    # the wire shape fails this job on the next PR against the still-
-    # published version.
+    # runtime hosted at api.codespar.dev. Installs the SDK fresh from npm
+    # (not the workspace source) at the exact version packages/core
+    # declares, so the job proves two things: the registry carries the
+    # version main says is current, and that artifact still round-trips
+    # against the served API. A pinned older version proved neither — it
+    # kept passing while the SDK moved six releases ahead of it.
     steps:
       - uses: actions/checkout@v4
 
@@ -28,11 +30,21 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install published @codespar/sdk
+      - name: Install published @codespar/sdk at the workspace version
         run: |
+          version=$(node -p "require('./packages/core/package.json').version")
           mkdir _smoke && cd _smoke
           npm init -y >/dev/null
-          npm install @codespar/sdk@0.10.0
+          if ! npm install "@codespar/sdk@${version}"; then
+            echo "::error::@codespar/sdk@${version} is not on npm. The workspace declares ${version}; publish it before this job can prove anything about the current SDK."
+            exit 1
+          fi
+          installed=$(node -p "require('./node_modules/@codespar/sdk/package.json').version")
+          if [ "${installed}" != "${version}" ]; then
+            echo "::error::installed @codespar/sdk@${installed}, expected ${version}"
+            exit 1
+          fi
+          echo "smoke runs against @codespar/sdk@${installed}"
 
       - name: Run hosted-runtime smoke
         env:
