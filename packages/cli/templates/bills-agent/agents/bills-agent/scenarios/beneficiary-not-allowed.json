@@ -1,0 +1,14 @@
+{
+  "name": "beneficiary-not-allowed",
+  "description": "A payee outside the signed allowlist: escalates in human (and the core refuses to approve it even on a yes), denied in mandate.",
+  "modes": ["human", "mandate"],
+  "transcript": "./beneficiary-not-allowed.transcript.jsonl",
+  "turns": [
+    { "input": "manda 200 reais pra chave pix do meu primo, primo@banco.example.com", "decision": "approve" }
+  ],
+  "expect": {
+    "both": { "states": ["denied"], "reasons": ["beneficiary_not_allowed"], "receipts": 0 },
+    "human": { "trails": [["awaiting_approval", "denied"]] },
+    "mandate": { "trails": [["denied"]] }
+  }
+}

@@ -1,0 +1,2 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "codespar_charge", "input": {"action": "create", "agreement": "acordo-1077", "instalments": [{"amount_minor": 255000, "due_date": "2026-09-30"}, {"amount_minor": 255000, "due_date": "2026-10-30"}], "total_minor": 510000}}]}
+{"kind": "assistant_step", "reply": "Propus o acordo #1077 em 2 vezes de R$ 2.550,00. Acima de R$ 3.000,00 um operador da loja decide antes da emissão; ninguém no chat libera isso."}

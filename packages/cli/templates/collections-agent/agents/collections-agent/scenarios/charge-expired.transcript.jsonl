@@ -1,0 +1,4 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "list_agreements", "input": {}}]}
+{"kind": "assistant_step", "reply": "Oi, Ana Paula! Sobre o pedido #1103, R$ 450,00 em aberto: à vista com 10% de desconto fica R$ 405,00, vencendo em 25/09. Emito assim?"}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_2", "name": "codespar_charge", "input": {"action": "create", "agreement": "acordo-1103", "instalments": [{"amount_minor": 40500, "due_date": "2026-09-25"}], "total_minor": 40500}}]}
+{"kind": "assistant_step", "reply": "A cobrança venceu sem pagamento, então esse acordo não foi concluído. Se quiser, emito uma nova nas mesmas condições."}

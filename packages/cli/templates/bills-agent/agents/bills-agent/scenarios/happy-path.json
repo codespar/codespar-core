@@ -1,0 +1,14 @@
+{
+  "name": "happy-path",
+  "description": "The runbook: the titular asks for the school bill of October; the agent proposes it; the core asks (human) or escalates the first payment to this payee (mandate); the person approves; one receipt.",
+  "modes": ["human", "mandate"],
+  "transcript": "./happy-path.transcript.jsonl",
+  "turns": [
+    { "input": "pague a escola de outubro", "decision": "approve" }
+  ],
+  "expect": {
+    "both": { "states": ["settled"], "trails": [["awaiting_approval", "approved", "executing", "settled"]], "receipts": 1, "settled_total": 185000 },
+    "human": { "triggers": [null] },
+    "mandate": { "triggers": ["amount"] }
+  }
+}

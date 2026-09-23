@@ -1,0 +1,20 @@
+{
+  "approval": "human",
+  "escalate_above": {
+    "amount": 300000
+  },
+  "velocity": {
+    "window_hours": 24
+  },
+  "outside_hours_action": "escalate",
+  "model_total_mismatch": "use_core",
+  "approval_ttl_minutes": 15,
+  "timezone": "America/Sao_Paulo",
+  "envelope": {
+    "max_discount_pct": 15,
+    "max_instalments": 3,
+    "due_date_window_days": 90,
+    "min_instalment_minor": 5000,
+    "collection_hours": "08:00-20:00"
+  }
+}

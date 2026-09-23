@@ -1,5 +1,31 @@
 # @codespar/cli — changelog
 
+## 0.14.0 — 2026-09-23
+
+### Added
+
+- `codespar init <name> --template bills-agent` and `--template
+  collections-agent`: the two agents of codespar/agent-starter-kits as
+  templates, scaffolded offline from the package itself. The templates are
+  synced into `templates/` at release time by
+  `scripts/sync-kit-templates.mjs` (`npm run sync:kit-templates -- --ref
+  <tag-or-sha>`), pinned to one kits commit in `templates/kits.lock.json`
+  with a content hash per template. `@codespar/agent-core` is not on npm, so
+  each template vendors it under `packages/agent-core/` and links it as an
+  npm workspace; nothing inside `agents/<name>/` is rewritten, so the kits'
+  own `cli:`/`mcp:` pins and relative paths hold. The release gate
+  (`npm run check:kit-templates`, in CI and in the publish workflow) fetches
+  the locked ref again and fails when the packaged trees differ from a fresh
+  sync.
+- `codespar init --list` prints every template with a one-line description;
+  the kit ones carry the description from the kit's own manifest. The
+  interactive menu and the unknown-template refusal list them too.
+- `init` renames a template's `_gitignore` to `.gitignore` on the way out:
+  npm drops every `.gitignore` from a tarball, in any directory, and a
+  scaffolded agent without one would commit `.env`, `runs/` and
+  `.codespar/`. The four framework templates still ship a `.gitignore`
+  that npm strips; they are untouched here.
+
 ## 0.13.0 — 2026-09-23
 
 ### Added

@@ -1,0 +1,3 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "list_agreements", "input": {}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_2", "name": "codespar_charge", "input": {"action": "create", "agreement": "acordo-1077", "instalments": [{"amount_minor": 510000, "due_date": "2026-09-30"}], "total_minor": 510000}}]}
+{"kind": "assistant_step", "reply": "Não consigo emitir R$ 5.100,00 numa cobrança só: passa do teto por cobrança da loja e o código recusou. Em 2 vezes de R$ 2.550,00 eu fecho; quer assim?"}

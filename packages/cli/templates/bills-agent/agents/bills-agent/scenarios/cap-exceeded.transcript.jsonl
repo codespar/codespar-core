@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":300000,"description":"pedido do titular"}]}}]}
+{"kind":"assistant_step","reply":"Nao deu: R$ 3.000,00 passa do teto por pagamento do mandato (R$ 2.500,00). Nada foi pago. Se precisar, e preciso assinar um mandato com teto maior."}

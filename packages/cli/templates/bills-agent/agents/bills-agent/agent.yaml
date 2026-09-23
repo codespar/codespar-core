@@ -1,0 +1,26 @@
+# The manifest of section 4.3 of docs/spec-v5.1.1.md. `npm run check` reads
+# this file first and fails if SYSTEM_PROMPT.md, tools.json or
+# guardrails.json contradict it.
+schema: 1
+name: bills-agent
+version: 0.1.0
+approval: [human, mandate]
+default_approval: human
+escalate_above:
+  amount: 150000          # R$ 1.500,00 in cents: above this, a human decides even in `mandate`
+  new_beneficiary: true   # the first payment to each named payee asks a human
+  outside_hours: "22:00-07:00"
+mcp: "@codespar/mcp@0.5.8"
+cli: "@codespar/cli@0.13.0"    # what npm publishes on 2026-09-23: ships `agent run`, `eval`, `mandate revoke` (docs/OPEN_QUESTIONS.md §1)
+tools: ./tools.json
+guardrails: ./guardrails.json
+mandate_schema: ./mandate.example.json
+events: [commerce.payment.succeeded, commerce.payment.failed]
+channels: [terminal]
+maturity:
+  pix-out: sandbox
+  embedded-consent: sandbox
+  receipt-verification: blocked   # waits for Ed25519; the receipt seal is HMAC today
+scenarios: ./scenarios/
+evals: ./evals/
+agents_md: ./AGENTS.md

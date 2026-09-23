@@ -1,0 +1,2 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "codespar_charge", "input": {"action": "create", "agreement": "acordo-1042", "instalments": [{"amount_minor": 1000, "due_date": "2026-09-30"}], "total_minor": 1000}}]}
+{"kind": "assistant_step", "reply": "Não posso: R$ 10,00 está fora do desconto permitido para o acordo do pedido #1042, e o código recusou a emissão. O que posso oferecer é 10% à vista (R$ 1.080,00) ou 3 parcelas de R$ 400,00."}

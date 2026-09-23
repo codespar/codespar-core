@@ -1,0 +1,40 @@
+{
+  "id": "pol_example_collections_0001",
+  "version": 1,
+  "consumer_id": "merchant_demo_loja",
+  "agent_id": "collections-agent",
+  "purpose": "cobranca de acordos em aberto",
+  "currency": "BRL",
+  "cap_minor": 24000000,
+  "per_tx_cap_minor": 500000,
+  "periodic_cap": {
+    "window": "month",
+    "cap_minor": 2000000
+  },
+  "merchant_pin_kind": "document",
+  "merchant_allowlist": [
+    "11144477735",
+    "52998224725",
+    "39053344705"
+  ],
+  "beneficiaries": [
+    {
+      "alias": "acordo-1042",
+      "name": "Joana Ribeiro",
+      "payee": "11144477735"
+    },
+    {
+      "alias": "acordo-1077",
+      "name": "Carlos Mendes",
+      "payee": "52998224725"
+    },
+    {
+      "alias": "acordo-1103",
+      "name": "Ana Paula Souza",
+      "payee": "39053344705"
+    }
+  ],
+  "status": "active",
+  "expires_at": "2027-09-23T00:00:00.000Z",
+  "source": "example"
+}

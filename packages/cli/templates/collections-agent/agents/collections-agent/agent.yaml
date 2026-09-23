@@ -1,0 +1,28 @@
+# The manifest of section 4.3 of docs/spec-v5.1.1.md. `npm run check` reads
+# this file first and fails if SYSTEM_PROMPT.md, tools.json or
+# guardrails.json contradict it.
+schema: 1
+name: collections-agent
+version: 0.1.0
+approval: [human, mandate]
+default_approval: human
+escalate_above:
+  amount: 300000          # R$ 3.000,00 in cents: an agreement above this asks an operator even in `mandate`
+  # No `new_beneficiary`: a receivable is issued against a debtor already in the book, and the money comes TO the merchant;
+  # the first charge to a debtor is the normal case, not a risk. No `outside_hours` either: collection hours are a LEGAL
+  # rule the envelope refuses in both modes (guardrails.envelope.collection_hours), not an escalation.
+mcp: "@codespar/mcp@0.5.8"
+cli: "@codespar/cli@0.13.0"   # the published version on 2026-09-23 (docs/OPEN_QUESTIONS.md section 1)
+tools: ./tools.json
+guardrails: ./guardrails.json
+mandate_schema: ./mandate.example.json
+# The API's own names (plan of 2026-09-23, section 1). `paid` and `expired` close the cycle; `cancelled` closes it as failed;
+# `created` is when a cobranca com vencimento becomes payable (the kit reads that from the status poll).
+events: [commerce.charge.created, commerce.charge.paid, commerce.charge.expired, commerce.charge.cancelled]
+channels: [terminal]
+maturity:
+  bolepix-receivables: sandbox
+  receipt-verification: blocked   # waits for Ed25519; and the API seals no record for a paid charge today
+scenarios: ./scenarios/
+evals: ./evals/
+agents_md: ./AGENTS.md

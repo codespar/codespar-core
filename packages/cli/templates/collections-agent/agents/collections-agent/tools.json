@@ -1,0 +1,40 @@
+{
+  "meta_tools": [
+    {
+      "name": "codespar_charge",
+      "effect": "charge",
+      "description": "Propose the receivable(s) of an agreement the payer accepted: one instalment per bolepix (cobranca com vencimento: the payer settles by Pix or by boleto). This does NOT issue anything: it creates an execution in `drafted` that the code checks against the collection policy and the negotiation envelope (discount ceiling, instalment count, due-date window, collection hours) and, depending on the approval mode, asks the operator or issues. The code builds the real call (`POST /v1/charges`, `method: boleto`, the debtor's name and document from the agreement, `idempotency_key` per instalment) and presents the QR and the copy-and-paste; you never see or pass a document. action=status reads back the state of a receivable this run issued.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string", "enum": ["create", "status"], "description": "create (the default) proposes the receivables; status reads one back." },
+          "agreement": { "type": "string", "description": "The agreement alias from list_agreements (acordo-1042). Never a name, a document or a Pix key typed in the chat." },
+          "instalments": {
+            "type": "array",
+            "minItems": 1,
+            "description": "One entry per instalment, in order. A single entry is a payment in full.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "amount_minor": { "type": "integer", "minimum": 1, "description": "BRL cents." },
+                "due_date": { "type": "string", "description": "YYYY-MM-DD. Inside the envelope's window." }
+              },
+              "required": ["amount_minor", "due_date"]
+            }
+          },
+          "total_minor": { "type": "integer", "description": "Optional. What you believe the total is. The code recomputes it and yours is only recorded." },
+          "execution_id": { "type": "string", "description": "action=status: the execution to read." }
+        },
+        "required": ["action"]
+      }
+    }
+  ],
+  "local_tools": [
+    {
+      "name": "list_agreements",
+      "effect": "read",
+      "description": "The open agreements this merchant collects: alias, debtor's first name, principal in BRL cents, origin, and the envelope you may negotiate inside (maximum discount, maximum instalments, due-date window). Read-only. Documents are not returned.",
+      "input_schema": { "type": "object", "properties": {} }
+    }
+  ]
+}

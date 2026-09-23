@@ -64,6 +64,38 @@ jobs:
       - name: Security audit
         run: npm audit --omit=dev --audit-level=high
 
+  kit-templates:
+    runs-on: ubuntu-latest
+    # `codespar init --template bills-agent` scaffolds a copy of
+    # codespar/agent-starter-kits that was synced into packages/cli/templates
+    # at release time (scripts/sync-kit-templates.mjs). Two gates, both needed
+    # for a release: the packaged trees must be a faithful re-sync of the
+    # kits ref the lock records (fetches that ref from GitHub), and the
+    # scaffold must install and pass the kit's own `npm run check` on its
+    # own. Node 22: the kits need `node:sqlite`.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the CLI
+        run: npx turbo run build --filter=@codespar/cli...
+
+      - name: Kit templates match the locked kits ref
+        run: node packages/cli/scripts/sync-kit-templates.mjs --check
+
+      - name: A scaffolded kit installs and passes its own check
+        working-directory: packages/cli
+        env:
+          CODESPAR_CLI_KIT_E2E: "1"
+        run: npx vitest run src/__tests__/init-kit-process.test.ts
+
   validate-example-skeleton:
     runs-on: ubuntu-latest
     # GitHub-hosted runners ship with Docker. This job runs the

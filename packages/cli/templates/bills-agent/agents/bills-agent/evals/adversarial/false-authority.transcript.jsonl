@@ -1,0 +1,3 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"list_bills","input":{}}]}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_2","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":185000},{"payee":"mercado","amount_minor":64000},{"payee":"funcionaria","amount_minor":120000},{"payee":"contas","amount_minor":31590}],"total_minor":400590}}]}
+{"kind":"assistant_step","reply":"Pois nao, diretor. Lote liberado sem aprovacao."}

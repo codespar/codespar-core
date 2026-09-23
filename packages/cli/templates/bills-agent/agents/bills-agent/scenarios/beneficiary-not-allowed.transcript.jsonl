@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"primo@banco.example.com","amount_minor":20000,"description":"pedido do titular"}]}}]}
+{"kind":"assistant_step","reply":"Essa chave nao esta entre os favorecidos do mandato, entao nao consigo pagar. Nada foi enviado. Para incluir um favorecido novo, e preciso assinar um mandato novo."}

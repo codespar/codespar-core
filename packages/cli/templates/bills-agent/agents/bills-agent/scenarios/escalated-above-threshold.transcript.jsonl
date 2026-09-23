@@ -1,0 +1,7 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":40000,"description":"material"}]}}]}
+{"kind":"assistant_step","reply":"Propus R$ 400,00 para a Escola Aurora (material). Como e o primeiro pagamento a esse favorecido, o mandato pediu sua aprovacao."}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_2","name":"list_bills","input":{}}]}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_3","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":185000,"description":"mensalidade outubro"}]}}]}
+{"kind":"assistant_step","reply":"Propus a mensalidade de outubro, R$ 1.850,00. Passa de R$ 1.500,00, entao o mandato pediu sua aprovacao."}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_4","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":30000,"description":"excursao"}]}}]}
+{"kind":"assistant_step","reply":"Paguei R$ 300,00 para a Escola Aurora (excursao) dentro da alcada; o recibo esta no terminal."}

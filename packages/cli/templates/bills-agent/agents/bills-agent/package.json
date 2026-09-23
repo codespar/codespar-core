@@ -1,0 +1,24 @@
+{
+  "name": "@codespar/bills-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The consumer delegates the month's bills to an agent that pays under a signed mandate: per-payment cap, monthly cap, named payees, expiry. Every payment returns a receipt.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning --import tsx src/main.ts",
+    "check": "node --disable-warning=ExperimentalWarning --import tsx src/commands/check.ts",
+    "eval": "node --disable-warning=ExperimentalWarning --import tsx src/commands/eval.ts",
+    "resume": "node --disable-warning=ExperimentalWarning --import tsx src/commands/resume.ts",
+    "rerun": "node --disable-warning=ExperimentalWarning --import tsx src/commands/rerun.ts",
+    "reconcile": "node --disable-warning=ExperimentalWarning --import tsx src/commands/reconcile.ts",
+    "consent": "node --disable-warning=ExperimentalWarning --import tsx src/commands/consent.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --pool=forks --maxWorkers=1 --root ../.. agents/bills-agent",
+    "approve": "node --disable-warning=ExperimentalWarning --import tsx src/commands/approve.ts",
+    "deny": "node --disable-warning=ExperimentalWarning --import tsx src/commands/deny.ts"
+  },
+  "dependencies": {
+    "@codespar/agent-core": "0.1.0"
+  }
+}

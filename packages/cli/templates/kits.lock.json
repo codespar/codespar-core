@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "kits_repo": "https://github.com/codespar/agent-starter-kits",
+  "kits_ref": "778223274a5df3521d9ef9f33a21446868482391",
+  "commit": "778223274a5df3521d9ef9f33a21446868482391",
+  "agent_core": {
+    "source": "packages/agent-core",
+    "version": "0.1.0"
+  },
+  "templates": {
+    "bills-agent": {
+      "source": "agents/bills-agent",
+      "description": "The consumer delegates the month's bills to an agent that pays under a signed mandate: per-payment cap, monthly cap, named payees, expiry. Every payment returns a receipt.",
+      "version": "0.1.0",
+      "cli": "@codespar/cli@0.13.0",
+      "mcp": "@codespar/mcp@0.5.8",
+      "agent_core": "0.1.0",
+      "next_steps": [
+        "cp agents/bills-agent/.env.example agents/bills-agent/.env   # then fill in your keys",
+        "npm install",
+        "npm run consent -- --yes",
+        "npm start"
+      ],
+      "hash": "sha256:6cc725fc673f19f855a480163e463da121fe964db89320e587260097215b4f41"
+    },
+    "collections-agent": {
+      "source": "agents/collections-agent",
+      "description": "The merchant's agent that collects: agrees terms with the payer inside a negotiation envelope, issues one bolepix per instalment with an idempotency key, presents the QR and the copy-and-paste in the conversation, and closes the cycle on commerce.charge.paid or commerce.charge.expired.",
+      "version": "0.1.0",
+      "cli": "@codespar/cli@0.13.0",
+      "mcp": "@codespar/mcp@0.5.8",
+      "agent_core": "0.1.0",
+      "next_steps": [
+        "cp agents/collections-agent/.env.example agents/collections-agent/.env   # then fill in your keys",
+        "npm install",
+        "npm start"
+      ],
+      "hash": "sha256:149b22e812a97b35f90b42fed6a38261975346035abec05e779f938b5148c131"
+    }
+  }
+}

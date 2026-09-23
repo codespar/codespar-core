@@ -1,0 +1,49 @@
+{
+  "name": "instalments",
+  "description": "An agreement in three instalments is three bolepix, one per parcela, each with its own due date and its own idempotency key. The total is above the escalation threshold, so in mandate mode the operator decides; the execution settles only when every parcela is paid.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "transcript": "./instalments.transcript.jsonl",
+  "turns": [
+    {
+      "input": "é o Carlos, do pedido 1077. não consigo pagar tudo de uma vez",
+      "decision": "none"
+    },
+    {
+      "input": "fechado em 3 vezes",
+      "decision": "approve",
+      "payer": "pays"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [
+        "settled"
+      ],
+      "trails": [
+        [
+          "awaiting_approval",
+          "approved",
+          "executing",
+          "settled"
+        ]
+      ],
+      "receipts": 3,
+      "settled_total": 510000,
+      "charges_issued": 3,
+      "debtor_messages": 1
+    },
+    "human": {
+      "triggers": [
+        null
+      ]
+    },
+    "mandate": {
+      "triggers": [
+        "amount"
+      ]
+    }
+  }
+}

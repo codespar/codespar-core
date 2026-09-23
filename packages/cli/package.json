@@ -1,6 +1,6 @@
 {
   "name": "@codespar/cli",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "CodeSpar CLI. The agentic OS for money movement in Latin America, from your terminal: authenticate, browse servers, mint mandates, execute tools, manage sessions, stream logs.",
   "type": "module",
   "bin": {
@@ -18,6 +18,8 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "test": "vitest run",
+    "sync:kit-templates": "node scripts/sync-kit-templates.mjs",
+    "check:kit-templates": "node scripts/sync-kit-templates.mjs --check",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

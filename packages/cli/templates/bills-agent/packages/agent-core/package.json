@@ -1,0 +1,24 @@
+{
+  "name": "@codespar/agent-core",
+  "version": "0.1.0",
+  "description": "The primitives every CodeSpar starter-kit agent inherits: the execution state machine, the approval artifact, the agent.yaml manifest, escalate_above, actor, local state and providers.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./providers/anthropic": "./src/providers/anthropic.ts",
+    "./providers/replay": "./src/providers/replay.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --pool=forks --maxWorkers=1 --root ../.. packages/agent-core"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.128.0",
+    "@codespar/sdk": "0.16.4",
+    "yaml": "2.9.1",
+    "zod": "3.25.76"
+  }
+}

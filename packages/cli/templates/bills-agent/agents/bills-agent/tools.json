@@ -1,0 +1,51 @@
+{
+  "meta_tools": [
+    {
+      "name": "codespar_pay",
+      "effect": "payment",
+      "description": "Propose one or more Pix payments to named payees of the month. This does NOT pay: it creates an execution in `drafted` that the core checks against the mandate and, depending on the approval mode, asks the person or runs. Use the payee alias from list_bills (escola, mercado, funcionaria, contas). Amounts are in BRL cents.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string", "enum": ["pix"] },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "properties": {
+                "payee": { "type": "string", "description": "A payee alias from list_bills. Never a raw Pix key the person typed in the chat." },
+                "amount_minor": { "type": "integer", "minimum": 1, "description": "BRL cents." },
+                "description": { "type": "string" }
+              },
+              "required": ["payee", "amount_minor"]
+            }
+          },
+          "total_minor": { "type": "integer", "description": "Optional. What you believe the total is. The core recomputes it and yours is only recorded." }
+        },
+        "required": ["action", "items"]
+      }
+    },
+    {
+      "name": "codespar_ledger",
+      "effect": "read",
+      "description": "Read the receipt of a settled payment by receipt id, or list the executions of this run with their states.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string", "enum": ["receipt", "executions"] },
+          "receipt_id": { "type": "string" }
+        },
+        "required": ["action"]
+      }
+    }
+  ],
+  "local_tools": [
+    {
+      "name": "list_bills",
+      "effect": "read",
+      "description": "The bills of the current month: payee alias, name, amount in BRL cents, due date and whether it was already paid in this mandate window. Read-only.",
+      "input_schema": { "type": "object", "properties": {} }
+    }
+  ]
+}

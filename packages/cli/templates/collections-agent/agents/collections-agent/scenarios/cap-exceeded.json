@@ -1,0 +1,27 @@
+{
+  "name": "cap-exceeded",
+  "description": "A single receivable above the policy's cap per charge (R$ 5.000,00): the readable refusal of section 15. The agreement #1077 in full, even with the maximum discount, is R$ 5.100,00.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "transcript": "./cap-exceeded.transcript.jsonl",
+  "turns": [
+    {
+      "input": "é o Carlos, do pedido 1077. quero pagar tudo de uma vez com o desconto",
+      "decision": "approve"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [
+        "denied"
+      ],
+      "reasons": [
+        "per_tx_cap_exceeded"
+      ],
+      "receipts": 0,
+      "charges_issued": 0
+    }
+  }
+}

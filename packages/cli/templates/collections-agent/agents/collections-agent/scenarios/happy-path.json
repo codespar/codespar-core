@@ -1,0 +1,60 @@
+{
+  "name": "happy-path",
+  "description": "The runbook: the payer answers the message about order #1042; the agent proposes terms inside the envelope; the payer accepts in full; the operator approves (human) or the envelope covers it (mandate); one bolepix is issued with an idempotency key, the QR and the copy-and-paste are shown, the payer pays, the agent says 'recebemos, acordo quitado'. Settled inside 40 seconds with a real key.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "transcript": "./happy-path.transcript.jsonl",
+  "turns": [
+    {
+      "input": "oi, recebi a mensagem sobre o acordo do pedido 1042",
+      "decision": "none"
+    },
+    {
+      "input": "fechado, pago à vista",
+      "decision": "approve",
+      "payer": "pays"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [
+        "settled"
+      ],
+      "reasons": [
+        null
+      ],
+      "receipts": 1,
+      "settled_total": 108000,
+      "charges_issued": 1,
+      "debtor_messages": 1,
+      "max_cycle_seconds": 40
+    },
+    "human": {
+      "trails": [
+        [
+          "awaiting_approval",
+          "approved",
+          "executing",
+          "settled"
+        ]
+      ],
+      "triggers": [
+        null
+      ]
+    },
+    "mandate": {
+      "trails": [
+        [
+          "approved",
+          "executing",
+          "settled"
+        ]
+      ],
+      "triggers": [
+        null
+      ]
+    }
+  }
+}
