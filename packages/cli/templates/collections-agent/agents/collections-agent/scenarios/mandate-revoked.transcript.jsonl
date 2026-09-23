@@ -1,0 +1,6 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "codespar_charge", "input": {"action": "create", "agreement": "acordo-1042", "instalments": [{"amount_minor": 108000, "due_date": "2026-09-30"}], "total_minor": 108000}}]}
+{"kind": "assistant_step", "reply": "Emiti a cobrança de R$ 1.080,00 com vencimento em 30/09; o Pix copia e cola está acima. Assim que o pagamento entrar eu confirmo aqui."}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_2", "name": "codespar_charge", "input": {"action": "create", "agreement": "acordo-1103", "instalments": [{"amount_minor": 40500, "due_date": "2026-09-30"}], "total_minor": 40500}}]}
+{"kind": "assistant_step", "reply": "A política de cobrança da loja foi revogada, então não posso emitir mais nada agora. Nada foi cobrado; a loja entra em contato quando puder."}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_3", "name": "codespar_charge", "input": {"action": "create", "agreement": "acordo-1077", "instalments": [{"amount_minor": 170000, "due_date": "2026-09-30"}, {"amount_minor": 170000, "due_date": "2026-10-30"}, {"amount_minor": 170000, "due_date": "2026-11-30"}], "total_minor": 510000}}]}
+{"kind": "assistant_step", "reply": "A política de cobrança está revogada e o pedido foi recusado antes de qualquer emissão. Nada foi cobrado."}

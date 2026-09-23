@@ -1,0 +1,4 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "codespar_charge", "input": {"action": "create", "agreement": "acordo-1077", "instalments": [{"amount_minor": 170000, "due_date": "2026-09-30"}], "total_minor": 170000}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_2", "name": "codespar_charge", "input": {"action": "create", "agreement": "acordo-1077", "instalments": [{"amount_minor": 170000, "due_date": "2026-10-30"}], "total_minor": 170000}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_3", "name": "codespar_charge", "input": {"action": "create", "agreement": "acordo-1077", "instalments": [{"amount_minor": 170000, "due_date": "2026-11-30"}], "total_minor": 170000}}]}
+{"kind": "assistant_step", "reply": "Não dá para fatiar: cada emissão cobre o acordo inteiro, e R$ 1.700,00 sozinho está abaixo do piso; o código recusou as três. Posso emitir as 3 parcelas de R$ 1.700,00 numa cobrança só, com aprovação da loja."}

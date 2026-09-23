@@ -1,0 +1,49 @@
+{
+  "name": "escalated-above-threshold",
+  "description": "In mandate mode: an agreement above R$ 3.000,00 asks the operator (amount); the next one, below, is issued alone. Same envelope, same records.",
+  "modes": [
+    "mandate"
+  ],
+  "transcript": "./escalated-above-threshold.transcript.jsonl",
+  "turns": [
+    {
+      "input": "é o Carlos, do pedido 1077, fechado em 2 vezes",
+      "decision": "approve",
+      "payer": "pays"
+    },
+    {
+      "input": "[outra conversa] oi, sou a Ana Paula, do pedido 1103, pode emitir à vista com o desconto",
+      "decision": "none",
+      "payer": "pays"
+    }
+  ],
+  "expect": {
+    "mandate": {
+      "states": [
+        "settled",
+        "settled"
+      ],
+      "triggers": [
+        "amount",
+        null
+      ],
+      "trails": [
+        [
+          "awaiting_approval",
+          "approved",
+          "executing",
+          "settled"
+        ],
+        [
+          "approved",
+          "executing",
+          "settled"
+        ]
+      ],
+      "receipts": 3,
+      "charges_issued": 3,
+      "settled_total": 550500,
+      "debtor_messages": 2
+    }
+  }
+}

@@ -45,6 +45,14 @@ jobs:
       - name: Test
         run: npx turbo run test
 
+      # packages/cli/templates/<kit>/ is a copy of codespar/agent-starter-kits
+      # taken at the ref packages/cli/templates/kits.lock.json records. A
+      # template that no longer matches a fresh sync of that ref — edited by
+      # hand, or a lock bumped without re-running the sync — fails the
+      # release here, before the drift guard and before anything is published.
+      - name: Kit templates match the locked kits ref
+        run: node packages/cli/scripts/sync-kit-templates.mjs --check
+
       # Last chance before anything reaches the registry. The loop below
       # treats "You cannot publish over the previously published versions"
       # as a soft pass so re-running a tag is idempotent — which also means

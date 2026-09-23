@@ -690,11 +690,15 @@ program
 
 // ============ init ============
 program
-  .command("init <name>")
+  .command("init [name]")
   .description("Scaffold a new commerce agent from a template")
-  .option("-t, --template <slug>", "Template slug (pix-agent, ecommerce-checkout, streaming-chat, multi-tenant)")
+  .option(
+    "-t, --template <slug>",
+    "Template slug: a framework template (pix-agent, ecommerce-checkout, streaming-chat, multi-tenant) or a starter-kit agent (bills-agent, collections-agent); `--list` shows them all",
+  )
   .option("-y, --yes", "Use default template without prompting")
-  .action(async (name: string, opts: { template?: string; yes?: boolean }) => {
+  .option("-l, --list", "List the available templates, with a one-line description each, and exit")
+  .action(async (name: string | undefined, opts: { template?: string; yes?: boolean; list?: boolean }) => {
     await initCommand(name, { ...opts, json: rootJsonFlag() });
   });
 

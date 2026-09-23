@@ -1,0 +1,34 @@
+{
+  "name": "{{name}}",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The consumer delegates the month's bills to an agent that pays under a signed mandate: per-payment cap, monthly cap, named payees, expiry. Every payment returns a receipt.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/agent-core",
+    "agents/bills-agent"
+  ],
+  "scripts": {
+    "start": "npm start --workspace=agents/bills-agent --",
+    "check": "npm run check --workspaces --if-present --",
+    "test": "vitest run --pool=forks --maxWorkers=1",
+    "typecheck": "tsc --noEmit -p packages/agent-core/tsconfig.json && tsc --noEmit -p agents/bills-agent/tsconfig.json",
+    "approve": "npm run approve --workspace=agents/bills-agent --",
+    "consent": "npm run consent --workspace=agents/bills-agent --",
+    "deny": "npm run deny --workspace=agents/bills-agent --",
+    "eval": "npm run eval --workspace=agents/bills-agent --",
+    "reconcile": "npm run reconcile --workspace=agents/bills-agent --",
+    "rerun": "npm run rerun --workspace=agents/bills-agent --",
+    "resume": "npm run resume --workspace=agents/bills-agent --"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

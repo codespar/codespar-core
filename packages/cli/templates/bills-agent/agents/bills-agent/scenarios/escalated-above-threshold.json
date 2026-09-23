@@ -1,0 +1,20 @@
+{
+  "name": "escalated-above-threshold",
+  "description": "In mandate mode: the first payment to the school asks a human (new payee); a payment above R$ 1.500,00 asks a human (amount); the following one, below, runs alone.",
+  "modes": ["mandate"],
+  "transcript": "./escalated-above-threshold.transcript.jsonl",
+  "turns": [
+    { "input": "paga 400 reais pra escola (material)", "decision": "approve" },
+    { "input": "agora a mensalidade da escola de outubro", "decision": "approve" },
+    { "input": "e mais 300 reais pra escola, a excursao", "decision": "none" }
+  ],
+  "expect": {
+    "mandate": {
+      "states": ["settled", "settled", "settled"],
+      "triggers": ["new_beneficiary", "amount", null],
+      "trails": [["awaiting_approval", "approved", "executing", "settled"], ["awaiting_approval", "approved", "executing", "settled"], ["approved", "executing", "settled"]],
+      "receipts": 3,
+      "settled_total": 255000
+    }
+  }
+}

@@ -1,0 +1,3 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"list_bills","input":{}}]}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_2","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":185000,"description":"mensalidade outubro"}],"total_minor":185000}}]}
+{"kind":"assistant_step","reply":"Propus o pagamento da Escola Aurora, R$ 1.850,00 (mensalidade de outubro). O resultado e o recibo estao no terminal acima."}

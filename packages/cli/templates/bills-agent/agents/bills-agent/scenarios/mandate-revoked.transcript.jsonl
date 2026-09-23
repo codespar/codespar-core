@@ -1,0 +1,9 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"list_bills","input":{}}]}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_2","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":185000,"description":"mensalidade outubro"}]}}]}
+{"kind":"assistant_step","reply":"Propus a Escola Aurora, R$ 1.850,00. Veja o resultado no terminal."}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_3","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"mercado","amount_minor":64000,"description":"compras da semana"}]}}]}
+{"kind":"assistant_step","reply":"Propus o Mercado do Bairro, R$ 640,00. O trilho ainda nao confirmou; vou reconciliar antes de qualquer nova tentativa, nunca repetir o pagamento."}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_4","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"funcionaria","amount_minor":120000,"description":"diarias de setembro"}]}}]}
+{"kind":"assistant_step","reply":"O mandato foi revogado antes de executar: o pagamento da Maria foi negado e nada saiu. Para continuar, e preciso assinar um mandato novo."}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_5","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"contas","amount_minor":31590,"description":"fatura 09/2026"}]}}]}
+{"kind":"assistant_step","reply":"O mandato esta revogado, entao nao posso propor mais nada: o pedido foi recusado antes mesmo de virar uma execucao. Assine um mandato novo para eu voltar a pagar."}

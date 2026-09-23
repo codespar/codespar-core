@@ -1,0 +1,42 @@
+{
+  "name": "mandate-revoked",
+  "description": "The collection policy is revoked mid-run: the receivable in flight is not cancelled, it closes from what the rail says when the payer pays; the one awaiting a decision goes to denied even after a yes; a new request is refused before drafted; the agent says so.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "transcript": "./mandate-revoked.transcript.jsonl",
+  "turns": [
+    {
+      "input": "oi, recebi a mensagem sobre o acordo do pedido 1042, pago à vista",
+      "decision": "approve",
+      "payer": "late"
+    },
+    {
+      "input": "[outra conversa] sou a Ana Paula, do pedido 1103, pode emitir à vista",
+      "decision": "approve",
+      "before_decision": "revoke_mandate"
+    },
+    {
+      "input": "[outra conversa] é o Carlos, do 1077, fechado em 3 vezes",
+      "decision": "approve"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [
+        "settled",
+        "denied"
+      ],
+      "reasons": [
+        null,
+        "mandate_revoked"
+      ],
+      "refused_before_draft": 1,
+      "receipts": 1,
+      "charges_issued": 1,
+      "settled_total": 108000,
+      "debtor_messages": 2
+    }
+  }
+}

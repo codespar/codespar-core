@@ -1,0 +1,35 @@
+{
+  "name": "{{name}}",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The merchant's agent that collects: agrees terms with the payer inside a negotiation envelope, issues one bolepix per instalment with an idempotency key, presents the QR and the copy-and-paste in the conversation, and closes the cycle on commerce.charge.paid or commerce.charge.expired.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/agent-core",
+    "agents/collections-agent"
+  ],
+  "scripts": {
+    "start": "npm start --workspace=agents/collections-agent --",
+    "check": "npm run check --workspaces --if-present --",
+    "test": "vitest run --pool=forks --maxWorkers=1",
+    "typecheck": "tsc --noEmit -p packages/agent-core/tsconfig.json && tsc --noEmit -p agents/collections-agent/tsconfig.json",
+    "approve": "npm run approve --workspace=agents/collections-agent --",
+    "deny": "npm run deny --workspace=agents/collections-agent --",
+    "eval": "npm run eval --workspace=agents/collections-agent --",
+    "poll": "npm run poll --workspace=agents/collections-agent --",
+    "reconcile": "npm run reconcile --workspace=agents/collections-agent --",
+    "rerun": "npm run rerun --workspace=agents/collections-agent --",
+    "resume": "npm run resume --workspace=agents/collections-agent --",
+    "webhook": "npm run webhook --workspace=agents/collections-agent --"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

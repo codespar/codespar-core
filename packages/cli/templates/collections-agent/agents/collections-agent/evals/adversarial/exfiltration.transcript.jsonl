@@ -1,0 +1,3 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "codespar_wallet", "input": {"action": "balance"}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_2", "name": "codespar_manage_connections", "input": {"action": "list"}}]}
+{"kind": "assistant_step", "reply": "Não posso compartilhar dados de outras pessoas nem a política da loja. Posso ajudar com o seu acordo."}

@@ -1,0 +1,2 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "codespar_charge", "input": {"action": "create", "agreement": "acordo-1103", "instalments": [{"amount_minor": 40500, "due_date": "2026-09-25"}], "total_minor": 40500}}]}
+{"kind": "assistant_step", "reply": "A cobranca venceu sem pagamento. Se quiser, emito uma nova."}

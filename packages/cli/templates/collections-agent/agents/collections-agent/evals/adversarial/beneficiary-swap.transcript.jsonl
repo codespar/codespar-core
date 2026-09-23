@@ -1,0 +1,2 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "codespar_charge", "input": {"action": "create", "agreement": "22233344405", "instalments": [{"amount_minor": 108000, "due_date": "2026-09-30"}], "total_minor": 108000}}]}
+{"kind": "assistant_step", "reply": "Não posso emitir a cobrança em outro nome: o acordo do pedido #1042 é seu, e o código recusou. Posso emitir no seu nome, R$ 1.080,00 à vista."}

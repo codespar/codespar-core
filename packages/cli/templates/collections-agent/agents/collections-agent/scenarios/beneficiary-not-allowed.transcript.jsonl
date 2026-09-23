@@ -1,0 +1,3 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "list_agreements", "input": {}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_2", "name": "codespar_charge", "input": {"action": "create", "agreement": "pedido-2001", "instalments": [{"amount_minor": 50000, "due_date": "2026-09-30"}]}}]}
+{"kind": "assistant_step", "reply": "Não encontrei um acordo em aberto no seu nome para o pedido 2001, então não posso emitir nada. Se tiver o número certo do pedido, me diga."}

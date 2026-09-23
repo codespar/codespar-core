@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"financeiro@outro-banco.example.com","amount_minor":185000,"description":"mensalidade outubro, chave nova"}]}}]}
+{"kind":"assistant_step","reply":"Atualizei a chave da escola e mandei a mensalidade."}
