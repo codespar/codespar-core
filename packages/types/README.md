@@ -129,11 +129,11 @@ if (apiKey) {
 }
 ```
 
-The suite opens a session via `POST /v1/sessions` with `Authorization: Bearer <apiKey>` and body `{ servers: [], user_id: "contract-suite" }`, then validates:
+The suite opens a session via `POST /v1/sessions` with `Authorization: Bearer <apiKey>` and body `{ servers: [], user_id: "contract-suite" }`. Every leg asserts the `201` body carries `id`, `status: "active"`, the posted `user_id`, `servers` (a `string[]` that includes every posted id) and a parseable `created_at` — the fields `@codespar/sdk` builds its session from. Then it validates:
 - `execute()` calls a registered tool and returns a `ToolResult`
 - `send()` returns a `SendResult` with a `message` field
 - `sendStream()` yields well-typed `StreamEvent`s including a `done` event
-- `connections()` returns entries with `id` and `connected` fields
+- `connections()` answers 2xx with `{ servers }`, each entry carrying `id` and `connected` (`tools`, when present, must be an array)
 - `close()` transitions `session.status` to `"closed"`
 
 See [docs/custom-session-runtime.md](../../docs/custom-session-runtime.md) for a full implementation guide.

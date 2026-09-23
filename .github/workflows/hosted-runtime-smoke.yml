@@ -1,15 +1,31 @@
 name: hosted-runtime smoke
 
 on:
+  # Only what changes the installed artifact or the smoke itself. A
+  # types-only or python-only merge cannot move this job's outcome.
+  push:
+    branches: [main]
+    paths:
+      - 'packages/core/**'
+      - 'scripts/hosted-smoke.mjs'
+      - 'scripts/hosted-smoke-sdk-version.mjs'
+      - 'scripts/npm-registry.mjs'
+      - '.github/workflows/hosted-runtime-smoke.yml'
+  # The exact version exists on the registry only once Publish has run.
+  workflow_run:
+    workflows: [Publish]
+    types: [completed]
   pull_request:
     paths:
       - 'packages/core/**'
       - 'packages/types/**'
       - 'packages/python/**'
-      # A CLI e o caller que manda `servers: []`. Sem ela aqui, uma mudanca
-      # na CLI nunca dispara o unico job que fala com a API servida.
+      # The CLI is the caller that sends `servers: []`. Without it here, a
+      # CLI change never triggers the one job that talks to the served API.
       - 'packages/cli/**'
       - 'scripts/hosted-smoke.mjs'
+      - 'scripts/hosted-smoke-sdk-version.mjs'
+      - 'scripts/npm-registry.mjs'
       - '.github/workflows/hosted-runtime-smoke.yml'
   workflow_dispatch:
 
@@ -17,10 +33,22 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     # Validates the published @codespar/sdk against the wire-compatible
-    # runtime hosted at api.codespar.dev. Installs the SDK fresh from
-    # npm (not the workspace source) so a future SDK change that breaks
-    # the wire shape fails this job on the next PR against the still-
-    # published version.
+    # runtime hosted at api.codespar.dev. Installs the SDK fresh from npm
+    # (not the workspace source), at the version packages/core declares,
+    # so the job proves the registry carries what main says is current
+    # and that artifact still round-trips against the served API. A
+    # pinned older version proved neither — it kept passing while the
+    # SDK moved six releases ahead of it.
+    #
+    # Two modes (scripts/hosted-smoke-sdk-version.mjs). After the Publish
+    # workflow completes, and on manual runs, the workspace version must
+    # be on the registry or the job fails: that is the one moment the
+    # exact version is known to exist. On pull requests and on push to
+    # main the newest published release at or below the workspace version
+    # is used, with a warning when it is older — the bump merges before
+    # `npm publish` runs, so requiring the exact version there would fail
+    # every release on a 404 and nothing would re-run once it exists.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
 
@@ -29,10 +57,14 @@ jobs:
           node-version: '22'
 
       - name: Install published @codespar/sdk
+        env:
+          SMOKE_SDK_MODE: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run') && 'exact' || 'at-or-below' }}
         run: |
+          version=$(node scripts/hosted-smoke-sdk-version.mjs)
           mkdir _smoke && cd _smoke
           npm init -y >/dev/null
-          npm install @codespar/sdk@0.10.0
+          npm install "@codespar/sdk@${version}"
+          echo "smoke runs against @codespar/sdk@${version}"
 
       - name: Run hosted-runtime smoke
         env:
@@ -51,7 +83,13 @@ jobs:
   # PR. When it fails on a real change, the fix is a refresh commit
   # (`npm run sdk:spec:refresh`), reviewed on its own. Exit 2 (could not
   # fetch) fails the job too; "could not compare" is not "current".
+  #
+  # Only on pull requests and manual runs: the served document moves on
+  # its own schedule, and the fix is a refresh commit reviewed on its
+  # own, so a red run on every post-merge push or publish would report
+  # nothing a PR run did not.
   spec-freshness:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

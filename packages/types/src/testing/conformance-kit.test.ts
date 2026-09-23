@@ -19,6 +19,13 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import type { ToolResult } from "../index.js";
 import { SHOP_CONTRACT, DISCOVER_CONTRACT } from "../meta-tool-contract.js";
 import {
+  createdOk,
+  isSessionCreate,
+  isSessionDelete,
+  jsonResponse,
+  type FakeCreate,
+} from "./__fixtures__/fake-session-backend.js";
+import {
   fieldMatches,
   checkWireShape,
   checkActionResult,
@@ -334,12 +341,22 @@ describe("formatViolations", () => {
 type FakeExecute = (tool: string, input: Record<string, unknown>) => ToolResult;
 
 /** Install a `fetch` stub that routes session-create/execute/delete to a
- *  fake backend's `execute`. Returns a teardown. */
-function installFakeBackend(execute: FakeExecute): () => void {
+ *  fake backend's `execute`. Returns a teardown and the session ids
+ *  DELETEd. `create` overrides the session-create answer (a conforming 201
+ *  by default). */
+function installFakeBackend(
+  execute: FakeExecute,
+  create: FakeCreate = createdOk("conformance-suite"),
+): { teardown: () => void; deleted: string[] } {
+  const deleted: string[] = [];
   const stub = vi.fn(async (url: string | URL, init?: RequestInit) => {
     const u = String(url);
-    if (u.endsWith("/v1/sessions") && init?.method === "POST") {
-      return jsonResponse({ id: "sess_fake", status: "active" });
+    if (isSessionCreate(url, init)) {
+      return jsonResponse(create.body, create.status ?? 201);
+    }
+    if (isSessionDelete(url, init)) {
+      deleted.push(u.slice(u.lastIndexOf("/") + 1));
+      return jsonResponse({});
     }
     if (u.includes("/execute")) {
       const body = JSON.parse(String(init?.body ?? "{}")) as {
@@ -348,21 +365,16 @@ function installFakeBackend(execute: FakeExecute): () => void {
       };
       return jsonResponse(execute(body.tool, body.input ?? {}));
     }
-    // DELETE close
     return jsonResponse({});
   });
   const original = globalThis.fetch;
   globalThis.fetch = stub as unknown as typeof fetch;
-  return () => {
-    globalThis.fetch = original;
+  return {
+    teardown: () => {
+      globalThis.fetch = original;
+    },
+    deleted,
   };
-}
-
-function jsonResponse(body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
 }
 
 /** Run the suite under a mocked Vitest that executes each registered `it`
@@ -446,7 +458,7 @@ describe("runMetaToolConformanceSuite against a fake backend", () => {
   });
 
   it("a conforming fake passes every registered case", async () => {
-    teardown = installFakeBackend(conformingShop);
+    ({ teardown } = installFakeBackend(conformingShop));
     const results = await runSuiteAndCollect("codespar_shop");
     const failures = results.filter((r) => !r.passed);
     expect(failures, JSON.stringify(failures, null, 2)).toEqual([]);
@@ -454,13 +466,40 @@ describe("runMetaToolConformanceSuite against a fake backend", () => {
     expect(results.length).toBe(5);
   });
 
+  it("fails every case when the 201 body carries only { id, status }", async () => {
+    // The session the kit opens is the one the SDK would build: a runtime
+    // that omits user_id, servers or created_at fails before any action
+    // runs, instead of the kit passing on a session the SDK could not use.
+    ({ teardown } = installFakeBackend(conformingShop, {
+      status: 201,
+      body: { id: "ses_fake", status: "active" },
+    }));
+    const results = await runSuiteAndCollect("codespar_shop");
+    expect(results.length).toBe(5);
+    for (const r of results) {
+      expect(r.passed, r.name).toBe(false);
+      expect(r.error, r.name).toContain("user_id");
+    }
+  });
+
+  it("DELETEs the session the runtime created when its 201 body is rejected", async () => {
+    let deleted: string[];
+    ({ teardown, deleted } = installFakeBackend(conformingShop, {
+      body: { id: "ses_leak", status: "active" },
+    }));
+    const results = await runSuiteAndCollect("codespar_shop");
+    expect(results.every((r) => !r.passed)).toBe(true);
+    // One rejected create per registered case, each closed.
+    expect(deleted).toEqual(results.map(() => "ses_leak"));
+  });
+
   it("fails the wire-shape case when an action returns the wrong shape", async () => {
     // search returns a number for `rail` — a wire-shape violation.
-    teardown = installFakeBackend((tool, input) =>
+    ({ teardown } = installFakeBackend((tool, input) =>
       input.action === "search" && input.query
         ? okResult({ rail: 7, products: [] })
         : conformingShop(tool, input),
-    );
+    ));
     const results = await runSuiteAndCollect("codespar_shop");
     const searchCase = results.find((r) => r.name.includes('"search"'));
     expect(searchCase?.passed).toBe(false);
@@ -468,11 +507,11 @@ describe("runMetaToolConformanceSuite against a fake backend", () => {
   });
 
   it("fails the action-state case when checkout reports a terminal status early", async () => {
-    teardown = installFakeBackend((tool, input) =>
+    ({ teardown } = installFakeBackend((tool, input) =>
       input.action === "checkout"
         ? okResult({ checkout_session_id: "cks_1", status: "ready_for_payment" })
         : conformingShop(tool, input),
-    );
+    ));
     const results = await runSuiteAndCollect("codespar_shop");
     const checkoutCase = results.find((r) => r.name.includes('"checkout"'));
     expect(checkoutCase?.passed).toBe(false);
@@ -480,11 +519,11 @@ describe("runMetaToolConformanceSuite against a fake backend", () => {
   });
 
   it("fails the unregistered-error case when the runtime swallows it", async () => {
-    teardown = installFakeBackend((tool, input) =>
+    ({ teardown } = installFakeBackend((tool, input) =>
       tool.endsWith("__unregistered_probe")
         ? okResult({ rail: "vtex", products: [] }) // wrongly succeeds
         : conformingShop(tool, input),
-    );
+    ));
     const results = await runSuiteAndCollect("codespar_shop");
     const unregCase = results.find((r) => r.name.includes("unregistered"));
     expect(unregCase?.passed).toBe(false);
@@ -492,11 +531,11 @@ describe("runMetaToolConformanceSuite against a fake backend", () => {
   });
 
   it("fails the malformed-error case when the runtime accepts bad input", async () => {
-    teardown = installFakeBackend((tool, input) =>
+    ({ teardown } = installFakeBackend((tool, input) =>
       input.action === "search" && !input.query
         ? okResult({ rail: "vtex", products: [] }) // wrongly succeeds on empty query
         : conformingShop(tool, input),
-    );
+    ));
     const results = await runSuiteAndCollect("codespar_shop");
     const malformedCase = results.find((r) => r.name.includes("malformed"));
     expect(malformedCase?.passed).toBe(false);
@@ -504,7 +543,7 @@ describe("runMetaToolConformanceSuite against a fake backend", () => {
   });
 
   it("drives a single-shot tool (discover) with no state machine", async () => {
-    teardown = installFakeBackend((tool, input) => {
+    ({ teardown } = installFakeBackend((tool, input) => {
       if (tool.endsWith("__unregistered_probe")) {
         return {
           ...errResult(`Tool not registered: ${tool}`),
@@ -520,7 +559,7 @@ describe("runMetaToolConformanceSuite against a fake backend", () => {
         related: [],
         next_steps: [],
       });
-    });
+    }));
     const results = await runSuiteAndCollect("codespar_discover");
     const failures = results.filter((r) => !r.passed);
     expect(failures, JSON.stringify(failures, null, 2)).toEqual([]);
@@ -533,14 +572,14 @@ describe("runMetaToolConformanceSuite against a fake backend", () => {
     // Regression guard for the hollow-green hole: discover used to pass on
     // `success: true` alone, so a scalar `output: 42` slipped through. With
     // the descriptor's single-shot wire shape the case must now FAIL.
-    teardown = installFakeBackend((tool, input) => {
+    ({ teardown } = installFakeBackend((tool, input) => {
       if (tool.endsWith("__unregistered_probe")) {
         return { ...errResult(`Tool not registered: ${tool}`), tool };
       }
       if (!input.use_case) return errResult("use_case: required");
       // Succeeds, but the payload is a scalar — not a DiscoverResult.
       return okResult(42);
-    });
+    }));
     const results = await runSuiteAndCollect("codespar_discover");
     const happyPath = results.find((r) => r.name.includes("DiscoverResult"));
     expect(happyPath?.passed).toBe(false);

@@ -38,6 +38,9 @@ jobs:
       - name: Publish drift guard — self-test
         run: node --test scripts/check-publish-drift.test.mjs
 
+      - name: Hosted-smoke SDK version resolver — self-test
+        run: node --test scripts/hosted-smoke-sdk-version.test.mjs
+
       # A package naming @codespar/sdk in BOTH dependencies and
       # peerDependencies must name the same range in each. @codespar/mcp
       # names both, and 0.5.6 shipped with them disagreeing — a release step

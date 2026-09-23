@@ -1,5 +1,24 @@
 # @codespar/types — CHANGELOG
 
+## 0.11.3 — 2026-09-23
+
+### Changed
+
+- `runContractSuite` pins the `POST /v1/sessions` 201 body on every leg:
+  status `201`, `id`, `status: "active"`, the posted `user_id`, `servers`
+  as a `string[]` containing every posted id, and a parseable `created_at`
+  — the fields `@codespar/sdk` builds its session from. The `connections`
+  leg asserts `{ servers }` with `id` + `connected` on each entry (`tools`,
+  when present, must be an array) and fails on a non-2xx instead of
+  reporting `[]`. A runtime that returns less than the SDK reads now fails
+  the suite. `runMetaToolConformanceSuite` opens its session under the
+  same 201 assertion. A session whose 201 body is rejected is DELETEd
+  before the failure propagates, so a non-conforming runtime is not left
+  with one open session per leg per run.
+- `assertCreatedSessionShape`, `assertConnectionsShape` and
+  `postSessionChecked` are exported from `@codespar/types/testing` so a
+  runtime's own tests can reuse them.
+
 ## 0.11.2 — 2026-09-23
 
 ### Changed

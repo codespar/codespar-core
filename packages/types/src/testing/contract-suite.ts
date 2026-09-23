@@ -135,29 +135,144 @@ async function* parseSse(body: ReadableStream<Uint8Array>): AsyncIterable<Stream
   }
 }
 
-// Builds a minimal SessionBase from raw fetch calls so the contract suite
-// can run against any backend that implements the codespar session API.
-async function openSession(
-  baseUrl: string,
-  apiKey: string,
-  opts?: ContractSuiteOptions,
-): Promise<SessionBase> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
-  };
+/** The fields of the `POST /v1/sessions` 201 body that the SDK reads. */
+export interface CreatedSessionBody {
+  id: string;
+  status: "active" | "closed" | "error";
+  user_id: string;
+  servers: string[];
+  created_at: string;
+}
 
+/** The fields of the `GET /v1/sessions/:id/connections` body that the SDK reads. */
+export interface ConnectionsBody {
+  servers: BaseConnection[];
+  /** Tool catalogue the SDK caches when present. Not part of `SessionBase`. */
+  tools?: unknown[];
+}
+
+/**
+ * Pin the 201 body to the shape `@codespar/sdk` builds its session from.
+ * The SDK assigns `user_id`, `servers` and `created_at` without checking
+ * them (`createdAt: new Date(data.created_at)`), so a runtime that returns
+ * only `{ id, status }` produces an Invalid Date and undefined fields
+ * rather than an error. Asserting here makes every leg fail loudly on such
+ * a runtime instead of passing on a session the SDK could not use.
+ *
+ * `servers` is checked for containment, not equality: a runtime may
+ * provision defaults on top of what the caller posted, but must not drop
+ * what was posted.
+ */
+export function assertCreatedSessionShape(
+  status: number,
+  body: unknown,
+  posted: { servers: string[]; user_id: string },
+): CreatedSessionBody {
+  expect(status, "POST /v1/sessions must answer 201 Created").toBe(201);
+  expect(
+    body,
+    "201 body must carry id, status: active, the posted user_id, servers and created_at",
+  ).toMatchObject({
+    id: expect.any(String),
+    status: "active",
+    user_id: posted.user_id,
+    servers: expect.any(Array),
+    created_at: expect.any(String),
+  });
+  const raw = body as CreatedSessionBody;
+  for (const id of raw.servers) {
+    expect(typeof id, "servers must be a string[]").toBe("string");
+  }
+  expect(raw.servers, "servers must include every id the caller posted").toEqual(
+    expect.arrayContaining(posted.servers),
+  );
+  expect(
+    Number.isNaN(Date.parse(raw.created_at)),
+    `created_at must parse as a date, got ${JSON.stringify(raw.created_at)}`,
+  ).toBe(false);
+  return raw;
+}
+
+/**
+ * Pin the connections body to the `SessionBase` contract: `servers`, each
+ * entry at least a `BaseConnection`. `tools` is what `@codespar/sdk` caches
+ * from the same body, but no type in this package declares it, so a runtime
+ * built from the custom-runtime guide may omit it; when present it must be
+ * an array.
+ */
+export function assertConnectionsShape(body: unknown): ConnectionsBody {
+  expect(body, "connections body must carry servers[]").toMatchObject({
+    servers: expect.any(Array),
+  });
+  const raw = body as ConnectionsBody;
+  if (raw.tools !== undefined) {
+    expect(Array.isArray(raw.tools), "tools, when present, must be an array").toBe(true);
+  }
+  for (const c of raw.servers) {
+    expect(c, "each server entry must carry id and connected").toMatchObject({
+      id: expect.any(String),
+      connected: expect.any(Boolean),
+    });
+  }
+  return raw;
+}
+
+/**
+ * `POST /v1/sessions` and assert the 201 body. When the assertion fails on a
+ * body that still carries an `id`, the backend has created a session the
+ * caller will never hold — so it is deleted before the error propagates,
+ * instead of leaking one open session per leg per run. Shared with the
+ * meta-tool conformance kit.
+ */
+export async function postSessionChecked(
+  baseUrl: string,
+  headers: Record<string, string>,
+  createBody: { servers: string[]; user_id: string },
+): Promise<CreatedSessionBody> {
   const res = await fetch(`${baseUrl}/v1/sessions`, {
     method: "POST",
     headers,
-    body: JSON.stringify(buildSessionCreateBody(opts)),
+    body: JSON.stringify(createBody),
   });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`session create failed: ${res.status} ${text}`);
   }
-  const raw = (await res.json()) as { id: string; status: string };
-  const state = { id: raw.id, status: raw.status as "active" | "closed" | "error" };
+  const body: unknown = await res.json();
+  try {
+    return assertCreatedSessionShape(res.status, body, createBody);
+  } catch (err) {
+    const id = (body as { id?: unknown } | null)?.id;
+    if (typeof id === "string") {
+      await fetch(`${baseUrl}/v1/sessions/${id}`, { method: "DELETE", headers }).catch(
+        () => undefined,
+      );
+    }
+    throw err;
+  }
+}
+
+/** The request headers every session call sends. */
+export function sessionHeaders(apiKey: string): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKey}`,
+  };
+}
+
+/**
+ * Build a minimal `SessionBase` over raw fetch calls from a 201 body that
+ * already passed {@link assertCreatedSessionShape}, so a conformance test
+ * can drive any backend that implements the codespar session API without
+ * `@codespar/sdk`. Shared by the session contract suite and the meta-tool
+ * conformance kit.
+ */
+export function buildMinimalSession(
+  baseUrl: string,
+  headers: Record<string, string>,
+  raw: CreatedSessionBody,
+): SessionBase {
+  const state = { id: raw.id, status: raw.status };
 
   return {
     get id() {
@@ -211,9 +326,11 @@ async function openSession(
     },
     async connections(): Promise<BaseConnection[]> {
       const r = await fetch(`${baseUrl}/v1/sessions/${state.id}/connections`, { headers });
-      if (!r.ok) return [];
-      const payload = (await r.json()) as { servers: BaseConnection[] };
-      return payload.servers;
+      if (!r.ok) {
+        const body = await r.text();
+        throw new Error(`connections failed: ${r.status} ${body}`);
+      }
+      return assertConnectionsShape(await r.json()).servers;
     },
     async close(): Promise<void> {
       await fetch(`${baseUrl}/v1/sessions/${state.id}`, {
@@ -223,6 +340,16 @@ async function openSession(
       state.status = "closed";
     },
   };
+}
+
+async function openSession(
+  baseUrl: string,
+  apiKey: string,
+  opts?: ContractSuiteOptions,
+): Promise<SessionBase> {
+  const headers = sessionHeaders(apiKey);
+  const raw = await postSessionChecked(baseUrl, headers, buildSessionCreateBody(opts));
+  return buildMinimalSession(baseUrl, headers, raw);
 }
 
 /**
