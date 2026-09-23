@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-09-23T03:55:10.895Z",
-    "sha256": "572bcf65d1720da4abea4702adaefdb0f916f54bdb3a129be5493ba2556c1c32",
+    "fetched_at": "2026-09-23T16:38:33.921Z",
+    "sha256": "d4506b600d906848d9154a56e1e89402f23e06e0a76421288c101706ba1aa70c",
     "etag": null,
     "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 235,
-    "operations": 283,
+    "paths": 237,
+    "operations": 285,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -29518,6 +29518,773 @@
                             "enum": [
                               "provider_cancel_failed",
                               "provider_status_unreadable"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/test/charges/{chargeId}/pay": {
+        "post": {
+          "summary": "Pay a charge in the sandbox",
+          "description": "Plays the DEBTOR of a test charge: settles it through the SAME path a Celcoin `charge-in` webhook takes (translate, publish `commerce.charge.paid`, reconcile, ledger `fund()` with the `pending -> settled` claim). It is not a status write, so the event fans out to your triggers exactly as a real payment would, and the ledger and receipt side effects are the ones production produces.\n\n**Test-mode only, fail-closed.** A live-environment key or project answers 403 `sandbox_pay_not_permitted` before the body is read or any query runs.\n\n**Nothing claims money moved.** The event payload, the ledger entry and the charge row all carry `simulated: true` and `settled_against: \"sandbox_fixture\"`; a real `charge-in` never carries either.\n\n**Idempotent.** The provider event id is the one the real delivery would carry, so a second pay dedupes at the event (no second trigger fire), the ledger dedupes on the charge, and a charge already `settled` answers its recorded state with `idempotent_replay: true` whatever amount the second call names.\n\n`chargeId` is the id `create` returned, or your own idempotency key, resolved under the caller's org and project: another tenant's charge is `charge_not_found`, never `forbidden`.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string"
+              },
+              "required": true,
+              "name": "chargeId",
+              "in": "path"
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "amount_minor": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "description": "Overrides the quoted amount, in minor units, to simulate a partial or divergent payment. The funding bridge credits what arrived and closes the charge, exactly as it does for a real `charge-in` that disagrees with the quote. Omitted: the quoted amount is paid in full."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Optional. An empty body pays the quoted amount."
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "charge_id": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "paid"
+                        ]
+                      },
+                      "local_status": {
+                        "type": "string",
+                        "description": "What CodeSpar recorded: `settled`."
+                      },
+                      "currency": {
+                        "type": "string"
+                      },
+                      "quoted_minor": {
+                        "type": "integer"
+                      },
+                      "paid_minor": {
+                        "type": "integer",
+                        "description": "What the ledger credited."
+                      },
+                      "payment": {
+                        "type": "string",
+                        "enum": [
+                          "full",
+                          "partial",
+                          "over"
+                        ]
+                      },
+                      "paid_via": {
+                        "type": "string",
+                        "description": "The leg the simulated debtor used. Always `Pix` today."
+                      },
+                      "wallet_id": {
+                        "type": "string"
+                      },
+                      "ledger_entry_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "The `fund` entry keyed `bolepix:<charge_id>`. Null only for a charge the other credit path settled."
+                      },
+                      "event": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "commerce.charge.paid"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type"
+                        ],
+                        "description": "The one `commerce.charge.paid` this charge has. A second pay never mints another."
+                      },
+                      "simulated": {
+                        "type": "boolean",
+                        "description": "True when a sandbox fixture settled it. Read off the records, never off the request."
+                      },
+                      "settled_against": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "sandbox_fixture"
+                        ]
+                      },
+                      "money_moved": {
+                        "type": "boolean",
+                        "enum": [
+                          false
+                        ],
+                        "description": "Nothing moved anywhere, including at the provider's sandbox."
+                      },
+                      "idempotent_replay": {
+                        "type": "boolean",
+                        "description": "True when the charge was already settled and this call answered from the record."
+                      }
+                    },
+                    "required": [
+                      "charge_id",
+                      "status",
+                      "local_status",
+                      "currency",
+                      "quoted_minor",
+                      "paid_minor",
+                      "payment",
+                      "paid_via",
+                      "wallet_id",
+                      "ledger_entry_id",
+                      "event",
+                      "simulated",
+                      "settled_against",
+                      "money_moved",
+                      "idempotent_replay"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "The body is outside the schema, or the credential names no project.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body",
+                              "project_scope_missing"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "Not a test-environment key/project. Terminal for that credential.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "sandbox_pay_not_permitted"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No charge under that id for this tenant.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "charge_not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "The charge exists and cannot be paid: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge already closed (expired or cancelled).",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "issuance_unconfirmed",
+                              "charge_not_payable"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "502": {
+              "description": "The payment event was published but the ledger credit did not land; the charge is still open. Retrying is safe — the event dedupes and the credit is keyed on the charge.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "sandbox_settlement_failed"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/charges/{chargeId}/sandbox/pay": {
+        "post": {
+          "deprecated": true,
+          "summary": "Pay a charge in the sandbox (alias path)",
+          "description": "Alias of `POST /v1/test/charges/{chargeId}/pay` (ent#979 contract: one handler, two paths, one scope). Same body, same answers.\n\nPlays the DEBTOR of a test charge: settles it through the SAME path a Celcoin `charge-in` webhook takes (translate, publish `commerce.charge.paid`, reconcile, ledger `fund()` with the `pending -> settled` claim). It is not a status write, so the event fans out to your triggers exactly as a real payment would, and the ledger and receipt side effects are the ones production produces.\n\n**Test-mode only, fail-closed.** A live-environment key or project answers 403 `sandbox_pay_not_permitted` before the body is read or any query runs.\n\n**Nothing claims money moved.** The event payload, the ledger entry and the charge row all carry `simulated: true` and `settled_against: \"sandbox_fixture\"`; a real `charge-in` never carries either.\n\n**Idempotent.** The provider event id is the one the real delivery would carry, so a second pay dedupes at the event (no second trigger fire), the ledger dedupes on the charge, and a charge already `settled` answers its recorded state with `idempotent_replay: true` whatever amount the second call names.\n\n`chargeId` is the id `create` returned, or your own idempotency key, resolved under the caller's org and project: another tenant's charge is `charge_not_found`, never `forbidden`.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string"
+              },
+              "required": true,
+              "name": "chargeId",
+              "in": "path"
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "amount_minor": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "description": "Overrides the quoted amount, in minor units, to simulate a partial or divergent payment. The funding bridge credits what arrived and closes the charge, exactly as it does for a real `charge-in` that disagrees with the quote. Omitted: the quoted amount is paid in full."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Optional. An empty body pays the quoted amount."
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "charge_id": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "paid"
+                        ]
+                      },
+                      "local_status": {
+                        "type": "string",
+                        "description": "What CodeSpar recorded: `settled`."
+                      },
+                      "currency": {
+                        "type": "string"
+                      },
+                      "quoted_minor": {
+                        "type": "integer"
+                      },
+                      "paid_minor": {
+                        "type": "integer",
+                        "description": "What the ledger credited."
+                      },
+                      "payment": {
+                        "type": "string",
+                        "enum": [
+                          "full",
+                          "partial",
+                          "over"
+                        ]
+                      },
+                      "paid_via": {
+                        "type": "string",
+                        "description": "The leg the simulated debtor used. Always `Pix` today."
+                      },
+                      "wallet_id": {
+                        "type": "string"
+                      },
+                      "ledger_entry_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "The `fund` entry keyed `bolepix:<charge_id>`. Null only for a charge the other credit path settled."
+                      },
+                      "event": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "commerce.charge.paid"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type"
+                        ],
+                        "description": "The one `commerce.charge.paid` this charge has. A second pay never mints another."
+                      },
+                      "simulated": {
+                        "type": "boolean",
+                        "description": "True when a sandbox fixture settled it. Read off the records, never off the request."
+                      },
+                      "settled_against": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "sandbox_fixture"
+                        ]
+                      },
+                      "money_moved": {
+                        "type": "boolean",
+                        "enum": [
+                          false
+                        ],
+                        "description": "Nothing moved anywhere, including at the provider's sandbox."
+                      },
+                      "idempotent_replay": {
+                        "type": "boolean",
+                        "description": "True when the charge was already settled and this call answered from the record."
+                      }
+                    },
+                    "required": [
+                      "charge_id",
+                      "status",
+                      "local_status",
+                      "currency",
+                      "quoted_minor",
+                      "paid_minor",
+                      "payment",
+                      "paid_via",
+                      "wallet_id",
+                      "ledger_entry_id",
+                      "event",
+                      "simulated",
+                      "settled_against",
+                      "money_moved",
+                      "idempotent_replay"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "The body is outside the schema, or the credential names no project.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body",
+                              "project_scope_missing"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "Not a test-environment key/project. Terminal for that credential.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "sandbox_pay_not_permitted"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No charge under that id for this tenant.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "charge_not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "The charge exists and cannot be paid: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge already closed (expired or cancelled).",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "issuance_unconfirmed",
+                              "charge_not_payable"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "502": {
+              "description": "The payment event was published but the ledger credit did not land; the charge is still open. Retrying is safe — the event dedupes and the credit is keyed on the charge.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "sandbox_settlement_failed"
                             ]
                           },
                           "message": {

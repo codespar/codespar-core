@@ -1,5 +1,24 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.5 — 2026-09-23
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: 283 -> 285 operacoes, duas
+  rotas novas e nenhuma removida.
+
+      POST /v1/test/charges/{chargeId}/pay              (nova)
+      POST /v1/charges/{chargeId}/sandbox/pay           (deprecated no documento)
+
+  A rota de pagar uma cobranca no sandbox ganhou o caminho canonico sob
+  `/v1/test/`, ao lado de `fund`, `pix-in` e `settle-pix-in`; a antiga sob
+  `/v1/charges/` segue servida e vem marcada `deprecated`, e o comando derivado
+  dela (`charges sandbox-pay`) se anuncia assim no `--help`.
+
+- A CLI deriva dois comandos novos da mesma tabela (`test charges-pay`,
+  `charges sandbox-pay`), 95 -> 97 derivados. Ela nao muda de conteudo: depende
+  de `@codespar/sdk` por faixa (`^0.16.1`).
+
 ## 0.16.4 — 2026-09-23
 
 ### Changed

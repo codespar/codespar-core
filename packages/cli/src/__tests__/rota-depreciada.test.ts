@@ -94,10 +94,18 @@ describe("família morta não é cobrada, e comando morto se anuncia", () => {
     expect(mortos.length).toBeGreaterThan(0);
 
     const calados = mortos.filter(({ grupo, nome }) => {
-      const linha = ajuda(grupo)
-        .split("\n")
-        .find((l) => new RegExp(`^\\s+${nome}(?=\\s|$)`).test(l));
-      return !linha || !linha.includes("(deprecated)");
+      const linhas = ajuda(grupo).split("\n");
+      const inicio = linhas.findIndex((l) => new RegExp(`^\\s+${nome}(?=\\s|$)`).test(l));
+      if (inicio === -1) return true;
+      // Sem TTY o commander quebra a descricao em 80 colunas, e num caminho
+      // longo (`/v1/charges/{chargeId}/sandbox/pay`) a marca cai na linha
+      // seguinte, que so carrega espaco antes do texto. O comando continua
+      // se anunciando; e o teste que precisa ler a linha inteira.
+      let linha = linhas[inicio];
+      for (let j = inicio + 1; j < linhas.length && /^\s{3,}\S/.test(linhas[j]); j++) {
+        linha += ` ${linhas[j].trim()}`;
+      }
+      return !linha.includes("(deprecated)");
     });
 
     expect(calados).toEqual([]);
