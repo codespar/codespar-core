@@ -147,7 +147,8 @@ export interface CreatedSessionBody {
 /** The fields of the `GET /v1/sessions/:id/connections` body that the SDK reads. */
 export interface ConnectionsBody {
   servers: BaseConnection[];
-  tools: unknown[];
+  /** Tool catalogue the SDK caches when present. Not part of `SessionBase`. */
+  tools?: unknown[];
 }
 
 /**
@@ -193,17 +194,20 @@ export function assertCreatedSessionShape(
 }
 
 /**
- * Pin the connections body to what the SDK caches from it: `servers` (each
- * at least a `BaseConnection`) and `tools`. The SDK assigns `payload.tools`
- * straight into its tool cache, so a body without it is a cache that never
- * fills, not an empty catalogue.
+ * Pin the connections body to the `SessionBase` contract: `servers`, each
+ * entry at least a `BaseConnection`. `tools` is what `@codespar/sdk` caches
+ * from the same body, but no type in this package declares it, so a runtime
+ * built from the custom-runtime guide may omit it; when present it must be
+ * an array.
  */
 export function assertConnectionsShape(body: unknown): ConnectionsBody {
-  expect(body, "connections body must carry servers[] and tools[]").toMatchObject({
+  expect(body, "connections body must carry servers[]").toMatchObject({
     servers: expect.any(Array),
-    tools: expect.any(Array),
   });
   const raw = body as ConnectionsBody;
+  if (raw.tools !== undefined) {
+    expect(Array.isArray(raw.tools), "tools, when present, must be an array").toBe(true);
+  }
   for (const c of raw.servers) {
     expect(c, "each server entry must carry id and connected").toMatchObject({
       id: expect.any(String),
@@ -211,6 +215,41 @@ export function assertConnectionsShape(body: unknown): ConnectionsBody {
     });
   }
   return raw;
+}
+
+/**
+ * `POST /v1/sessions` and assert the 201 body. When the assertion fails on a
+ * body that still carries an `id`, the backend has created a session the
+ * caller will never hold — so it is deleted before the error propagates,
+ * instead of leaking one open session per leg per run. Shared with the
+ * meta-tool conformance kit.
+ */
+export async function postSessionChecked(
+  baseUrl: string,
+  headers: Record<string, string>,
+  createBody: { servers: string[]; user_id: string },
+): Promise<CreatedSessionBody> {
+  const res = await fetch(`${baseUrl}/v1/sessions`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(createBody),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`session create failed: ${res.status} ${text}`);
+  }
+  const body: unknown = await res.json();
+  try {
+    return assertCreatedSessionShape(res.status, body, createBody);
+  } catch (err) {
+    const id = (body as { id?: unknown } | null)?.id;
+    if (typeof id === "string") {
+      await fetch(`${baseUrl}/v1/sessions/${id}`, { method: "DELETE", headers }).catch(
+        () => undefined,
+      );
+    }
+    throw err;
+  }
 }
 
 // Builds a minimal SessionBase from raw fetch calls so the contract suite
@@ -225,17 +264,7 @@ async function openSession(
     Authorization: `Bearer ${apiKey}`,
   };
 
-  const createBody = buildSessionCreateBody(opts);
-  const res = await fetch(`${baseUrl}/v1/sessions`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(createBody),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`session create failed: ${res.status} ${text}`);
-  }
-  const raw = assertCreatedSessionShape(res.status, await res.json(), createBody);
+  const raw = await postSessionChecked(baseUrl, headers, buildSessionCreateBody(opts));
   const state = { id: raw.id, status: raw.status };
 
   return {

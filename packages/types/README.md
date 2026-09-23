@@ -133,7 +133,7 @@ The suite opens a session via `POST /v1/sessions` with `Authorization: Bearer <a
 - `execute()` calls a registered tool and returns a `ToolResult`
 - `send()` returns a `SendResult` with a `message` field
 - `sendStream()` yields well-typed `StreamEvent`s including a `done` event
-- `connections()` answers 2xx with `{ servers, tools }`, each server entry carrying `id` and `connected`
+- `connections()` answers 2xx with `{ servers }`, each entry carrying `id` and `connected` (`tools`, when present, must be an array)
 - `close()` transitions `session.status` to `"closed"`
 
 See [docs/custom-session-runtime.md](../../docs/custom-session-runtime.md) for a full implementation guide.

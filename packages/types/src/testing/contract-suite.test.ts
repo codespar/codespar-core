@@ -16,6 +16,13 @@ import {
   buildSessionCreateBody,
   type ContractLeg,
 } from "./contract-suite.js";
+import {
+  createdOk,
+  isSessionCreate,
+  isSessionDelete,
+  jsonResponse,
+  type FakeCreate,
+} from "./__fixtures__/fake-session-backend.js";
 
 describe("selectLegs", () => {
   const ALL: ContractLeg[] = ["execute", "send", "sendStream", "connections", "close"];
@@ -131,13 +138,13 @@ describe("runContractSuite leg registration", () => {
  *     `id` + `connected`, and `tools` is present, because the SDK caches it.
  * ─────────────────────────────────────────────────────────────── */
 
-/** A 201 body a conforming runtime returns for `{ servers: [], user_id: "contract-suite" }`. */
-const CREATED_OK = {
-  id: "ses_fake",
-  status: "active",
-  user_id: "contract-suite",
-  servers: [] as string[],
-  created_at: "2026-09-23T12:00:00.000Z",
+/** The 201 body a conforming runtime returns for the suite's session-create. */
+const CREATED_OK = createdOk("contract-suite").body as {
+  id: string;
+  status: string;
+  user_id: string;
+  servers: string[];
+  created_at: string;
 };
 
 /** A connections body a conforming runtime returns: one connected server, no tools. */
@@ -165,26 +172,28 @@ const EXECUTE_OK: ToolResult = {
 };
 
 interface FakeBackend {
-  create?: { status?: number; body: unknown };
+  create?: FakeCreate;
   execute?: ToolResult;
   connections?: { status?: number; body: unknown };
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-/** Stub `fetch` with the given backend answers (conforming defaults). Returns a teardown. */
-function installFakeBackend(backend: FakeBackend = {}): () => void {
-  const create = backend.create ?? { status: 201, body: CREATED_OK };
+/** Stub `fetch` with the given backend answers (conforming defaults). Returns
+ *  a teardown and the ids DELETEd, so a test can prove a session was closed. */
+function installFakeBackend(backend: FakeBackend = {}): {
+  teardown: () => void;
+  deleted: string[];
+} {
+  const create = backend.create ?? createdOk("contract-suite");
   const connections = backend.connections ?? { status: 200, body: CONNECTIONS_OK };
+  const deleted: string[] = [];
   const stub = vi.fn(async (url: string | URL, init?: RequestInit) => {
     const u = String(url);
-    if (u.endsWith("/v1/sessions") && init?.method === "POST") {
+    if (isSessionCreate(url, init)) {
       return jsonResponse(create.body, create.status ?? 201);
+    }
+    if (isSessionDelete(url, init)) {
+      deleted.push(u.slice(u.lastIndexOf("/") + 1));
+      return jsonResponse({});
     }
     if (u.includes("/execute")) {
       return jsonResponse(backend.execute ?? EXECUTE_OK);
@@ -196,8 +205,11 @@ function installFakeBackend(backend: FakeBackend = {}): () => void {
   });
   const original = globalThis.fetch;
   globalThis.fetch = stub as unknown as typeof fetch;
-  return () => {
-    globalThis.fetch = original;
+  return {
+    teardown: () => {
+      globalThis.fetch = original;
+    },
+    deleted,
   };
 }
 
@@ -257,7 +269,7 @@ describe("runContractSuite execute leg against a fake backend", () => {
   });
 
   it("passes when a success result carries the canonical error: null", async () => {
-    teardown = installFakeBackend({ execute: EXECUTE_OK });
+    ({ teardown } = installFakeBackend({ execute: EXECUTE_OK }));
     const outcome = await runLeg("execute");
     expect(outcome.error ?? "", outcome.error ?? "").toBe("");
     expect(outcome.passed).toBe(true);
@@ -266,14 +278,14 @@ describe("runContractSuite execute leg against a fake backend", () => {
   it("fails when a success result carries a non-null error (the masked divergence)", async () => {
     // An OSS runtime used to return `error: ""` on a success — non-null, so
     // it must now fail the pinned `error: null` assertion.
-    teardown = installFakeBackend({ execute: { ...EXECUTE_OK, error: "" } });
+    ({ teardown } = installFakeBackend({ execute: { ...EXECUTE_OK, error: "" } }));
     const outcome = await runLeg("execute");
     expect(outcome.passed).toBe(false);
   });
 
   it("fails when a no-error result reports success: false", async () => {
     // `success: true` is now pinned too — list_tools always succeeds.
-    teardown = installFakeBackend({ execute: { ...EXECUTE_OK, success: false } });
+    ({ teardown } = installFakeBackend({ execute: { ...EXECUTE_OK, success: false } }));
     const outcome = await runLeg("execute");
     expect(outcome.passed).toBe(false);
   });
@@ -287,7 +299,7 @@ describe("runContractSuite pins the POST /v1/sessions 201 body on every leg", ()
   });
 
   it("passes on the full body: id, status, user_id, servers, created_at", async () => {
-    teardown = installFakeBackend();
+    ({ teardown } = installFakeBackend());
     const outcome = await runLeg("close");
     expect(outcome.error ?? "", outcome.error ?? "").toBe("");
     expect(outcome.passed).toBe(true);
@@ -296,9 +308,9 @@ describe("runContractSuite pins the POST /v1/sessions 201 body on every leg", ()
   it("fails on a body that carries only { id, status }", async () => {
     // The shape a runtime used to return: the SDK turned it into an Invalid
     // Date and undefined `userId` / `servers`, silently.
-    teardown = installFakeBackend({
+    ({ teardown } = installFakeBackend({
       create: { body: { id: "ses_fake", status: "active" } },
-    });
+    }));
     const outcome = await runLeg("close");
     expect(outcome.passed).toBe(false);
     expect(outcome.error).toContain("user_id");
@@ -309,48 +321,87 @@ describe("runContractSuite pins the POST /v1/sessions 201 body on every leg", ()
     async (field) => {
       const body: Record<string, unknown> = { ...CREATED_OK };
       delete body[field];
-      teardown = installFakeBackend({ create: { body } });
+      ({ teardown } = installFakeBackend({ create: { body } }));
       const outcome = await runLeg("execute");
       expect(outcome.passed).toBe(false);
     },
   );
 
   it("fails when the status code is not 201", async () => {
-    teardown = installFakeBackend({ create: { status: 200, body: CREATED_OK } });
+    ({ teardown } = installFakeBackend({ create: { status: 200, body: CREATED_OK } }));
     const outcome = await runLeg("execute");
     expect(outcome.passed).toBe(false);
     expect(outcome.error).toContain("201");
   });
 
   it("fails when user_id is not the one the caller posted", async () => {
-    teardown = installFakeBackend({ create: { body: { ...CREATED_OK, user_id: "other" } } });
+    ({ teardown } = installFakeBackend({ create: { body: { ...CREATED_OK, user_id: "other" } } }));
     const outcome = await runLeg("execute");
     expect(outcome.passed).toBe(false);
   });
 
   it("fails when created_at does not parse as a date", async () => {
-    teardown = installFakeBackend({
+    ({ teardown } = installFakeBackend({
       create: { body: { ...CREATED_OK, created_at: "not-a-date" } },
-    });
+    }));
     const outcome = await runLeg("execute");
     expect(outcome.passed).toBe(false);
     expect(outcome.error).toContain("created_at");
   });
 
   it("fails when servers drops an id the caller posted", async () => {
-    teardown = installFakeBackend({ create: { body: { ...CREATED_OK, servers: [] } } });
+    ({ teardown } = installFakeBackend({ create: { body: { ...CREATED_OK, servers: [] } } }));
     const outcome = await runLeg("execute", ["alpha"]);
     expect(outcome.passed).toBe(false);
     expect(outcome.error).toContain("servers");
   });
 
   it("passes when servers echoes the posted ids, with or without provisioned extras", async () => {
-    teardown = installFakeBackend({
+    ({ teardown } = installFakeBackend({
       create: { body: { ...CREATED_OK, servers: ["alpha", "default"] } },
-    });
+    }));
     const outcome = await runLeg("execute", ["alpha"]);
     expect(outcome.error ?? "", outcome.error ?? "").toBe("");
     expect(outcome.passed).toBe(true);
+  });
+});
+
+describe("runContractSuite closes a session it rejects", () => {
+  let teardown: (() => void) | null = null;
+  afterEach(() => {
+    teardown?.();
+    teardown = null;
+  });
+
+  it("DELETEs the created session when the 201 body fails the shape assertion", async () => {
+    // The backend did create a session; the caller never receives it, so
+    // without this it would stay open on the runtime — once per leg per run.
+    const { created_at: _dropped, ...withoutCreatedAt } = CREATED_OK;
+    let deleted: string[];
+    ({ teardown, deleted } = installFakeBackend({
+      create: { body: { ...withoutCreatedAt, id: "ses_leak" } },
+    }));
+    const outcome = await runLeg("execute");
+    expect(outcome.passed).toBe(false);
+    expect(deleted).toEqual(["ses_leak"]);
+  });
+
+  it("DELETEs the created session when the status is 200 instead of 201", async () => {
+    let deleted: string[];
+    ({ teardown, deleted } = installFakeBackend({ create: { status: 200, body: CREATED_OK } }));
+    const outcome = await runLeg("execute");
+    expect(outcome.passed).toBe(false);
+    expect(deleted).toEqual([CREATED_OK.id]);
+  });
+
+  it("does not DELETE when the body carries no id to delete", async () => {
+    let deleted: string[];
+    ({ teardown, deleted } = installFakeBackend({
+      create: { status: 201, body: { status: "active" } },
+    }));
+    const outcome = await runLeg("execute");
+    expect(outcome.passed).toBe(false);
+    expect(deleted).toEqual([]);
   });
 });
 
@@ -362,27 +413,36 @@ describe("runContractSuite connections leg pins the GET /connections body", () =
   });
 
   it("passes on { servers: [{ id, connected, ... }], tools: [] }", async () => {
-    teardown = installFakeBackend();
+    ({ teardown } = installFakeBackend());
     const outcome = await runLeg("connections");
     expect(outcome.error ?? "", outcome.error ?? "").toBe("");
     expect(outcome.passed).toBe(true);
   });
 
-  it("fails when tools is missing", async () => {
-    // The SDK assigns `payload.tools` into its tool cache; without it the
-    // cache never fills.
-    teardown = installFakeBackend({
+  it("passes without tools: SessionBase declares only servers", async () => {
+    // `tools` is what @codespar/sdk caches from this body, but no type in
+    // this package declares it, so a runtime may omit it.
+    ({ teardown } = installFakeBackend({
       connections: { body: { servers: CONNECTIONS_OK.servers } },
-    });
+    }));
+    const outcome = await runLeg("connections");
+    expect(outcome.error ?? "", outcome.error ?? "").toBe("");
+    expect(outcome.passed).toBe(true);
+  });
+
+  it("fails when tools is present but not an array", async () => {
+    ({ teardown } = installFakeBackend({
+      connections: { body: { servers: CONNECTIONS_OK.servers, tools: {} } },
+    }));
     const outcome = await runLeg("connections");
     expect(outcome.passed).toBe(false);
     expect(outcome.error).toContain("tools");
   });
 
   it("fails when a server entry lacks connected", async () => {
-    teardown = installFakeBackend({
+    ({ teardown } = installFakeBackend({
       connections: { body: { servers: [{ id: "asaas" }], tools: [] } },
-    });
+    }));
     const outcome = await runLeg("connections");
     expect(outcome.passed).toBe(false);
     expect(outcome.error).toContain("connected");
@@ -391,9 +451,9 @@ describe("runContractSuite connections leg pins the GET /connections body", () =
   it("fails when the route answers non-2xx instead of returning []", async () => {
     // A runtime without the route used to pass this leg: the old client
     // swallowed the status and returned an empty list.
-    teardown = installFakeBackend({
+    ({ teardown } = installFakeBackend({
       connections: { status: 404, body: { error: "not_found" } },
-    });
+    }));
     const outcome = await runLeg("connections");
     expect(outcome.passed).toBe(false);
     expect(outcome.error).toContain("404");

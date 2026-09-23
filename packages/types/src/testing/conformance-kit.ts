@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import type { ToolResult } from "../index.js";
-import { assertCreatedSessionShape, validateBaseUrl } from "./contract-suite.js";
+import { postSessionChecked, validateBaseUrl } from "./contract-suite.js";
 import {
   META_TOOL_CONTRACTS,
   type ContractedToolName,
@@ -269,19 +269,12 @@ async function openSession(
     Authorization: `Bearer ${apiKey}`,
   };
 
-  const createBody = { servers, user_id: "conformance-suite" };
-  const res = await fetch(`${baseUrl}/v1/sessions`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(createBody),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`session create failed: ${res.status} ${text}`);
-  }
   // Same 201 contract the session suite pins: the kit must not run its
   // cases on a session the SDK could not have built.
-  const raw = assertCreatedSessionShape(res.status, await res.json(), createBody);
+  const raw = await postSessionChecked(baseUrl, headers, {
+    servers,
+    user_id: "conformance-suite",
+  });
 
   return {
     get id() {

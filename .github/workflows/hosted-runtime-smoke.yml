@@ -1,6 +1,16 @@
 name: hosted-runtime smoke
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/core/**'
+      - 'packages/types/**'
+      - 'packages/python/**'
+      - 'packages/cli/**'
+      - 'scripts/hosted-smoke.mjs'
+      - 'scripts/hosted-smoke-sdk-version.mjs'
+      - '.github/workflows/hosted-runtime-smoke.yml'
   pull_request:
     paths:
       - 'packages/core/**'
@@ -10,6 +20,7 @@ on:
       # na CLI nunca dispara o unico job que fala com a API servida.
       - 'packages/cli/**'
       - 'scripts/hosted-smoke.mjs'
+      - 'scripts/hosted-smoke-sdk-version.mjs'
       - '.github/workflows/hosted-runtime-smoke.yml'
   workflow_dispatch:
 
@@ -18,11 +29,18 @@ jobs:
     runs-on: ubuntu-latest
     # Validates the published @codespar/sdk against the wire-compatible
     # runtime hosted at api.codespar.dev. Installs the SDK fresh from npm
-    # (not the workspace source) at the exact version packages/core
-    # declares, so the job proves two things: the registry carries the
-    # version main says is current, and that artifact still round-trips
-    # against the served API. A pinned older version proved neither — it
-    # kept passing while the SDK moved six releases ahead of it.
+    # (not the workspace source), at the version packages/core declares,
+    # so the job proves the registry carries what main says is current
+    # and that artifact still round-trips against the served API. A
+    # pinned older version proved neither — it kept passing while the
+    # SDK moved six releases ahead of it.
+    #
+    # Two modes (scripts/hosted-smoke-sdk-version.mjs): on push to main
+    # and manual runs the workspace version must be published, or the job
+    # fails. On pull requests the newest published release at or below
+    # the workspace version is used, with a warning when it is older —
+    # a release PR bumps the version before `npm publish` runs, and an
+    # exact pin would fail every one of them on a 404.
     steps:
       - uses: actions/checkout@v4
 
@@ -30,21 +48,15 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install published @codespar/sdk at the workspace version
+      - name: Install published @codespar/sdk
+        env:
+          SMOKE_SDK_MODE: ${{ github.event_name == 'pull_request' && 'at-or-below' || 'exact' }}
         run: |
-          version=$(node -p "require('./packages/core/package.json').version")
+          version=$(node scripts/hosted-smoke-sdk-version.mjs)
           mkdir _smoke && cd _smoke
           npm init -y >/dev/null
-          if ! npm install "@codespar/sdk@${version}"; then
-            echo "::error::@codespar/sdk@${version} is not on npm. The workspace declares ${version}; publish it before this job can prove anything about the current SDK."
-            exit 1
-          fi
-          installed=$(node -p "require('./node_modules/@codespar/sdk/package.json').version")
-          if [ "${installed}" != "${version}" ]; then
-            echo "::error::installed @codespar/sdk@${installed}, expected ${version}"
-            exit 1
-          fi
-          echo "smoke runs against @codespar/sdk@${installed}"
+          npm install "@codespar/sdk@${version}"
+          echo "smoke runs against @codespar/sdk@${version}"
 
       - name: Run hosted-runtime smoke
         env:

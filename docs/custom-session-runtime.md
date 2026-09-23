@@ -138,7 +138,7 @@ if (apiKey) {
 }
 ```
 
-The suite expects a `POST /v1/sessions` endpoint that takes `Authorization: Bearer <apiKey>` and `{ servers, user_id }`, and answers `201` with `{ id, status, user_id, servers, created_at }` — the fields `@codespar/sdk` builds its session from, so a body that carries less fails every leg. It then calls `execute`, `send`, `sendStream`, `connections` (which must answer `{ servers, tools }`), and `close` on the resulting session and asserts the shapes match the contract types.
+The suite expects a `POST /v1/sessions` endpoint that takes `Authorization: Bearer <apiKey>` and `{ servers, user_id }`, and answers `201` with `{ id, status, user_id, servers, created_at }` — the fields `@codespar/sdk` builds its session from, so a body that carries less fails every leg. It then calls `execute`, `send`, `sendStream`, `connections` (which must answer `{ servers }`, each entry with `id` and `connected`), and `close` on the resulting session and asserts the shapes match the contract types.
 
 Run it against your staging server before shipping:
 
