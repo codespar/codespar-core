@@ -2,8 +2,9 @@
  * @codespar/langchain — LangChain.js StructuredTool adapter
  *
  * Bridges CodeSpar session tools to LangChain's StructuredTool format.
- * Converts JSON Schema inputs to Zod schemas and creates class instances
- * that route execution through the CodeSpar session for billing and audit.
+ * Converts each tool's JSON Schema input to a Zod schema that accepts the
+ * same values (see schema.ts) and creates tool objects that route execution
+ * through the CodeSpar session for billing and audit.
  *
  * @example
  * ```ts
@@ -23,41 +24,11 @@
  * ```
  */
 
-import { z } from "zod";
+import type { z } from "zod";
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
 import { tools as getSessionTools } from "@codespar/sdk";
 
-/** Convert a JSON Schema object to a Zod object schema. */
-function jsonSchemaToZod(schema: Record<string, unknown>): z.ZodObject<z.ZodRawShape> {
-  const properties = (schema.properties ?? {}) as Record<string, Record<string, unknown>>;
-  const required = (schema.required ?? []) as string[];
-  const shape: z.ZodRawShape = {};
-
-  for (const [key, prop] of Object.entries(properties)) {
-    let field: z.ZodTypeAny;
-    switch (prop.type) {
-      case "number":
-      case "integer":
-        field = z.number();
-        break;
-      case "boolean":
-        field = z.boolean();
-        break;
-      case "array":
-        field = z.array(z.unknown());
-        break;
-      case "object":
-        field = z.record(z.unknown());
-        break;
-      default:
-        field = z.string();
-    }
-    if (prop.description) field = field.describe(prop.description as string);
-    shape[key] = required.includes(key) ? field : field.optional();
-  }
-
-  return z.object(shape);
-}
+import { jsonSchemaToZod } from "./schema.js";
 
 export interface CodeSparLangChainTool {
   name: string;
@@ -102,4 +73,4 @@ export async function handleToolCall(
   return session.execute(toolName, args);
 }
 
-export { jsonSchemaToZod };
+export { jsonSchemaToZod, jsonSchemaToZodType, type JsonSchema } from "./schema.js";
