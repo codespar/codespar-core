@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 572bcf65d1720da4abea4702adaefdb0f916f54bdb3a129be5493ba2556c1c32, fetched 2026-09-23T03:55:10.895Z
+// Source: openapi-snapshot.json (sha256 d4506b600d906848d9154a56e1e89402f23e06e0a76421288c101706ba1aa70c, fetched 2026-09-23T16:38:33.921Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -165,6 +165,8 @@ export const API_OPERATIONS = [
   { method: "post", path: "/v1/charges", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/charges/{chargeId}", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/charges/{chargeId}/cancel", body: null, accept: "application/json", deprecated: false },
+  { method: "post", path: "/v1/test/charges/{chargeId}/pay", body: "application/json", accept: "application/json", deprecated: false },
+  { method: "post", path: "/v1/charges/{chargeId}/sandbox/pay", body: "application/json", accept: "application/json", deprecated: true },
   { method: "get", path: "/v1/consumers/consents", body: null, accept: "application/json", deprecated: true },
   { method: "get", path: "/v1/consumers/funding-sources", body: null, accept: "application/json", deprecated: true },
   { method: "get", path: "/v1/consumers/{consumerId}/dda/subscriptions/{document}", body: null, accept: "application/json", deprecated: false },

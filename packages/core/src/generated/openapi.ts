@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 572bcf65d1720da4abea4702adaefdb0f916f54bdb3a129be5493ba2556c1c32, fetched 2026-09-23T03:55:10.895Z
+// Source: openapi-snapshot.json (sha256 d4506b600d906848d9154a56e1e89402f23e06e0a76421288c101706ba1aa70c, fetched 2026-09-23T16:38:33.921Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -15628,6 +15628,389 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "provider_cancel_failed" | "provider_status_unreadable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/test/charges/{chargeId}/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pay a charge in the sandbox
+         * @description Plays the DEBTOR of a test charge: settles it through the SAME path a Celcoin `charge-in` webhook takes (translate, publish `commerce.charge.paid`, reconcile, ledger `fund()` with the `pending -> settled` claim). It is not a status write, so the event fans out to your triggers exactly as a real payment would, and the ledger and receipt side effects are the ones production produces.
+         *
+         *     **Test-mode only, fail-closed.** A live-environment key or project answers 403 `sandbox_pay_not_permitted` before the body is read or any query runs.
+         *
+         *     **Nothing claims money moved.** The event payload, the ledger entry and the charge row all carry `simulated: true` and `settled_against: "sandbox_fixture"`; a real `charge-in` never carries either.
+         *
+         *     **Idempotent.** The provider event id is the one the real delivery would carry, so a second pay dedupes at the event (no second trigger fire), the ledger dedupes on the charge, and a charge already `settled` answers its recorded state with `idempotent_replay: true` whatever amount the second call names.
+         *
+         *     `chargeId` is the id `create` returned, or your own idempotency key, resolved under the caller's org and project: another tenant's charge is `charge_not_found`, never `forbidden`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    chargeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Overrides the quoted amount, in minor units, to simulate a partial or divergent payment. The funding bridge credits what arrived and closes the charge, exactly as it does for a real `charge-in` that disagrees with the quote. Omitted: the quoted amount is paid in full. */
+                        amount_minor?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            charge_id: string;
+                            /** @enum {string} */
+                            status: "paid";
+                            /** @description What CodeSpar recorded: `settled`. */
+                            local_status: string;
+                            currency: string;
+                            quoted_minor: number;
+                            /** @description What the ledger credited. */
+                            paid_minor: number;
+                            /** @enum {string} */
+                            payment: "full" | "partial" | "over";
+                            /** @description The leg the simulated debtor used. Always `Pix` today. */
+                            paid_via: string;
+                            wallet_id: string;
+                            /** @description The `fund` entry keyed `bolepix:<charge_id>`. Null only for a charge the other credit path settled. */
+                            ledger_entry_id: string | null;
+                            /** @description The one `commerce.charge.paid` this charge has. A second pay never mints another. */
+                            event: {
+                                id: string;
+                                /** @enum {string} */
+                                type: "commerce.charge.paid";
+                            } | null;
+                            /** @description True when a sandbox fixture settled it. Read off the records, never off the request. */
+                            simulated: boolean;
+                            /** @enum {string|null} */
+                            settled_against: "sandbox_fixture" | null;
+                            /**
+                             * @description Nothing moved anywhere, including at the provider's sandbox.
+                             * @enum {boolean}
+                             */
+                            money_moved: false;
+                            /** @description True when the charge was already settled and this call answered from the record. */
+                            idempotent_replay: boolean;
+                        };
+                    };
+                };
+                /** @description The body is outside the schema, or the credential names no project. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "project_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not a test-environment key/project. Terminal for that credential. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_pay_not_permitted";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No charge under that id for this tenant. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The charge exists and cannot be paid: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge already closed (expired or cancelled). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "issuance_unconfirmed" | "charge_not_payable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The payment event was published but the ledger credit did not land; the charge is still open. Retrying is safe — the event dedupes and the credit is keyed on the charge. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_settlement_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/charges/{chargeId}/sandbox/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pay a charge in the sandbox (alias path)
+         * @deprecated
+         * @description Alias of `POST /v1/test/charges/{chargeId}/pay` (ent#979 contract: one handler, two paths, one scope). Same body, same answers.
+         *
+         *     Plays the DEBTOR of a test charge: settles it through the SAME path a Celcoin `charge-in` webhook takes (translate, publish `commerce.charge.paid`, reconcile, ledger `fund()` with the `pending -> settled` claim). It is not a status write, so the event fans out to your triggers exactly as a real payment would, and the ledger and receipt side effects are the ones production produces.
+         *
+         *     **Test-mode only, fail-closed.** A live-environment key or project answers 403 `sandbox_pay_not_permitted` before the body is read or any query runs.
+         *
+         *     **Nothing claims money moved.** The event payload, the ledger entry and the charge row all carry `simulated: true` and `settled_against: "sandbox_fixture"`; a real `charge-in` never carries either.
+         *
+         *     **Idempotent.** The provider event id is the one the real delivery would carry, so a second pay dedupes at the event (no second trigger fire), the ledger dedupes on the charge, and a charge already `settled` answers its recorded state with `idempotent_replay: true` whatever amount the second call names.
+         *
+         *     `chargeId` is the id `create` returned, or your own idempotency key, resolved under the caller's org and project: another tenant's charge is `charge_not_found`, never `forbidden`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    chargeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Overrides the quoted amount, in minor units, to simulate a partial or divergent payment. The funding bridge credits what arrived and closes the charge, exactly as it does for a real `charge-in` that disagrees with the quote. Omitted: the quoted amount is paid in full. */
+                        amount_minor?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            charge_id: string;
+                            /** @enum {string} */
+                            status: "paid";
+                            /** @description What CodeSpar recorded: `settled`. */
+                            local_status: string;
+                            currency: string;
+                            quoted_minor: number;
+                            /** @description What the ledger credited. */
+                            paid_minor: number;
+                            /** @enum {string} */
+                            payment: "full" | "partial" | "over";
+                            /** @description The leg the simulated debtor used. Always `Pix` today. */
+                            paid_via: string;
+                            wallet_id: string;
+                            /** @description The `fund` entry keyed `bolepix:<charge_id>`. Null only for a charge the other credit path settled. */
+                            ledger_entry_id: string | null;
+                            /** @description The one `commerce.charge.paid` this charge has. A second pay never mints another. */
+                            event: {
+                                id: string;
+                                /** @enum {string} */
+                                type: "commerce.charge.paid";
+                            } | null;
+                            /** @description True when a sandbox fixture settled it. Read off the records, never off the request. */
+                            simulated: boolean;
+                            /** @enum {string|null} */
+                            settled_against: "sandbox_fixture" | null;
+                            /**
+                             * @description Nothing moved anywhere, including at the provider's sandbox.
+                             * @enum {boolean}
+                             */
+                            money_moved: false;
+                            /** @description True when the charge was already settled and this call answered from the record. */
+                            idempotent_replay: boolean;
+                        };
+                    };
+                };
+                /** @description The body is outside the schema, or the credential names no project. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "project_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not a test-environment key/project. Terminal for that credential. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_pay_not_permitted";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No charge under that id for this tenant. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The charge exists and cannot be paid: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge already closed (expired or cancelled). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "issuance_unconfirmed" | "charge_not_payable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The payment event was published but the ledger credit did not land; the charge is still open. Retrying is safe — the event dedupes and the credit is keyed on the charge. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_settlement_failed";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
