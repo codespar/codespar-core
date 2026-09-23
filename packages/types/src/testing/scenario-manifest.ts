@@ -31,7 +31,7 @@
  *  union, and the per-example groups a consumer drives completely. */
 export const DEMO_SCENARIO_MANIFEST = {
   /** Must equal this package's published version (see the lockstep test). */
-  version: "0.11.1",
+  version: "0.11.2",
   /** Every shipped scenario `name` — the union of all `groups` (see the test). */
   scenarios: [
     "customer-data-rejection",

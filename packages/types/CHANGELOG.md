@@ -1,5 +1,16 @@
 # @codespar/types — CHANGELOG
 
+## 0.11.2 — 2026-09-23
+
+### Changed
+
+- `Session` passa a declarar `userId`, `servers` e `createdAt`. Os tres sao
+  escritos sem condicao pelo `createSession` do SDK desde sempre; o tipo e que
+  nao os tinha, entao `session.servers` reprovava no `tsc` e o editor nao
+  completava. `tools()` e `findTools()` continuam FORA de proposito: sao
+  internas, e as funcoes livres `tools(session)` / `findTools(session)` sao a
+  API publica.
+
 ## 0.11.1 — 2026-09-19
 
 ### Fixed

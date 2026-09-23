@@ -1,5 +1,15 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.3 — 2026-09-23
+
+### Changed
+
+- `fakeSession` passa a devolver `userId`, `servers` e `createdAt`, que
+  `@codespar/types@0.11.2` agora exige de um `Session`. Os defaults sao
+  `"user_fake"`, `[]` e uma data FIXA (`2026-01-01`), nao `new Date()`: mock com
+  relogio faz teste que passa hoje e reprova amanha. As tres viraram opcoes de
+  `fakeSession(responses, options)`.
+
 ## 0.16.2 — 2026-09-21
 
 ### Changed
