@@ -1,5 +1,29 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.4 — 2026-09-23
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: 280 -> 283 operacoes, tres
+  rotas novas e nenhuma removida.
+
+      POST /v1/payables/documents
+      POST /v1/payables/{payableId}/review
+      POST /v1/payables/{payableId}/pay
+
+  A porta de documento do payable passou a ser rota PROPRIA. Antes ela era o
+  mesmo `POST /v1/payables` com corpo `multipart/form-data`, e uma operacao com
+  dois content types trava o gerador deste pacote, que manda exatamente um: o
+  `spec:refresh` reprovava com "operation declares 2 request content types", e
+  com isso o snapshot ficou sem poder ser regenerado e o `spec-freshness` ficou
+  vermelho na main para todo mundo. Com a rota separada o gerador aceita a
+  multipart sozinha, e `operations.ts` a traz com `body: "multipart/form-data"`.
+
+- A CLI deriva tres comandos novos do mesmo table (`payables documents`,
+  `payables review`, `payables pay`), 92 -> 95 derivados. Ela nao muda de
+  conteudo: depende de `@codespar/sdk` por faixa (`^0.16.1`), entao uma
+  instalacao nova ja os traz.
+
 ## 0.16.3 — 2026-09-23
 
 ### Changed

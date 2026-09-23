@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 fb565d27129d401af20e17fa173f9f7ee4422d2b77278d94f095f0b6e5f63ee3, fetched 2026-09-22T00:28:23.295Z
+// Source: openapi-snapshot.json (sha256 572bcf65d1720da4abea4702adaefdb0f916f54bdb3a129be5493ba2556c1c32, fetched 2026-09-23T03:55:10.895Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -16151,7 +16151,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `no_celcoin_account`: the consumer has no active Pix funding source, so there is no account to list. `pix_key_provider_refused`: the provider adjudicated and said no; `details.provider_code` names its business code, and retrying the same input cannot succeed. */
+                /** @description `no_provider_account`: the consumer has no active Pix funding source, so there is no account to list. `pix_key_provider_refused`: the provider adjudicated and said no; `details.provider_code` names its business code, and retrying the same input cannot succeed. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -16160,7 +16160,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_celcoin_account" | "pix_key_provider_refused";
+                                code: "no_provider_account" | "pix_key_provider_refused";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -16311,7 +16311,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `no_celcoin_account`: the consumer has no active pix-celcoin funding source in this organization — or is not this organization's consumer at all; nothing reached the provider. `pix_key_provider_refused`: the provider adjudicated and refused, with `details.provider_status` and `details.provider_code` (null when the body named no code); repeating the same input will not pass. */
+                /** @description `no_provider_account`: the consumer has no active pix-celcoin funding source in this organization — or is not this organization's consumer at all; nothing reached the provider. `pix_key_provider_refused`: the provider adjudicated and refused, with `details.provider_status` and `details.provider_code` (null when the body named no code); repeating the same input will not pass. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -16320,7 +16320,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_celcoin_account" | "pix_key_provider_refused";
+                                code: "no_provider_account" | "pix_key_provider_refused";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -16467,7 +16467,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `no_celcoin_account`: the consumer has no active Pix funding source. `pix_key_provider_refused`: the provider adjudicated and refused; retrying the same input cannot succeed. `details.provider_code` carries its business code. */
+                /** @description `no_provider_account`: the consumer has no active Pix funding source. `pix_key_provider_refused`: the provider adjudicated and refused; retrying the same input cannot succeed. `details.provider_code` carries its business code. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -16476,7 +16476,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_celcoin_account" | "pix_key_provider_refused";
+                                code: "no_provider_account" | "pix_key_provider_refused";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -17637,7 +17637,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_celcoin_account" | "sandbox_funding_failed";
+                                code: "no_provider_account" | "sandbox_funding_failed";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -17762,7 +17762,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_celcoin_account" | "sandbox_funding_failed";
+                                code: "no_provider_account" | "sandbox_funding_failed";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -18336,7 +18336,7 @@ export interface paths {
          *
          *     A SEND SUPERSEDES THE LIVE ONE for the same contact: the previous verification is closed and only the new code counts. If that happens while this send is in flight, the 201 comes back with `expires_at` already in the past, and that is deliberate — two live codes would double the guessing budget.
          *
-         *     A `consumerId` the calling organization does not hold answers 422 `no_celcoin_account`, the same answer as an own consumer that has not finished onboarding. The route does not separate the two, so it cannot be used to probe for ids.
+         *     A `consumerId` the calling organization does not hold answers 422 `no_provider_account`, the same answer as an own consumer that has not finished onboarding. The route does not separate the two, so it cannot be used to probe for ids.
          */
         post: {
             parameters: {
@@ -18409,7 +18409,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `no_celcoin_account`: the consumer has no active pix-celcoin funding source in this organization — or is not this organization's consumer at all. `otp_sender_refused`: the sender refused to deliver to this number and repeating will not change that; `details.provider` names which sender said so. Nothing was sent, and no attempt was consumed, in either case. */
+                /** @description `no_provider_account`: the consumer has no active pix-celcoin funding source in this organization — or is not this organization's consumer at all. `otp_sender_refused`: the sender refused to deliver to this number and repeating will not change that; `details.provider` names which sender said so. Nothing was sent, and no attempt was consumed, in either case. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -18418,7 +18418,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_celcoin_account" | "otp_sender_refused";
+                                code: "no_provider_account" | "otp_sender_refused";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -18841,7 +18841,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `no_celcoin_account`: the consumer has no active pix-celcoin funding source in this organization — or is not this organization's consumer at all. `dda_document_not_owned` ALSO answers 422, and only for one cause: the account has no verified document on file at all, so no document can be shown to be theirs. Sending a different document will not help; finish onboarding and retry. */
+                /** @description `no_provider_account`: the consumer has no active pix-celcoin funding source in this organization — or is not this organization's consumer at all. `dda_document_not_owned` ALSO answers 422, and only for one cause: the account has no verified document on file at all, so no document can be shown to be theirs. Sending a different document will not help; finish onboarding and retry. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -18850,7 +18850,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_celcoin_account" | "dda_document_not_owned";
+                                code: "no_provider_account" | "dda_document_not_owned";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -25651,7 +25651,7 @@ export interface paths {
         put?: never;
         /**
          * Create a payable from a partner's record or a person's form
-         * @description A payable is an obligation to pay somebody. This endpoint takes one as structured data: `attribution.channel` is `structured` for a partner system's record and `manual` for a form a person filled in. Both go through the same schema and the same deterministic checks, so the same payable sent through either channel ends in the same status with the same validation. `upload` is refused, because this endpoint takes no file yet.
+         * @description A payable is an obligation to pay somebody. This endpoint takes one as structured data: `attribution.channel` is `structured` for a partner system's record and `manual` for a form a person filled in. Both go through the same schema and the same deterministic checks, so the same payable sent through either channel ends in the same status with the same validation. A file (PDF or image) goes to `POST /v1/payables/documents`, which reads the payable out of it and enters the same pipeline; a `multipart/form-data` body sent HERE answers 415 `payable_document_endpoint`, and a JSON body claiming `attribution.channel: "upload"` is refused.
          *
          *     Every field carries its provenance in `from`. Amounts are integer centavos (`*_minor`). `rail_quote` is refused by name: the amount and the payee of a payment come from the rail, never from a request. `attribution.credential_id` is set to the API key the request authenticated with; a different value is refused.
          *
@@ -25702,6 +25702,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25712,6 +25714,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25724,6 +25728,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25734,6 +25740,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25745,6 +25753,8 @@ export interface paths {
                             evidence?: {
                                 page: number;
                                 excerpt: string;
+                                /** @enum {string} */
+                                verification?: "verified" | "moved" | "unverifiable";
                             };
                             confidence?: number;
                         };
@@ -25755,6 +25765,8 @@ export interface paths {
                             evidence?: {
                                 page: number;
                                 excerpt: string;
+                                /** @enum {string} */
+                                verification?: "verified" | "moved" | "unverifiable";
                             };
                             confidence?: number;
                         };
@@ -25765,6 +25777,8 @@ export interface paths {
                             evidence?: {
                                 page: number;
                                 excerpt: string;
+                                /** @enum {string} */
+                                verification?: "verified" | "moved" | "unverifiable";
                             };
                             confidence?: number;
                         };
@@ -25775,6 +25789,8 @@ export interface paths {
                             evidence?: {
                                 page: number;
                                 excerpt: string;
+                                /** @enum {string} */
+                                verification?: "verified" | "moved" | "unverifiable";
                             };
                             confidence?: number;
                         };
@@ -25786,6 +25802,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25796,6 +25814,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25806,6 +25826,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25816,6 +25838,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25828,6 +25852,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25838,6 +25864,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25848,6 +25876,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25858,6 +25888,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25868,6 +25900,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25878,6 +25912,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25888,6 +25924,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25898,6 +25936,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25908,6 +25948,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25918,6 +25960,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -25966,6 +26010,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -25976,6 +26022,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -25988,6 +26036,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -25998,6 +26048,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26009,6 +26061,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -26019,6 +26073,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -26029,6 +26085,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -26039,6 +26097,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -26050,6 +26110,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26060,6 +26122,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26070,6 +26134,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26080,6 +26146,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26092,6 +26160,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26102,6 +26172,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26112,6 +26184,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26122,6 +26196,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26132,6 +26208,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26142,6 +26220,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26152,6 +26232,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26162,6 +26244,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26172,6 +26256,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26182,6 +26268,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26321,13 +26409,78 @@ export interface paths {
                                 }[];
                                 /** @description Checks whose failure rejects the payable. */
                                 rejected_by: string[];
+                                /** @description Checks that failed and stopped blocking because a person confirmed the rail's beneficiary (§6). The check still fails; what changed is that somebody took responsibility for it. */
+                                confirmed_by: string[];
                                 /** @description Required, implemented checks that did not answer and may be retried. */
                                 awaiting: string[];
                                 /** @description Checks that did not run and do not block READY in this release. */
                                 not_covered: string[];
-                                /** @description §9 triggers that keep a VALIDATED payable out of READY, such as `new_supplier`. */
+                                /** @description §9 triggers that keep a VALIDATED payable out of READY, such as `new_supplier`. The evidence trigger names the field and the gap: `critical_field_without_evidence:<field>:<missing|unverified|unverifiable|moved>`. */
                                 review_triggers: string[];
+                                /** @description Resolutions a person recorded in a completed review (§9). Absent until one is. */
+                                resolutions?: {
+                                    /** @description The §7 check this resolution answers. */
+                                    code: string;
+                                    /**
+                                     * @description What the person did about it.
+                                     * @enum {string}
+                                     */
+                                    resolution: "human_correction" | "reject" | "confirm_rail_beneficiary";
+                                    /** @description ISO 8601 instant of the review. */
+                                    at: string;
+                                    /** @description The user who reviewed. */
+                                    by: string;
+                                    /**
+                                     * @description How that identity was established.
+                                     * @enum {string}
+                                     */
+                                    by_source: "verified_user_token" | "header_asserted";
+                                    /** @description Field paths a correction changed. Paths only, never values. */
+                                    fields?: string[];
+                                    /** @description The rail's payee, masked, as the person confirmed it. */
+                                    confirmed_beneficiary_document?: string;
+                                }[];
                             };
+                            /** @description What paying it did (ent#1587); null until a payment was attempted. */
+                            payment: {
+                                /** @enum {string} */
+                                state: "awaiting_approval" | "dispatching" | "executed" | "uncertain" | "released";
+                                /** @description The pending approval that holds this payment, while a person decides. */
+                                approval_id?: string;
+                                /**
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @enum {string}
+                                 */
+                                settled_against?: "document_line" | "sandbox_fixture";
+                                document_amount_minor?: number;
+                                mandate_id: string;
+                                /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
+                                attempt_id: string;
+                                /** @description How many claims this payable has taken. Each is its own attempt. */
+                                tries: number;
+                                /** @description The rail's TRUE amount at the quote the attempt id was derived from. */
+                                amount_minor: number;
+                                /** @description SHA-256 of the quote the attempt was derived from. Never the quote. */
+                                quote_hash: string;
+                                claimed_at: string;
+                                /** @description The credential that asked. The key id, never the key; null on service auth. */
+                                key_id: string | null;
+                                via: string;
+                                executed_at?: string;
+                                receipt_id?: string | null;
+                                transaction_id?: string;
+                                end_to_end_id?: string | null;
+                                money_moved?: boolean;
+                                /** @description The lifecycle code the dispatch ended in when its outcome is unknown. */
+                                uncertain_code?: string;
+                                hold_entry_id?: string | null;
+                                /** @description The last refusal that provably moved no money, kept on release back to READY. */
+                                last_refusal?: {
+                                    code: string;
+                                    attempt_id: string;
+                                    at: string;
+                                };
+                            } | null;
                             /** @description ISO 8601 instant the payable was created. */
                             created_at: string;
                             /** @description ISO 8601 instant of the last change to the payable. */
@@ -26364,6 +26517,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26374,6 +26529,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26386,6 +26543,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26396,6 +26555,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26407,6 +26568,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -26417,6 +26580,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -26427,6 +26592,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -26437,6 +26604,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -26448,6 +26617,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26458,6 +26629,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26468,6 +26641,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26478,6 +26653,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26490,6 +26667,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26500,6 +26679,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26510,6 +26691,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26520,6 +26703,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26530,6 +26715,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26540,6 +26727,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26550,6 +26739,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26560,6 +26751,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26570,6 +26763,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26580,6 +26775,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26719,13 +26916,78 @@ export interface paths {
                                 }[];
                                 /** @description Checks whose failure rejects the payable. */
                                 rejected_by: string[];
+                                /** @description Checks that failed and stopped blocking because a person confirmed the rail's beneficiary (§6). The check still fails; what changed is that somebody took responsibility for it. */
+                                confirmed_by: string[];
                                 /** @description Required, implemented checks that did not answer and may be retried. */
                                 awaiting: string[];
                                 /** @description Checks that did not run and do not block READY in this release. */
                                 not_covered: string[];
-                                /** @description §9 triggers that keep a VALIDATED payable out of READY, such as `new_supplier`. */
+                                /** @description §9 triggers that keep a VALIDATED payable out of READY, such as `new_supplier`. The evidence trigger names the field and the gap: `critical_field_without_evidence:<field>:<missing|unverified|unverifiable|moved>`. */
                                 review_triggers: string[];
+                                /** @description Resolutions a person recorded in a completed review (§9). Absent until one is. */
+                                resolutions?: {
+                                    /** @description The §7 check this resolution answers. */
+                                    code: string;
+                                    /**
+                                     * @description What the person did about it.
+                                     * @enum {string}
+                                     */
+                                    resolution: "human_correction" | "reject" | "confirm_rail_beneficiary";
+                                    /** @description ISO 8601 instant of the review. */
+                                    at: string;
+                                    /** @description The user who reviewed. */
+                                    by: string;
+                                    /**
+                                     * @description How that identity was established.
+                                     * @enum {string}
+                                     */
+                                    by_source: "verified_user_token" | "header_asserted";
+                                    /** @description Field paths a correction changed. Paths only, never values. */
+                                    fields?: string[];
+                                    /** @description The rail's payee, masked, as the person confirmed it. */
+                                    confirmed_beneficiary_document?: string;
+                                }[];
                             };
+                            /** @description What paying it did (ent#1587); null until a payment was attempted. */
+                            payment: {
+                                /** @enum {string} */
+                                state: "awaiting_approval" | "dispatching" | "executed" | "uncertain" | "released";
+                                /** @description The pending approval that holds this payment, while a person decides. */
+                                approval_id?: string;
+                                /**
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @enum {string}
+                                 */
+                                settled_against?: "document_line" | "sandbox_fixture";
+                                document_amount_minor?: number;
+                                mandate_id: string;
+                                /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
+                                attempt_id: string;
+                                /** @description How many claims this payable has taken. Each is its own attempt. */
+                                tries: number;
+                                /** @description The rail's TRUE amount at the quote the attempt id was derived from. */
+                                amount_minor: number;
+                                /** @description SHA-256 of the quote the attempt was derived from. Never the quote. */
+                                quote_hash: string;
+                                claimed_at: string;
+                                /** @description The credential that asked. The key id, never the key; null on service auth. */
+                                key_id: string | null;
+                                via: string;
+                                executed_at?: string;
+                                receipt_id?: string | null;
+                                transaction_id?: string;
+                                end_to_end_id?: string | null;
+                                money_moved?: boolean;
+                                /** @description The lifecycle code the dispatch ended in when its outcome is unknown. */
+                                uncertain_code?: string;
+                                hold_entry_id?: string | null;
+                                /** @description The last refusal that provably moved no money, kept on release back to READY. */
+                                last_refusal?: {
+                                    code: string;
+                                    attempt_id: string;
+                                    at: string;
+                                };
+                            } | null;
                             /** @description ISO 8601 instant the payable was created. */
                             created_at: string;
                             /** @description ISO 8601 instant of the last change to the payable. */
@@ -26775,7 +27037,27 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `payable_carrier_malformed`: a carrier failed its own check digits, so the payable is `REJECTED` and was not stored; `details.carriers` names the carrier and the failure. `payable_no_duplicate_key`: the payable carries no duplicity axis. `payable_channel_unsupported`: `upload` was sent. `payable_attribution_mismatch`: `attribution.credential_id` names another API key. */
+                /** @description A `multipart/form-data` body was sent to the JSON endpoint. Send the file to `POST /v1/payables/documents` (`details.endpoint`). */
+                415: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_document_endpoint";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `payable_carrier_malformed`: a carrier failed its own check digits, so the payable is `REJECTED` and was not stored; `details.carriers` names the carrier and the failure. `payable_no_duplicate_key`: the payable carries no duplicity axis. `payable_channel_unsupported`: a JSON body claimed `upload`. `payable_attribution_mismatch`: `attribution.credential_id` names another API key. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -26805,6 +27087,1219 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "vault_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payables/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a payable from an uploaded document (PDF or image)
+         * @description The file goes in the multipart field `document` (PDF, PNG, JPEG or WEBP by its bytes; the declared type is not consulted), an optional text field `actor` names the person who uploaded it, and the payable is READ from the document: `attribution.channel` is `upload`, every field carries `from: "modelo"`, a page and a literal excerpt, and `extraction` names the model and its token counts. From there it enters the same pipeline as `POST /v1/payables` — the same schema, the same deterministic checks, the same duplicate axes, the same statuses — and answers the same 200/201 shape. A JSON body sent here answers 415 `payable_document_required`.
+         *
+         *     **Upload (multipart).** The door is behind a deployment switch: while it is off every upload answers 503 `payable_extraction_disabled` and nothing is read or stored. The file is checked before any reader sees it — real type by magic bytes (415 `payable_document_type_unsupported`; HEIC is detected and named but not accepted), at most 10 MB (413 `payable_document_too_large`), at most 10 pages (422 `payable_document_too_many_pages`), no JavaScript, embedded files, forms or launch actions (422 `payable_document_active_content`; refused, not stripped, so the hash on the payable is the hash of the bytes sent), and it must open (422 `payable_document_unreadable`, `details.reason` `encrypted` or `malformed`). The SHA-256 of the file is `document_hash`, computed before anything else: a file an open or paid payable of this project already holds answers 409 `payable_duplicate` on the `document_hash` axis without being read again. The original file is NOT kept; re-extraction is re-upload.
+         *
+         *     The reader's citations are checked against the PDF's text layer (§7): each field's `evidence.verification` is `verified`, `moved` (the excerpt is on another page) or `unverifiable` (an image, or a PDF with no text layer — a scan). `moved` and `unverifiable` on a critical field open the `critical_field_without_evidence` review trigger; an excerpt that is in NO page of a critical field refuses the whole document, 422 `payable_evidence_fabricated`, and nothing is stored. A reader that did not find enough for the schema answers 422 `payable_extraction_incomplete` naming the missing paths. A reader that did not answer after a bounded retry answers 502 `payable_extraction_unavailable` (retriable, nothing stored; the original is not kept, so there is no failed row to resume); a reader that declined the document answers 422 `payable_extraction_refused`. Nothing of the document's content reaches a log, an audit event or an error body: the trail carries the hash, the model, the token counts and the verdict counts.
+         *
+         *     **The amount and the payee come from the rail, never from what was sent.** `amount_matches_rail`, `beneficiary_document_matches_supplier` and `due_date_state` run against a consult of the boleto on the payable, and they block `READY` whether or not they answered. A consult that could not be made — no connected payment provider, a provider that did not answer — leaves them `indisponivel` and the payable `NEEDS_REVIEW`, named under `review.review_by`. `pix_key_owner_matches_supplier` is not consulted in this release and blocks a payable carrying a Pix BR Code with cause `required_not_implemented`. `VALIDATING` is never returned: nothing re-runs a validation yet, so a check with no answer goes to a person rather than waiting.
+         *
+         *     **Status.** Two fields answer two questions. `review.validation_status` is what the checks alone say: `REJECTED` (a check that rejects failed), `NEEDS_REVIEW` (a check failed, or a required check has no answer it can have), `VALIDATING` (a required, implemented check did not answer and will be retried) or `VALIDATED` (every required check passed). `status` is what the payable may do: `READY` only from `VALIDATED` with no review trigger open, and `NEEDS_REVIEW` when a trigger is open. The trigger this API evaluates is `new_supplier`: this project has no executed payable for the supplier's document, or the payable names no supplier document. It is evaluated per project, never across projects.
+         *
+         *     **Why things are in review.** `review.review_by` lists each check that sends the payable to a person and its `cause`: `check_failed`, `retries_exhausted` or `required_not_implemented`. `review.review_triggers` lists the open triggers. `review.not_covered` lists checks that did not run and do not block `READY` in this release (`supplier_registry`, `bank_details_changed`).
+         *
+         *     **Idempotency.** Send an `Idempotency-Key` header to make a retry safe. The same key with the same file answers 200 with `idempotent_replay: true`; the same key with a different file answers 409 `idempotency_key_conflict`. Both are checked before the reader runs, so a retry never spends a model call.
+         *
+         *     Scope: `payables:write`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description Makes the call repeatable. Reuse it verbatim on every retry of the same file. */
+                    "Idempotency-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "multipart/form-data": {
+                        /**
+                         * Format: binary
+                         * @description The PDF, PNG, JPEG or WEBP. At most 10 MB and 10 pages.
+                         */
+                        document: string;
+                        /** @description The person who uploaded it, recorded as `attribution.actor`. */
+                        actor?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            schema_version: "payable.v1";
+                            /** @enum {string} */
+                            doc_type: "invoice" | "danfe_nfe" | "boleto" | "unknown";
+                            attribution: {
+                                /** @enum {string} */
+                                channel: "upload" | "structured" | "manual";
+                                credential_id?: string;
+                                connection_id?: string;
+                                actor?: string;
+                            };
+                            document_hash?: string;
+                            supplier: {
+                                document?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                name: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            };
+                            recipient?: {
+                                document?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                name: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            };
+                            invoice_number?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            serie?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            issue_date?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            due_date?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            items?: {
+                                description: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                quantity: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                unit_amount_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                total_amount_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            }[];
+                            totals: {
+                                subtotal_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                discount_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                tax_relief_deducted_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                freight_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                insurance_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                other_charges_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                taxes_added_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                taxes_included_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                grand_total_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                currency: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            };
+                            carriers?: {
+                                boleto?: string;
+                                br_code?: string;
+                                nfe?: string;
+                            };
+                            extraction?: {
+                                model: string;
+                                model_version: string;
+                                input_tokens: number;
+                                output_tokens: number;
+                                reasoning_tokens?: number;
+                            };
+                            payable_id: string;
+                            /** @enum {string} */
+                            status: "RECEIVED" | "EXTRACTING" | "EXTRACTED" | "VALIDATING" | "VALIDATED" | "NEEDS_REVIEW" | "READY" | "APPROVED" | "EXECUTED" | "REJECTED" | "FAILED_EXTRACTION" | "EXPIRED";
+                            rail_quote?: {
+                                beneficiary: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                beneficiary_document_masked: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                final_beneficiary?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                final_beneficiary_document_masked?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                amount_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                discount_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                interest_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                fine_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                due_date?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                /** Format: date-time */
+                                quoted_at: string;
+                            };
+                            validation: {
+                                carrier_check_digits?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                document_check_digits?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                nfe_key_consistency?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                arithmetic?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                duplicate_document?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                amount_matches_rail?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                beneficiary_document_matches_supplier?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                due_date_state?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                pix_key_owner_matches_supplier?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                supplier_registry?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                bank_details_changed?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                            };
+                            review: {
+                                /**
+                                 * @description What the checks alone say. `status` adds the §9 triggers to it.
+                                 * @enum {string}
+                                 */
+                                validation_status: "REJECTED" | "NEEDS_REVIEW" | "VALIDATING" | "VALIDATED";
+                                /** @description Each check that sends the payable to a person, and why: it failed, it is implemented and did not answer, or it is required and nothing implements it yet. */
+                                review_by: {
+                                    code: string;
+                                    /** @enum {string} */
+                                    cause: "check_failed" | "retries_exhausted" | "required_not_implemented";
+                                }[];
+                                /** @description Checks whose failure rejects the payable. */
+                                rejected_by: string[];
+                                /** @description Checks that failed and stopped blocking because a person confirmed the rail's beneficiary (§6). The check still fails; what changed is that somebody took responsibility for it. */
+                                confirmed_by: string[];
+                                /** @description Required, implemented checks that did not answer and may be retried. */
+                                awaiting: string[];
+                                /** @description Checks that did not run and do not block READY in this release. */
+                                not_covered: string[];
+                                /** @description §9 triggers that keep a VALIDATED payable out of READY, such as `new_supplier`. The evidence trigger names the field and the gap: `critical_field_without_evidence:<field>:<missing|unverified|unverifiable|moved>`. */
+                                review_triggers: string[];
+                                /** @description Resolutions a person recorded in a completed review (§9). Absent until one is. */
+                                resolutions?: {
+                                    /** @description The §7 check this resolution answers. */
+                                    code: string;
+                                    /**
+                                     * @description What the person did about it.
+                                     * @enum {string}
+                                     */
+                                    resolution: "human_correction" | "reject" | "confirm_rail_beneficiary";
+                                    /** @description ISO 8601 instant of the review. */
+                                    at: string;
+                                    /** @description The user who reviewed. */
+                                    by: string;
+                                    /**
+                                     * @description How that identity was established.
+                                     * @enum {string}
+                                     */
+                                    by_source: "verified_user_token" | "header_asserted";
+                                    /** @description Field paths a correction changed. Paths only, never values. */
+                                    fields?: string[];
+                                    /** @description The rail's payee, masked, as the person confirmed it. */
+                                    confirmed_beneficiary_document?: string;
+                                }[];
+                            };
+                            /** @description What paying it did (ent#1587); null until a payment was attempted. */
+                            payment: {
+                                /** @enum {string} */
+                                state: "awaiting_approval" | "dispatching" | "executed" | "uncertain" | "released";
+                                /** @description The pending approval that holds this payment, while a person decides. */
+                                approval_id?: string;
+                                /**
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @enum {string}
+                                 */
+                                settled_against?: "document_line" | "sandbox_fixture";
+                                document_amount_minor?: number;
+                                mandate_id: string;
+                                /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
+                                attempt_id: string;
+                                /** @description How many claims this payable has taken. Each is its own attempt. */
+                                tries: number;
+                                /** @description The rail's TRUE amount at the quote the attempt id was derived from. */
+                                amount_minor: number;
+                                /** @description SHA-256 of the quote the attempt was derived from. Never the quote. */
+                                quote_hash: string;
+                                claimed_at: string;
+                                /** @description The credential that asked. The key id, never the key; null on service auth. */
+                                key_id: string | null;
+                                via: string;
+                                executed_at?: string;
+                                receipt_id?: string | null;
+                                transaction_id?: string;
+                                end_to_end_id?: string | null;
+                                money_moved?: boolean;
+                                /** @description The lifecycle code the dispatch ended in when its outcome is unknown. */
+                                uncertain_code?: string;
+                                hold_entry_id?: string | null;
+                                /** @description The last refusal that provably moved no money, kept on release back to READY. */
+                                last_refusal?: {
+                                    code: string;
+                                    attempt_id: string;
+                                    at: string;
+                                };
+                            } | null;
+                            /** @description ISO 8601 instant the payable was created. */
+                            created_at: string;
+                            /** @description ISO 8601 instant of the last change to the payable. */
+                            updated_at: string;
+                            /** @description True when this answer replays an earlier call made with the same Idempotency-Key. */
+                            idempotent_replay: boolean;
+                        };
+                    };
+                };
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            schema_version: "payable.v1";
+                            /** @enum {string} */
+                            doc_type: "invoice" | "danfe_nfe" | "boleto" | "unknown";
+                            attribution: {
+                                /** @enum {string} */
+                                channel: "upload" | "structured" | "manual";
+                                credential_id?: string;
+                                connection_id?: string;
+                                actor?: string;
+                            };
+                            document_hash?: string;
+                            supplier: {
+                                document?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                name: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            };
+                            recipient?: {
+                                document?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                name: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            };
+                            invoice_number?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            serie?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            issue_date?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            due_date?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            items?: {
+                                description: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                quantity: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                unit_amount_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                total_amount_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            }[];
+                            totals: {
+                                subtotal_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                discount_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                tax_relief_deducted_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                freight_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                insurance_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                other_charges_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                taxes_added_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                taxes_included_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                grand_total_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                currency: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            };
+                            carriers?: {
+                                boleto?: string;
+                                br_code?: string;
+                                nfe?: string;
+                            };
+                            extraction?: {
+                                model: string;
+                                model_version: string;
+                                input_tokens: number;
+                                output_tokens: number;
+                                reasoning_tokens?: number;
+                            };
+                            payable_id: string;
+                            /** @enum {string} */
+                            status: "RECEIVED" | "EXTRACTING" | "EXTRACTED" | "VALIDATING" | "VALIDATED" | "NEEDS_REVIEW" | "READY" | "APPROVED" | "EXECUTED" | "REJECTED" | "FAILED_EXTRACTION" | "EXPIRED";
+                            rail_quote?: {
+                                beneficiary: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                beneficiary_document_masked: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                final_beneficiary?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                final_beneficiary_document_masked?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                amount_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                discount_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                interest_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                fine_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                due_date?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                /** Format: date-time */
+                                quoted_at: string;
+                            };
+                            validation: {
+                                carrier_check_digits?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                document_check_digits?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                nfe_key_consistency?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                arithmetic?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                duplicate_document?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                amount_matches_rail?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                beneficiary_document_matches_supplier?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                due_date_state?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                pix_key_owner_matches_supplier?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                supplier_registry?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                bank_details_changed?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                            };
+                            review: {
+                                /**
+                                 * @description What the checks alone say. `status` adds the §9 triggers to it.
+                                 * @enum {string}
+                                 */
+                                validation_status: "REJECTED" | "NEEDS_REVIEW" | "VALIDATING" | "VALIDATED";
+                                /** @description Each check that sends the payable to a person, and why: it failed, it is implemented and did not answer, or it is required and nothing implements it yet. */
+                                review_by: {
+                                    code: string;
+                                    /** @enum {string} */
+                                    cause: "check_failed" | "retries_exhausted" | "required_not_implemented";
+                                }[];
+                                /** @description Checks whose failure rejects the payable. */
+                                rejected_by: string[];
+                                /** @description Checks that failed and stopped blocking because a person confirmed the rail's beneficiary (§6). The check still fails; what changed is that somebody took responsibility for it. */
+                                confirmed_by: string[];
+                                /** @description Required, implemented checks that did not answer and may be retried. */
+                                awaiting: string[];
+                                /** @description Checks that did not run and do not block READY in this release. */
+                                not_covered: string[];
+                                /** @description §9 triggers that keep a VALIDATED payable out of READY, such as `new_supplier`. The evidence trigger names the field and the gap: `critical_field_without_evidence:<field>:<missing|unverified|unverifiable|moved>`. */
+                                review_triggers: string[];
+                                /** @description Resolutions a person recorded in a completed review (§9). Absent until one is. */
+                                resolutions?: {
+                                    /** @description The §7 check this resolution answers. */
+                                    code: string;
+                                    /**
+                                     * @description What the person did about it.
+                                     * @enum {string}
+                                     */
+                                    resolution: "human_correction" | "reject" | "confirm_rail_beneficiary";
+                                    /** @description ISO 8601 instant of the review. */
+                                    at: string;
+                                    /** @description The user who reviewed. */
+                                    by: string;
+                                    /**
+                                     * @description How that identity was established.
+                                     * @enum {string}
+                                     */
+                                    by_source: "verified_user_token" | "header_asserted";
+                                    /** @description Field paths a correction changed. Paths only, never values. */
+                                    fields?: string[];
+                                    /** @description The rail's payee, masked, as the person confirmed it. */
+                                    confirmed_beneficiary_document?: string;
+                                }[];
+                            };
+                            /** @description What paying it did (ent#1587); null until a payment was attempted. */
+                            payment: {
+                                /** @enum {string} */
+                                state: "awaiting_approval" | "dispatching" | "executed" | "uncertain" | "released";
+                                /** @description The pending approval that holds this payment, while a person decides. */
+                                approval_id?: string;
+                                /**
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @enum {string}
+                                 */
+                                settled_against?: "document_line" | "sandbox_fixture";
+                                document_amount_minor?: number;
+                                mandate_id: string;
+                                /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
+                                attempt_id: string;
+                                /** @description How many claims this payable has taken. Each is its own attempt. */
+                                tries: number;
+                                /** @description The rail's TRUE amount at the quote the attempt id was derived from. */
+                                amount_minor: number;
+                                /** @description SHA-256 of the quote the attempt was derived from. Never the quote. */
+                                quote_hash: string;
+                                claimed_at: string;
+                                /** @description The credential that asked. The key id, never the key; null on service auth. */
+                                key_id: string | null;
+                                via: string;
+                                executed_at?: string;
+                                receipt_id?: string | null;
+                                transaction_id?: string;
+                                end_to_end_id?: string | null;
+                                money_moved?: boolean;
+                                /** @description The lifecycle code the dispatch ended in when its outcome is unknown. */
+                                uncertain_code?: string;
+                                hold_entry_id?: string | null;
+                                /** @description The last refusal that provably moved no money, kept on release back to READY. */
+                                last_refusal?: {
+                                    code: string;
+                                    attempt_id: string;
+                                    at: string;
+                                };
+                            } | null;
+                            /** @description ISO 8601 instant the payable was created. */
+                            created_at: string;
+                            /** @description ISO 8601 instant of the last change to the payable. */
+                            updated_at: string;
+                            /** @description True when this answer replays an earlier call made with the same Idempotency-Key. */
+                            idempotent_replay: boolean;
+                        };
+                    };
+                };
+                /** @description The multipart field `document` is absent or empty (`payable_document_required`), the `actor` field is out of shape or the multipart body could not be read (`invalid_body`), or the Idempotency-Key header is empty or longer than 255 characters. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_document_required" | "invalid_body" | "invalid_idempotency_key";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `payable_duplicate`: an open or paid payable of this project already holds this file's `document_hash` (refused before the reader runs; no `details.validation`) or shares a carrier with what was read. `idempotency_key_conflict`: the key was used with a different file. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_duplicate" | "idempotency_key_conflict";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The uploaded file exceeds 10 MB. Nothing was read or stored. */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_document_too_large";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `payable_document_type_unsupported`: the file is not a PDF, PNG, JPEG or WEBP by its bytes; `details.detected` names what it is when known (`image/heic` is detected and not accepted). `payable_document_required`: the body was not `multipart/form-data` at all. */
+                415: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_document_type_unsupported" | "payable_document_required";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The PDF has more than 10 pages (`payable_document_too_many_pages`), carries active content (`payable_document_active_content`, `details.found`), or cannot be opened (`payable_document_unreadable`, `details.reason`); the reader cited, for a critical field, a passage in no page (`payable_evidence_fabricated`, `details.fields`); the reader found too little (`payable_extraction_incomplete`, `details.issues`); the reader declined the document (`payable_extraction_refused`); or a carrier it read fails its check digits (`payable_carrier_malformed`). None of these stores anything. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_document_too_many_pages" | "payable_document_active_content" | "payable_document_unreadable" | "payable_evidence_fabricated" | "payable_extraction_incomplete" | "payable_extraction_refused" | "payable_carrier_malformed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `payable_extraction_unavailable`: the reader did not answer usably after a bounded retry (`details.attempts`); nothing was stored; retry later with the same Idempotency-Key. `payable_extraction_failed`: the extraction request was refused for a reason on our side; not fixable by retrying. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_extraction_unavailable" | "payable_extraction_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `payable_extraction_disabled`: the document door is switched off on this deployment; send the payable as JSON (`structured` or `manual`). `payable_extractor_unconfigured`: the door is on with no reader behind it; a deployment fault, not retriable. `vault_unavailable`: the key that protects supplier documents could not be read; retry later with the same Idempotency-Key. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_extraction_disabled" | "payable_extractor_unconfigured" | "vault_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -26881,6 +28376,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26891,6 +28388,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26903,6 +28402,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26913,6 +28414,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26924,6 +28427,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -26934,6 +28439,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -26944,6 +28451,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -26954,6 +28463,8 @@ export interface paths {
                                 evidence?: {
                                     page: number;
                                     excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
                                 };
                                 confidence?: number;
                             };
@@ -26965,6 +28476,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26975,6 +28488,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26985,6 +28500,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -26995,6 +28512,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -27007,6 +28526,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -27017,6 +28538,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -27027,6 +28550,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -27037,6 +28562,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -27047,6 +28574,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -27057,6 +28586,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -27067,6 +28598,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -27077,6 +28610,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -27087,6 +28622,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -27097,6 +28634,8 @@ export interface paths {
                                     evidence?: {
                                         page: number;
                                         excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
                                     };
                                     confidence?: number;
                                 };
@@ -27236,13 +28775,78 @@ export interface paths {
                                 }[];
                                 /** @description Checks whose failure rejects the payable. */
                                 rejected_by: string[];
+                                /** @description Checks that failed and stopped blocking because a person confirmed the rail's beneficiary (§6). The check still fails; what changed is that somebody took responsibility for it. */
+                                confirmed_by: string[];
                                 /** @description Required, implemented checks that did not answer and may be retried. */
                                 awaiting: string[];
                                 /** @description Checks that did not run and do not block READY in this release. */
                                 not_covered: string[];
-                                /** @description §9 triggers that keep a VALIDATED payable out of READY, such as `new_supplier`. */
+                                /** @description §9 triggers that keep a VALIDATED payable out of READY, such as `new_supplier`. The evidence trigger names the field and the gap: `critical_field_without_evidence:<field>:<missing|unverified|unverifiable|moved>`. */
                                 review_triggers: string[];
+                                /** @description Resolutions a person recorded in a completed review (§9). Absent until one is. */
+                                resolutions?: {
+                                    /** @description The §7 check this resolution answers. */
+                                    code: string;
+                                    /**
+                                     * @description What the person did about it.
+                                     * @enum {string}
+                                     */
+                                    resolution: "human_correction" | "reject" | "confirm_rail_beneficiary";
+                                    /** @description ISO 8601 instant of the review. */
+                                    at: string;
+                                    /** @description The user who reviewed. */
+                                    by: string;
+                                    /**
+                                     * @description How that identity was established.
+                                     * @enum {string}
+                                     */
+                                    by_source: "verified_user_token" | "header_asserted";
+                                    /** @description Field paths a correction changed. Paths only, never values. */
+                                    fields?: string[];
+                                    /** @description The rail's payee, masked, as the person confirmed it. */
+                                    confirmed_beneficiary_document?: string;
+                                }[];
                             };
+                            /** @description What paying it did (ent#1587); null until a payment was attempted. */
+                            payment: {
+                                /** @enum {string} */
+                                state: "awaiting_approval" | "dispatching" | "executed" | "uncertain" | "released";
+                                /** @description The pending approval that holds this payment, while a person decides. */
+                                approval_id?: string;
+                                /**
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @enum {string}
+                                 */
+                                settled_against?: "document_line" | "sandbox_fixture";
+                                document_amount_minor?: number;
+                                mandate_id: string;
+                                /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
+                                attempt_id: string;
+                                /** @description How many claims this payable has taken. Each is its own attempt. */
+                                tries: number;
+                                /** @description The rail's TRUE amount at the quote the attempt id was derived from. */
+                                amount_minor: number;
+                                /** @description SHA-256 of the quote the attempt was derived from. Never the quote. */
+                                quote_hash: string;
+                                claimed_at: string;
+                                /** @description The credential that asked. The key id, never the key; null on service auth. */
+                                key_id: string | null;
+                                via: string;
+                                executed_at?: string;
+                                receipt_id?: string | null;
+                                transaction_id?: string;
+                                end_to_end_id?: string | null;
+                                money_moved?: boolean;
+                                /** @description The lifecycle code the dispatch ended in when its outcome is unknown. */
+                                uncertain_code?: string;
+                                hold_entry_id?: string | null;
+                                /** @description The last refusal that provably moved no money, kept on release back to READY. */
+                                last_refusal?: {
+                                    code: string;
+                                    attempt_id: string;
+                                    at: string;
+                                };
+                            } | null;
                             /** @description ISO 8601 instant the payable was created. */
                             created_at: string;
                             /** @description ISO 8601 instant of the last change to the payable. */
@@ -27274,6 +28878,1409 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payables/{payableId}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete the review of a payable
+         * @description A person records what they decided about a payable that is `NEEDS_REVIEW`, and the payable comes out `READY` or `REJECTED`. There is no third outcome and no partial review: a call that leaves anything blocking is refused and writes nothing, so resolve every item of `review` in one call.
+         *
+         *     **Who may review.** A verified human. Forward the reviewer's Clerk session token in `x-codespar-user-token` on a service-auth request; that user must be an `admin` of the organization. A project API key is refused (`bearer_token_cannot_decide`): a key proves which service is calling, never which person confirmed, and the audit event names the person.
+         *
+         *     **The ordinary review is an empty one.** `resolutions: []` releases a payable that no check failed and that only a review trigger holds — typically `new_supplier`, a supplier this project has never paid. The person is still recorded as the author.
+         *
+         *     **One resolution per failed check.** Each names a `code` that is currently `needs_review` and one of the resolutions that code admits: the two rejecting codes (`carrier_check_digits`, `duplicate_document`) admit none, the three payee codes (`beneficiary_document_matches_supplier`, `pix_key_owner_matches_supplier`, `bank_details_changed`) admit `reject` or `confirm_rail_beneficiary`, and every other code admits `human_correction` or `reject`. A refused resolution lists what its code admits in `details.allowed`. A check that produced no answer (`indisponivel`) has no finding to resolve and is refused (`payable_check_did_not_run`) — a check that never ran is not a check that passed.
+         *
+         *     - `human_correction` carries `corrections`, each naming a field and its corrected value. The value is stored with provenance `pessoa`; evidence and confidence of the previous value are dropped. The correction is then RE-CHECKED: the payable is validated again, the rail is consulted again, and the resolution holds only if the check now passes. It is refused otherwise (`payable_correction_did_not_resolve`).
+         *     - `confirm_rail_beneficiary` is the only resolution for a payee that differs from the rail's, because editing the extracted field would turn a forged beneficiary into corrected data. It carries `confirmed_beneficiary_document`: the rail's beneficiary, masked. If it is absent or is not who the rail names now, the call is refused with `payable_rail_beneficiary_unconfirmed` and `details.rail_beneficiary_document_masked` tells you who that is — send it back verbatim to confirm.
+         *     - `reject` ends the payable, and is sent alone. It is a decision about the payable, not the resolution of a check, so it is accepted whatever state the checks are in — a check that produced no answer included; the code it names only has to be one that admits `reject`.
+         *
+         *     **What a correction may touch.** `issue_date`, `due_date`, `recipient.document`, `recipient.name` and the `totals.*` fields, and only when the payable already carries them. Everything that is a duplicity axis (`document_hash`, the carriers, `supplier.document`, `invoice_number`, `serie`) is outside, because it is a canonical column the duplicate check runs on, and `supplier.*` is outside for the payee reason above. A misread carrier or supplier document is re-entered as a new payable, not patched.
+         *
+         *     Scope: `payables:write`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description The reviewer's Clerk session token. Required: the review names its author. */
+                    "x-codespar-user-token"?: string;
+                };
+                path: {
+                    /** @description `pbl_` followed by 16 characters. */
+                    payableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @default [] */
+                        resolutions?: {
+                            /** @enum {string} */
+                            code: "carrier_check_digits" | "document_check_digits" | "nfe_key_consistency" | "arithmetic" | "duplicate_document" | "amount_matches_rail" | "beneficiary_document_matches_supplier" | "due_date_state" | "pix_key_owner_matches_supplier" | "supplier_registry" | "bank_details_changed";
+                            /** @enum {string} */
+                            resolution: "human_correction" | "reject" | "confirm_rail_beneficiary";
+                            corrections?: {
+                                /** @enum {string} */
+                                field: "issue_date" | "due_date" | "recipient.document" | "recipient.name" | "totals.subtotal_minor" | "totals.discount_minor" | "totals.tax_relief_deducted_minor" | "totals.freight_minor" | "totals.insurance_minor" | "totals.other_charges_minor" | "totals.taxes_added_minor" | "totals.taxes_included_minor" | "totals.grand_total_minor" | "totals.currency";
+                                value: string | number;
+                            }[];
+                            confirmed_beneficiary_document?: string;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            schema_version: "payable.v1";
+                            /** @enum {string} */
+                            doc_type: "invoice" | "danfe_nfe" | "boleto" | "unknown";
+                            attribution: {
+                                /** @enum {string} */
+                                channel: "upload" | "structured" | "manual";
+                                credential_id?: string;
+                                connection_id?: string;
+                                actor?: string;
+                            };
+                            document_hash?: string;
+                            supplier: {
+                                document?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                name: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            };
+                            recipient?: {
+                                document?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                name: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            };
+                            invoice_number?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            serie?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            issue_date?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            due_date?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            items?: {
+                                description: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                quantity: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                unit_amount_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                total_amount_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            }[];
+                            totals: {
+                                subtotal_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                discount_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                tax_relief_deducted_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                freight_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                insurance_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                other_charges_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                taxes_added_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                taxes_included_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                grand_total_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                currency: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            };
+                            carriers?: {
+                                boleto?: string;
+                                br_code?: string;
+                                nfe?: string;
+                            };
+                            extraction?: {
+                                model: string;
+                                model_version: string;
+                                input_tokens: number;
+                                output_tokens: number;
+                                reasoning_tokens?: number;
+                            };
+                            payable_id: string;
+                            /** @enum {string} */
+                            status: "RECEIVED" | "EXTRACTING" | "EXTRACTED" | "VALIDATING" | "VALIDATED" | "NEEDS_REVIEW" | "READY" | "APPROVED" | "EXECUTED" | "REJECTED" | "FAILED_EXTRACTION" | "EXPIRED";
+                            rail_quote?: {
+                                beneficiary: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                beneficiary_document_masked: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                final_beneficiary?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                final_beneficiary_document_masked?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                amount_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                discount_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                interest_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                fine_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                due_date?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                /** Format: date-time */
+                                quoted_at: string;
+                            };
+                            validation: {
+                                carrier_check_digits?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                document_check_digits?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                nfe_key_consistency?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                arithmetic?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                duplicate_document?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                amount_matches_rail?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                beneficiary_document_matches_supplier?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                due_date_state?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                pix_key_owner_matches_supplier?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                supplier_registry?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                bank_details_changed?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                            };
+                            review: {
+                                /**
+                                 * @description What the checks alone say. `status` adds the §9 triggers to it.
+                                 * @enum {string}
+                                 */
+                                validation_status: "REJECTED" | "NEEDS_REVIEW" | "VALIDATING" | "VALIDATED";
+                                /** @description Each check that sends the payable to a person, and why: it failed, it is implemented and did not answer, or it is required and nothing implements it yet. */
+                                review_by: {
+                                    code: string;
+                                    /** @enum {string} */
+                                    cause: "check_failed" | "retries_exhausted" | "required_not_implemented";
+                                }[];
+                                /** @description Checks whose failure rejects the payable. */
+                                rejected_by: string[];
+                                /** @description Checks that failed and stopped blocking because a person confirmed the rail's beneficiary (§6). The check still fails; what changed is that somebody took responsibility for it. */
+                                confirmed_by: string[];
+                                /** @description Required, implemented checks that did not answer and may be retried. */
+                                awaiting: string[];
+                                /** @description Checks that did not run and do not block READY in this release. */
+                                not_covered: string[];
+                                /** @description §9 triggers that keep a VALIDATED payable out of READY, such as `new_supplier`. The evidence trigger names the field and the gap: `critical_field_without_evidence:<field>:<missing|unverified|unverifiable|moved>`. */
+                                review_triggers: string[];
+                                /** @description Resolutions a person recorded in a completed review (§9). Absent until one is. */
+                                resolutions?: {
+                                    /** @description The §7 check this resolution answers. */
+                                    code: string;
+                                    /**
+                                     * @description What the person did about it.
+                                     * @enum {string}
+                                     */
+                                    resolution: "human_correction" | "reject" | "confirm_rail_beneficiary";
+                                    /** @description ISO 8601 instant of the review. */
+                                    at: string;
+                                    /** @description The user who reviewed. */
+                                    by: string;
+                                    /**
+                                     * @description How that identity was established.
+                                     * @enum {string}
+                                     */
+                                    by_source: "verified_user_token" | "header_asserted";
+                                    /** @description Field paths a correction changed. Paths only, never values. */
+                                    fields?: string[];
+                                    /** @description The rail's payee, masked, as the person confirmed it. */
+                                    confirmed_beneficiary_document?: string;
+                                }[];
+                            };
+                            /** @description What paying it did (ent#1587); null until a payment was attempted. */
+                            payment: {
+                                /** @enum {string} */
+                                state: "awaiting_approval" | "dispatching" | "executed" | "uncertain" | "released";
+                                /** @description The pending approval that holds this payment, while a person decides. */
+                                approval_id?: string;
+                                /**
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @enum {string}
+                                 */
+                                settled_against?: "document_line" | "sandbox_fixture";
+                                document_amount_minor?: number;
+                                mandate_id: string;
+                                /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
+                                attempt_id: string;
+                                /** @description How many claims this payable has taken. Each is its own attempt. */
+                                tries: number;
+                                /** @description The rail's TRUE amount at the quote the attempt id was derived from. */
+                                amount_minor: number;
+                                /** @description SHA-256 of the quote the attempt was derived from. Never the quote. */
+                                quote_hash: string;
+                                claimed_at: string;
+                                /** @description The credential that asked. The key id, never the key; null on service auth. */
+                                key_id: string | null;
+                                via: string;
+                                executed_at?: string;
+                                receipt_id?: string | null;
+                                transaction_id?: string;
+                                end_to_end_id?: string | null;
+                                money_moved?: boolean;
+                                /** @description The lifecycle code the dispatch ended in when its outcome is unknown. */
+                                uncertain_code?: string;
+                                hold_entry_id?: string | null;
+                                /** @description The last refusal that provably moved no money, kept on release back to READY. */
+                                last_refusal?: {
+                                    code: string;
+                                    attempt_id: string;
+                                    at: string;
+                                };
+                            } | null;
+                            /** @description ISO 8601 instant the payable was created. */
+                            created_at: string;
+                            /** @description ISO 8601 instant of the last change to the payable. */
+                            updated_at: string;
+                        };
+                    };
+                };
+                /** @description The body did not match the review schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The reviewer was not established. `bearer_token_cannot_decide`: a project API key cannot review. `user_token_required`: no token was forwarded. `user_token_invalid`: the token did not verify — mint a fresh one. `user_token_identity_mismatch`: `x-codespar-user` names somebody else. `insufficient_role`: that user is not an admin of the organization. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "bearer_token_cannot_decide" | "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "insufficient_role";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No payable with this id in this project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Nothing was written. `payable_not_reviewable`: the payable is not `NEEDS_REVIEW`. `payable_correction_did_not_resolve`: the corrections were applied and `details.code` still does not pass. `payable_rail_beneficiary_unconfirmed`: the confirmation named nobody, or not who the rail names now; `details.rail_beneficiary_document_masked` names who. `payable_review_incomplete`: something still blocks the payable; `details.review` says what. `payable_review_conflict`: the payable changed while this review was being decided. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_not_reviewable" | "payable_correction_did_not_resolve" | "payable_rail_beneficiary_unconfirmed" | "payable_review_incomplete" | "payable_review_conflict";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The review itself is malformed. `payable_check_not_in_review`: that check did not fail. `payable_check_did_not_run`: that check produced no answer. `payable_resolution_not_allowed`: that check does not admit that resolution; `details.allowed` lists what it does. `payable_resolution_repeated`: one code, one resolution. `payable_resolution_conflict`: a rejection resolves nothing else. `payable_field_not_correctable`: that field is not corrected in a review, or the payable does not carry it. `payable_correction_invalid`: the corrected payable no longer matches the schema. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_check_not_in_review" | "payable_check_did_not_run" | "payable_resolution_not_allowed" | "payable_resolution_repeated" | "payable_resolution_conflict" | "payable_field_not_correctable" | "payable_correction_invalid";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `vault_unavailable`: the key that protects supplier documents could not be read. `user_token_verification_unconfigured`: this deployment cannot verify a reviewer's token. Nothing was written either way. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "vault_unavailable" | "user_token_verification_unconfigured";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payables/{payableId}/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pay a payable under a consumer mandate
+         * @description Pays a `READY` payable through the governed consumer-payment cycle — mandate HMAC verification, policy, cap under lock, hold, dispatch with uncertainty classification and a sealed receipt — and moves it to `EXECUTED`. Only a boleto is paid in this wave.
+         *
+         *     **The rail is consulted again first.** The stored quote may have aged, so the eleven checks re-run over a fresh consult, with the review's confirmations standing. If that verdict no longer allows paying, nothing is dispatched: the payable goes back to `NEEDS_REVIEW` with the new verdict and the call answers `payable_quote_diverged`. READY is derived from a verdict, never assumed from the row.
+         *
+         *     **The attempt id is derived**, from the payable id and the fresh quote (`payment.attempt_id`). The same quote is the same attempt — a retry lands on the same hold, the same provider anchor and the same receipt — and a different quote is a different attempt, which is why the payable leaves READY before money moves.
+         *
+         *     **What the outcome does to the payable.** Success: `EXECUTED`, `payment.state = executed`, with `receipt_id`, `transaction_id` and `end_to_end_id`; the response also carries `receipt`. A refusal that provably moved no money (policy, cap, allowlist, funds, `boleto_amount_mismatch`): the payable is `READY` again with `payment.last_refusal`. A dispatch whose outcome is unknown (`psp_dispatch_uncertain`, `psp_attempt_uncertain`, `payable_dispatch_unknown`): the payable stays `APPROVED` with `payment.state = uncertain`, pinned for reconciliation — do not resubmit it, under this payable or another; a later call answers `payable_payment_uncertain`.
+         *
+         *     **The receipt carries the document hash.** Its delivery proof is a `merchant_document_ref` of kind `payable` whose reference is `payable:<id>;sha256:<document_hash>` (the hash part only when the payable has one), covered by the receipt's chain: document → mandate → payment → receipt verifies offline.
+         *
+         *     **A policy approval holds the payable.** When the durable policy engine routes the spend to a person (403 `policy_denied` with `approval_id`), the payable leaves READY under that approval (`payment.state = awaiting_approval`, `payment.approval_id`); `/pay` answers `payable_payment_pending_approval` until it is decided. The approved execution pays the attempt and records the outcome on the payable; a denied or expired approval is released by the next `/pay`, which asks the gate again.
+         *
+         *     **Test projects settle the sandbox fixture.** A boleto in a test project is settled against Celcoin's sandbox fixture, not the document's line (spec §18): `payment.settled_against = sandbox_fixture`, `payment.document_amount_minor` keeps what the document quoted, and the receipt's delivery reference ends in `;settled_against:sandbox_fixture`. Live projects are untouched.
+         *
+         *     Scope: `payables:pay`. The mandate must be one of this organization's consumers' and its `merchant_allowlist` must name the boleto's digitable line.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description `pbl_` followed by 16 characters. */
+                    payableId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        mandate_id: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            schema_version: "payable.v1";
+                            /** @enum {string} */
+                            doc_type: "invoice" | "danfe_nfe" | "boleto" | "unknown";
+                            attribution: {
+                                /** @enum {string} */
+                                channel: "upload" | "structured" | "manual";
+                                credential_id?: string;
+                                connection_id?: string;
+                                actor?: string;
+                            };
+                            document_hash?: string;
+                            supplier: {
+                                document?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                name: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            };
+                            recipient?: {
+                                document?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                name: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            };
+                            invoice_number?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            serie?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            issue_date?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            due_date?: {
+                                value: string;
+                                /** @enum {string} */
+                                from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                evidence?: {
+                                    page: number;
+                                    excerpt: string;
+                                    /** @enum {string} */
+                                    verification?: "verified" | "moved" | "unverifiable";
+                                };
+                                confidence?: number;
+                            };
+                            items?: {
+                                description: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                quantity: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                unit_amount_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                total_amount_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            }[];
+                            totals: {
+                                subtotal_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                discount_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                tax_relief_deducted_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                freight_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                insurance_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                other_charges_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                taxes_added_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                taxes_included_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                grand_total_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                currency: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                            };
+                            carriers?: {
+                                boleto?: string;
+                                br_code?: string;
+                                nfe?: string;
+                            };
+                            extraction?: {
+                                model: string;
+                                model_version: string;
+                                input_tokens: number;
+                                output_tokens: number;
+                                reasoning_tokens?: number;
+                            };
+                            payable_id: string;
+                            /** @enum {string} */
+                            status: "RECEIVED" | "EXTRACTING" | "EXTRACTED" | "VALIDATING" | "VALIDATED" | "NEEDS_REVIEW" | "READY" | "APPROVED" | "EXECUTED" | "REJECTED" | "FAILED_EXTRACTION" | "EXPIRED";
+                            rail_quote?: {
+                                beneficiary: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                beneficiary_document_masked: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                final_beneficiary?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                final_beneficiary_document_masked?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                amount_minor: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                discount_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                interest_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                fine_minor?: {
+                                    value: number;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                due_date?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "trilho";
+                                };
+                                /** Format: date-time */
+                                quoted_at: string;
+                            };
+                            validation: {
+                                carrier_check_digits?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                document_check_digits?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                nfe_key_consistency?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                arithmetic?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                duplicate_document?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                amount_matches_rail?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                beneficiary_document_matches_supplier?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                due_date_state?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                pix_key_owner_matches_supplier?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                supplier_registry?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                                bank_details_changed?: {
+                                    /** @enum {string} */
+                                    outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                    detail?: string;
+                                };
+                            };
+                            review: {
+                                /**
+                                 * @description What the checks alone say. `status` adds the §9 triggers to it.
+                                 * @enum {string}
+                                 */
+                                validation_status: "REJECTED" | "NEEDS_REVIEW" | "VALIDATING" | "VALIDATED";
+                                /** @description Each check that sends the payable to a person, and why: it failed, it is implemented and did not answer, or it is required and nothing implements it yet. */
+                                review_by: {
+                                    code: string;
+                                    /** @enum {string} */
+                                    cause: "check_failed" | "retries_exhausted" | "required_not_implemented";
+                                }[];
+                                /** @description Checks whose failure rejects the payable. */
+                                rejected_by: string[];
+                                /** @description Checks that failed and stopped blocking because a person confirmed the rail's beneficiary (§6). The check still fails; what changed is that somebody took responsibility for it. */
+                                confirmed_by: string[];
+                                /** @description Required, implemented checks that did not answer and may be retried. */
+                                awaiting: string[];
+                                /** @description Checks that did not run and do not block READY in this release. */
+                                not_covered: string[];
+                                /** @description §9 triggers that keep a VALIDATED payable out of READY, such as `new_supplier`. The evidence trigger names the field and the gap: `critical_field_without_evidence:<field>:<missing|unverified|unverifiable|moved>`. */
+                                review_triggers: string[];
+                                /** @description Resolutions a person recorded in a completed review (§9). Absent until one is. */
+                                resolutions?: {
+                                    /** @description The §7 check this resolution answers. */
+                                    code: string;
+                                    /**
+                                     * @description What the person did about it.
+                                     * @enum {string}
+                                     */
+                                    resolution: "human_correction" | "reject" | "confirm_rail_beneficiary";
+                                    /** @description ISO 8601 instant of the review. */
+                                    at: string;
+                                    /** @description The user who reviewed. */
+                                    by: string;
+                                    /**
+                                     * @description How that identity was established.
+                                     * @enum {string}
+                                     */
+                                    by_source: "verified_user_token" | "header_asserted";
+                                    /** @description Field paths a correction changed. Paths only, never values. */
+                                    fields?: string[];
+                                    /** @description The rail's payee, masked, as the person confirmed it. */
+                                    confirmed_beneficiary_document?: string;
+                                }[];
+                            };
+                            /** @description What paying it did (ent#1587); null until a payment was attempted. */
+                            payment: {
+                                /** @enum {string} */
+                                state: "awaiting_approval" | "dispatching" | "executed" | "uncertain" | "released";
+                                /** @description The pending approval that holds this payment, while a person decides. */
+                                approval_id?: string;
+                                /**
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @enum {string}
+                                 */
+                                settled_against?: "document_line" | "sandbox_fixture";
+                                document_amount_minor?: number;
+                                mandate_id: string;
+                                /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
+                                attempt_id: string;
+                                /** @description How many claims this payable has taken. Each is its own attempt. */
+                                tries: number;
+                                /** @description The rail's TRUE amount at the quote the attempt id was derived from. */
+                                amount_minor: number;
+                                /** @description SHA-256 of the quote the attempt was derived from. Never the quote. */
+                                quote_hash: string;
+                                claimed_at: string;
+                                /** @description The credential that asked. The key id, never the key; null on service auth. */
+                                key_id: string | null;
+                                via: string;
+                                executed_at?: string;
+                                receipt_id?: string | null;
+                                transaction_id?: string;
+                                end_to_end_id?: string | null;
+                                money_moved?: boolean;
+                                /** @description The lifecycle code the dispatch ended in when its outcome is unknown. */
+                                uncertain_code?: string;
+                                hold_entry_id?: string | null;
+                                /** @description The last refusal that provably moved no money, kept on release back to READY. */
+                                last_refusal?: {
+                                    code: string;
+                                    attempt_id: string;
+                                    at: string;
+                                };
+                            } | null;
+                            /** @description ISO 8601 instant the payable was created. */
+                            created_at: string;
+                            /** @description ISO 8601 instant of the last change to the payable. */
+                            updated_at: string;
+                            /** @description The sealed Control Record receipt; null when no consumer secret could sign one. */
+                            receipt: {
+                                id: string;
+                                /** @enum {string} */
+                                state: "paid" | "exception" | "delivered";
+                                chain: string;
+                                exceptions: {
+                                    code: string;
+                                    detail: string;
+                                    at: string;
+                                }[];
+                            } | null;
+                        };
+                    };
+                };
+                /** @description The body did not match the pay schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `policy_denied`: the durable policy engine refused (`reason`, `ruleId`; `approval_id` when it routed the spend to a person — once approved, the same attempt is paid and a later call to this route records it). `payee_not_allowed`: the mandate's allowlist does not name the boleto. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "policy_denied" | "payee_not_allowed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `not_found`: no payable with this id in this project. `mandate_not_found`: no consumer mandate with this id in this organization. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found" | "mandate_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `payable_not_payable`: not `READY`; `details.status` says what it is. `payable_already_paid`: `EXECUTED`; `details.receipt_id`. `payable_payment_in_flight`: a dispatch is running. `payable_payment_uncertain`: a dispatch outcome is unknown and the payable is pinned — do not resubmit. `payable_payment_pending_approval`: a person is deciding the policy approval (`details.approval_id`). `payable_quote_diverged`: the fresh verdict no longer allows paying; the payable is back in `NEEDS_REVIEW` and `details.review` says why. `payable_payment_conflict`: the row moved while this payment was planned; read it again. `boleto_amount_mismatch`: the provider's true amount moved between the fresh quote and the confirm; nothing paid, the payable is `READY`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_not_payable" | "payable_already_paid" | "payable_payment_in_flight" | "payable_payment_uncertain" | "payable_payment_pending_approval" | "payable_quote_diverged" | "payable_payment_conflict" | "boleto_amount_mismatch";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `payable_rail_unsupported`: no boleto carrier to pay by. `insufficient_funds` and the mandate cap codes carry their usual consumer-payment meanings; the payable is `READY` again. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_rail_unsupported" | "insufficient_funds";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The dispatch did not answer cleanly. `psp_dispatch_uncertain` / `payable_dispatch_unknown`: the outcome is unknown, the payable is `APPROVED` with `payment.state = uncertain` and held for reconciliation — do not resubmit. `psp_dispatch_failed`: the provider refused and nothing moved; the payable is `READY`. `payable_cycle_threw`: the cycle failed before any provider debit; nothing moved, the payable is `READY`, retry. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "psp_dispatch_uncertain" | "payable_dispatch_unknown" | "psp_dispatch_failed" | "payable_cycle_threw";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `vault_unavailable`: the key that protects supplier documents could not be read. `policy_engine_error`: the policy engine could not evaluate; refused, nothing dispatched. `payable_sandbox_fixture_unavailable`: test project, the sandbox settlement consult did not answer; nothing dispatched, retry. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "vault_unavailable" | "policy_engine_error" | "payable_sandbox_fixture_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
