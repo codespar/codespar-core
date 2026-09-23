@@ -8,6 +8,10 @@ LangChain.js adapter for CodeSpar — convert session tools to LangChain Structu
 npm install @codespar/langchain @codespar/sdk zod
 ```
 
+Peer `zod` is `^3.23.0`. The converter is written against zod 3's
+`ZodEffects` and `ZodLazy.schema`, which zod 4 renamed; zod 4 support is
+left for a future version.
+
 ## Usage
 
 ```ts
@@ -56,9 +60,15 @@ LangChain validates a tool call's arguments against `schema` before
   properties with `toolInputShape(tool.schema)` and the object with
   `toolInputObject(tool.schema)` rather than `tool.schema.shape`;
 - a construct the converter does not translate (`not`, `if`/`then`/`else`,
-  `patternProperties`, a non-local `$ref`, …) becomes `z.unknown()` and its
-  description ends with `(schema construct not translated: …)`. The value
-  is passed to the API as sent; the API validates it.
+  `patternProperties`, a non-local `$ref`, a pattern JS cannot compile, …)
+  is marked in the field's description with `(schema construct not
+  translated: …)`. The rest of that node — its type, properties, required
+  — is still translated; only when nothing else is known does the field
+  become `z.unknown()` (a required one still has to be present). The value
+  is passed to the API as sent; the API validates the untranslated rule;
+- a `default` becomes a Zod default only when the field accepts it (a
+  `null` default on a string does not); otherwise the field stays optional
+  and the description carries the value.
 
 ## Need more?
 

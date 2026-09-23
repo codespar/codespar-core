@@ -260,9 +260,14 @@ describe("jsonSchemaToZod — review findings", () => {
     };
     expect(() => jsonSchemaToZod(schema)).not.toThrow();
     const s = jsonSchemaToZod(schema);
-    expect(shapeOf(s).bad).toBeInstanceOf(z.ZodUnknown);
-    expect(shapeOf(s).bad!.description).toContain("schema construct not translated: pattern");
+    // The rest of the node survives: still a string, still required.
+    expect(shapeOf(s).bad).toBeInstanceOf(z.ZodString);
+    expect(shapeOf(s).bad!.description).toBe(
+      'Python named group (schema construct not translated: pattern "(?P<name>a)")',
+    );
     expect(ok(s, { ok: "abc", bad: "anything" })).toBe(true);
+    expect(ok(s, { ok: "abc", bad: 1 })).toBe(false);
+    expect(ok(s, { ok: "abc" })).toBe(false);
     expect(ok(s, { ok: "ABC", bad: "anything" })).toBe(false);
   });
 
@@ -317,6 +322,80 @@ describe("jsonSchemaToZod — review findings", () => {
     expect(ok(all, { v: {} })).toBe(false);
   });
 
+  it("allOf of objects merges shapes: three members at the root keep every property", () => {
+    const s = jsonSchemaToZod({
+      allOf: [
+        { type: "object", properties: { a: { type: "string" } }, required: ["a"] },
+        { type: "object", properties: { b: { type: "number" } }, required: ["b"] },
+        { type: "object", properties: { c: { type: "boolean" } } },
+      ],
+    });
+    expect(s).toBeInstanceOf(z.ZodObject);
+    expect(Object.keys(shapeOf(s))).toEqual(["a", "b", "c"]);
+    expect(ok(s, { a: "x", b: 1 })).toBe(true);
+    expect(ok(s, { a: "x" })).toBe(false);
+    expect(ok(s, { a: "x", b: 1, c: "no" })).toBe(false);
+    // The "extends" idiom beside own properties merges too.
+    const extended = jsonSchemaToZod({
+      type: "object",
+      properties: { own: { type: "string" } },
+      required: ["own"],
+      allOf: [{ $ref: "#/definitions/Base" }],
+      definitions: { Base: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } },
+    });
+    expect(ok(extended, { own: "x", id: "y" })).toBe(true);
+    expect(ok(extended, { own: "x" })).toBe(false);
+  });
+
+  it("nested allOf members that default the same key do not fail a valid input", () => {
+    const s = objectWith({
+      allOf: [
+        { type: "object", properties: { k: { type: "string", default: "one" }, a: { type: "number" } } },
+        { type: "object", properties: { k: { type: "string", default: "two" }, b: { type: "number" } } },
+      ],
+    });
+    expect(ok(s, { v: { a: 1, b: 2 } })).toBe(true);
+    expect(ok(s, { v: { a: 1, b: "2" } })).toBe(false);
+  });
+
+  it("a root refinement that enforces an undeclared required key is kept, not unwrapped", () => {
+    const s = jsonSchemaToZod({
+      type: "object",
+      properties: { a: { type: "string" } },
+      required: ["a", "b"],
+    });
+    expect(s).toBeInstanceOf(z.ZodEffects);
+    expect(Object.keys(shapeOf(s))).toEqual(["a"]);
+    expect(ok(s, { a: "x" })).toBe(false);
+    expect(ok(s, { a: "x", b: 1 })).toBe(true);
+  });
+
+  it("a default the field rejects is not applied: the field stays optional and the description says it", () => {
+    const s = jsonSchemaToZod({
+      type: "object",
+      properties: {
+        note: { type: "string", default: null, description: "Free text" },
+        country: { type: "string", default: "BR" },
+      },
+    });
+    expect(ok(s, {})).toBe(true);
+    expect(s.parse({})).toEqual({ country: "BR" });
+    expect(shapeOf(s).note).toBeInstanceOf(z.ZodOptional);
+    expect(shapeOf(s).note!.description).toBe("Free text (default: null)");
+  });
+
+  it("items: false accepts only the empty array; uniqueItems rejects duplicates", () => {
+    const empty = objectWith({ type: "array", items: false });
+    expect(ok(empty, { v: [] })).toBe(true);
+    expect(ok(empty, { v: [1] })).toBe(false);
+    const unique = objectWith({ type: "array", items: { type: "number" }, uniqueItems: true });
+    expect(ok(unique, { v: [1, 2] })).toBe(true);
+    expect(ok(unique, { v: [1, 1] })).toBe(false);
+    // Uniqueness is by value, so 1 and "1" are distinct in an untyped array.
+    expect(ok(objectWith({ type: "array", uniqueItems: true }), { v: [1, "1"] })).toBe(true);
+    expect(ok(objectWith({ type: "array", uniqueItems: true }), { v: [{ a: 1 }, { a: 1 }] })).toBe(false);
+  });
+
   it("a required property keeps its default out of the type: it must be sent", () => {
     const s = jsonSchemaToZod({
       type: "object",
@@ -358,19 +437,60 @@ describe("jsonSchemaToZod — what it does not translate", () => {
   it.each([
     ["not", { not: { type: "string" } }],
     ["if", { if: { type: "string" }, then: { minLength: 1 } }],
-    ["patternProperties", { type: "object", patternProperties: { "^x": { type: "string" } } }],
     ["$ref https://…", { $ref: "https://example.com/schema.json" }],
     ["$ref #/missing", { $ref: "#/definitions/missing" }],
     ["type \"money\"", { type: "money" }],
-  ])("%s → z.unknown() with the description marked, never z.string()", (_label, prop) => {
-    const s = objectWith({ description: "The amount", ...(prop as JsonSchema) });
-    const field = shapeOf(s).v!;
+  ])("%s with nothing else known → z.unknown() with the description marked, never z.string()", (_label, prop) => {
+    const s = objectWith({ description: "The amount", ...(prop as JsonSchema) }, false);
+    const field = (shapeOf(s).v as z.ZodOptional<z.ZodTypeAny>).unwrap();
     expect(field).toBeInstanceOf(z.ZodUnknown);
     expect(field).not.toBeInstanceOf(z.ZodString);
     expect(field.description).toMatch(/^The amount \(schema construct not translated: /);
     // Whatever the model sends reaches the API as sent.
     expect(ok(s, { v: { nested: [1, "two"] } })).toBe(true);
     expect(ok(s, { v: 42 })).toBe(true);
+  });
+
+  it("a required field with nothing else known still has to be present, and JSON Schema lists it as required", () => {
+    const s = jsonSchemaToZod({
+      type: "object",
+      properties: { v: { type: "money", description: "The amount" } },
+      required: ["v"],
+    });
+    expect(shapeOf(s).v!.isOptional()).toBe(false);
+    expect(shapeOf(s).v!.description).toContain("schema construct not translated");
+    expect(ok(s, {})).toBe(false);
+    expect(ok(s, { v: 42 })).toBe(true);
+    expect((zodToJsonSchema(s) as { required?: string[] }).required).toEqual(["v"]);
+  });
+
+  it("an untranslated keyword marks the node but keeps its type, properties and required — at the root too", () => {
+    // Conditional-required idiom: the properties must not vanish.
+    const s = jsonSchemaToZod({
+      type: "object",
+      description: "Card or Pix",
+      properties: { method: { type: "string", enum: ["card", "pix"] }, card_token: { type: "string" } },
+      required: ["method"],
+      if: { properties: { method: { const: "card" } } },
+      then: { required: ["card_token"] },
+    });
+    expect(Object.keys(shapeOf(s))).toEqual(["method", "card_token"]);
+    expect(ok(s, { method: "pix" })).toBe(true);
+    expect(ok(s, { method: "cash" })).toBe(false);
+    expect(ok(s, {})).toBe(false);
+    expect(s.description).toBe("Card or Pix (schema construct not translated: if, then)");
+    // Nested: same rule.
+    const nested = objectWith({
+      type: "object",
+      properties: { a: { type: "number" } },
+      required: ["a"],
+      patternProperties: { "^x": { type: "string" } },
+    });
+    const inner = shapeOf(nested).v as z.ZodObject<z.ZodRawShape>;
+    expect(inner).toBeInstanceOf(z.ZodObject);
+    expect(inner.description).toBe("(schema construct not translated: patternProperties)");
+    expect(ok(nested, { v: { a: 1, xtra: "s" } })).toBe(true);
+    expect(ok(nested, { v: { xtra: "s" } })).toBe(false);
   });
 
   it("a non-object root still yields an object schema for the tool contract", () => {

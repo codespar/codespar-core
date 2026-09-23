@@ -29,11 +29,24 @@
   the object's properties.
 - A property in `required` keeps its `default` out of the Zod type: it is
   required, the default is documentation.
-- Peer dependency `zod` is `>=3.23.0`; the string formats used need it.
+- Peer dependency `zod` is `^3.23.0`: the string formats used need 3.23,
+  and the converter relies on zod 3's `ZodEffects` / `ZodLazy.schema`,
+  which zod 4 renamed. zod 4 is left for a future version.
 - A construct outside that subset (`not`, `if`/`then`/`else`,
-  `patternProperties`, a non-local `$ref`, …) becomes `z.unknown()` with
-  the description marked `(schema construct not translated: …)`, never
+  `patternProperties`, a non-local `$ref`, a pattern JS cannot compile, …)
+  marks the field's description `(schema construct not translated: …)`
+  while the rest of the node — type, properties, required — is still
+  translated, at any depth; only a field with nothing else known becomes
+  `z.unknown()`, and a required one still has to be present. Never
   `z.string()`: the value reaches the API as sent, and the gap is visible.
+- `allOf` members that are all objects merge into one object (the OpenAPI
+  "extends" idiom) instead of an intersection chain, so three or more
+  members keep every property at the root and two members that default
+  the same key no longer fail a valid input. `items: false` accepts only
+  the empty array and `uniqueItems` rejects duplicates.
+- `default` becomes a Zod default only when the field accepts it (a `null`
+  default on a string does not); otherwise the field stays optional and
+  the description carries the value.
 
 ### Changed
 
