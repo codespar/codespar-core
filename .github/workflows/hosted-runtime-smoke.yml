@@ -75,7 +75,12 @@ jobs:
   # PR. When it fails on a real change, the fix is a refresh commit
   # (`npm run sdk:spec:refresh`), reviewed on its own. Exit 2 (could not
   # fetch) fails the job too; "could not compare" is not "current".
+  #
+  # Not on push to main: the served document moves on its own schedule,
+  # and the fix is a refresh commit reviewed on its own, so a red run on
+  # every post-merge push would report nothing a PR run did not.
   spec-freshness:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
