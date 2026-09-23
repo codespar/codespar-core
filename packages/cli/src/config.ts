@@ -77,8 +77,16 @@ export function requireApiKey(config: CliConfig): string {
  * Anything else bubbling up is treated as a bug and prints the stack.
  */
 export class CliError extends Error {
-  constructor(message: string) {
+  /**
+   * A stable, machine-readable name for the refusal, carried into the
+   * `--json` error document as `error.code`. Optional: most refusals are
+   * one-offs a script has no reason to branch on, and the message is enough.
+   */
+  readonly code?: string;
+
+  constructor(message: string, opts: { code?: string } = {}) {
     super(message);
     this.name = "CliError";
+    this.code = opts.code;
   }
 }

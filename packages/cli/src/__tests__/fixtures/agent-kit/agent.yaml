@@ -1,0 +1,8 @@
+# A minimal schema-1 manifest for the CLI's own tests. Only the three
+# top-level scalars the CLI reads matter here; `npm run check` of a real
+# kit validates the rest.
+schema: 1
+name: kit-under-test   # trailing comment, to prove it is stripped
+version: "0.0.1"
+approval: [human]
+default_approval: human

@@ -1,0 +1,1 @@
+{ "name": "from-the-future", "private": true, "scripts": { "start": "node -e 0" } }

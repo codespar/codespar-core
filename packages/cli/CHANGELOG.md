@@ -1,5 +1,34 @@
 # @codespar/cli — changelog
 
+## 0.13.0 — 2026-09-23
+
+### Added
+
+- `codespar agent run <dir> [--input <text>] [--approve|--deny] [--json]`
+  runs an agent directory built on `@codespar/agent-core` (agent-starter-kits,
+  `agent.yaml` `schema: 1`). It does not re-implement the runtime: it
+  resolves the manifest and spawns the directory's own `npm start` with the
+  same arguments, so `codespar agent run <dir> --input X` and
+  `npm start -- --input X` in that directory are the same process and give
+  the same output and exit code (spec v5.1.1 §15). A directory with no
+  `agent.yaml`, or one of a schema this CLI does not know, is refused with a
+  stable `error.code` (`agent_manifest_missing`,
+  `agent_manifest_unsupported_schema`).
+- `codespar eval <dir> [--json]` runs the agent's `npm run check` and
+  `npm run eval` (adversarial suite plus every scenario in every mode) and
+  reports one line per case; `--json` answers one document with the case
+  list and both kit documents verbatim. Exit 1 on any failing case; a
+  failing check does not stop the eval suite from running.
+- `codespar mandate revoke <id> [--reason <text>] [--json]` over
+  `POST /v1/mandates/{id}/revoke`, the canonical spelling (ent#979). Active
+  or paused → revoked, terminal; an already-revoked mandate answers
+  `changed: false` and is reported as unchanged, not as a failure. The
+  route is in the served OpenAPI document, so the call goes through the
+  typed client with no hand-written path. `surface.ts` had this verb
+  listed as wave-5 work; it is built now on the existing route.
+- `error.code` on a `cli` refusal in the `--json` error document, when the
+  refusal has a stable name (`CliError` takes an optional `code`).
+
 ## 0.12.1 — 2026-09-21
 
 ### Fixed

@@ -24,6 +24,8 @@ import { chargeCommand } from "./commands/charge.js";
 import { spendCommand } from "./commands/spend.js";
 import { mandateCreateCommand } from "./commands/mandate.js";
 import { mandateVerifyCommand } from "./commands/mandate-verify.js";
+import { mandateRevokeCommand } from "./commands/mandate-revoke.js";
+import { agentRunCommand, evalCommand } from "./commands/agent.js";
 import { walletCommand } from "./commands/wallet.js";
 import { transferCommand } from "./commands/transfer.js";
 import { shipCommand } from "./commands/ship.js";
@@ -466,6 +468,15 @@ mandate
     },
   );
 
+mandate
+  .command("revoke <id>")
+  .description("Revoke a consumer mandate (POST /v1/mandates/{id}/revoke); active or paused → revoked, terminal")
+  .option("--reason <text>", "Recorded in the mandate's evidence row (max 280 chars); not echoed back")
+  .action(async (id: string, opts: { reason?: string }) => {
+    const client = await authedClient();
+    await mandateRevokeCommand(client, id, { ...opts, json: rootJsonFlag() });
+  });
+
 program
   .command("spend")
   .description("Execute an agentic spend against a consumer mandate (Pix / USDC / x402 by payee)")
@@ -654,6 +665,29 @@ logs
     },
   );
 
+// ============ agent (agent-starter-kits) ============
+// Both commands delegate to the agent directory's own npm scripts, so the
+// output — and the exit code — are the agent's. `agent run` in particular
+// must equal `npm start -- --input` in that directory (spec v5.1.1 §15).
+const agent = program.command("agent").description("Run an agent directory built on @codespar/agent-core");
+
+agent
+  .command("run <dir>")
+  .description("Run one turn of the agent (or its interactive terminal, without --input) via its own `npm start`")
+  .option("--input <text>", "One turn, no prompt — the same --input the agent's `npm start` takes")
+  .option("--approve", "Decide the turn's execution: approve")
+  .option("--deny", "Decide the turn's execution: deny")
+  .action(async (dir: string, opts: { input?: string; approve?: boolean; deny?: boolean }) => {
+    process.exitCode = await agentRunCommand(dir, { ...opts, json: rootJsonFlag() });
+  });
+
+program
+  .command("eval <dir>")
+  .description("Run the agent's manifest check plus its eval suite (adversarial cases and scenarios); exit 1 on any failing case")
+  .action(async (dir: string) => {
+    process.exitCode = await evalCommand(dir, { json: rootJsonFlag() });
+  });
+
 // ============ init ============
 program
   .command("init <name>")
@@ -711,7 +745,7 @@ async function main() {
           ...(err.body === undefined ? {} : { body: err.body }),
         });
       } else {
-        falhou("cli", err.message);
+        falhou("cli", err.message, err.code === undefined ? {} : { code: err.code });
       }
       process.exit(1);
     }

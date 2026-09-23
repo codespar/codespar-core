@@ -1,0 +1,11 @@
+{
+  "name": "kit-under-test",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node kit.mjs start",
+    "check": "node kit.mjs check",
+    "eval": "node kit.mjs eval"
+  }
+}
