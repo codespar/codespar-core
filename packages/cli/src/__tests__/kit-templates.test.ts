@@ -140,6 +140,10 @@ function fixtureKits(): { dir: string; commit: string } {
   write(dir, "agents/demo-agent/.env.example", "CODESPAR_API_KEY=csk_test_your_key_here\n");
   write(dir, "agents/demo-agent/README.md", "# demo-agent\n");
   git(dir, "init", "-q");
+  // The default branch name is the runner's (`master` on GitHub's image,
+  // `main` on a developer's machine with init.defaultBranch set). The test
+  // that syncs a branch names `main`, so the fixture fixes it here.
+  git(dir, "symbolic-ref", "HEAD", "refs/heads/main");
   git(dir, "add", "-A");
   git(dir, "commit", "-q", "-m", "kits fixture");
   // A commit on top with a different agent version and a tag on the first,
@@ -323,10 +327,8 @@ describe("syncKitTemplates + the release gate, against a local kits repository",
   it("a moved ref (the kits advanced, the lock did not) fails the online check", () => {
     const { dir } = fixtureKits();
     const templatesDir = scratch("templates-moved-");
-    syncKitTemplates({ repo: dir, ref: "main", templatesDir }).lock;
-    const branch = git(dir, "rev-parse", "--abbrev-ref", "HEAD");
-    // Re-sync at the branch name, then advance the branch: the lock still says the old commit.
-    syncKitTemplates({ repo: dir, ref: branch, templatesDir });
+    // Sync at the branch name, then advance the branch: the lock still says the old commit.
+    syncKitTemplates({ repo: dir, ref: "main", templatesDir });
     write(dir, "agents/demo-agent/src/main.ts", 'console.log("v2");\n');
     git(dir, "commit", "-q", "-am", "advance");
 
