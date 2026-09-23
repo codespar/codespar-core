@@ -239,9 +239,14 @@ describe("jsonSchemaToZod — review findings", () => {
 
   it("a recursive $ref resolves to one Zod instance, so a walk of the tree (zod-to-json-schema) terminates", () => {
     const s = jsonSchemaToZod(NODE);
-    const next = (shapeOf(s).node as z.ZodLazy<z.ZodTypeAny>).schema;
+    // `node` is required, so the lazy rides under a presence refinement.
+    const nodeField = shapeOf(s).node as z.ZodEffects<z.ZodLazy<z.ZodTypeAny>>;
+    expect(nodeField).toBeInstanceOf(z.ZodEffects);
+    const lazy = nodeField.innerType();
+    expect(lazy).toBeInstanceOf(z.ZodLazy);
+    const next = lazy.schema;
     const inner = (next as z.ZodObject<z.ZodRawShape>).shape.next as z.ZodOptional<z.ZodLazy<z.ZodTypeAny>>;
-    expect(inner.unwrap()).toBe(shapeOf(s).node);
+    expect(inner.unwrap()).toBe(lazy);
     expect(inner.unwrap().schema).toBe(next);
     const out = zodToJsonSchema(s);
     expect(JSON.stringify(out)).toContain("$ref");
@@ -394,6 +399,106 @@ describe("jsonSchemaToZod — review findings", () => {
     // Uniqueness is by value, so 1 and "1" are distinct in an untyped array.
     expect(ok(objectWith({ type: "array", uniqueItems: true }), { v: [1, "1"] })).toBe(true);
     expect(ok(objectWith({ type: "array", uniqueItems: true }), { v: [{ a: 1 }, { a: 1 }] })).toBe(false);
+  });
+
+  it("allOf on a shared key keeps both members' rules, required and strictness (no last-wins)", () => {
+    const s = jsonSchemaToZod({
+      type: "object",
+      properties: { id: { type: "string" } },
+      required: ["id"],
+      additionalProperties: false,
+      allOf: [{ properties: { id: { type: "string", pattern: "^pay_" } } }],
+    });
+    expect(s).toBeInstanceOf(z.ZodObject);
+    expect(ok(s, { id: "pay_1" })).toBe(true);
+    expect(ok(s, {})).toBe(false);
+    expect(ok(s, { id: "x" })).toBe(false);
+    expect(ok(s, { id: "pay_1", junk: 1 })).toBe(false);
+    // Contradictory members are unsatisfiable, not "the last one wins".
+    const clash = jsonSchemaToZod({ allOf: [{ properties: { a: { type: "number" } } }, { properties: { a: { type: "string" } } }] });
+    expect(ok(clash, { a: 1 })).toBe(false);
+    expect(ok(clash, { a: "1" })).toBe(false);
+    expect(ok(clash, {})).toBe(true);
+    // Disjoint members: every key, each as declared.
+    const disjoint = jsonSchemaToZod({
+      allOf: [
+        { properties: { a: { type: "number" } }, required: ["a"] },
+        { properties: { b: { type: "string" } }, additionalProperties: { type: "boolean" } },
+      ],
+    });
+    expect(Object.keys(shapeOf(disjoint))).toEqual(["a", "b"]);
+    expect(ok(disjoint, { a: 1, extra: true })).toBe(true);
+    expect(ok(disjoint, { a: 1, extra: "no" })).toBe(false);
+  });
+
+  it("a root union of object branches shows every branch's keys and enforces the union", () => {
+    const branches = [
+      {
+        type: "object",
+        properties: { action: { const: "pay" }, amount: { type: "number" } },
+        required: ["action", "amount"],
+      },
+      {
+        type: "object",
+        properties: { action: { const: "refund" }, payment_id: { type: "string" } },
+        required: ["action", "payment_id"],
+      },
+    ];
+    for (const root of [{ type: "object", oneOf: branches }, { oneOf: branches }]) {
+      const s = jsonSchemaToZod(root as JsonSchema);
+      expect(s).toBeInstanceOf(z.ZodEffects);
+      expect(Object.keys(shapeOf(s))).toEqual(["action", "amount", "payment_id"]);
+      expect(ok(s, { action: "pay", amount: 10 })).toBe(true);
+      expect(ok(s, { action: "refund", payment_id: "p1" })).toBe(true);
+      expect(ok(s, { action: "refund", amount: 10 })).toBe(false);
+      expect(ok(s, { action: "void" })).toBe(false);
+      expect(ok(s, { amount: 10 })).toBe(false);
+      expect(s.description ?? "").not.toContain("schema construct not translated");
+    }
+    // The union itself is discriminated when the branches share a literal key.
+    const u = jsonSchemaToZodType({ oneOf: branches });
+    expect(u).toBeInstanceOf(z.ZodDiscriminatedUnion);
+  });
+
+  it("a root allOf of two $refs plus an inline object keeps every key; a non-object root is marked, not emptied", () => {
+    const s = jsonSchemaToZod({
+      allOf: [{ $ref: "#/$defs/A" }, { $ref: "#/$defs/B" }, { type: "object", properties: { c: { type: "boolean" } } }],
+      $defs: {
+        A: { type: "object", properties: { a: { type: "string" } }, required: ["a"] },
+        B: { type: "object", properties: { b: { type: "number" } }, required: ["b"] },
+      },
+    });
+    expect(Object.keys(shapeOf(s))).toEqual(["a", "b", "c"]);
+    expect(ok(s, { a: "x", b: 1 })).toBe(true);
+    expect(ok(s, { a: "x" })).toBe(false);
+    const notObject = jsonSchemaToZod({ allOf: [{ type: "string" }] });
+    expect(notObject.description).toContain("schema construct not translated: root schema is not an object");
+    const mixed = jsonSchemaToZod({ allOf: [{ type: "object", properties: { a: { type: "string" } } }, { type: "string" }] });
+    expect(Object.keys(shapeOf(mixed))).toEqual(["a"]);
+    expect(mixed.description).toContain("root intersects a non-object schema");
+  });
+
+  it("a required key whose type accepts undefined (nullable unknown, $ref to {}) still has to be present", () => {
+    const s = jsonSchemaToZod({
+      type: "object",
+      properties: { n: { nullable: true }, r: { $ref: "#/$defs/Empty" } },
+      required: ["n", "r"],
+      $defs: { Empty: {} },
+    });
+    expect(ok(s, { n: null, r: 1 })).toBe(true);
+    expect(ok(s, { r: 1 })).toBe(false);
+    expect(ok(s, { n: null })).toBe(false);
+    expect((zodToJsonSchema(s) as { required?: string[] }).required).toEqual(["n", "r"]);
+  });
+
+  it("allOf and anyOf on the same node both apply", () => {
+    const s = objectWith({
+      allOf: [{ type: "object", properties: { a: { type: "number" } }, required: ["a"] }],
+      anyOf: [{ required: ["x"] }, { required: ["y"] }],
+    });
+    expect(ok(s, { v: { a: 1, x: 0 } })).toBe(true);
+    expect(ok(s, { v: { a: 1 } })).toBe(false);
+    expect(ok(s, { v: { x: 0 } })).toBe(false);
   });
 
   it("a required property keeps its default out of the type: it must be sent", () => {

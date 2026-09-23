@@ -12,8 +12,12 @@
   payment tool became a plain string. The converter is now recursive and
   covers `enum`/`const`, `items` (and tuples), nested objects with their
   own `required`, `additionalProperties` (`false` → `.strict()`, a schema →
-  `.catchall()`, absent → `.passthrough()`), `anyOf`/`oneOf` (→ union),
-  `allOf` (→ intersection), local `$ref`, `nullable` and `type: [..,
+  `.catchall()`, absent → `.passthrough()`), `anyOf`/`oneOf` (→ union; a
+  discriminated union when every branch is an object with a common literal
+  key), `allOf` (objects → one object: keys only one member declares are
+  taken as is, a key two members declare is the intersection of both
+  fields, unknown keys follow the stricter member; anything else → an
+  intersection), local `$ref`, `nullable` and `type: [..,
   "null"]`, `integer`, `minimum`/`maximum`/`exclusive*`/`multipleOf`,
   `minLength`/`maxLength`/`pattern`, the `email`/`uri`/`uuid`/`date-time`/
   `date` formats, `minItems`/`maxItems`, `prefixItems` (and draft-07
@@ -29,9 +33,12 @@
   the object's properties.
 - A property in `required` keeps its `default` out of the Zod type: it is
   required, the default is documentation.
-- Peer dependency `zod` is `^3.23.0`: the string formats used need 3.23,
-  and the converter relies on zod 3's `ZodEffects` / `ZodLazy.schema`,
-  which zod 4 renamed. zod 4 is left for a future version.
+- Peer dependency `zod` is `>=3.25.0`. The converter imports the classic
+  API from `zod/v3`, which zod 3.25+ and zod 4 both ship, so either works;
+  the string formats used need 3.23, and `zod/v3` needs 3.25.
+- A required property whose type would accept `undefined` (an untranslated
+  field, a nullable one, a `$ref` to an empty definition) still has to be
+  present.
 - A construct outside that subset (`not`, `if`/`then`/`else`,
   `patternProperties`, a non-local `$ref`, a pattern JS cannot compile, …)
   marks the field's description `(schema construct not translated: …)`
@@ -39,11 +46,17 @@
   translated, at any depth; only a field with nothing else known becomes
   `z.unknown()`, and a required one still has to be present. Never
   `z.string()`: the value reaches the API as sent, and the gap is visible.
-- `allOf` members that are all objects merge into one object (the OpenAPI
+- `allOf` members that are all objects become one object (the OpenAPI
   "extends" idiom) instead of an intersection chain, so three or more
   members keep every property at the root and two members that default
-  the same key no longer fail a valid input. `items: false` accepts only
-  the empty array and `uniqueItems` rejects duplicates.
+  the same key no longer fail a valid input; a shared key keeps both
+  members' rules and a `required` or `additionalProperties: false` on
+  either side survives. A root that is a union of object branches shows
+  the model every branch's keys and enforces the union as a rule. A root
+  intersection is flattened whatever its nesting; a root with no object
+  in it is marked, never silently emptied. `allOf` and `anyOf` on the same
+  node both apply. `items: false` accepts only the empty array and
+  `uniqueItems` rejects duplicates.
 - `default` becomes a Zod default only when the field accepts it (a `null`
   default on a string does not); otherwise the field stays optional and
   the description carries the value.

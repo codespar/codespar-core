@@ -8,9 +8,10 @@ LangChain.js adapter for CodeSpar — convert session tools to LangChain Structu
 npm install @codespar/langchain @codespar/sdk zod
 ```
 
-Peer `zod` is `^3.23.0`. The converter is written against zod 3's
-`ZodEffects` and `ZodLazy.schema`, which zod 4 renamed; zod 4 support is
-left for a future version.
+Peer `zod` is `>=3.25.0`: zod 3.25+ and zod 4 both work. The converter
+imports the classic API from `zod/v3`, which both ship, so a project
+already on zod 4 keeps its own `zod` and the schemas this package builds
+are zod 3 classic schemas, which LangChain accepts.
 
 ## Usage
 
@@ -39,7 +40,12 @@ const tools = await getTools(session);
 Each tool's `schema` is the Zod form of the `input_schema` the API
 declares, converted without changing its meaning: `enum` is a closed
 vocabulary, a nested object keeps its own `required`, `anyOf`/`oneOf` is
-a union, `allOf` an intersection, a local `$ref` is resolved, `integer`,
+a union (a discriminated one when every branch is an object with a common
+literal key, the action idiom), `allOf` of objects is one object — keys
+only one member declares are taken as is, a key two members declare is
+the intersection of both fields, unknown keys follow the stricter member
+— and anything else in an `allOf` is an intersection; a local `$ref` is
+resolved, `integer`,
 `minimum`/`maximum`, `minLength`/`maxLength`/`pattern`, the
 `email`/`uri`/`uuid`/`date-time`/`date` formats, `nullable`, `default`
 and `description` are carried over.
@@ -52,10 +58,13 @@ LangChain validates a tool call's arguments against `schema` before
   the call reaches CodeSpar;
 - keys the schema does not declare pass through to the API unless the
   schema says `additionalProperties: false` (then the object is strict);
-- a root schema that carries `anyOf`/`oneOf`/`allOf` beside its
-  `properties` (the "one of these keys is required" idiom) yields a
-  `ZodEffects` over the object rather than a bare `ZodObject`. LangChain
-  accepts both. Since 0.5.0 `tool.schema` is therefore typed
+- a root schema that carries `anyOf`/`oneOf` beside its `properties`
+  (the "one of these keys is required" idiom), or whose root is a union
+  of object branches (`oneOf: [{action: "pay", …}, {action: "refund", …}]`),
+  yields a `ZodEffects` over an object rather than a bare `ZodObject`: the
+  object shows the model every key any branch declares, the union is
+  enforced as a rule over it. LangChain accepts both. Since 0.5.0
+  `tool.schema` is therefore typed
   `ToolInputSchema` (`ZodObject | ZodEffects<ZodObject>`): read the
   properties with `toolInputShape(tool.schema)` and the object with
   `toolInputObject(tool.schema)` rather than `tool.schema.shape`;
