@@ -12,7 +12,14 @@ import {
   PAY_DEFINITION,
   WALLET_DEFINITION,
 } from "@codespar/types";
-import { jsonSchemaToZod, jsonSchemaToZodType, type JsonSchema } from "../schema.js";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import {
+  jsonSchemaToZod,
+  jsonSchemaToZodType,
+  toolInputShape,
+  type JsonSchema,
+  type ToolInputSchema,
+} from "../schema.js";
 
 const ok = (schema: z.ZodTypeAny, value: unknown) => schema.safeParse(value).success;
 
@@ -21,13 +28,15 @@ function objectWith(prop: JsonSchema, required = true): z.ZodObject<z.ZodRawShap
     type: "object",
     properties: { v: prop },
     required: required ? ["v"] : [],
-  });
+  }) as z.ZodObject<z.ZodRawShape>;
 }
+
+const shapeOf = (s: ToolInputSchema): z.ZodRawShape => toolInputShape(s);
 
 describe("jsonSchemaToZod — each construct", () => {
   it("enum → closed vocabulary (z.enum), not a free string", () => {
     const s = objectWith({ type: "string", enum: ["pix", "boleto"] });
-    expect(s.shape.v).toBeInstanceOf(z.ZodEnum);
+    expect(shapeOf(s).v).toBeInstanceOf(z.ZodEnum);
     expect(ok(s, { v: "pix" })).toBe(true);
     expect(ok(s, { v: "card" })).toBe(false);
   });
@@ -61,7 +70,7 @@ describe("jsonSchemaToZod — each construct", () => {
       properties: { country: { type: "string" }, name: { type: "string" } },
       required: ["country"],
     });
-    expect(s.shape.v).toBeInstanceOf(z.ZodObject);
+    expect(shapeOf(s).v).toBeInstanceOf(z.ZodObject);
     expect(ok(s, { v: { country: "BR" } })).toBe(true);
     expect(ok(s, { v: { name: "x" } })).toBe(false);
     expect(ok(s, { v: { country: 1 } })).toBe(false);
@@ -191,8 +200,8 @@ describe("jsonSchemaToZod — each construct", () => {
         },
       },
     });
-    expect(s.shape.recipient!.description).toBe("Who gets paid");
-    const inner = (s.shape.recipient as z.ZodOptional<z.ZodUnion<[z.ZodTypeAny, z.ZodTypeAny]>>).unwrap();
+    expect(shapeOf(s).recipient!.description).toBe("Who gets paid");
+    const inner = (shapeOf(s).recipient as z.ZodOptional<z.ZodUnion<[z.ZodTypeAny, z.ZodTypeAny]>>).unwrap();
     expect(inner.options[0].description).toBe("A Pix key");
     expect(inner.options[1].description).toBe("Bank account");
   });
@@ -214,6 +223,137 @@ describe("jsonSchemaToZod — each construct", () => {
   });
 });
 
+describe("jsonSchemaToZod — review findings", () => {
+  const NODE: JsonSchema = {
+    type: "object",
+    properties: { node: { $ref: "#/definitions/node" } },
+    required: ["node"],
+    definitions: {
+      node: {
+        type: "object",
+        properties: { value: { type: "number" }, next: { $ref: "#/definitions/node" } },
+        required: ["value"],
+      },
+    },
+  };
+
+  it("a recursive $ref resolves to one Zod instance, so a walk of the tree (zod-to-json-schema) terminates", () => {
+    const s = jsonSchemaToZod(NODE);
+    const next = (shapeOf(s).node as z.ZodLazy<z.ZodTypeAny>).schema;
+    const inner = (next as z.ZodObject<z.ZodRawShape>).shape.next as z.ZodOptional<z.ZodLazy<z.ZodTypeAny>>;
+    expect(inner.unwrap()).toBe(shapeOf(s).node);
+    expect(inner.unwrap().schema).toBe(next);
+    const out = zodToJsonSchema(s);
+    expect(JSON.stringify(out)).toContain("$ref");
+    expect(ok(s, { node: { value: 1, next: { value: 2, next: { value: 3 } } } })).toBe(true);
+    expect(ok(s, { node: { value: 1, next: { value: "2" } } })).toBe(false);
+  });
+
+  it("a pattern JS cannot compile marks the field untranslated instead of throwing", () => {
+    const schema: JsonSchema = {
+      type: "object",
+      properties: {
+        ok: { type: "string", pattern: "^[a-z]+$" },
+        bad: { type: "string", pattern: "(?P<name>a)", description: "Python named group" },
+      },
+      required: ["ok", "bad"],
+    };
+    expect(() => jsonSchemaToZod(schema)).not.toThrow();
+    const s = jsonSchemaToZod(schema);
+    expect(shapeOf(s).bad).toBeInstanceOf(z.ZodUnknown);
+    expect(shapeOf(s).bad!.description).toContain("schema construct not translated: pattern");
+    expect(ok(s, { ok: "abc", bad: "anything" })).toBe(true);
+    expect(ok(s, { ok: "ABC", bad: "anything" })).toBe(false);
+  });
+
+  it("a root $ref, default, nullable or effects wrapper still yields the object's properties", () => {
+    const named = jsonSchemaToZod({
+      $ref: "#/definitions/Input",
+      definitions: {
+        Input: { type: "object", properties: { amount: { type: "number" } }, required: ["amount"] },
+      },
+    });
+    expect(Object.keys(shapeOf(named))).toEqual(["amount"]);
+    expect(ok(named, { amount: "x" })).toBe(false);
+    const defaulted = jsonSchemaToZod({
+      type: "object",
+      properties: { a: { type: "string" } },
+      required: ["a"],
+      default: { a: "x" },
+      nullable: true,
+    });
+    expect(Object.keys(shapeOf(defaulted))).toEqual(["a"]);
+    const withUndeclaredRequired = jsonSchemaToZod({
+      type: "object",
+      properties: { a: { type: "string" } },
+      required: ["a", "b"],
+    });
+    expect(Object.keys(shapeOf(withUndeclaredRequired))).toEqual(["a"]);
+    // A genuinely non-object root is the empty pass-through object.
+    expect(Object.keys(shapeOf(jsonSchemaToZod({ type: "string" })))).toEqual([]);
+  });
+
+  it("anyOf beside type: object + properties constrains the object instead of replacing it", () => {
+    const s = jsonSchemaToZod({
+      type: "object",
+      properties: { pix_key: { type: "string" }, account: { type: "object" }, v: { type: "number" } },
+      required: ["v"],
+      anyOf: [{ required: ["pix_key"] }, { required: ["account"] }],
+    });
+    // The properties are still reachable; the combinator rides as a refinement.
+    expect(s).toBeInstanceOf(z.ZodEffects);
+    expect(Object.keys(shapeOf(s))).toEqual(["pix_key", "account", "v"]);
+    expect(ok(s, { v: 1, pix_key: "a@b.co" })).toBe(true);
+    expect(ok(s, { v: 1, account: {} })).toBe(true);
+    expect(ok(s, { v: 1 })).toBe(false);
+    expect(ok(s, { v: 1, pix_key: 5 })).toBe(false);
+    expect(ok(s, { pix_key: "a@b.co" })).toBe(false);
+    const all = objectWith({
+      type: "object",
+      properties: { a: { type: "string" } },
+      allOf: [{ required: ["a"] }],
+    });
+    expect(ok(all, { v: { a: "x" } })).toBe(true);
+    expect(ok(all, { v: {} })).toBe(false);
+  });
+
+  it("a required property keeps its default out of the type: it must be sent", () => {
+    const s = jsonSchemaToZod({
+      type: "object",
+      properties: { country: { type: "string", default: "BR" }, currency: { type: "string", default: "BRL" } },
+      required: ["country"],
+    });
+    expect(ok(s, {})).toBe(false);
+    expect(s.parse({ country: "MX" })).toEqual({ country: "MX", currency: "BRL" });
+  });
+
+  it("prefixItems → tuple with the items schema as rest, closed by items: false", () => {
+    const open = objectWith({ type: "array", prefixItems: [{ type: "string" }, { type: "number" }] });
+    expect(ok(open, { v: ["a", 1] })).toBe(true);
+    expect(ok(open, { v: ["a", 1, true] })).toBe(true);
+    expect(ok(open, { v: [1, "a"] })).toBe(false);
+    const typedRest = objectWith({ type: "array", prefixItems: [{ type: "string" }], items: { type: "number" } });
+    expect(ok(typedRest, { v: ["a", 1, 2] })).toBe(true);
+    expect(ok(typedRest, { v: ["a", "b"] })).toBe(false);
+    const closed = objectWith({ type: "array", prefixItems: [{ type: "string" }], items: false });
+    expect(ok(closed, { v: ["a"] })).toBe(true);
+    expect(ok(closed, { v: ["a", 1] })).toBe(false);
+    // draft-07 spelling, same semantics via additionalItems.
+    const d7 = objectWith({ type: "array", items: [{ type: "string" }], additionalItems: false });
+    expect(ok(d7, { v: ["a", 1] })).toBe(false);
+    expect(ok(objectWith({ type: "array", items: [{ type: "string" }] }), { v: ["a", 1] })).toBe(true);
+  });
+
+  it("draft-4 boolean exclusiveMinimum/exclusiveMaximum make the bound exclusive", () => {
+    const s = objectWith({ type: "number", minimum: 0, exclusiveMinimum: true, maximum: 10, exclusiveMaximum: true });
+    expect(ok(s, { v: 0 })).toBe(false);
+    expect(ok(s, { v: 10 })).toBe(false);
+    expect(ok(s, { v: 5 })).toBe(true);
+    const inclusive = objectWith({ type: "number", minimum: 0, exclusiveMinimum: false });
+    expect(ok(inclusive, { v: 0 })).toBe(true);
+  });
+});
+
 describe("jsonSchemaToZod — what it does not translate", () => {
   it.each([
     ["not", { not: { type: "string" } }],
@@ -224,7 +364,7 @@ describe("jsonSchemaToZod — what it does not translate", () => {
     ["type \"money\"", { type: "money" }],
   ])("%s → z.unknown() with the description marked, never z.string()", (_label, prop) => {
     const s = objectWith({ description: "The amount", ...(prop as JsonSchema) });
-    const field = s.shape.v!;
+    const field = shapeOf(s).v!;
     expect(field).toBeInstanceOf(z.ZodUnknown);
     expect(field).not.toBeInstanceOf(z.ZodString);
     expect(field.description).toMatch(/^The amount \(schema construct not translated: /);
@@ -254,14 +394,14 @@ describe("round trip over real money-tool input schemas", () => {
   const wallet = jsonSchemaToZod(WALLET_DEFINITION.input_schema as unknown as JsonSchema);
 
   it("codespar_pay: action and method are closed vocabularies", () => {
-    expect(pay.shape.action).toBeDefined();
+    expect(shapeOf(pay).action).toBeDefined();
     expect(ok(pay, { action: "pay", amount: 15000, currency: "BRL", method: "pix", recipient: "a@b.co" })).toBe(true);
     expect(ok(pay, { action: "refund", amount: 15000, currency: "BRL", method: "pix", recipient: "a@b.co" })).toBe(false);
     expect(ok(pay, { action: "pay", amount: 15000, currency: "BRL", method: "cash", recipient: "a@b.co" })).toBe(false);
   });
 
   it("codespar_pay: recipient is the anyOf — a Pix key string OR a bank-account object, not a string", () => {
-    const recipient = (pay.shape.recipient as z.ZodOptional<z.ZodTypeAny>).unwrap();
+    const recipient = (shapeOf(pay).recipient as z.ZodOptional<z.ZodTypeAny>).unwrap();
     expect(recipient).toBeInstanceOf(z.ZodUnion);
     expect(ok(pay, { action: "pay", recipient: "11144477735" })).toBe(true);
     const branch = (PAY_DEFINITION.input_schema.properties.recipient.anyOf ?? []).find((b) => b.type === "object");
@@ -290,7 +430,7 @@ describe("round trip over real money-tool input schemas", () => {
     expect(ok(crypto, { ...base, currency: "BRL" })).toBe(false);
     expect(ok(crypto, { ...base, network: network.enum![0] })).toBe(true);
     expect(ok(crypto, { ...base, network: "mainnet" })).toBe(false);
-    const field = (crypto.shape.counterparty as z.ZodOptional<z.ZodTypeAny>).unwrap();
+    const field = (shapeOf(crypto).counterparty as z.ZodOptional<z.ZodTypeAny>).unwrap();
     expect(field).toBeInstanceOf(z.ZodObject);
     expect((field as z.ZodObject<z.ZodRawShape>).shape.country).toBeInstanceOf(z.ZodOptional);
     expect(ok(crypto, { ...base, counterparty: { country: "BR" } })).toBe(true);
@@ -300,7 +440,7 @@ describe("round trip over real money-tool input schemas", () => {
 
   it("codespar_wallet: every declared property converts and the schema has no z.string() stand-ins", () => {
     for (const [key, prop] of Object.entries(WALLET_DEFINITION.input_schema.properties)) {
-      const field = wallet.shape[key]!;
+      const field = shapeOf(wallet)[key]!;
       const inner = field instanceof z.ZodOptional ? field.unwrap() : field;
       if (prop.enum) expect(inner, key).toBeInstanceOf(prop.enum.length === 1 ? z.ZodLiteral : z.ZodEnum);
       else if (prop.type === "number") expect(inner, key).toBeInstanceOf(z.ZodNumber);

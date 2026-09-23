@@ -24,16 +24,20 @@
  * ```
  */
 
-import type { z } from "zod";
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
 import { tools as getSessionTools } from "@codespar/sdk";
-
-import { jsonSchemaToZod } from "./schema.js";
+import { jsonSchemaToZod, type ToolInputSchema } from "./schema.js";
 
 export interface CodeSparLangChainTool {
   name: string;
   description: string;
-  schema: z.ZodObject<z.ZodRawShape>;
+  /**
+   * The Zod form of the tool's `input_schema`: a `ZodObject`, or a
+   * `ZodEffects` over one when the root schema carries a combinator beside
+   * its properties. LangChain accepts either; `toolInputShape(schema)`
+   * reaches the properties in both.
+   */
+  schema: ToolInputSchema;
   invoke(input: Record<string, unknown>): Promise<string>;
 }
 
@@ -73,4 +77,11 @@ export async function handleToolCall(
   return session.execute(toolName, args);
 }
 
-export { jsonSchemaToZod, jsonSchemaToZodType, type JsonSchema } from "./schema.js";
+export {
+  jsonSchemaToZod,
+  jsonSchemaToZodType,
+  toolInputObject,
+  toolInputShape,
+  type JsonSchema,
+  type ToolInputSchema,
+} from "./schema.js";

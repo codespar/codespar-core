@@ -28,6 +28,7 @@ const tools = await getTools(session);
 | `handleToolCall` | Execute a tool call via the session |
 | `jsonSchemaToZod` | Convert a tool's JSON Schema `input_schema` to a Zod object |
 | `jsonSchemaToZodType` | Convert any JSON Schema fragment to a Zod type |
+| `toolInputShape` / `toolInputObject` | The properties / the object under a tool's `schema`, whichever form it takes |
 
 ## Schema fidelity
 
@@ -47,6 +48,11 @@ LangChain validates a tool call's arguments against `schema` before
   the call reaches CodeSpar;
 - keys the schema does not declare pass through to the API unless the
   schema says `additionalProperties: false` (then the object is strict);
+- a root schema that carries `anyOf`/`oneOf`/`allOf` beside its
+  `properties` (the "one of these keys is required" idiom) yields a
+  `ZodEffects` over the object rather than a bare `ZodObject`; LangChain
+  accepts both, and `toolInputShape(tool.schema)` reaches the properties
+  in either form;
 - a construct the converter does not translate (`not`, `if`/`then`/`else`,
   `patternProperties`, a non-local `$ref`, …) becomes `z.unknown()` and its
   description ends with `(schema construct not translated: …)`. The value

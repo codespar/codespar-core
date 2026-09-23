@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from "vitest";
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
-import { toLangChainTool, getTools, handleToolCall, jsonSchemaToZod } from "../index.js";
+import { toLangChainTool, getTools, handleToolCall, jsonSchemaToZod, toolInputShape } from "../index.js";
 
 function makeTool(overrides: Partial<Tool> = {}): Tool {
   return {
@@ -60,8 +60,8 @@ describe("@codespar/langchain", () => {
       properties: { amount: { type: "number" }, name: { type: "string" } },
       required: ["amount"],
     });
-    expect(schema.shape.amount).toBeDefined();
-    expect(schema.shape.name).toBeDefined();
+    expect(toolInputShape(schema).amount).toBeDefined();
+    expect(toolInputShape(schema).name).toBeDefined();
   });
 
   it("toLangChainTool creates tool with correct shape", () => {

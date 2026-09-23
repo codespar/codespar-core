@@ -33,11 +33,22 @@ const UNTRANSLATED = [
   "unevaluatedItems",
 ] as const;
 
-const PRIMITIVE_TYPES = new Set(["string", "number", "integer", "boolean", "null", "array", "object"]);
-
 interface Ctx {
   /** The root schema, for local `$ref` resolution. */
   root: JsonSchema;
+  /**
+   * One Zod instance per referenced target. A `$ref` must resolve to the
+   * same instance every time: a consumer that walks the Zod tree to emit
+   * JSON Schema (LangChain does, to describe the tool to the model) detects
+   * a cycle by identity, and a fresh tree per visit is an unbounded walk.
+   */
+  refs: Map<JsonSchema, z.ZodTypeAny>;
+}
+
+/** Per-property conversion switches. */
+interface ConvertOptions {
+  /** A property listed in `required` keeps its default out of the Zod type. */
+  skipDefault?: boolean;
 }
 
 function isSchema(v: unknown): v is JsonSchema {
@@ -89,16 +100,27 @@ function union(members: z.ZodTypeAny[]): z.ZodTypeAny {
   return z.union([members[0]!, members[1]!, ...members.slice(2)]);
 }
 
+/** A JSON Schema `pattern` as a JS RegExp, or null when JS cannot express it. */
+function compilePattern(pattern: string): RegExp | null {
+  for (const flags of ["u", ""]) {
+    try {
+      return new RegExp(pattern, flags);
+    } catch {
+      // try the next flag set
+    }
+  }
+  return null;
+}
+
 function stringSchema(schema: JsonSchema): z.ZodTypeAny {
   let s = z.string();
   if (typeof schema.minLength === "number") s = s.min(schema.minLength);
   if (typeof schema.maxLength === "number") s = s.max(schema.maxLength);
   if (typeof schema.pattern === "string") {
-    try {
-      s = s.regex(new RegExp(schema.pattern, "u"));
-    } catch {
-      s = s.regex(new RegExp(schema.pattern));
-    }
+    const re = compilePattern(schema.pattern);
+    // A pattern JS cannot compile must not take every tool down with it.
+    if (!re) return untranslated(schema, `pattern ${JSON.stringify(schema.pattern)}`);
+    s = s.regex(re);
   }
   switch (schema.format) {
     case "email":
@@ -127,20 +149,35 @@ function stringSchema(schema: JsonSchema): z.ZodTypeAny {
 function numberSchema(schema: JsonSchema, integer: boolean): z.ZodTypeAny {
   let n = z.number();
   if (integer) n = n.int();
-  if (typeof schema.minimum === "number") n = n.min(schema.minimum);
-  if (typeof schema.maximum === "number") n = n.max(schema.maximum);
+  // draft-4 spelled exclusivity as a boolean next to the bound.
+  if (typeof schema.minimum === "number") {
+    n = schema.exclusiveMinimum === true ? n.gt(schema.minimum) : n.min(schema.minimum);
+  }
+  if (typeof schema.maximum === "number") {
+    n = schema.exclusiveMaximum === true ? n.lt(schema.maximum) : n.max(schema.maximum);
+  }
   if (typeof schema.exclusiveMinimum === "number") n = n.gt(schema.exclusiveMinimum);
   if (typeof schema.exclusiveMaximum === "number") n = n.lt(schema.exclusiveMaximum);
   if (typeof schema.multipleOf === "number") n = n.multipleOf(schema.multipleOf);
   return n;
 }
 
+/**
+ * A tuple: 2020-12 `prefixItems` with `items` as the rest (a schema, `false`
+ * for none, absent for anything), or draft-07 `items: [...]` with
+ * `additionalItems` playing the same role.
+ */
+function tupleSchema(prefix: unknown[], rest: unknown, ctx: Ctx): z.ZodTypeAny {
+  const members = prefix.map((it) => (isSchema(it) ? convert(it, ctx) : z.unknown()));
+  const tuple = members.length === 0 ? z.tuple([]) : z.tuple([members[0]!, ...members.slice(1)]);
+  if (rest === false) return tuple;
+  return tuple.rest(isSchema(rest) ? convert(rest, ctx) : z.unknown());
+}
+
 function arraySchema(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
   const items = schema.items;
-  if (Array.isArray(items)) {
-    const members = items.map((it) => (isSchema(it) ? convert(it, ctx) : z.unknown()));
-    return members.length === 0 ? z.tuple([]) : z.tuple([members[0]!, ...members.slice(1)]);
-  }
+  if (Array.isArray(schema.prefixItems)) return tupleSchema(schema.prefixItems, items, ctx);
+  if (Array.isArray(items)) return tupleSchema(items, schema.additionalItems, ctx);
   let a = z.array(isSchema(items) ? convert(items, ctx) : z.unknown());
   if (typeof schema.minItems === "number") a = a.min(schema.minItems);
   if (typeof schema.maxItems === "number") a = a.max(schema.maxItems);
@@ -154,20 +191,37 @@ function arraySchema(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
  * reaches the API instead of being stripped. `additionalProperties: false`
  * is `.strict()`; a schema there is `.catchall()`.
  */
-function objectSchema(schema: JsonSchema, ctx: Ctx): z.ZodObject<z.ZodRawShape> {
+function objectSchema(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
   const properties = isSchema(schema.properties) ? schema.properties : {};
-  const required = new Set(Array.isArray(schema.required) ? (schema.required as unknown[]) : []);
+  const required = new Set(
+    (Array.isArray(schema.required) ? (schema.required as unknown[]) : []).filter(
+      (k): k is string => typeof k === "string",
+    ),
+  );
   const shape: z.ZodRawShape = {};
   for (const [key, prop] of Object.entries(properties)) {
-    const field = isSchema(prop) ? convert(prop, ctx) : z.unknown();
-    const hasDefault = isSchema(prop) && prop.default !== undefined;
-    shape[key] = required.has(key) || hasDefault ? field : field.optional();
+    const isRequired = required.has(key);
+    // A required property is required: its default is documentation, not
+    // a value the caller may omit.
+    const field = isSchema(prop) ? convert(prop, ctx, { skipDefault: isRequired }) : z.unknown();
+    const hasDefault = !isRequired && isSchema(prop) && prop.default !== undefined;
+    shape[key] = isRequired || hasDefault ? field : field.optional();
   }
   const base = z.object(shape);
   const extra = schema.additionalProperties;
-  if (extra === false) return base.strict();
-  if (isSchema(extra)) return base.catchall(convert(extra, ctx));
-  return base.passthrough();
+  const object = extra === false ? base.strict() : isSchema(extra) ? base.catchall(convert(extra, ctx)) : base.passthrough();
+
+  // `required` may name keys `properties` does not declare (the "one of
+  // these must be present" idiom inside anyOf). Presence is the constraint.
+  const undeclared = [...required].filter((k) => !(k in properties));
+  if (undeclared.length === 0) return object;
+  return object.superRefine((value, issues) => {
+    for (const key of undeclared) {
+      if (!(key in value)) {
+        issues.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: "Required" });
+      }
+    }
+  });
 }
 
 function byType(type: string, schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
@@ -192,26 +246,75 @@ function byType(type: string, schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
 }
 
 /** Convert any JSON Schema fragment to the Zod type that accepts the same values. */
-export function convert(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
+export function convert(schema: JsonSchema, ctx: Ctx, opts: ConvertOptions = {}): z.ZodTypeAny {
   let field = core(schema, ctx);
   if (schema.nullable === true) field = field.nullable();
-  if (schema.default !== undefined) field = field.default(schema.default as never);
+  if (schema.default !== undefined && !opts.skipDefault) field = field.default(schema.default as never);
   return describe(field, schema);
+}
+
+/** The `$ref` target's Zod type: one instance per target, registered before conversion. */
+function reference(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
+  const ref = schema.$ref as string;
+  const target = resolveRef(ref, ctx.root);
+  if (!target) return untranslated(schema, `$ref ${ref}`);
+  const known = ctx.refs.get(target);
+  if (known) return known;
+  let converted: z.ZodTypeAny | null = null;
+  const lazy = z.lazy(() => (converted ??= convert(target, ctx)));
+  ctx.refs.set(target, lazy);
+  return lazy;
+}
+
+/** `anyOf` / `oneOf` / `allOf` as one Zod type, or null when the schema has none. */
+function combinator(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny | null {
+  if (Array.isArray(schema.allOf)) {
+    const parts = (schema.allOf as unknown[]).filter(isSchema).map((s) => convert(s, ctx));
+    if (parts.length === 0) return z.unknown();
+    return parts.slice(1).reduce<z.ZodTypeAny>((acc, p) => z.intersection(acc, p), parts[0]!);
+  }
+  const alternatives = Array.isArray(schema.anyOf)
+    ? (schema.anyOf as unknown[])
+    : Array.isArray(schema.oneOf)
+      ? (schema.oneOf as unknown[])
+      : null;
+  if (!alternatives) return null;
+  const branches = alternatives.filter(isSchema);
+  const nullBranch = branches.some((b) => b.type === "null");
+  const rest = branches.filter((b) => b.type !== "null").map((b) => convert(b, ctx));
+  const u = rest.length === 0 ? z.null() : union(rest);
+  return nullBranch && rest.length > 0 ? u.nullable() : u;
+}
+
+/** The schema's own `type` / `properties` / `items` constraint, or null when it declares none. */
+function structural(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny | null {
+  const type = schema.type;
+  if (Array.isArray(type)) {
+    const types = (type as unknown[]).filter((t): t is string => typeof t === "string");
+    const nullable = types.includes("null");
+    const rest = types.filter((t) => t !== "null").map((t) => byType(t, schema, ctx));
+    if (rest.length === 0) return z.null();
+    const u = union(rest);
+    return nullable ? u.nullable() : u;
+  }
+  if (typeof type === "string") return byType(type, schema, ctx);
+  // No type: infer from the keywords present.
+  if (
+    isSchema(schema.properties) ||
+    schema.additionalProperties !== undefined ||
+    Array.isArray(schema.required)
+  ) {
+    return objectSchema(schema, ctx);
+  }
+  if (schema.items !== undefined || schema.prefixItems !== undefined) return arraySchema(schema, ctx);
+  return null;
 }
 
 function core(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
   for (const keyword of UNTRANSLATED) {
     if (schema[keyword] !== undefined) return untranslated(schema, keyword);
   }
-
-  if (typeof schema.$ref === "string") {
-    const ref = schema.$ref;
-    const target = resolveRef(ref, ctx.root);
-    if (!target) return untranslated(schema, `$ref ${ref}`);
-    // Lazy so a self-referencing definition terminates at conversion time.
-    return z.lazy(() => convert(target, ctx));
-  }
-
+  if (typeof schema.$ref === "string") return reference(schema, ctx);
   if (schema.const !== undefined) return literal(schema.const);
 
   if (Array.isArray(schema.enum)) {
@@ -225,61 +328,82 @@ function core(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
     return union(values.map(literal));
   }
 
-  if (Array.isArray(schema.allOf)) {
-    const parts = (schema.allOf as unknown[]).filter(isSchema).map((s) => convert(s, ctx));
-    if (parts.length === 0) return z.unknown();
-    return parts.slice(1).reduce<z.ZodTypeAny>((acc, p) => z.intersection(acc, p), parts[0]!);
-  }
+  // A combinator beside the schema's own type/properties constrains it
+  // further; both apply. Dropping the siblings turned "an object with these
+  // properties, one of which is required" into a bare union.
+  const combined = combinator(schema, ctx);
+  const own = structural(schema, ctx);
+  if (combined && own) return z.intersection(own, combined);
+  return combined ?? own ?? z.unknown();
+}
 
-  const alternatives = Array.isArray(schema.anyOf)
-    ? (schema.anyOf as unknown[])
-    : Array.isArray(schema.oneOf)
-      ? (schema.oneOf as unknown[])
-      : null;
-  if (alternatives) {
-    const branches = alternatives.filter(isSchema);
-    const nullBranch = branches.some((b) => b.type === "null");
-    const rest = branches.filter((b) => b.type !== "null").map((b) => convert(b, ctx));
-    const u = rest.length === 0 ? z.null() : union(rest);
-    return nullBranch && rest.length > 0 ? u.nullable() : u;
-  }
+/**
+ * A tool's input schema: the object itself, or the object under a
+ * refinement when the root carries a combinator beside its properties
+ * (`anyOf: [{ required: [...] }, ...]`). LangChain accepts both forms;
+ * {@link toolInputShape} reaches the properties in either.
+ */
+export type ToolInputSchema =
+  | z.ZodObject<z.ZodRawShape>
+  | z.ZodEffects<z.ZodObject<z.ZodRawShape>>;
 
-  const type = schema.type;
-  if (Array.isArray(type)) {
-    const types = (type as unknown[]).filter((t): t is string => typeof t === "string");
-    const nullable = types.includes("null");
-    const rest = types.filter((t) => t !== "null").map((t) => byType(t, schema, ctx));
-    if (rest.length === 0) return z.null();
-    const u = union(rest);
-    return nullable ? u.nullable() : u;
-  }
-  if (typeof type === "string") {
-    if (!PRIMITIVE_TYPES.has(type)) return untranslated(schema, `type ${JSON.stringify(type)}`);
-    return byType(type, schema, ctx);
-  }
+/** The object under a tool input schema, whichever form it takes. */
+export function toolInputObject(schema: ToolInputSchema): z.ZodObject<z.ZodRawShape> {
+  return schema instanceof z.ZodEffects ? schema.innerType() : schema;
+}
 
-  // No type: infer from the keywords present, else the schema accepts anything.
-  if (isSchema(schema.properties) || schema.additionalProperties !== undefined) {
-    return objectSchema(schema, ctx);
+/** The properties of a tool input schema, whichever form it takes. */
+export function toolInputShape(schema: ToolInputSchema): z.ZodRawShape {
+  return toolInputObject(schema).shape;
+}
+
+/** Strip the wrappers a converted root may carry to reach the object underneath. */
+function unwrapRoot(field: z.ZodTypeAny): z.ZodTypeAny {
+  let current = field;
+  for (let i = 0; i < 16; i++) {
+    if (current instanceof z.ZodLazy) current = current.schema;
+    else if (current instanceof z.ZodDefault) current = current._def.innerType;
+    else if (current instanceof z.ZodNullable || current instanceof z.ZodOptional) current = current.unwrap();
+    else if (current instanceof z.ZodEffects) current = current.innerType();
+    else return current;
   }
-  if (schema.items !== undefined) return arraySchema(schema, ctx);
-  return z.unknown();
+  return current;
 }
 
 /**
  * Convert a tool's `input_schema` (an object schema) to a Zod object schema.
- * A non-object root is still returned as an object so LangChain's tool
- * contract holds; its properties are then empty and unknown keys pass.
+ * A root `$ref` is resolved eagerly and wrappers (default, nullable) are
+ * stripped, so a named or wrapped object schema still yields its
+ * properties. A root that is an object intersected with a combinator keeps
+ * the combinator as a refinement over the object. Only a genuinely
+ * non-object root falls back to an empty pass-through object, which keeps
+ * LangChain's tool contract.
  */
-export function jsonSchemaToZod(schema: JsonSchema): z.ZodObject<z.ZodRawShape> {
-  const ctx: Ctx = { root: schema };
-  const converted = convert(schema, ctx);
-  return converted instanceof z.ZodObject
-    ? (converted as z.ZodObject<z.ZodRawShape>)
-    : z.object({}).passthrough();
+export function jsonSchemaToZod(schema: JsonSchema): ToolInputSchema {
+  const ctx: Ctx = { root: schema, refs: new Map() };
+  let target: JsonSchema = schema;
+  for (let i = 0; i < 16 && typeof target.$ref === "string"; i++) {
+    const resolved = resolveRef(target.$ref, schema);
+    if (!resolved) break;
+    target = resolved;
+  }
+  const converted = unwrapRoot(convert(target, ctx));
+  if (converted instanceof z.ZodObject) return converted as z.ZodObject<z.ZodRawShape>;
+  if (converted instanceof z.ZodIntersection) {
+    const left = unwrapRoot(converted._def.left as z.ZodTypeAny);
+    const right = converted._def.right as z.ZodTypeAny;
+    if (left instanceof z.ZodObject) {
+      const object = left as z.ZodObject<z.ZodRawShape>;
+      return object.superRefine((value, issues) => {
+        const result = right.safeParse(value);
+        if (!result.success) for (const issue of result.error.issues) issues.addIssue(issue);
+      });
+    }
+  }
+  return z.object({}).passthrough();
 }
 
 /** Convert any JSON Schema fragment; `root` (default: the fragment) resolves local `$ref`s. */
 export function jsonSchemaToZodType(schema: JsonSchema, root: JsonSchema = schema): z.ZodTypeAny {
-  return convert(schema, { root });
+  return convert(schema, { root, refs: new Map() });
 }
