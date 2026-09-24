@@ -26,6 +26,7 @@ import { mandateCreateCommand } from "./commands/mandate.js";
 import { mandateVerifyCommand } from "./commands/mandate-verify.js";
 import { DEFAULT_BASE_URL } from "./did.js";
 import { mandateRevokeCommand } from "./commands/mandate-revoke.js";
+import { auditReplayCommand } from "./commands/audit-replay.js";
 import { agentRunCommand, evalCommand } from "./commands/agent.js";
 import { walletCommand } from "./commands/wallet.js";
 import { transferCommand } from "./commands/transfer.js";
@@ -666,6 +667,23 @@ program
       });
     },
   );
+
+// ============ audit ============
+const audit = program
+  .command("audit")
+  .description("Read the tamper-evident audit chain");
+
+audit
+  .command("replay")
+  .description(
+    "Ask the API whether the chain is verified over an interval, and render the verdict; exit 1 when it is not `verified`",
+  )
+  .option("--from <iso>", "Start of the interval, ISO 8601 (default: the API's own window)")
+  .option("--to <iso>", "End of the interval, ISO 8601 (default: the API's own window)")
+  .action(async (opts: { from?: string; to?: string }) => {
+    const client = await authedClient();
+    await auditReplayCommand(client, { ...opts, json: rootJsonFlag() });
+  });
 
 // ============ logs ============
 const logs = program.command("logs").description("Inspect tool-call execution logs");

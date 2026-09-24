@@ -1,5 +1,47 @@
 # @codespar/cli — changelog
 
+## 0.15.0 — 2026-09-24
+
+### Added
+
+- `codespar audit replay [--from <iso>] [--to <iso>]`: the audit chain's
+  verdict over an interval, asked of the API and rendered here. The Agent
+  Starter Kits' proof bundle promises a `verify.json` produced by this
+  command and forbids a second implementation of the hash-chain check; the
+  command did not exist, so the file went unwritten (core#180).
+
+  No endpoint verifies a chain for an interval, which is what the work had
+  to establish first. The backend's verification lives in a cron that walks
+  each org's chain and persists a watermark, and in a private offline
+  verifier over an export file that is not on npm. The caller-facing face of
+  the cron's work is `GET /v1/audit-events/health`, which reports the whole
+  chain and not a range. So the verdict is composed from two typed reads —
+  `GET /v1/audit-events/health` for what the verifier says, and
+  `GET /v1/audit-events` for which sequences the interval covers — and the
+  only arithmetic is the comparison the health payload defines for itself:
+  `watermark_sequence` is everything at or below which the chain has been
+  walked and verified. **No hash is recomputed in this process**, which is
+  the point.
+
+  Verdicts are `broken`, `degraded`, `link_unverifiable`, `no_events`,
+  `verified` and `unverified`. The last is absence of proof rather than a
+  failure — the common case in the minute after a run, while the verifier
+  catches up — and the reason says so. `degraded` and `link_unverifiable`
+  are read off the chain's global status and are NOT intersected with the
+  interval, so a break elsewhere colours this interval too; that is the
+  fail-closed direction, and the unverifiable segment's own range travels in
+  the payload so a reader can see whether it overlaps.
+
+  `--json` puts one document on stdout and nothing else, with the one-line
+  verdict still on stderr. The document carries `verified_by` — the producer
+  and the two endpoints — so a bundle holding the file says where the
+  verdict came from instead of asking a reader to trust the filename. A
+  deployment that does not serve the audit-chain resource is a named refusal
+  (`audit_chain_unsupported`), not a stack trace over a 404. The exit code
+  is 1 on any verdict that is not `verified`, as `mandate verify` already
+  does. Paging over the interval is bounded; truncation costs the floor and
+  the exact count, never the verdict, and the document says `truncated`.
+
 ## 0.14.1 — 2026-09-23
 
 ### Fixed
