@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "note": {
+      "type": "string",
+      "default": null
+    }
+  }
+}

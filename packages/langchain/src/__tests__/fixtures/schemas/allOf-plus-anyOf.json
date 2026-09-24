@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "allOf": [
+        {
+          "type": "object",
+          "properties": {
+            "a": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "a"
+          ]
+        }
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "x"
+          ]
+        },
+        {
+          "required": [
+            "y"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

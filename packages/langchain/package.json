@@ -1,6 +1,6 @@
 {
   "name": "@codespar/langchain",
-  "version": "0.4.6",
+  "version": "0.5.0",
   "description": "LangChain.js adapter for CodeSpar — convert session tools to LangChain StructuredTool format",
   "type": "module",
   "main": "./dist/index.js",
@@ -19,7 +19,7 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build"
   },
@@ -38,13 +38,17 @@
   },
   "peerDependencies": {
     "@codespar/sdk": "^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^0.14.0 || ^0.15.0 || ^0.16.0",
-    "zod": ">=3.0.0"
+    "zod": ">=3.25.0"
   },
   "devDependencies": {
     "@codespar/sdk": "*",
+    "@codespar/types": "*",
     "@types/node": "^25.6.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "typescript": "^5.8.0",
     "vitest": "^3.1.0",
-    "zod": "^3.23.0"
+    "zod": "^3.25.0",
+    "zod-to-json-schema": "^3.25.2"
   }
 }

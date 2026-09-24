@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "node": {
+      "type": "object",
+      "properties": {
+        "k": {
+          "type": "string"
+        },
+        "up": {
+          "$ref": "#/properties/node",
+          "required": [
+            "k"
+          ]
+        }
+      }
+    }
+  }
+}

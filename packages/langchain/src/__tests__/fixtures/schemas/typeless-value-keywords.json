@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "n": {
+      "minimum": 5,
+      "exclusiveMaximum": 100,
+      "multipleOf": 5
+    },
+    "s": {
+      "minLength": 2,
+      "maxLength": 4,
+      "pattern": "^a"
+    },
+    "a": {
+      "minItems": 1,
+      "maxItems": 2,
+      "uniqueItems": true
+    }
+  }
+}

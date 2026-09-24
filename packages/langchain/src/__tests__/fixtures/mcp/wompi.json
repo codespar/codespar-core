@@ -1,0 +1,522 @@
+{
+  "source": "codespar/mcp-dev-latam @codespar/mcp-wompi (MIT)",
+  "tools": [
+    {
+      "name": "mcp-wompi",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "amount_in_cents": {
+            "type": "number",
+            "description": "Amount in cents (COP)"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code (COP)"
+          },
+          "customer_email": {
+            "type": "string",
+            "description": "Customer email"
+          },
+          "reference": {
+            "type": "string",
+            "description": "Unique transaction reference"
+          },
+          "payment_method": {
+            "type": "object",
+            "description": "Payment method details",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Payment type (CARD, NEQUI, PSE, BANCOLOMBIA_TRANSFER)"
+              },
+              "token": {
+                "type": "string",
+                "description": "Tokenized card token (for CARD)"
+              },
+              "installments": {
+                "type": "number",
+                "description": "Number of installments (for CARD)"
+              },
+              "phone_number": {
+                "type": "string",
+                "description": "Phone number (for NEQUI)"
+              },
+              "user_type": {
+                "type": "number",
+                "description": "User type: 0=Natural, 1=Legal (for PSE)"
+              },
+              "financial_institution_code": {
+                "type": "string",
+                "description": "Bank code (for PSE)"
+              },
+              "payment_description": {
+                "type": "string",
+                "description": "Description (for PSE)"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "acceptance_token": {
+            "type": "string",
+            "description": "Acceptance token from get_acceptance_token"
+          },
+          "customer_data": {
+            "type": "object",
+            "description": "Customer data",
+            "properties": {
+              "full_name": {
+                "type": "string",
+                "description": "Full name"
+              },
+              "phone_number": {
+                "type": "string",
+                "description": "Phone number"
+              },
+              "legal_id": {
+                "type": "string",
+                "description": "Legal ID (cedula)"
+              },
+              "legal_id_type": {
+                "type": "string",
+                "description": "Legal ID type (CC, NIT, CE)"
+              }
+            }
+          }
+        },
+        "required": [
+          "amount_in_cents",
+          "currency",
+          "customer_email",
+          "reference",
+          "payment_method"
+        ]
+      }
+    },
+    {
+      "name": "get_transaction",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string",
+            "description": "Transaction ID"
+          }
+        },
+        "required": [
+          "transactionId"
+        ]
+      }
+    },
+    {
+      "name": "list_transactions",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "description": "Page number"
+          },
+          "per_page": {
+            "type": "number",
+            "description": "Results per page"
+          }
+        }
+      }
+    },
+    {
+      "name": "search_transaction_by_reference",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string",
+            "description": "Merchant reference"
+          }
+        },
+        "required": [
+          "reference"
+        ]
+      }
+    },
+    {
+      "name": "void_transaction",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string",
+            "description": "Transaction ID"
+          }
+        },
+        "required": [
+          "transactionId"
+        ]
+      }
+    },
+    {
+      "name": "create_payment_link",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Payment link name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description"
+          },
+          "single_use": {
+            "type": "boolean",
+            "description": "Whether single use"
+          },
+          "collect_shipping": {
+            "type": "boolean",
+            "description": "Collect shipping info"
+          },
+          "amount_in_cents": {
+            "type": "number",
+            "description": "Amount in cents"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency (COP)"
+          },
+          "expires_at": {
+            "type": "string",
+            "description": "Expiration date (ISO 8601)"
+          }
+        },
+        "required": [
+          "name",
+          "amount_in_cents",
+          "currency"
+        ]
+      }
+    },
+    {
+      "name": "get_payment_link",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "linkId": {
+            "type": "string",
+            "description": "Payment link ID"
+          }
+        },
+        "required": [
+          "linkId"
+        ]
+      }
+    },
+    {
+      "name": "update_payment_link",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "linkId": {
+            "type": "string",
+            "description": "Payment link ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Payment link name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description"
+          },
+          "single_use": {
+            "type": "boolean",
+            "description": "Whether single use"
+          },
+          "collect_shipping": {
+            "type": "boolean",
+            "description": "Collect shipping info"
+          },
+          "amount_in_cents": {
+            "type": "number",
+            "description": "Amount in cents"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency (COP)"
+          },
+          "expires_at": {
+            "type": "string",
+            "description": "Expiration date (ISO 8601)"
+          }
+        },
+        "required": [
+          "linkId"
+        ]
+      }
+    },
+    {
+      "name": "list_payment_links",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "description": "Page number"
+          },
+          "per_page": {
+            "type": "number",
+            "description": "Results per page"
+          }
+        }
+      }
+    },
+    {
+      "name": "list_payment_methods",
+      "input_schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_acceptance_token",
+      "input_schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "create_tokenized_card",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string",
+            "description": "Card number"
+          },
+          "cvc": {
+            "type": "string",
+            "description": "CVC code"
+          },
+          "exp_month": {
+            "type": "string",
+            "description": "Expiration month (MM)"
+          },
+          "exp_year": {
+            "type": "string",
+            "description": "Expiration year (YY)"
+          },
+          "card_holder": {
+            "type": "string",
+            "description": "Cardholder name"
+          }
+        },
+        "required": [
+          "number",
+          "cvc",
+          "exp_month",
+          "exp_year",
+          "card_holder"
+        ]
+      }
+    },
+    {
+      "name": "create_tokenized_nequi",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "phone_number": {
+            "type": "string",
+            "description": "Nequi phone number (10 digits)"
+          }
+        },
+        "required": [
+          "phone_number"
+        ]
+      }
+    },
+    {
+      "name": "get_tokenization_status",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Tokenization type (nequi)"
+          },
+          "tokenizationId": {
+            "type": "string",
+            "description": "Tokenization ID returned by create_tokenized_nequi"
+          }
+        },
+        "required": [
+          "type",
+          "tokenizationId"
+        ]
+      }
+    },
+    {
+      "name": "create_payment_source",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "CARD | NEQUI | PSE"
+          },
+          "token": {
+            "type": "string",
+            "description": "Token id (card or nequi token)"
+          },
+          "customer_email": {
+            "type": "string",
+            "description": "Customer email"
+          },
+          "acceptance_token": {
+            "type": "string",
+            "description": "Acceptance token from get_acceptance_token"
+          }
+        },
+        "required": [
+          "type",
+          "token",
+          "customer_email",
+          "acceptance_token"
+        ]
+      }
+    },
+    {
+      "name": "create_customer",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Customer email"
+          },
+          "full_name": {
+            "type": "string",
+            "description": "Full name"
+          },
+          "phone_number": {
+            "type": "string",
+            "description": "Phone number"
+          },
+          "legal_id": {
+            "type": "string",
+            "description": "Legal ID (cedula)"
+          },
+          "legal_id_type": {
+            "type": "string",
+            "description": "Legal ID type (CC, NIT, CE)"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      }
+    },
+    {
+      "name": "get_customer",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "Customer ID"
+          }
+        },
+        "required": [
+          "customerId"
+        ]
+      }
+    },
+    {
+      "name": "list_financial_institutions",
+      "input_schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "create_refund",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "transaction_id": {
+            "type": "string",
+            "description": "Transaction ID to refund"
+          },
+          "amount_in_cents": {
+            "type": "number",
+            "description": "Amount in cents (optional, omits = full refund)"
+          }
+        },
+        "required": [
+          "transaction_id"
+        ]
+      }
+    },
+    {
+      "name": "get_refund",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "refundId": {
+            "type": "string",
+            "description": "Refund ID"
+          }
+        },
+        "required": [
+          "refundId"
+        ]
+      }
+    },
+    {
+      "name": "get_merchant",
+      "input_schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "validate_webhook_signature",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "description": "'properties' (default) or 'hmac'"
+          },
+          "properties": {
+            "type": "array",
+            "description": "Ordered list of property values concatenated before hashing (properties mode)",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Event timestamp (properties mode)"
+          },
+          "checksum": {
+            "type": "string",
+            "description": "Expected checksum from event payload (properties mode)"
+          },
+          "raw_body": {
+            "type": "string",
+            "description": "Raw JSON body of the event (hmac mode)"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Signature header value (hmac mode)"
+          },
+          "secret": {
+            "type": "string",
+            "description": "Override secret; defaults to WOMPI_EVENTS_SECRET env"
+          }
+        }
+      }
+    }
+  ]
+}

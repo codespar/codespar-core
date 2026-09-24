@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "card": {
+      "type": "string"
+    },
+    "cvv": {
+      "type": "string"
+    }
+  },
+  "dependentRequired": {
+    "card": [
+      "cvv"
+    ]
+  }
+}

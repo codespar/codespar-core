@@ -1,0 +1,486 @@
+{
+  "source": "codespar/mcp-dev-latam @codespar/mcp-mercado-libre (MIT)",
+  "tools": [
+    {
+      "name": "mcp-mercado-libre",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category ID filter"
+          },
+          "minPrice": {
+            "type": "number",
+            "description": "Minimum price"
+          },
+          "maxPrice": {
+            "type": "number",
+            "description": "Maximum price"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "relevance",
+              "price_asc",
+              "price_desc"
+            ],
+            "description": "Sort order"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Results limit (max 50)"
+          },
+          "offset": {
+            "type": "number",
+            "description": "Results offset"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "get_product",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "Item ID (e.g. MLB1234567890)"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "get_product_description",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "Item ID"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "list_categories",
+      "input_schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_category",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "description": "Category ID"
+          }
+        },
+        "required": [
+          "categoryId"
+        ]
+      }
+    },
+    {
+      "name": "predict_category",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Product title (ideally in the site language)"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max predictions to return"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      }
+    },
+    {
+      "name": "get_trends",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "Category ID (optional)"
+          }
+        }
+      }
+    },
+    {
+      "name": "list_listings",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sellerId": {
+            "type": "string",
+            "description": "Seller ID (uses authenticated user if omitted)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "closed"
+            ],
+            "description": "Listing status"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Results limit"
+          }
+        }
+      }
+    },
+    {
+      "name": "update_item",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "Item ID (e.g. MLB1234567890)"
+          },
+          "available_quantity": {
+            "type": "number",
+            "description": "Stock quantity"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "closed"
+            ],
+            "description": "Listing status (lowercase)"
+          },
+          "price": {
+            "type": "number",
+            "description": "New price"
+          },
+          "title": {
+            "type": "string",
+            "description": "New title (only allowed if item has no sales)"
+          },
+          "fields": {
+            "type": "object",
+            "description": "Arbitrary extra fields to send in the PUT body",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "get_seller",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sellerId": {
+            "type": "string",
+            "description": "Seller ID"
+          }
+        },
+        "required": [
+          "sellerId"
+        ]
+      }
+    },
+    {
+      "name": "list_orders",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "paid",
+              "shipped",
+              "delivered",
+              "cancelled"
+            ],
+            "description": "Order status"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "date_asc",
+              "date_desc"
+            ],
+            "description": "Sort order"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Results limit"
+          },
+          "offset": {
+            "type": "number",
+            "description": "Results offset"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_order",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "description": "Order ID"
+          }
+        },
+        "required": [
+          "orderId"
+        ]
+      }
+    },
+    {
+      "name": "get_user",
+      "input_schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_shipment",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "shipmentId": {
+            "type": "string",
+            "description": "Shipment ID"
+          }
+        },
+        "required": [
+          "shipmentId"
+        ]
+      }
+    },
+    {
+      "name": "get_shipment_history",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "shipmentId": {
+            "type": "string",
+            "description": "Shipment ID"
+          }
+        },
+        "required": [
+          "shipmentId"
+        ]
+      }
+    },
+    {
+      "name": "get_shipping_label",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "shipmentIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Shipment IDs (max 50)"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "zpl2"
+            ],
+            "description": "Label format (default: pdf)"
+          }
+        },
+        "required": [
+          "shipmentIds"
+        ]
+      }
+    },
+    {
+      "name": "list_questions",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "Item ID"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unanswered",
+              "answered"
+            ],
+            "description": "Filter by status"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "answer_question",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "description": "Question ID"
+          },
+          "text": {
+            "type": "string",
+            "description": "Answer text"
+          }
+        },
+        "required": [
+          "questionId",
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "list_messages",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "packId": {
+            "type": "string",
+            "description": "Pack ID (or order ID if no pack)"
+          },
+          "sellerId": {
+            "type": "string",
+            "description": "Seller user ID"
+          },
+          "markAsRead": {
+            "type": "boolean",
+            "description": "Whether to mark messages as read (default: false)"
+          }
+        },
+        "required": [
+          "packId",
+          "sellerId"
+        ]
+      }
+    },
+    {
+      "name": "send_message",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "packId": {
+            "type": "string",
+            "description": "Pack ID (or order ID if no pack)"
+          },
+          "sellerId": {
+            "type": "string",
+            "description": "Seller user ID (sender)"
+          },
+          "buyerId": {
+            "type": "string",
+            "description": "Buyer user ID (recipient)"
+          },
+          "text": {
+            "type": "string",
+            "description": "Message text"
+          },
+          "textTranslated": {
+            "type": "string",
+            "description": "Message text translated to buyer language (optional)"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Attachment file IDs from upload endpoint (optional)"
+          }
+        },
+        "required": [
+          "packId",
+          "sellerId",
+          "buyerId",
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "list_reviews",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "Item ID"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "create_promotion",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "Item ID"
+          },
+          "dealPrice": {
+            "type": "number",
+            "description": "Discounted price for all buyers"
+          },
+          "topDealPrice": {
+            "type": "number",
+            "description": "Discounted price for top buyers (optional)"
+          },
+          "startDate": {
+            "type": "string",
+            "description": "ISO 8601 start date"
+          },
+          "finishDate": {
+            "type": "string",
+            "description": "ISO 8601 finish date"
+          },
+          "promotionType": {
+            "type": "string",
+            "description": "Promotion type (default: PRICE_DISCOUNT)"
+          }
+        },
+        "required": [
+          "itemId",
+          "dealPrice",
+          "startDate",
+          "finishDate"
+        ]
+      }
+    }
+  ]
+}

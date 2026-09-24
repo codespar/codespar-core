@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "head": {
+      "$ref": "#/$defs/node"
+    }
+  },
+  "required": [
+    "head"
+  ],
+  "$defs": {
+    "node": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "next": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/node"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "value",
+        "next"
+      ]
+    }
+  }
+}

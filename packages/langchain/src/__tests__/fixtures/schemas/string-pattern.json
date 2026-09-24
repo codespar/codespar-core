@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "string",
+      "pattern": "^pay_[0-9]+$"
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "addr": {
+      "$ref": "#/definitions/addr"
+    }
+  },
+  "required": [
+    "addr"
+  ],
+  "definitions": {
+    "addr": {
+      "type": "string",
+      "minLength": 3
+    }
+  }
+}

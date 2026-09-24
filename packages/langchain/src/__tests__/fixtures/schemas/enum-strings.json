@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "string",
+      "enum": [
+        "pix",
+        "boleto"
+      ]
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

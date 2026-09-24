@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "version": {
+              "const": 1
+            },
+            "kind": {
+              "const": "a"
+            }
+          },
+          "required": [
+            "version",
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "version": {
+              "const": 1
+            },
+            "kind": {
+              "const": "b"
+            }
+          },
+          "required": [
+            "version",
+            "kind"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "properties": {
+        "a": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "a"
+      ]
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

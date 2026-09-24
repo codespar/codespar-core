@@ -2,8 +2,9 @@
  * @codespar/langchain — LangChain.js StructuredTool adapter
  *
  * Bridges CodeSpar session tools to LangChain's StructuredTool format.
- * Converts JSON Schema inputs to Zod schemas and creates class instances
- * that route execution through the CodeSpar session for billing and audit.
+ * Converts each tool's JSON Schema input to a Zod schema that accepts the
+ * same values (see schema.ts) and creates tool objects that route execution
+ * through the CodeSpar session for billing and audit.
  *
  * @example
  * ```ts
@@ -23,46 +24,20 @@
  * ```
  */
 
-import { z } from "zod";
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
 import { tools as getSessionTools } from "@codespar/sdk";
-
-/** Convert a JSON Schema object to a Zod object schema. */
-function jsonSchemaToZod(schema: Record<string, unknown>): z.ZodObject<z.ZodRawShape> {
-  const properties = (schema.properties ?? {}) as Record<string, Record<string, unknown>>;
-  const required = (schema.required ?? []) as string[];
-  const shape: z.ZodRawShape = {};
-
-  for (const [key, prop] of Object.entries(properties)) {
-    let field: z.ZodTypeAny;
-    switch (prop.type) {
-      case "number":
-      case "integer":
-        field = z.number();
-        break;
-      case "boolean":
-        field = z.boolean();
-        break;
-      case "array":
-        field = z.array(z.unknown());
-        break;
-      case "object":
-        field = z.record(z.unknown());
-        break;
-      default:
-        field = z.string();
-    }
-    if (prop.description) field = field.describe(prop.description as string);
-    shape[key] = required.includes(key) ? field : field.optional();
-  }
-
-  return z.object(shape);
-}
+import { jsonSchemaToZod, type ToolInputSchema } from "./schema.js";
 
 export interface CodeSparLangChainTool {
   name: string;
   description: string;
-  schema: z.ZodObject<z.ZodRawShape>;
+  /**
+   * The Zod form of the tool's `input_schema`: a `ZodObject`, or a
+   * `ZodEffects` over one when the root schema carries a combinator beside
+   * its properties. LangChain accepts either; `toolInputShape(schema)`
+   * reaches the properties in both.
+   */
+  schema: ToolInputSchema;
   invoke(input: Record<string, unknown>): Promise<string>;
 }
 
@@ -102,4 +77,15 @@ export async function handleToolCall(
   return session.execute(toolName, args);
 }
 
-export { jsonSchemaToZod };
+export {
+  KEYWORD_SUPPORT,
+  MARKED_KEYWORDS,
+  renderKeywordTable,
+  type KeywordSupport,
+  jsonSchemaToZod,
+  jsonSchemaToZodType,
+  toolInputObject,
+  toolInputShape,
+  type JsonSchema,
+  type ToolInputSchema,
+} from "./schema.js";

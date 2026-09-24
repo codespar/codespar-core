@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 1,
+      "maxItems": 2
+    }
+  },
+  "required": [
+    "v"
+  ]
+}

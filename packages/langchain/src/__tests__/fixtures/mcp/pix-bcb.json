@@ -1,0 +1,638 @@
+{
+  "source": "codespar/mcp-dev-latam @codespar/mcp-pix-bcb (MIT)",
+  "tools": [
+    {
+      "name": "mcp-pix-bcb",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "txid": {
+            "type": "string",
+            "description": "Transaction ID (26-35 alphanumeric chars, optional — auto-generated if omitted)"
+          },
+          "calendario": {
+            "type": "object",
+            "description": "Charge timing",
+            "properties": {
+              "expiracao": {
+                "type": "number",
+                "description": "Expiration in seconds (default: 3600)"
+              }
+            }
+          },
+          "devedor": {
+            "type": "object",
+            "description": "Debtor (payer) info",
+            "properties": {
+              "cpf": {
+                "type": "string",
+                "description": "CPF (11 digits)"
+              },
+              "cnpj": {
+                "type": "string",
+                "description": "CNPJ (14 digits)"
+              },
+              "nome": {
+                "type": "string",
+                "description": "Payer name"
+              }
+            }
+          },
+          "valor": {
+            "type": "object",
+            "description": "Charge amount",
+            "properties": {
+              "original": {
+                "type": "string",
+                "description": "Amount in BRL (e.g., '100.00')"
+              }
+            },
+            "required": [
+              "original"
+            ]
+          },
+          "chave": {
+            "type": "string",
+            "description": "Receiver Pix key"
+          },
+          "solicitacaoPagador": {
+            "type": "string",
+            "description": "Message to payer (max 140 chars)"
+          },
+          "infoAdicionais": {
+            "type": "array",
+            "description": "Additional info fields",
+            "items": {
+              "type": "object",
+              "properties": {
+                "nome": {
+                  "type": "string",
+                  "description": "Field name"
+                },
+                "valor": {
+                  "type": "string",
+                  "description": "Field value"
+                }
+              },
+              "required": [
+                "nome",
+                "valor"
+              ]
+            }
+          }
+        },
+        "required": [
+          "valor",
+          "chave"
+        ]
+      }
+    },
+    {
+      "name": "get_cob",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "txid": {
+            "type": "string",
+            "description": "Transaction ID"
+          },
+          "revisao": {
+            "type": "number",
+            "description": "Revision number (optional)"
+          }
+        },
+        "required": [
+          "txid"
+        ]
+      }
+    },
+    {
+      "name": "list_cobs",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "inicio": {
+            "type": "string",
+            "description": "Start date (ISO 8601, e.g., 2024-01-01T00:00:00Z)"
+          },
+          "fim": {
+            "type": "string",
+            "description": "End date (ISO 8601)"
+          },
+          "cpf": {
+            "type": "string",
+            "description": "Filter by payer CPF"
+          },
+          "cnpj": {
+            "type": "string",
+            "description": "Filter by payer CNPJ"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ATIVA",
+              "CONCLUIDA",
+              "REMOVIDA_PELO_USUARIO_RECEBEDOR",
+              "REMOVIDA_PELO_PSP"
+            ],
+            "description": "Filter by status"
+          },
+          "paginacao_paginaAtual": {
+            "type": "number",
+            "description": "Page number (0-based)"
+          },
+          "paginacao_itensPorPagina": {
+            "type": "number",
+            "description": "Items per page"
+          }
+        },
+        "required": [
+          "inicio",
+          "fim"
+        ]
+      }
+    },
+    {
+      "name": "update_cob",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "txid": {
+            "type": "string",
+            "description": "Transaction ID"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ATIVA",
+              "REMOVIDA_PELO_USUARIO_RECEBEDOR"
+            ],
+            "description": "New status (use REMOVIDA_PELO_USUARIO_RECEBEDOR to cancel)"
+          },
+          "valor": {
+            "type": "object",
+            "description": "Updated amount",
+            "properties": {
+              "original": {
+                "type": "string",
+                "description": "Amount in BRL"
+              }
+            }
+          },
+          "solicitacaoPagador": {
+            "type": "string",
+            "description": "Updated message to payer (max 140 chars)"
+          },
+          "calendario": {
+            "type": "object",
+            "properties": {
+              "expiracao": {
+                "type": "number",
+                "description": "Expiration in seconds"
+              }
+            }
+          }
+        },
+        "required": [
+          "txid"
+        ]
+      }
+    },
+    {
+      "name": "create_cobv",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "txid": {
+            "type": "string",
+            "description": "Transaction ID (26-35 alphanumeric chars)"
+          },
+          "calendario": {
+            "type": "object",
+            "description": "Charge timing with due date",
+            "properties": {
+              "dataDeVencimento": {
+                "type": "string",
+                "description": "Due date (YYYY-MM-DD)"
+              },
+              "validadeAposVencimento": {
+                "type": "number",
+                "description": "Days valid after due date"
+              }
+            },
+            "required": [
+              "dataDeVencimento"
+            ]
+          },
+          "devedor": {
+            "type": "object",
+            "description": "Debtor (payer) info — required for cobv",
+            "properties": {
+              "cpf": {
+                "type": "string",
+                "description": "CPF (11 digits)"
+              },
+              "cnpj": {
+                "type": "string",
+                "description": "CNPJ (14 digits)"
+              },
+              "nome": {
+                "type": "string",
+                "description": "Payer name"
+              }
+            },
+            "required": [
+              "nome"
+            ]
+          },
+          "valor": {
+            "type": "object",
+            "description": "Charge amount",
+            "properties": {
+              "original": {
+                "type": "string",
+                "description": "Amount in BRL (e.g., '100.00')"
+              }
+            },
+            "required": [
+              "original"
+            ]
+          },
+          "chave": {
+            "type": "string",
+            "description": "Receiver Pix key"
+          },
+          "solicitacaoPagador": {
+            "type": "string",
+            "description": "Message to payer (max 140 chars)"
+          }
+        },
+        "required": [
+          "txid",
+          "calendario",
+          "devedor",
+          "valor",
+          "chave"
+        ]
+      }
+    },
+    {
+      "name": "list_cobv",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "inicio": {
+            "type": "string",
+            "description": "Start date (ISO 8601)"
+          },
+          "fim": {
+            "type": "string",
+            "description": "End date (ISO 8601)"
+          },
+          "cpf": {
+            "type": "string",
+            "description": "Filter by payer CPF"
+          },
+          "cnpj": {
+            "type": "string",
+            "description": "Filter by payer CNPJ"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ATIVA",
+              "CONCLUIDA",
+              "REMOVIDA_PELO_USUARIO_RECEBEDOR",
+              "REMOVIDA_PELO_PSP"
+            ],
+            "description": "Filter by status"
+          },
+          "paginacao_paginaAtual": {
+            "type": "number",
+            "description": "Page number (0-based)"
+          },
+          "paginacao_itensPorPagina": {
+            "type": "number",
+            "description": "Items per page"
+          }
+        },
+        "required": [
+          "inicio",
+          "fim"
+        ]
+      }
+    },
+    {
+      "name": "update_cobv",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "txid": {
+            "type": "string",
+            "description": "Transaction ID"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ATIVA",
+              "REMOVIDA_PELO_USUARIO_RECEBEDOR"
+            ],
+            "description": "New status"
+          },
+          "valor": {
+            "type": "object",
+            "properties": {
+              "original": {
+                "type": "string",
+                "description": "Amount in BRL"
+              }
+            }
+          },
+          "calendario": {
+            "type": "object",
+            "properties": {
+              "dataDeVencimento": {
+                "type": "string",
+                "description": "Due date (YYYY-MM-DD)"
+              },
+              "validadeAposVencimento": {
+                "type": "number",
+                "description": "Days valid after due date"
+              }
+            }
+          },
+          "solicitacaoPagador": {
+            "type": "string",
+            "description": "Message to payer (max 140 chars)"
+          }
+        },
+        "required": [
+          "txid"
+        ]
+      }
+    },
+    {
+      "name": "get_pix",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "e2eid": {
+            "type": "string",
+            "description": "End-to-end ID of the Pix payment"
+          }
+        },
+        "required": [
+          "e2eid"
+        ]
+      }
+    },
+    {
+      "name": "list_pix_received",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "inicio": {
+            "type": "string",
+            "description": "Start date (ISO 8601)"
+          },
+          "fim": {
+            "type": "string",
+            "description": "End date (ISO 8601)"
+          },
+          "txid": {
+            "type": "string",
+            "description": "Filter by txid"
+          },
+          "cpf": {
+            "type": "string",
+            "description": "Filter by payer CPF"
+          },
+          "cnpj": {
+            "type": "string",
+            "description": "Filter by payer CNPJ"
+          },
+          "paginacao_paginaAtual": {
+            "type": "number",
+            "description": "Page number (0-based)"
+          },
+          "paginacao_itensPorPagina": {
+            "type": "number",
+            "description": "Items per page"
+          }
+        },
+        "required": [
+          "inicio",
+          "fim"
+        ]
+      }
+    },
+    {
+      "name": "create_devolucao",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "e2eid": {
+            "type": "string",
+            "description": "End-to-end ID of the original Pix"
+          },
+          "id": {
+            "type": "string",
+            "description": "Refund ID (35 alphanumeric chars, client-generated)"
+          },
+          "valor": {
+            "type": "string",
+            "description": "Refund amount in BRL (e.g., '50.00')"
+          },
+          "natureza": {
+            "type": "string",
+            "enum": [
+              "ORIGINAL",
+              "RETIRADA"
+            ],
+            "description": "Refund nature (default: ORIGINAL)"
+          },
+          "descricao": {
+            "type": "string",
+            "description": "Refund description (max 140 chars)"
+          }
+        },
+        "required": [
+          "e2eid",
+          "id",
+          "valor"
+        ]
+      }
+    },
+    {
+      "name": "get_devolucao",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "e2eid": {
+            "type": "string",
+            "description": "End-to-end ID of the original Pix"
+          },
+          "id": {
+            "type": "string",
+            "description": "Refund ID"
+          }
+        },
+        "required": [
+          "e2eid",
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "create_pix_key",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "CPF",
+              "CNPJ",
+              "PHONE",
+              "EMAIL",
+              "EVP"
+            ],
+            "description": "Key type (EVP = random key)"
+          },
+          "chave": {
+            "type": "string",
+            "description": "Key value (omit for EVP to auto-generate)"
+          }
+        },
+        "required": [
+          "tipo"
+        ]
+      }
+    },
+    {
+      "name": "get_pix_key",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "chave": {
+            "type": "string",
+            "description": "Pix key to look up"
+          }
+        },
+        "required": [
+          "chave"
+        ]
+      }
+    },
+    {
+      "name": "list_pix_keys",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "paginacao_paginaAtual": {
+            "type": "number",
+            "description": "Page number (0-based)"
+          },
+          "paginacao_itensPorPagina": {
+            "type": "number",
+            "description": "Items per page"
+          }
+        }
+      }
+    },
+    {
+      "name": "request_key_portability",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "chave": {
+            "type": "string",
+            "description": "Pix key to port"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "CPF",
+              "CNPJ",
+              "PHONE",
+              "EMAIL",
+              "EVP"
+            ],
+            "description": "Key type"
+          },
+          "motivo": {
+            "type": "string",
+            "enum": [
+              "PORTABILIDADE",
+              "REIVINDICACAO"
+            ],
+            "description": "Request reason (default: PORTABILIDADE)"
+          }
+        },
+        "required": [
+          "chave",
+          "tipo"
+        ]
+      }
+    },
+    {
+      "name": "resolve_key_claim",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "description": "Claim ID"
+          },
+          "decisao": {
+            "type": "string",
+            "enum": [
+              "CONFIRMADA",
+              "CANCELADA"
+            ],
+            "description": "Resolution decision"
+          }
+        },
+        "required": [
+          "claim_id",
+          "decisao"
+        ]
+      }
+    },
+    {
+      "name": "set_webhook",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "chave": {
+            "type": "string",
+            "description": "Pix key"
+          },
+          "webhookUrl": {
+            "type": "string",
+            "description": "HTTPS webhook endpoint URL"
+          }
+        },
+        "required": [
+          "chave",
+          "webhookUrl"
+        ]
+      }
+    },
+    {
+      "name": "delete_webhook",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "chave": {
+            "type": "string",
+            "description": "Pix key"
+          }
+        },
+        "required": [
+          "chave"
+        ]
+      }
+    }
+  ]
+}

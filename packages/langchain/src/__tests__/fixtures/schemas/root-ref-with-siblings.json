@@ -1,0 +1,25 @@
+{
+  "$ref": "#/$defs/Base",
+  "description": "Base plus an extra field",
+  "properties": {
+    "extra": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "extra"
+  ],
+  "$defs": {
+    "Base": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  }
+}

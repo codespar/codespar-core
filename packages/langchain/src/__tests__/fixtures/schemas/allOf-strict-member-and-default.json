@@ -1,0 +1,21 @@
+{
+  "allOf": [
+    {
+      "type": "object",
+      "properties": {
+        "a": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "properties": {
+        "b": {
+          "type": "number",
+          "default": 5
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "t": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#"
+        }
+      ],
+      "default": [
+        {}
+      ]
+    }
+  }
+}

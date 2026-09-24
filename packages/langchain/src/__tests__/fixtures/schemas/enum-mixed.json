@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "v": {
+      "enum": [
+        "a",
+        1,
+        null
+      ]
+    }
+  },
+  "required": [
+    "v"
+  ]
+}
