@@ -105,6 +105,7 @@ codespar init my-agent
 | `connect start <server>` | Start an OAuth Connect Link flow (add `--open`) |
 | `connect revoke <server>` | Revoke a connection |
 | `logs tail` | Stream tool-call logs in real time (SSE) |
+| `audit replay` | Ask the API whether the audit chain is verified over an interval (`--from`/`--to`, ISO 8601) and render the verdict; the chain check runs server-side, exit 1 when the verdict is not `verified` |
 | `init <name> [--template <slug>]` | Scaffold a new commerce agent from a template; `init --list` shows them |
 
 ## Global flags

@@ -469,7 +469,11 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
     since: "2026-09-10",
   },
   "audit-events": {
-    reason: "Audit event stream, incidents and config. Not in onda 4 of the matrix.",
+    reason:
+      "Chain verification is covered by the hand-written `codespar audit replay`, which " +
+      "composes GET /v1/audit-events/health with GET /v1/audit-events into an interval " +
+      "verdict (core#180). The rest of the family — anchors, export, incidents and config " +
+      "— is not in onda 4 of the matrix.",
     since: "2026-09-10",
   },
   approvals: {
