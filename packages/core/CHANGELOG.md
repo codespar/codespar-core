@@ -1,5 +1,60 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.7 — 2026-09-24
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: 285 -> 287 operacoes, duas
+  rotas novas e nenhuma removida. Nove operacoes mudaram de forma ou de texto,
+  e `components.schemas` ganha `PaymentActor`.
+
+  Rotas novas:
+
+      GET  /.well-known/codespar-receipt-keys.json   JWKS publico das chaves
+                                                     Ed25519 que selam recibos
+      POST /v1/audit-events/verify                   veredito da cadeia num
+                                                     intervalo (`verified` |
+                                                     `broken` | `unverified`)
+
+  Recibos agenticos (`GET /v1/consumers/{consumerId}/receipts`,
+  `GET /v1/consumers/receipts/{id}`, `POST /v1/consumers/receipts/{id}/delivery`)
+  ganham `actor`, `receipt_sig_ed25519` e `receipt_sig_kid`, os tres
+  obrigatorios (anulaveis) na resposta.
+
+  Kids com namespace de ambiente (enterprise #1643, ent#1641): o documento de
+  chaves ganha `key_namespace` (obrigatorio) e todo kid documentado passa de
+  `<did>#<n>` para `<did>#<namespace>-<n>` — recibos (`receipt_sig_kid`),
+  registro de agente (`POST /v1/agents`, `POST /v1/orgs/{orgId}/agents`) e o
+  `{kid}` das duas rotas de revogacao. Um kid ausente do documento buscado
+  significa recibo de outro ambiente (`unknown_key`), nao recibo adulterado.
+
+  Quem disparou o gasto (`PaymentActor`, opcional: `agent` com `on_behalf_of`
+  ou `human` com `channel`):
+
+      POST /v1/consumers/mandates/{id}/spend       `actor` no corpo; novo 400
+      POST /v1/consumer-payments/execute           `actor_consumer_mismatch`
+      POST /v1/consumer-payments/execute-stream
+
+  `POST /v1/consents/{token}/submit`: `attestation.evidence` (canal, ids da
+  mensagem/sessao, ip, user agent, geo, contato); novo 400
+  `attestation_evidence_invalid` e novo 409 `contact_verification_required`.
+
+  `POST /v1/webhook-endpoints` e `POST /v1/triggers`: `event` passa a
+  documentar o casamento exato (sem prefixo, sem curinga) e a lista de eventos
+  que este build emite.
+
+- Cada operacao declara o escopo de chave que exige (enterprise #1642): 273
+  ganham `security: [{ bearerAuth: ["<escopo>"] }]` e 274 ganham
+  `x-codespar-scope` (`GET /v1/whoami` declara `"none"` e herda o `security`
+  global). As 13 rotas publicas (`/.well-known/*`, `/oauth/*`, os documentos
+  `openapi.json`/`meta-tools.json` e as duas rotas de consentimento por token)
+  declaram `security: []` e nenhum escopo. Isso nao muda os tipos gerados:
+  `src/generated/openapi.ts` nao representa `security`.
+
+- A CLI nao deriva comando novo (97 derivados seguem 97): as duas rotas novas
+  caem em grupos sem comando derivado (`audit-events`, `.well-known`). Nao muda
+  de conteudo: depende de `@codespar/sdk` por faixa.
+
 ## 0.16.6 — 2026-09-23
 
 ### Changed

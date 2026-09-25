@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 5a7f86d6fdf069c1e2ea7c0adef59362087f01c1e849bd8630305408ff6c152b, fetched 2026-09-23T23:05:33.042Z
+// Source: openapi-snapshot.json (sha256 eaea0786c0ae2af755059d93cd8330397398e0bdeac43112206d9d0f22b74d3c, fetched 2026-09-25T02:44:14.269Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -13,6 +13,7 @@ import type { ApiOperationRef } from "../api/types.js";
  */
 export const API_OPERATIONS = [
   { method: "get", path: "/.well-known/oauth-protected-resource", body: null, accept: "application/json", deprecated: false },
+  { method: "get", path: "/.well-known/codespar-receipt-keys.json", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/.well-known/oauth-authorization-server", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/oauth/register", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/oauth/authorize", body: null, accept: "text/html", deprecated: false },
@@ -76,6 +77,7 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/audit-events/export", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/audit-events", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/audit-events/health", body: null, accept: "application/json", deprecated: false },
+  { method: "post", path: "/v1/audit-events/verify", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/audit-events/incidents", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/audit-events/incidents/{id}/acknowledge", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/audit-events/config", body: null, accept: "application/json", deprecated: false },
