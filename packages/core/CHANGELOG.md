@@ -21,6 +21,13 @@
   ganham `actor`, `receipt_sig_ed25519` e `receipt_sig_kid`, os tres
   obrigatorios (anulaveis) na resposta.
 
+  Kids com namespace de ambiente (enterprise #1643, ent#1641): o documento de
+  chaves ganha `key_namespace` (obrigatorio) e todo kid documentado passa de
+  `<did>#<n>` para `<did>#<namespace>-<n>` — recibos (`receipt_sig_kid`),
+  registro de agente (`POST /v1/agents`, `POST /v1/orgs/{orgId}/agents`) e o
+  `{kid}` das duas rotas de revogacao. Um kid ausente do documento buscado
+  significa recibo de outro ambiente (`unknown_key`), nao recibo adulterado.
+
   Quem disparou o gasto (`PaymentActor`, opcional: `agent` com `on_behalf_of`
   ou `human` com `channel`):
 

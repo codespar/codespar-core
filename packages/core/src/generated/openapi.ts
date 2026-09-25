@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 c308078a0726749fa9e58f5c824c882591b48e253768e090bb9d5bb54e230b7b, fetched 2026-09-25T02:00:06.289Z
+// Source: openapi-snapshot.json (sha256 eaea0786c0ae2af755059d93cd8330397398e0bdeac43112206d9d0f22b74d3c, fetched 2026-09-25T02:44:14.269Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -63,6 +63,8 @@ export interface paths {
          *     To verify: take `receipt_sig_kid` from the receipt, find the key with that `kid` below, build `codespar-receipt:v1:<receipt_id>:<chain>` and check the base64url signature over those UTF-8 bytes with any Ed25519 verifier. `x` is the raw 32-byte public key, base64url (RFC 8037).
          *
          *     Keys ROTATE and a retired key stays listed — that is what keeps an old receipt verifiable. A revoked key is removed entirely: its private half is assumed compromised, so signatures it made are worth nothing. An empty `keys` means this deployment publishes none, which is consistent with its receipts carrying a null `receipt_sig_kid`.
+         *
+         *     Every `kid` names the DEPLOYMENT that minted it — `<did>#<namespace>-<n>`, and `key_namespace` repeats the namespace this document serves. A `receipt_sig_kid` that is ABSENT here therefore means the receipt came from another environment (a sandbox receipt checked against production, most often), which is `unknown_key` and NOT a tampered receipt. Before ent#1641 the id was `<did>#<n>` in every environment, so receipts sealed then carry an id that more than one document may claim; they keep verifying against the document of the environment that issued them and nowhere else.
          */
         get: {
             parameters: {
@@ -81,6 +83,8 @@ export interface paths {
                     content: {
                         "application/json": {
                             issuer: string;
+                            /** @description The deployment whose keys this document serves, and the namespace every `kid` below carries. A kid from another namespace is unknown here, not forged. */
+                            key_namespace: string;
                             algorithm: string;
                             /** @description The template of the bytes a signature covers, stated so a verifier needs nothing else from us. */
                             signing_string: string;
@@ -18119,7 +18123,7 @@ export interface paths {
                                 receipt_sig: string;
                                 /** @description base64url Ed25519 signature over `codespar-receipt:v1:<receipt_id>:<chain>`, made with the platform issuer key. Verifiable by anyone: fetch `/.well-known/codespar-receipt-keys.json` (no credential), take the key whose `kid` is the one below, and check the signature over that string. Null on a receipt sealed before this existed, and on one sealed while the key could not be resolved — `receipt_sig` is the HMAC seal either way and is unaffected. */
                                 receipt_sig_ed25519: string | null;
-                                /** @description Which published key signed it, `<did:web:...>#<n>`. Keys rotate and a retired key stays published, so an old receipt names its own key rather than leaving a verifier to try each one. */
+                                /** @description Which published key signed it, `<did:web:...>#<namespace>-<n>`. Keys rotate and a retired key stays published, so an old receipt names its own key rather than leaving a verifier to try each one. The namespace names the DEPLOYMENT that minted the key (ent#1641), so a kid absent from the key document you fetched means the receipt came from another environment — `unknown_key`, not a tampered receipt. */
                                 receipt_sig_kid: string | null;
                                 exceptions: {
                                     code: string;
@@ -18242,7 +18246,7 @@ export interface paths {
                             receipt_sig: string;
                             /** @description base64url Ed25519 signature over `codespar-receipt:v1:<receipt_id>:<chain>`, made with the platform issuer key. Verifiable by anyone: fetch `/.well-known/codespar-receipt-keys.json` (no credential), take the key whose `kid` is the one below, and check the signature over that string. Null on a receipt sealed before this existed, and on one sealed while the key could not be resolved — `receipt_sig` is the HMAC seal either way and is unaffected. */
                             receipt_sig_ed25519: string | null;
-                            /** @description Which published key signed it, `<did:web:...>#<n>`. Keys rotate and a retired key stays published, so an old receipt names its own key rather than leaving a verifier to try each one. */
+                            /** @description Which published key signed it, `<did:web:...>#<namespace>-<n>`. Keys rotate and a retired key stays published, so an old receipt names its own key rather than leaving a verifier to try each one. The namespace names the DEPLOYMENT that minted the key (ent#1641), so a kid absent from the key document you fetched means the receipt came from another environment — `unknown_key`, not a tampered receipt. */
                             receipt_sig_kid: string | null;
                             exceptions: {
                                 code: string;
@@ -20220,7 +20224,7 @@ export interface paths {
                             receipt_sig: string;
                             /** @description base64url Ed25519 signature over `codespar-receipt:v1:<receipt_id>:<chain>`, made with the platform issuer key. Verifiable by anyone: fetch `/.well-known/codespar-receipt-keys.json` (no credential), take the key whose `kid` is the one below, and check the signature over that string. Null on a receipt sealed before this existed, and on one sealed while the key could not be resolved — `receipt_sig` is the HMAC seal either way and is unaffected. */
                             receipt_sig_ed25519: string | null;
-                            /** @description Which published key signed it, `<did:web:...>#<n>`. Keys rotate and a retired key stays published, so an old receipt names its own key rather than leaving a verifier to try each one. */
+                            /** @description Which published key signed it, `<did:web:...>#<namespace>-<n>`. Keys rotate and a retired key stays published, so an old receipt names its own key rather than leaving a verifier to try each one. The namespace names the DEPLOYMENT that minted the key (ent#1641), so a kid absent from the key document you fetched means the receipt came from another environment — `unknown_key`, not a tampered receipt. */
                             receipt_sig_kid: string | null;
                             exceptions: {
                                 code: string;
@@ -24816,7 +24820,7 @@ export interface paths {
                         "application/json": {
                             /** @description `did:web:` derived from the org and the handle. */
                             agent_did: string;
-                            /** @description `<agent_did>#<n>`. */
+                            /** @description `<agent_did>#<namespace>-<n>` — the namespace names the deployment that minted the key (ent#1641). */
                             kid: string;
                             /** @description Raw 32-byte Ed25519 public key, base64. */
                             pubkey: string;
@@ -25029,7 +25033,7 @@ export interface paths {
          *
          *     Takes no body. Unlike rotation, this is the verb that stops a key from counting: the mandate spend gate resolves the key an existing mandate was signed with and refuses the spend once that key is revoked, so revoking reaches BACKWARDS into mandates already issued.
          *
-         *     `{kid}` is a full key id of the form `<did:web:...>#<n>`, and its `#` MUST be percent-encoded as `%23` to survive as one path segment. This revokes ONE key; it does not revoke the agent identity.
+         *     `{kid}` is a full key id of the form `<did:web:...>#<namespace>-<n>`, and its `#` MUST be percent-encoded as `%23` to survive as one path segment. This revokes ONE key; it does not revoke the agent identity.
          *
          *     Revoking an already-revoked key is 409 rather than a no-op, so a retry after a timeout is distinguishable from a first call.
          */
@@ -25041,7 +25045,7 @@ export interface paths {
                     orgId: string;
                     /** @description The registration handle, not the `did:web`. */
                     agentId: string;
-                    /** @description `<did:web:...>#<n>`, with the `#` percent-encoded as `%23`. */
+                    /** @description `<did:web:...>#<namespace>-<n>`, with the `#` percent-encoded as `%23`. */
                     kid: string;
                 };
                 cookie?: never;
@@ -33105,7 +33109,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             agent_did: string;
-                            /** @description `<did>#<n>`, where n is the key's ordinal. */
+                            /** @description `<did>#<namespace>-<n>`: the namespace names the deployment that minted the key (ent#1641), n is its ordinal. */
                             kid: string;
                             /** @description base64. */
                             pubkey: string;
@@ -34001,7 +34005,7 @@ export interface paths {
          *
          *     It also changes what counterparties can see. The published `did:web` document lists the identity's keys where status is not `revoked`, so a REVOKED key disappears from it while a RETIRED one stays and keeps verifying its own past issuance. Revoking is the verb for a key you believe is compromised; rotating is the verb for hygiene.
          *
-         *     `{kid}` is a full kid (`<did>#<n>`), and its `#` MUST be percent-encoded as `%23` so the whole kid arrives as one path segment.
+         *     `{kid}` is a full kid (`<did>#<namespace>-<n>`), and its `#` MUST be percent-encoded as `%23` so the whole kid arrives as one path segment.
          *
          *     Idempotency is NOT offered: revoking an already-revoked key is 409, not a repeat of the 200.
          */
