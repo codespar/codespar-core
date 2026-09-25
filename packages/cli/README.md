@@ -154,16 +154,27 @@ one-line description per template.
 | `ecommerce-checkout` | Node + Claude — full Complete Loop |
 | `streaming-chat` | Next.js + Vercel AI — token-by-token streaming |
 | `multi-tenant` | Next.js + OpenAI — one API key, N tenants |
-| `bills-agent` | Starter kit — the titular's agent pays the month's bills under a signed mandate (`@codespar/agent-core`) |
-| `collections-agent` | Starter kit — the merchant's agent collects: bolepix per instalment, closes on paid/expired (`@codespar/agent-core`) |
+<!-- kit-templates:start -->
+| `bills-agent` | Starter kit — The consumer delegates the month's bills to an agent that pays under a signed mandate: per-payment cap, monthly cap, named payees, expiry. Every payment returns a receipt. |
+| `collections-agent` | Starter kit — The merchant's agent that collects: agrees terms with the payer inside a negotiation envelope, issues one bolepix per instalment with an idempotency key, presents the QR and the copy-and-paste in the conversation, and closes the cycle on commerce.charge.paid or commerce.charge.expired. |
+| `hello-agent` | Starter kit — The worked example of the codespar-agent-builder skill: a read-only agent that reads the month's bills and cannot pay. Built from the five files, the packs and one kit module. |
+| `supplier-payments-agent` | Starter kit — A company delegates its suppliers, commissions and payroll to an agent that pays them in batches under one signed mandate. A batch is a loop of executions: one refusal does not stop the others, and re-running it pays nobody twice. |
+<!-- kit-templates:end -->
+
+The kit rows between those markers are written by `npm run sync:kit-templates`
+from each agent's own `description`. Do not edit them by hand: the next sync
+overwrites them, which is the point — a hand-kept list goes stale on the next
+agent that lands.
 
 ### Starter-kit templates
 
-`bills-agent` and `collections-agent` are the agents of
+The kit templates are the agents of
 [codespar/agent-starter-kits](https://github.com/codespar/agent-starter-kits),
-copied into this package at release time. `init` never fetches them: what it
-scaffolds is what the published tarball carries, so it works offline and two
-installs of the same CLI version scaffold the same bytes.
+copied into this package at release time — every agent the synced ref carries,
+discovered rather than listed, which is why the table above is generated. `init`
+never fetches them: what it scaffolds is what the published tarball carries, so
+it works offline and two installs of the same CLI version scaffold the same
+bytes.
 
 ```
 codespar init my-bills --template bills-agent
@@ -174,15 +185,24 @@ npm run consent -- --yes
 npm start
 ```
 
-The scaffold mirrors the kits repository: `agents/<name>/` and
-`packages/agent-core/` are the kits' own files, byte for byte, under a
-generated root `package.json` that links them as an npm workspace.
-`@codespar/agent-core` is not published on npm yet, so it travels vendored,
-and the agent's own `"@codespar/agent-core": "0.1.0"` pin resolves to that
-copy exactly as it does in the kits repository. Nothing inside the kit is
-rewritten: `agent.yaml` keeps the kits' `cli:` and `mcp:` pins, and every
-relative path (`../../tsconfig.base.json`, the `.env` the agent reads from
-its own directory, the paths its README names) keeps resolving.
+The scaffold mirrors the kits repository: `agents/<name>/` and the kits-local
+packages that agent needs are the kits' own files, byte for byte, under a
+generated root `package.json` that links them as npm workspaces. None of those
+packages is published on npm — `@codespar/agent-core` and, since the runner was
+split out of it, `@codespar/agent-runtime`, which owns the `codespar-agent` bin
+every agent script calls — so they travel vendored and the agent's own pins
+resolve to those copies exactly as they do in the kits repository. Which ones to
+vendor is walked from the agent's dependencies, transitively, and a build that
+would leave one behind is refused rather than shipped: a pin with no directory
+behind it sends `npm install` to the registry for a package that was never
+published there. Nothing inside the kit is rewritten: `agent.yaml` keeps the
+kits' `cli:` and `mcp:` pins, and every relative path
+(`../../tsconfig.base.json`, the `.env` the agent reads from its own directory,
+the paths its README names) keeps resolving.
+
+The template's own root scripts are narrowed to the one agent, and its `check`
+is deliberately NOT the kits root's: the kits root runs repo-level gates over
+files a single-agent template does not carry.
 
 `templates/kits.lock.json` records which kits ref was synced (tag or commit),
 the commit it resolved to, and a content hash per template. The release gate
@@ -194,9 +214,15 @@ bumped without a sync does not ship.
 **To bump the kits** to a new tag or commit, from `packages/cli`:
 
 ```
-npm run sync:kit-templates -- --ref <tag-or-sha>   # rewrites templates/<kit>/ and the lock
-git add templates && git commit
+npm run sync:kit-templates -- --ref <tag-or-sha>   # rewrites templates/<kit>/, the lock and the README rows
+git add templates README.md && git commit
 ```
+
+A bump can bring agents that did not exist before, so it can add templates; the
+sync writes the table above and the lock, and `codespar init --list` reads the
+lock. Run the e2e job (`CODESPAR_CLI_KIT_E2E=1`) on a bump: it is the only gate
+that proves a freshly generated template still installs and passes its own
+`npm run check`, for every template the lock names.
 
 then bump this package's version (new template content is at least a minor).
 Without `--ref` the sync re-runs at the locked ref, which is the way to

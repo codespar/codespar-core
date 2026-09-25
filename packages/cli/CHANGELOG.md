@@ -1,5 +1,88 @@
 # @codespar/cli — changelog
 
+## 0.16.0 — 2026-09-25
+
+### Added
+
+- **Two new starter-kit templates**, `hello-agent` and
+  `supplier-payments-agent`, from the kits bump below. `hello-agent` is the
+  read-only worked example of the `codespar-agent-builder` skill: it reads the
+  month's bills and cannot pay, which makes it the place to start when the goal
+  is to WRITE an agent rather than run a finished one.
+  `supplier-payments-agent` pays suppliers, commissions and payroll in batches
+  under one mandate, one execution per line.
+
+  Which agents become templates is discovered from the kits repository, not
+  listed here, so the next agent that lands arrives without anyone editing a
+  list. The `--template` help and the README's template table are now derived
+  from that same source, one line per template taken from each agent's own
+  `description`.
+
+### Changed
+
+- **Kit templates bumped to `codespar/agent-starter-kits@8f130b7`**, 82 commits
+  on from the locked `7782232`. `codespar init --template bills-agent` was
+  scaffolding the pre-refactor agent: no `inspect`, no `verify`, no WhatsApp
+  channel, and the runner copied into the agent instead of shared.
+
+  What a scaffolded kit gains: the shared runner in `packages/agent-runtime`,
+  `codespar-agent inspect <run-id>` (the proof bundle read back as a timeline,
+  with `--json` and a self-contained `--html`), `codespar-agent verify
+  <receipt-file>`, a durable claim for work larger than one execution, and the
+  devcontainer entry points.
+
+- **A receipt's Ed25519 seal reaches the scaffolded kits.** The API now signs
+  every agentic receipt with Ed25519 ALONGSIDE the existing HMAC seal
+  (`codespar/codespar-enterprise` f070e3ff) and publishes the public keys at
+  `/.well-known/codespar-receipt-keys.json` with no credential, so
+  `npm run verify -- <receipt-file>` checks a receipt with stock `node:crypto`,
+  no key and no API call. `bills-agent` and `supplier-payments-agent` therefore
+  declare `receipt-verification: sandbox` where they used to say `blocked`.
+
+  Three limits the kits' own copy states and this entry repeats rather than
+  softens: it holds only for receipts sealed from now on, because there is no
+  backfill and an older receipt reads `null` in `receipt_sig_ed25519` for good;
+  a receipt must be checked against the key document of the deployment that
+  issued it, since every deployment publishes its own key under the same `kid`;
+  and the HMAC seal is unchanged, with Ed25519 additional to it. What the
+  signature attests is that CodeSpar sealed that receipt for a settlement
+  CodeSpar executed, not that a bank moved the money.
+
+  `collections-agent` stays `receipt-verification: blocked`, now for the reason
+  that survives: the API seals no record for a paid charge, so there is no chain
+  and no signature to check. Tracked in
+  [ent#1642](https://github.com/codespar/codespar-enterprise/issues/1642).
+
+### Fixed
+
+- **A template whose vendored packages were incomplete no longer reports
+  success.** `sync-kit-templates.mjs` vendored one hard-coded directory,
+  `packages/agent-core`, and verified one hard-coded pin. After the kits split
+  the shared runner into `packages/agent-runtime`, a build from that hard-coded
+  list returned SUCCESS while producing a template whose `npm install` dies with
+  `404 @codespar/agent-runtime` — the package is `private: true` and was never
+  published — and whose every script calls the `codespar-agent` bin that lives
+  in it.
+
+  Which packages to vendor is now walked from the agent's dependencies over the
+  kits' own `packages/*`, transitively, and a separate guard refuses a built
+  tree that still names a kits-local package it does not carry. The pin check
+  covers transitive packages too, so a runtime pinning a core version the tree
+  does not have is refused at build time rather than at install time.
+
+- **A scaffold's `npm run check` no longer runs the kits' repo-level gates.**
+  The template copied the kits root's `check` verbatim, which became
+  `node scripts/check-plugin.mjs && npm run check --workspaces …`; `scripts/` is
+  not part of a template, and that script checks plugin manifests a single-agent
+  scaffold has no reason to carry, so `npm run check` died on a missing file
+  before reaching the agent's own check. The template's `check` is now the
+  workspaces half, which is the half that is about the agent.
+
+- The `--template` help no longer names two kit slugs in a hand-written
+  sentence. It could not throw before and still cannot: it is built while the
+  command tree is assembled, so an unreadable lock degrades to a generic line
+  rather than breaking every other command.
+
 ## 0.15.0 — 2026-09-24
 
 ### Added
