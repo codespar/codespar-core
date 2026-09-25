@@ -1,0 +1,30 @@
+{
+  "name": "{{name}}",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The worked example of the codespar-agent-builder skill: a read-only agent that reads the month's bills and cannot pay. Built from the five files, the packs and one kit module.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/agent-core",
+    "packages/agent-runtime",
+    "agents/hello-agent"
+  ],
+  "scripts": {
+    "start": "npm start --workspace=agents/hello-agent --",
+    "check": "npm run check --workspaces --if-present --",
+    "test": "vitest run --pool=forks --maxWorkers=1",
+    "typecheck": "tsc --noEmit -p packages/agent-core/tsconfig.json && tsc --noEmit -p packages/agent-runtime/tsconfig.json && tsc --noEmit -p agents/hello-agent/tsconfig.json",
+    "eval": "npm run eval --workspace=agents/hello-agent --",
+    "inspect": "npm run inspect --workspace=agents/hello-agent --"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

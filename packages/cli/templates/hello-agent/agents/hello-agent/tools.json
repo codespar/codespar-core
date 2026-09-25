@@ -1,0 +1,11 @@
+{
+  "meta_tools": [],
+  "local_tools": [
+    {
+      "name": "list_bills",
+      "effect": "read",
+      "description": "The bills of the current month: payee alias, name, amount in BRL cents and due date. Read-only.",
+      "input_schema": { "type": "object", "properties": {} }
+    }
+  ]
+}

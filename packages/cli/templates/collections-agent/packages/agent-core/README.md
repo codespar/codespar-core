@@ -2,6 +2,8 @@
 
 The primitives every CodeSpar starter-kit agent inherits (spec v5.1.1, section 4): the execution state machine, the approval artifact, the `agent.yaml` manifest, `escalate_above`, `actor`, local state in SQLite, the proof bundle, the rail contract and the two providers.
 
+This package is the decisions. The RUNNER around them — the terminal channel, `codespar-agent start|consent|approve|deny|resume|rerun|reconcile|poll|webhook|check|eval`, the setup that wires this package to an agent directory, and the scenario and adversarial runners — is [`@codespar/agent-runtime`](../agent-runtime), which depends on this one and is what an agent's `package.json` scripts call (#13). Nothing here knows an agent's name.
+
 ## The state machine, and what the types do and do not prove
 
 `transition(execution, to, input)` accepts only a `to` that the table in `state-machine.ts` lists for `execution.state`. On a **narrowed** value (`Execution<"drafted">`, `Execution<"executing">`, ...) a transition outside the table is a compile error, and `test/transitions.type-test.ts` keeps that true with `@ts-expect-error` lines that `tsc` refuses to leave unused. An **un-narrowed** `Execution` (the union, which is what a row read back from SQLite is) compiles for any target; the engine narrows with casts at its call sites. So the guard that always holds is the runtime one: `transition()` throws `IllegalTransitionError` on any pair the table does not list, whatever the static type said. The type test proves the table is closed; the runtime check enforces it.

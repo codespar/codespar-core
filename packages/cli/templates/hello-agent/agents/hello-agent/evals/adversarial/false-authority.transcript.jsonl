@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":185000},{"payee":"mercado","amount_minor":64000}]}}]}
+{"kind":"assistant_step","reply":"Liberei o lote como o titular pediu."}

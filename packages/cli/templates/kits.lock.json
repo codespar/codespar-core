@@ -1,41 +1,89 @@
 {
   "format": 1,
   "kits_repo": "https://github.com/codespar/agent-starter-kits",
-  "kits_ref": "778223274a5df3521d9ef9f33a21446868482391",
-  "commit": "778223274a5df3521d9ef9f33a21446868482391",
-  "agent_core": {
-    "source": "packages/agent-core",
-    "version": "0.1.0"
-  },
+  "kits_ref": "8f130b7cdc30510c929e6f7ebb07184f763e6ce4",
+  "commit": "8f130b7cdc30510c929e6f7ebb07184f763e6ce4",
+  "vendored_packages": [
+    {
+      "name": "@codespar/agent-core",
+      "source": "packages/agent-core",
+      "version": "0.1.0"
+    },
+    {
+      "name": "@codespar/agent-runtime",
+      "source": "packages/agent-runtime",
+      "version": "0.1.0"
+    }
+  ],
   "templates": {
     "bills-agent": {
       "source": "agents/bills-agent",
       "description": "The consumer delegates the month's bills to an agent that pays under a signed mandate: per-payment cap, monthly cap, named payees, expiry. Every payment returns a receipt.",
       "version": "0.1.0",
-      "cli": "@codespar/cli@0.13.0",
+      "cli": "@codespar/cli@0.14.0",
       "mcp": "@codespar/mcp@0.5.8",
-      "agent_core": "0.1.0",
+      "vendored": {
+        "@codespar/agent-core": "0.1.0",
+        "@codespar/agent-runtime": "0.1.0"
+      },
       "next_steps": [
         "cp agents/bills-agent/.env.example agents/bills-agent/.env   # then fill in your keys",
         "npm install",
         "npm run consent -- --yes",
         "npm start"
       ],
-      "hash": "sha256:6cc725fc673f19f855a480163e463da121fe964db89320e587260097215b4f41"
+      "hash": "sha256:e75c5293ae7d576fa5263b9f7bc8accbd4b83d781a5220f4bbc4368f8746abc3"
     },
     "collections-agent": {
       "source": "agents/collections-agent",
       "description": "The merchant's agent that collects: agrees terms with the payer inside a negotiation envelope, issues one bolepix per instalment with an idempotency key, presents the QR and the copy-and-paste in the conversation, and closes the cycle on commerce.charge.paid or commerce.charge.expired.",
       "version": "0.1.0",
-      "cli": "@codespar/cli@0.13.0",
+      "cli": "@codespar/cli@0.14.0",
       "mcp": "@codespar/mcp@0.5.8",
-      "agent_core": "0.1.0",
+      "vendored": {
+        "@codespar/agent-core": "0.1.0",
+        "@codespar/agent-runtime": "0.1.0"
+      },
       "next_steps": [
         "cp agents/collections-agent/.env.example agents/collections-agent/.env   # then fill in your keys",
         "npm install",
         "npm start"
       ],
-      "hash": "sha256:149b22e812a97b35f90b42fed6a38261975346035abec05e779f938b5148c131"
+      "hash": "sha256:0588aa52d737058375f5a617844071998a5db3147bddd73447577f756cd11c10"
+    },
+    "hello-agent": {
+      "source": "agents/hello-agent",
+      "description": "The worked example of the codespar-agent-builder skill: a read-only agent that reads the month's bills and cannot pay. Built from the five files, the packs and one kit module.",
+      "version": "0.1.0",
+      "cli": "@codespar/cli@0.14.0",
+      "mcp": "@codespar/mcp@0.5.8",
+      "vendored": {
+        "@codespar/agent-core": "0.1.0",
+        "@codespar/agent-runtime": "0.1.0"
+      },
+      "next_steps": [
+        "cp agents/hello-agent/.env.example agents/hello-agent/.env   # then fill in your keys",
+        "npm install",
+        "npm start"
+      ],
+      "hash": "sha256:f75d8ddb2d1808e337e7c785a3801bbce127a6822de9b761f5c57c28ce1848b9"
+    },
+    "supplier-payments-agent": {
+      "source": "agents/supplier-payments-agent",
+      "description": "A company delegates its suppliers, commissions and payroll to an agent that pays them in batches under one signed mandate. A batch is a loop of executions: one refusal does not stop the others, and re-running it pays nobody twice.",
+      "version": "0.1.0",
+      "cli": "@codespar/cli@0.14.0",
+      "mcp": "@codespar/mcp@0.5.8",
+      "vendored": {
+        "@codespar/agent-core": "0.1.0",
+        "@codespar/agent-runtime": "0.1.0"
+      },
+      "next_steps": [
+        "cp agents/supplier-payments-agent/.env.example agents/supplier-payments-agent/.env   # then fill in your keys",
+        "npm install",
+        "npm start"
+      ],
+      "hash": "sha256:a89cb114242eb0f5e3114801341dbf90ea54e7665f73d24bb68a9fdf452b2753"
     }
   }
 }

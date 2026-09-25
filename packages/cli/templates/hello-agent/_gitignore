@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# local state, proof bundles and keys: never committed
+.codespar/
+runs/
+.env
+.env.*
+!.env.example

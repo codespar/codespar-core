@@ -13,8 +13,18 @@
 //   LICENSE, _gitignore,    the kits repo's own root files, verbatim (init
 //   tsconfig.base.json,     renames _gitignore back: npm ships no .gitignore)
 //   vitest.config.ts
-//   packages/agent-core/    @codespar/agent-core, verbatim (not on npm yet)
+//   packages/<pkg>/         every kits-local package this agent needs,
+//                           transitively, verbatim (none of them is on npm)
 //   agents/<name>/          the agent, verbatim
+//
+// WHICH packages is derived, not listed. It used to be the one hard-coded
+// `packages/agent-core`, which was true until the kits split the shared runner
+// into `packages/agent-runtime`; after that split a template built from the
+// hard-coded list installed nothing, because the agent's scripts all call the
+// `codespar-agent` bin that lives in the runtime. `vendoredPackagesFor` walks
+// the agent's dependencies over the kits' own `packages/*` and
+// `assertLocalDepsVendored` refuses a built tree that still names one it does
+// not carry.
 //
 // The layout mirrors the kits repo on purpose. Every relative path inside a
 // kit — `extends: ../../tsconfig.base.json`, `vitest --root ../..`, the
@@ -156,6 +166,117 @@ function copyDirVerbatim(src, dst) {
   }
 }
 
+/**
+ * The kits' own workspace packages under `packages/*`, by package name.
+ *
+ * A template vendors these because they are `private: true` and not on npm, so
+ * a pin to one of them can only ever resolve through the workspace link the
+ * template generates. Anything NOT in this map is a registry dependency and
+ * npm's problem, not this script's.
+ */
+export function discoverKitsPackages(kitsDir) {
+  const root = path.join(kitsDir, "packages");
+  const out = new Map();
+  if (!fs.existsSync(root)) return out;
+  for (const entry of fs.readdirSync(root, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+    if (!entry.isDirectory()) continue;
+    const pkgFile = path.join(root, entry.name, "package.json");
+    if (!fs.existsSync(pkgFile)) continue;
+    const pkg = readJson(pkgFile);
+    if (!pkg.name) continue;
+    out.set(pkg.name, {
+      name: pkg.name,
+      source: `packages/${entry.name}`,
+      version: pkg.version,
+      dependencies: pkg.dependencies ?? {},
+    });
+  }
+  return out;
+}
+
+/**
+ * The kits-local packages one agent needs, TRANSITIVELY, with every pin
+ * checked against the version the kits tree actually carries.
+ *
+ * Transitively is the load-bearing word. `agents/bills-agent` depends on
+ * `@codespar/agent-runtime`, which depends on `@codespar/agent-core`: vendoring
+ * only what the agent names directly would ship a runtime whose own dependency
+ * cannot resolve. The walk is over kits-local packages only, so it terminates
+ * on a map that is at most `packages/*`.
+ *
+ * The pin check is the old single-package one generalised, message included. A
+ * pin that disagrees with the vendored version means the workspace link would
+ * not resolve, and that is worth refusing the build over rather than shipping a
+ * template whose `npm install` reaches the registry for a private package.
+ */
+export function vendoredPackagesFor({ agentName, agentPkg, kitsPackages }) {
+  const chosen = new Map();
+  const pending = [[`agents/${agentName}`, agentPkg.dependencies ?? {}]];
+  while (pending.length > 0) {
+    const [dependerSource, deps] = pending.shift();
+    for (const [name, pin] of Object.entries(deps)) {
+      const local = kitsPackages.get(name);
+      if (!local) continue;
+      if (pin !== local.version) {
+        throw new SyncError(
+          `${dependerSource} depends on ${name}@${pin} but the kits tree carries ${local.version}; the workspace link would not resolve`,
+        );
+      }
+      if (chosen.has(name)) continue;
+      chosen.set(name, local);
+      pending.push([local.source, local.dependencies]);
+    }
+  }
+  return [...chosen.values()].sort((a, b) => (a.source < b.source ? -1 : 1));
+}
+
+/**
+ * THE GUARD THAT WAS MISSING, and the reason this function exists separately
+ * from the pin check above.
+ *
+ * Until the kits split the runner out of `agent-core`, this script vendored one
+ * hard-coded directory and verified one hard-coded pin, so "the template is
+ * complete" and "the core's pin matches" were the same sentence. After the
+ * split they are not: at kits `8f130b7` every agent also depends on
+ * `@codespar/agent-runtime`, and a build that vendored only the core reported
+ * SUCCESS while producing a template whose `npm install` dies with
+ * `404 @codespar/agent-runtime` — the package is `private: true` and was never
+ * published. A guard whose silence can mean "broken" is not a guard.
+ *
+ * So the completeness question is asked of the BUILT tree and of every manifest
+ * in it: every dependency that names a kits-local package must resolve to a
+ * directory this template carries. It is deliberately not derived from the same
+ * closure walk that chose the packages — a guard that re-runs the selection
+ * logic can only agree with it.
+ *
+ * Exported so a test can hand it an incomplete tree. It is reached through
+ * `buildTemplate` on every build, but the walk above normally satisfies it, so
+ * the only way to see it produce a positive is to call it with a `vendored`
+ * list that a build would never produce. A guard nobody has watched refuse is
+ * a guard nobody knows works.
+ */
+export function assertLocalDepsVendored({ outDir, agentName, kitsPackages, vendored }) {
+  const carried = new Map(vendored.map((p) => [p.name, p]));
+  const manifests = [
+    [`agents/${agentName}`, path.join(outDir, "agents", agentName, "package.json")],
+    ...vendored.map((p) => [p.source, path.join(outDir, p.source, "package.json")]),
+  ];
+  for (const [source, file] of manifests) {
+    if (!fs.existsSync(file)) {
+      throw new SyncError(`${source}/package.json is missing from the built template`);
+    }
+    const pkg = readJson(file);
+    for (const name of Object.keys(pkg.dependencies ?? {})) {
+      const local = kitsPackages.get(name);
+      if (!local || carried.has(name)) continue;
+      throw new SyncError(
+        `${source} depends on ${name}, which the kits tree carries at ${local.source} and this template does not vendor; ` +
+          `\`npm install\` in a scaffold would look for it on the registry, where it is not published`,
+      );
+    }
+  }
+}
+
 /** Agents under `agents/*` that carry an agent.yaml. */
 export function discoverAgents(kitsDir) {
   const root = path.join(kitsDir, "agents");
@@ -173,13 +294,27 @@ export function discoverAgents(kitsDir) {
  * every other script the agent declares, so `npm run consent -- --yes` at
  * the template root reaches the agent exactly as it does in the kits repo.
  */
-export function rootScriptsFor(agentName, agentScripts, kitsRootScripts) {
+export function rootScriptsFor(agentName, agentScripts, kitsRootScripts, typecheckSources = [AGENT_CORE_DIR]) {
   const ws = `agents/${agentName}`;
   const scripts = {
     start: `npm start --workspace=${ws} --`,
-    check: kitsRootScripts.check ?? "npm run check --workspaces --if-present --",
+    // NOT the kits root's `check`, on purpose. The kits root runs its own
+    // repo-level gates first — at 8f130b7 it is
+    // `node scripts/check-plugin.mjs && npm run check --workspaces …`, and that
+    // script checks the kits' plugin manifests and `skills/`, none of which a
+    // single-agent template carries or should. Copying it verbatim produced a
+    // scaffold whose `npm run check` died on a missing
+    // `scripts/check-plugin.mjs` before reaching the agent's own check. The
+    // workspaces form is the half that is about the agent, so it is the half a
+    // template gets, and a new repo-level gate in the kits cannot break a
+    // scaffold again.
+    check: "npm run check --workspaces --if-present --",
     test: kitsRootScripts.test ?? "vitest run --pool=forks --maxWorkers=1",
-    typecheck: `tsc --noEmit -p ${AGENT_CORE_DIR}/tsconfig.json && tsc --noEmit -p ${ws}/tsconfig.json`,
+    // Every vendored package that has a tsconfig, then the agent. Derived
+    // rather than hard-coded: a template that vendors the runtime and does not
+    // typecheck it would report a green `npm run typecheck` over code it never
+    // looked at.
+    typecheck: [...typecheckSources, ws].map((src) => `tsc --noEmit -p ${src}/tsconfig.json`).join(" && "),
   };
   for (const name of Object.keys(agentScripts).sort()) {
     if (name in scripts) continue;
@@ -196,7 +331,7 @@ export function nextStepsFor(agentName, agentScripts) {
   return steps;
 }
 
-function generatedPackageJson({ agentName, agentPkg, kitsRootPkg }) {
+function generatedPackageJson({ agentName, agentPkg, kitsRootPkg, vendored, typecheckSources }) {
   const manifest = {
     name: "{{name}}",
     version: "0.1.0",
@@ -204,15 +339,17 @@ function generatedPackageJson({ agentName, agentPkg, kitsRootPkg }) {
     description: agentPkg.description ?? "",
     license: kitsRootPkg.license ?? "MIT",
     type: "module",
-    workspaces: [AGENT_CORE_DIR, `agents/${agentName}`],
-    scripts: rootScriptsFor(agentName, agentPkg.scripts ?? {}, kitsRootPkg.scripts ?? {}),
+    workspaces: [...vendored.map((p) => p.source), `agents/${agentName}`],
+    scripts: rootScriptsFor(agentName, agentPkg.scripts ?? {}, kitsRootPkg.scripts ?? {}, typecheckSources),
     devDependencies: kitsRootPkg.devDependencies ?? {},
   };
   if (kitsRootPkg.engines) manifest.engines = kitsRootPkg.engines;
   return `${JSON.stringify(manifest, null, 2)}\n`;
 }
 
-function generatedReadme({ agentName, agentPkg, agentManifest, commit, repo, coreVersion, steps }) {
+function generatedReadme({ agentName, agentPkg, agentManifest, commit, repo, vendored, steps }) {
+  const names = vendored.map((p) => `\`${p.name}\``);
+  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
   return [
     "# {{name}}",
     "",
@@ -221,9 +358,11 @@ function generatedReadme({ agentName, agentPkg, agentManifest, commit, repo, cor
     "",
     agentPkg.description ?? "",
     "",
-    "`@codespar/agent-core` is not published on npm yet, so the copy this agent was built",
-    `against (${coreVersion}) is vendored under \`${AGENT_CORE_DIR}/\` and linked as an npm workspace;`,
-    "the agent's own `package.json` pin resolves to it unchanged.",
+    `${list} ${names.length === 1 ? "is" : "are"} not published on npm, so the ${names.length === 1 ? "copy" : "copies"} this agent was built`,
+    "against are vendored here and linked as npm workspaces; the agent's own",
+    "`package.json` pins resolve to them unchanged:",
+    "",
+    ...vendored.map((p) => `  - \`${p.source}/\` — ${p.name} ${p.version}`),
     "",
     "```",
     ...steps.map((s) => `  ${s}`),
@@ -245,9 +384,9 @@ export function buildTemplate({ kitsDir, agentName, outDir, commit, repo = DEFAU
   const agentDir = path.join(kitsDir, "agents", agentName);
   const manifestFile = path.join(agentDir, "agent.yaml");
   if (!fs.existsSync(manifestFile)) throw new SyncError(`agents/${agentName}/agent.yaml not found in ${kitsDir}`);
-  const coreDir = path.join(kitsDir, AGENT_CORE_DIR);
-  if (!fs.existsSync(path.join(coreDir, "package.json"))) {
-    throw new SyncError(`${AGENT_CORE_DIR}/package.json not found in ${kitsDir}`);
+  const kitsPackages = discoverKitsPackages(kitsDir);
+  if (kitsPackages.size === 0) {
+    throw new SyncError(`${kitsDir} has no packages/*/package.json — is this the kits repo?`);
   }
 
   const agentManifest = parseManifestScalars(fs.readFileSync(manifestFile, "utf8"));
@@ -255,14 +394,11 @@ export function buildTemplate({ kitsDir, agentName, outDir, commit, repo = DEFAU
     throw new SyncError(`agents/${agentName}/agent.yaml declares schema ${agentManifest.schema ?? "(none)"}; this script knows schema 1`);
   }
   const agentPkg = readJson(path.join(agentDir, "package.json"));
-  const corePkg = readJson(path.join(coreDir, "package.json"));
   const kitsRootPkg = readJson(path.join(kitsDir, "package.json"));
 
-  const corePin = agentPkg.dependencies?.[corePkg.name];
-  if (corePin !== corePkg.version) {
-    throw new SyncError(
-      `agents/${agentName} depends on ${corePkg.name}@${corePin ?? "(absent)"} but the kits tree carries ${corePkg.version}; the workspace link would not resolve`,
-    );
+  const vendored = vendoredPackagesFor({ agentName, agentPkg, kitsPackages });
+  if (vendored.length === 0) {
+    throw new SyncError(`agents/${agentName} depends on none of the kits' own packages; the template would carry no runtime at all`);
   }
 
   fs.rmSync(outDir, { recursive: true, force: true });
@@ -271,8 +407,9 @@ export function buildTemplate({ kitsDir, agentName, outDir, commit, repo = DEFAU
     const src = path.join(kitsDir, file);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(outDir, packagedAs));
   }
-  copyDirVerbatim(coreDir, path.join(outDir, AGENT_CORE_DIR));
+  for (const pkg of vendored) copyDirVerbatim(path.join(kitsDir, pkg.source), path.join(outDir, pkg.source));
   copyDirVerbatim(agentDir, path.join(outDir, "agents", agentName));
+  assertLocalDepsVendored({ outDir, agentName, kitsPackages, vendored });
 
   // `init` substitutes `{{name}}` in every file it copies. The generated files
   // carry it on purpose; a kit file carrying it would be rewritten at init
@@ -284,10 +421,14 @@ export function buildTemplate({ kitsDir, agentName, outDir, commit, repo = DEFAU
   }
 
   const steps = nextStepsFor(agentName, agentPkg.scripts ?? {});
-  fs.writeFileSync(path.join(outDir, "package.json"), generatedPackageJson({ agentName, agentPkg, kitsRootPkg }));
+  const typecheckSources = vendored.filter((p) => fs.existsSync(path.join(outDir, p.source, "tsconfig.json"))).map((p) => p.source);
+  fs.writeFileSync(
+    path.join(outDir, "package.json"),
+    generatedPackageJson({ agentName, agentPkg, kitsRootPkg, vendored, typecheckSources }),
+  );
   fs.writeFileSync(
     path.join(outDir, "README.md"),
-    generatedReadme({ agentName, agentPkg, agentManifest, commit, repo, coreVersion: corePkg.version, steps }),
+    generatedReadme({ agentName, agentPkg, agentManifest, commit, repo, vendored, steps }),
   );
 
   return {
@@ -296,7 +437,7 @@ export function buildTemplate({ kitsDir, agentName, outDir, commit, repo = DEFAU
     version: agentManifest.version ?? agentPkg.version ?? "",
     cli: agentManifest.cli ?? "",
     mcp: agentManifest.mcp ?? "",
-    agent_core: corePkg.version,
+    vendored: Object.fromEntries(vendored.map((p) => [p.name, p.version])),
     next_steps: steps,
     hash: fingerprintDir(outDir),
   };
@@ -334,6 +475,48 @@ export function fetchKits({ repo, ref, into }) {
 // Lock file
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// The README's kit rows — derived, so the list cannot go stale
+// ---------------------------------------------------------------------------
+
+export const README_BLOCK_START = "<!-- kit-templates:start -->";
+export const README_BLOCK_END = "<!-- kit-templates:end -->";
+
+/** One table row per kit template, from each agent's own `description`. */
+export function renderKitTemplateRows(templates) {
+  return Object.entries(templates)
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([slug, entry]) => `| \`${slug}\` | Starter kit — ${entry.description} |`)
+    .join("\n");
+}
+
+/**
+ * Rewrite the marked block in `packages/cli/README.md`.
+ *
+ * The sync is the only thing that knows which agents exist at the locked ref,
+ * so it is the thing that writes them down. A table kept by hand beside a list
+ * that is discovered automatically goes stale on the next agent that lands, and
+ * a stale list of four is worse than an honest list of two.
+ *
+ * Returns false when there is no README to update, which is the case in the
+ * tests: they sync into a scratch directory that has no package around it.
+ */
+export function updateReadmeKitRows(readmeFile, templates) {
+  if (!fs.existsSync(readmeFile)) return false;
+  const text = fs.readFileSync(readmeFile, "utf8");
+  const start = text.indexOf(README_BLOCK_START);
+  const end = text.indexOf(README_BLOCK_END);
+  if (start === -1 || end === -1 || end < start) {
+    throw new SyncError(
+      `${readmeFile} has no ${README_BLOCK_START} … ${README_BLOCK_END} block; the kit template rows have nowhere to go`,
+    );
+  }
+  const next = `${text.slice(0, start + README_BLOCK_START.length)}\n${renderKitTemplateRows(templates)}\n${text.slice(end)}`;
+  if (next === text) return false;
+  fs.writeFileSync(readmeFile, next);
+  return true;
+}
+
 export function readLock(file) {
   if (!fs.existsSync(file)) return null;
   const lock = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -347,7 +530,7 @@ export function writeLock(file, lock) {
     kits_repo: lock.kits_repo,
     kits_ref: lock.kits_ref,
     commit: lock.commit,
-    agent_core: lock.agent_core,
+    vendored_packages: lock.vendored_packages,
     templates: Object.fromEntries(Object.entries(lock.templates).sort(([a], [b]) => (a < b ? -1 : 1))),
   };
   fs.writeFileSync(file, `${JSON.stringify(ordered, null, 2)}\n`);
@@ -370,7 +553,12 @@ export function syncKitTemplates({ repo, ref, templatesDir, lockFile = path.join
     for (const name of agents) {
       templates[name] = buildTemplate({ kitsDir: checkout, agentName: name, outDir: path.join(built, name), commit, repo });
     }
-    const coreVersion = readJson(path.join(checkout, AGENT_CORE_DIR, "package.json")).version;
+    // The union over the agents, because a template vendors only what its own
+    // agent needs and the lock records what the package as a whole carries.
+    const kitsPackages = discoverKitsPackages(checkout);
+    const vendoredPackages = [...kitsPackages.values()]
+      .filter((p) => agents.some((name) => p.name in (templates[name].vendored ?? {})))
+      .map((p) => ({ name: p.name, source: p.source, version: p.version }));
 
     for (const name of agents) {
       const dst = path.join(templatesDir, name);
@@ -381,11 +569,12 @@ export function syncKitTemplates({ repo, ref, templatesDir, lockFile = path.join
       kits_repo: repo,
       kits_ref: ref,
       commit,
-      agent_core: { source: AGENT_CORE_DIR, version: coreVersion },
+      vendored_packages: vendoredPackages,
       templates,
     };
     writeLock(lockFile, lock);
-    return { lock, agents };
+    const readmeUpdated = updateReadmeKitRows(path.join(templatesDir, "..", "README.md"), templates);
+    return { lock, agents, readmeUpdated };
   } finally {
     fs.rmSync(scratch, { recursive: true, force: true });
   }

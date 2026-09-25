@@ -1,0 +1,17 @@
+{
+  "id": "mdt_example_hello_0001",
+  "version": 1,
+  "consumer_id": "usr_demo_titular",
+  "agent_id": "hello-agent",
+  "purpose": "Ler as contas do mes e responder perguntas sobre elas. Nao paga nada.",
+  "currency": "BRL",
+  "cap_minor": 100000,
+  "per_tx_cap_minor": 10000,
+  "periodic_cap": { "window": "month", "cap_minor": 50000 },
+  "merchant_pin_kind": "pix-key",
+  "merchant_allowlist": ["financeiro@escola-aurora.example.com.br"],
+  "beneficiaries": [{ "alias": "escola", "name": "Escola Aurora", "payee": "financeiro@escola-aurora.example.com.br" }],
+  "status": "active",
+  "expires_at": "2027-09-23T00:00:00.000Z",
+  "source": "example"
+}

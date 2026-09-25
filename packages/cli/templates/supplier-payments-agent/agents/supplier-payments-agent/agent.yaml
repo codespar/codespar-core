@@ -1,0 +1,26 @@
+# The manifest of section 4.3 of docs/spec-v5.1.1.md. `npm run check` reads
+# this file first and fails if SYSTEM_PROMPT.md, tools.json or
+# guardrails.json contradict it.
+schema: 1
+name: supplier-payments-agent
+version: 0.1.0
+approval: [human, mandate]
+default_approval: human   # section 2: a batch is born with a person approving, which is where most companies are
+escalate_above:
+  amount: 150000          # R$ 1.500,00 in cents: above this, a human decides even in `mandate`
+  new_beneficiary: true   # the first payment to each supplier, rep or employee asks a human
+  outside_hours: "22:00-07:00"
+mcp: "@codespar/mcp@0.5.8"
+cli: "@codespar/cli@0.14.0"    # copied from agents/bills-agent/agent.yaml, which carries the pins verified against npm
+tools: ./tools.json
+guardrails: ./guardrails.json
+mandate_schema: ./mandate.example.json
+events: [commerce.payment.succeeded, commerce.payment.failed]
+channels: [terminal]
+maturity:
+  pix-out: sandbox
+  batch-payout: sandbox           # the loop of executions: one refusal does not stop the siblings, and a re-run pays nobody twice
+  receipt-verification: sandbox   # receipts sealed since the API added Ed25519 verify against the published key set: `npm run verify runs/<run-id>/receipts/<id>.json`
+scenarios: ./scenarios/
+evals: ./evals/
+agents_md: ./AGENTS.md

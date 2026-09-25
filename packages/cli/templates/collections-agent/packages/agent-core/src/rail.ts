@@ -15,6 +15,8 @@ export interface RailPayment {
   payee: string;
   purpose: string;
   agent_id: string;
+  /** The principal the agent acts for (the mandate's `consumer_id`). A receivable settles into THIS identity's account; `POST /v1/charges` needs it on the wire. */
+  consumer_id?: string;
   description?: string;
   /** Display name of the counterparty (a receivable's debtor). The rail that issues a charge needs it; a payout rail ignores it. */
   beneficiary?: string;
@@ -70,6 +72,14 @@ export interface RailReceipt {
   /** Null when the API seals nothing for this kind of record. */
   chain: string | null;
   receipt_sig: string | null;
+  /** The Ed25519 signature CodeSpar seals alongside the HMAC (base64url) and
+   *  the published key that made it. Null on a receipt sealed before the API
+   *  had the capability, on a record the API seals nothing for (a paid
+   *  charge), and on the stub rail, which is not CodeSpar and must not look
+   *  like it. Carried onto the bundle's copy so THAT copy is what a third
+   *  party checks: `npm run verify runs/<run-id>/receipts/<id>.json`. */
+  receipt_sig_ed25519: string | null;
+  receipt_sig_kid: string | null;
   /** Section 4.5: the kit stamps the actor onto the local copy of every receipt. */
   actor: Actor;
   raw: unknown;
@@ -81,7 +91,11 @@ export type RailLookup = RailOutcome | { status: "in_flight" } | undefined;
 export interface PaymentRail {
   readonly name: "stub" | "codespar" | "stub-charge" | "codespar-charge";
   pay(payment: RailPayment): Promise<RailOutcome>;
-  /** Answers the outcome of an attempt already presented, `in_flight` while the rail is still on it, or `undefined` when the rail never saw it. */
-  lookup(attemptId: string, payment: RailPayment): Promise<RailLookup>;
+  /**
+   * Answers the outcome of an attempt already presented, `in_flight` while the rail is still on it, or `undefined` when the rail
+   * never saw it. `transactionId` is the rail's own id for the attempt when the core recorded one (an accepted receivable): a rail
+   * whose read is keyed on its id and not on the caller's key looks it up by that.
+   */
+  lookup(attemptId: string, payment: RailPayment, transactionId?: string): Promise<RailLookup>;
   receipt(receiptId: string, actor: Actor): Promise<RailReceipt | undefined>;
 }

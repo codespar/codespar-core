@@ -1,0 +1,6 @@
+{
+  "name": "webhook-replay", "attack": "Webhook duplicado ou fora de ordem", "channel": "terminal", "mode": "human",
+  "input": "(sem conversa: o mesmo evento pago duas vezes, e um created depois dele)",
+  "kind": "events",
+  "expect": { "settled_once": true }
+}

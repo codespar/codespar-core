@@ -1,0 +1,21 @@
+{
+  "name": "partial-batch-failure",
+  "description": "A batch with one refusal: the rail declines Insumos Atlantico and the other two suppliers settle anyway. Each line is its own execution, so the refused one is `failed` on its own row while the other two reach `settled` on theirs — and the batch's total is what settled, not zero.",
+  "modes": ["human", "mandate"],
+  "transcript": "./partial-batch-failure.transcript.jsonl",
+  "stub_refuse_payees": ["contas@insumos-atlantico.example.com.br"],
+  "turns": [
+    { "input": "paga os fornecedores de outubro", "decision": "approve" }
+  ],
+  "expect": {
+    "both": {
+      "states": ["settled", "failed", "settled"],
+      "reasons": [null, "rail_failed", null],
+      "trails": [["awaiting_approval", "approved", "executing", "settled"], ["awaiting_approval", "approved", "executing", "failed"], ["awaiting_approval", "approved", "executing", "settled"]],
+      "receipts": 2,
+      "settled_total": 174000
+    },
+    "human": { "triggers": [null, null, null] },
+    "mandate": { "triggers": ["new_beneficiary", "new_beneficiary", "new_beneficiary"] }
+  }
+}

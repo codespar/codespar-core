@@ -1,0 +1,20 @@
+{
+  "name": "escalated-above-threshold",
+  "description": "In mandate mode: the first payout to the supplier asks a human (new payee); one above R$ 1.500,00 asks a human (amount); the following one, below, runs alone. A payout a human decided is not fractioning, so it does not count against the velocity window.",
+  "modes": ["mandate"],
+  "transcript": "./escalated-above-threshold.transcript.jsonl",
+  "turns": [
+    { "input": "paga 400 pra grafica, NF avulsa", "decision": "approve" },
+    { "input": "agora a NF 4471 dos catalogos", "decision": "approve" },
+    { "input": "e mais 300 da reimpressao", "decision": "none" }
+  ],
+  "expect": {
+    "mandate": {
+      "states": ["settled", "settled", "settled"],
+      "triggers": ["new_beneficiary", "amount", null],
+      "trails": [["awaiting_approval", "approved", "executing", "settled"], ["awaiting_approval", "approved", "executing", "settled"], ["approved", "executing", "settled"]],
+      "receipts": 3,
+      "settled_total": 250000
+    }
+  }
+}

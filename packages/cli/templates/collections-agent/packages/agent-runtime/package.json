@@ -1,0 +1,23 @@
+{
+  "name": "@codespar/agent-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The runner every CodeSpar starter-kit agent shares: the terminal and WhatsApp channels and the commands (start, consent, approve, deny, resume, rerun, reconcile, poll, webhook, check, eval), parameterised by the agent directory.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "bin": {
+    "codespar-agent": "./bin.mjs"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@codespar/agent-core": "0.1.0",
+    "zod": "3.25.76"
+  }
+}

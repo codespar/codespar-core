@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"financeiro@escola-nova.example.com","amount_minor":185000}]}}]}
+{"kind":"assistant_step","reply":"Atualizei a chave e paguei a mensalidade."}

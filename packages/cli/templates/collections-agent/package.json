@@ -7,16 +7,18 @@
   "type": "module",
   "workspaces": [
     "packages/agent-core",
+    "packages/agent-runtime",
     "agents/collections-agent"
   ],
   "scripts": {
     "start": "npm start --workspace=agents/collections-agent --",
     "check": "npm run check --workspaces --if-present --",
     "test": "vitest run --pool=forks --maxWorkers=1",
-    "typecheck": "tsc --noEmit -p packages/agent-core/tsconfig.json && tsc --noEmit -p agents/collections-agent/tsconfig.json",
+    "typecheck": "tsc --noEmit -p packages/agent-core/tsconfig.json && tsc --noEmit -p packages/agent-runtime/tsconfig.json && tsc --noEmit -p agents/collections-agent/tsconfig.json",
     "approve": "npm run approve --workspace=agents/collections-agent --",
     "deny": "npm run deny --workspace=agents/collections-agent --",
     "eval": "npm run eval --workspace=agents/collections-agent --",
+    "inspect": "npm run inspect --workspace=agents/collections-agent --",
     "poll": "npm run poll --workspace=agents/collections-agent --",
     "reconcile": "npm run reconcile --workspace=agents/collections-agent --",
     "rerun": "npm run rerun --workspace=agents/collections-agent --",

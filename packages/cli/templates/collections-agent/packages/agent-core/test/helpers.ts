@@ -26,7 +26,7 @@ export function testManifest(over: Partial<Manifest> = {}): Manifest {
     default_approval: "human",
     escalate_above: { amount: 150000, new_beneficiary: true, outside_hours: "22:00-07:00" },
     mcp: "@codespar/mcp@0.5.8",
-    cli: "@codespar/cli@0.13.0",
+    cli: "@codespar/cli@0.14.0",
     tools: "./tools.json",
     guardrails: "./guardrails.json",
     mandate_schema: "./mandate.example.json",

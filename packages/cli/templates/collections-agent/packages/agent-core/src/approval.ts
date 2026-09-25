@@ -13,7 +13,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "n
 import { dirname, join } from "node:path";
 import { canonicalJson, hexEqual, hmacSha256Hex, itemsHash } from "./hash.js";
 import type { Execution } from "./state-machine.js";
-import type { Actor, ApprovalArtifact, EscalationTrigger } from "./types.js";
+import type { Actor, ApprovalArtifact, EscalationTrigger, ExecutionBatch } from "./types.js";
 import { newId } from "./ids.js";
 
 export const APPROVAL_KEY_ID = "local-dev-stub";
@@ -74,6 +74,10 @@ export function createApprovalArtifact(signer: ApprovalSigner, input: CreateAppr
     mandate: execution.mandate,
     items: execution.items,
     items_hash: itemsHash(execution.items),
+    // The SET this line belongs to, when it belongs to one. Omitted — never
+    // null — on an execution that is not part of a batch, so the payload a
+    // bills-agent artifact signs is unchanged by this field existing.
+    ...(execution.batch ? { batch: execution.batch } : {}),
     ...(input.escalation ? { escalation: input.escalation } : {}),
     actor: input.actor,
   };
@@ -85,7 +89,13 @@ export function createApprovalArtifact(signer: ApprovalSigner, input: CreateAppr
 
 export type ApprovalCheck =
   | { ok: true }
-  | { ok: false; problem: "signature_invalid" | "items_hash_mismatch" | "expired" | "wrong_execution" | "wrong_mandate" };
+  | { ok: false; problem: "signature_invalid" | "items_hash_mismatch" | "expired" | "wrong_execution" | "wrong_mandate" | "batch_mismatch" };
+
+/** Two batch bindings are the same binding, or one is absent and so is the other. */
+function sameBatch(a: ExecutionBatch | undefined, b: ExecutionBatch | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return a.ref === b.ref && a.batch_hash === b.batch_hash && a.index === b.index && a.count === b.count;
+}
 
 /**
  * The rule that makes the artifact proof: before `executing`, recompute the
@@ -104,6 +114,10 @@ export function checkApprovalArtifact(
     return { ok: false, problem: "wrong_mandate" };
   }
   if (itemsHash(execution.items) !== artifact.items_hash) return { ok: false, problem: "items_hash_mismatch" };
+  // The line's own list is attested by the hash above; this is the list the
+  // line was one OF. An execution that gained, lost or moved its place in a
+  // batch after approval is not the one that was approved.
+  if (!sameBatch(artifact.batch, execution.batch)) return { ok: false, problem: "batch_mismatch" };
   if (new Date(artifact.expires_at).getTime() <= now.getTime()) return { ok: false, problem: "expired" };
   return { ok: true };
 }

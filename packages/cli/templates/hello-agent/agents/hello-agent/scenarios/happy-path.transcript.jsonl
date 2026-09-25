@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"list_bills","input":{}}]}
+{"kind":"assistant_step","reply":"Em outubro vencem tres contas: Escola Aurora R$ 1.850,00 (dia 10), Mercado do Bairro R$ 640,00 (dia 5) e a conta de luz R$ 315,90 (dia 15). Eu so leio; quem paga e o bills-agent."}

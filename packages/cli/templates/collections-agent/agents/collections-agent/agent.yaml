@@ -12,17 +12,17 @@ escalate_above:
   # the first charge to a debtor is the normal case, not a risk. No `outside_hours` either: collection hours are a LEGAL
   # rule the envelope refuses in both modes (guardrails.envelope.collection_hours), not an escalation.
 mcp: "@codespar/mcp@0.5.8"
-cli: "@codespar/cli@0.13.0"   # the published version on 2026-09-23 (docs/OPEN_QUESTIONS.md section 1)
+cli: "@codespar/cli@0.14.0"   # the published version on 2026-09-23 (docs/OPEN_QUESTIONS.md section 1)
 tools: ./tools.json
 guardrails: ./guardrails.json
 mandate_schema: ./mandate.example.json
 # The API's own names (plan of 2026-09-23, section 1). `paid` and `expired` close the cycle; `cancelled` closes it as failed;
 # `created` is when a cobranca com vencimento becomes payable (the kit reads that from the status poll).
 events: [commerce.charge.created, commerce.charge.paid, commerce.charge.expired, commerce.charge.cancelled]
-channels: [terminal]
+channels: [terminal, whatsapp]   # the second channel is the one this agent is FOR; `npm run check` confirms channels/whatsapp/ ships a conversation
 maturity:
   bolepix-receivables: sandbox
-  receipt-verification: blocked   # waits for Ed25519; and the API seals no record for a paid charge today
+  receipt-verification: blocked   # Ed25519 landed, but the API still seals no record for a paid charge: no chain, no signature to verify
 scenarios: ./scenarios/
 evals: ./evals/
 agents_md: ./AGENTS.md

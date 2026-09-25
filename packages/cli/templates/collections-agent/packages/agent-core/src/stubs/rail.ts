@@ -17,6 +17,14 @@ export interface StubRailOptions {
   refusePayees?: string[];
   /** Attempt ids the stub answers `uncertain` for, once. */
   uncertainOnce?: string[];
+  /**
+   * Payees whose first presentation answers `uncertain`, the way a timeout
+   * does: the provider still took the attempt, so a later lookup finds it.
+   * The payee twin of `refusePayees`, for scripting an unknown outcome in the
+   * MIDDLE of a multi-item execution, where the attempt ids are not known
+   * until the execution exists.
+   */
+  uncertainPayees?: string[];
   /** Test hook: called after the attempt is persisted and before the outcome is returned. */
   afterDispatch?: (attemptId: string) => void;
   /** Attempt ids whose first lookup answers `in_flight` and whose second lookup finds the provider finished (settled), with no pay() in between. */
@@ -40,6 +48,8 @@ export class StubRail implements PaymentRail {
   private readonly inFlightSeen = new Set<string>();
   /** Attempts that answered `uncertain` because the stub was armed: the "provider" did take them, and a later lookup finds them finished. */
   private readonly lateAttempts = new Set<string>();
+  /** Attempts that already gave their one `uncertain`, so a re-presentation behaves normally. */
+  private readonly uncertainAnswered = new Set<string>();
   /** How many times pay() reached the point of persisting a NEW attempt. */
   payCount = 0;
 
@@ -52,8 +62,10 @@ export class StubRail implements PaymentRail {
     const existing = this.store.stubRailGet(payment.attempt_id);
     if (existing) return existing.outcome as RailOutcome;
 
-    if (this.uncertainArmed || this.uncertainPending.has(payment.attempt_id)) {
-      if (this.uncertainArmed) this.lateAttempts.add(payment.attempt_id);
+    const uncertainPayee = this.options.uncertainPayees?.includes(payment.payee) === true && !this.uncertainAnswered.has(payment.attempt_id);
+    if (this.uncertainArmed || this.uncertainPending.has(payment.attempt_id) || uncertainPayee) {
+      if (this.uncertainArmed || uncertainPayee) this.lateAttempts.add(payment.attempt_id);
+      this.uncertainAnswered.add(payment.attempt_id);
       this.uncertainArmed = false;
       this.uncertainPending.delete(payment.attempt_id);
       return { status: "uncertain", code: "psp_dispatch_uncertain", message: "stub: outcome unknown on first presentation" };
@@ -117,6 +129,11 @@ export class StubRail implements PaymentRail {
       ...body,
       chain,
       receipt_sig: `stub:${sha256Hex(`sig:${chain}`).slice(0, 32)}`,
+      // The stub holds no CodeSpar key and must not look as though it did:
+      // `npm run verify` answers `unsigned` on a stub receipt, which is the
+      // truth about it.
+      receipt_sig_ed25519: null,
+      receipt_sig_kid: null,
       actor,
       raw: { stub: true, transaction_id: out.transaction_id },
     };

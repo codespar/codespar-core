@@ -3,7 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { AGREEMENTS } from "../src/agreements.js";
-import { checkScenario, listScenarios, loadScenario, runScenario, type ScenarioRun } from "../src/scenarios.js";
+import { checkScenario, listScenarios, loadScenario, runScenario, type ScenarioRun } from "@codespar/agent-runtime";
+import { agent } from "../src/kit.js";
 
 const runsDir = mkdtempSync(join(tmpdir(), "collections-runs-"));
 const DOCUMENTS = AGREEMENTS.map((a) => a.document);
@@ -12,14 +13,14 @@ describe("section 12: scenario packs, on the replay provider and the stub rail",
   const required = ["happy-path", "charge-expired", "prompt-injection", "cap-exceeded", "beneficiary-not-allowed", "escalated-above-threshold", "mandate-revoked", "instalments"];
 
   it("ships every scenario the spec asks for, plus instalments", () => {
-    for (const name of required) expect(listScenarios()).toContain(name);
+    for (const name of required) expect(listScenarios(agent)).toContain(name);
   });
 
   for (const name of required) {
-    const scenario = loadScenario(name);
+    const scenario = loadScenario(agent, name);
     for (const mode of scenario.modes) {
       it(`${name} [${mode}] ends in the states the pack declares`, async () => {
-        const run = await runScenario(scenario, { mode, runsDir });
+        const run = await runScenario(agent, scenario, { mode, runsDir });
         const check = checkScenario(scenario, run);
         expect(check.failures).toEqual([]);
         expect(check.ok).toBe(true);
@@ -45,9 +46,9 @@ describe("section 12: scenario packs, on the replay provider and the stub rail",
   }
 
   it("happy-path: the same records in human and in mandate; the person decided in human, the envelope in mandate", async () => {
-    const scenario = loadScenario("happy-path");
-    const human = await runScenario(scenario, { mode: "human", runsDir });
-    const mandate = await runScenario(scenario, { mode: "mandate", runsDir });
+    const scenario = loadScenario(agent, "happy-path");
+    const human = await runScenario(agent, scenario, { mode: "human", runsDir });
+    const mandate = await runScenario(agent, scenario, { mode: "mandate", runsDir });
     expect(normalizeReceipts(human)).toEqual(normalizeReceipts(mandate));
     const approvals = (run: ScenarioRun) => JSON.parse(readFileSync(join(run.bundle_dir, "approval.json"), "utf8")) as Array<{ approver: { type: string }; items_hash: string; items: Array<{ due_date?: string }> }>;
     expect(approvals(human)[0]?.approver.type).toBe("person");
@@ -65,9 +66,9 @@ describe("section 12: scenario packs, on the replay provider and the stub rail",
 
   it("nothing reaches executing without an approval artifact carrying its items_hash", async () => {
     for (const name of required) {
-      const scenario = loadScenario(name);
+      const scenario = loadScenario(agent, name);
       for (const mode of scenario.modes) {
-        const run = await runScenario(scenario, { mode, runsDir });
+        const run = await runScenario(agent, scenario, { mode, runsDir });
         const approvalPath = join(run.bundle_dir, "approval.json");
         const artifacts = existsSync(approvalPath) ? (JSON.parse(readFileSync(approvalPath, "utf8")) as Array<{ execution_id: string; items_hash: string }>) : [];
         for (const e of run.executions) {
@@ -79,7 +80,7 @@ describe("section 12: scenario packs, on the replay provider and the stub rail",
   });
 
   it("instalments: three receivables, three idempotency keys, one execution, one message", async () => {
-    const run = await runScenario(loadScenario("instalments"), { mode: "human", runsDir });
+    const run = await runScenario(agent, loadScenario(agent, "instalments"), { mode: "human", runsDir });
     expect(run.executions).toHaveLength(1);
     expect(new Set(run.executions[0]!.charge_ids).size).toBe(3);
     expect(run.charges_issued).toBe(3);

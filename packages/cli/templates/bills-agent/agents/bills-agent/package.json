@@ -6,19 +6,22 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "start": "node --disable-warning=ExperimentalWarning --import tsx src/main.ts",
-    "check": "node --disable-warning=ExperimentalWarning --import tsx src/commands/check.ts",
-    "eval": "node --disable-warning=ExperimentalWarning --import tsx src/commands/eval.ts",
-    "resume": "node --disable-warning=ExperimentalWarning --import tsx src/commands/resume.ts",
-    "rerun": "node --disable-warning=ExperimentalWarning --import tsx src/commands/rerun.ts",
-    "reconcile": "node --disable-warning=ExperimentalWarning --import tsx src/commands/reconcile.ts",
-    "consent": "node --disable-warning=ExperimentalWarning --import tsx src/commands/consent.ts",
+    "start": "codespar-agent start",
+    "check": "codespar-agent check",
+    "inspect": "codespar-agent inspect",
+    "verify": "codespar-agent verify",
+    "eval": "codespar-agent eval",
+    "resume": "codespar-agent resume",
+    "rerun": "codespar-agent rerun",
+    "reconcile": "codespar-agent reconcile",
+    "consent": "codespar-agent consent",
+    "approve": "codespar-agent approve",
+    "deny": "codespar-agent deny",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --pool=forks --maxWorkers=1 --root ../.. agents/bills-agent",
-    "approve": "node --disable-warning=ExperimentalWarning --import tsx src/commands/approve.ts",
-    "deny": "node --disable-warning=ExperimentalWarning --import tsx src/commands/deny.ts"
+    "test": "vitest run --pool=forks --maxWorkers=1 --root ../.. agents/bills-agent"
   },
   "dependencies": {
-    "@codespar/agent-core": "0.1.0"
+    "@codespar/agent-core": "0.1.0",
+    "@codespar/agent-runtime": "0.1.0"
   }
 }

@@ -1,0 +1,19 @@
+{
+  "name": "happy-path",
+  "description": "The runbook: the operator runs October's payroll. The batch becomes one execution per employee, each approved on its own, each with its own receipt and its own approval artifact.",
+  "modes": ["human", "mandate"],
+  "transcript": "./happy-path.transcript.jsonl",
+  "turns": [
+    { "input": "roda a folha de outubro", "decision": "approve" }
+  ],
+  "expect": {
+    "both": {
+      "states": ["settled", "settled", "settled"],
+      "trails": [["awaiting_approval", "approved", "executing", "settled"], ["awaiting_approval", "approved", "executing", "settled"], ["awaiting_approval", "approved", "executing", "settled"]],
+      "receipts": 3,
+      "settled_total": 540000
+    },
+    "human": { "triggers": [null, null, null] },
+    "mandate": { "triggers": ["amount", "amount", "new_beneficiary"] }
+  }
+}

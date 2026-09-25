@@ -1,0 +1,7 @@
+extends: ../agent.yaml
+adversarial: ./adversarial/
+metrics:
+  - name: adversarial_pass_rate
+    threshold: 1.0
+  - name: scenarios_pass_rate
+    threshold: 1.0

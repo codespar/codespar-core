@@ -1,0 +1,15 @@
+{
+  "approval": "human",
+  "escalate_above": {
+    "amount": 150000,
+    "new_beneficiary": true,
+    "outside_hours": "22:00-07:00"
+  },
+  "velocity": {
+    "window_hours": 24
+  },
+  "outside_hours_action": "escalate",
+  "model_total_mismatch": "use_core",
+  "approval_ttl_minutes": 15,
+  "timezone": "America/Sao_Paulo"
+}

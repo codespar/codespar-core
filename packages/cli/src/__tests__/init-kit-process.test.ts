@@ -148,13 +148,32 @@ describe.skipIf(!E2E)("the scaffold works standalone (CODESPAR_CLI_KIT_E2E=1)", 
     expect(doc.receipts).toHaveLength(1);
   }, 600_000);
 
-  it("collections-agent: npm install and npm run check", () => {
-    const r = scaffold("collections-agent", "e2e-collections");
+  // Every OTHER kit the lock names, derived. Naming them one by one is how the
+  // two agents kits 8f130b7 added would have shipped unproven: the gate that
+  // matters is "a freshly generated template installs and passes its own
+  // check", and it has to be asked of all of them, not of the two somebody
+  // remembered to write down.
+  const others = Object.keys(
+    (JSON.parse(readFileSync(join(TEMPLATES, "kits.lock.json"), "utf8")) as { templates: Record<string, unknown> }).templates,
+  ).filter((slug) => slug !== "bills-agent");
+
+  it.each(others)("%s: npm install and npm run check", (slug) => {
+    const r = scaffold(slug, `e2e-${slug}`);
     expect(r.status, r.stderr).toBe(0);
+
     const install = npm(["install", "--no-audit", "--no-fund", "--loglevel=error"], r.dir);
     expect(install.status, install.stderr).toBe(0);
+    // The vendored packages resolved through the workspace link rather than
+    // being fetched: this is the 404 of 25/09, asked of the installed tree.
+    for (const pkg of Object.keys(
+      (JSON.parse(readFileSync(join(r.dir, "agents", slug, "package.json"), "utf8")) as { dependencies?: Record<string, string> })
+        .dependencies ?? {},
+    ).filter((d) => d.startsWith("@codespar/agent-"))) {
+      expect(existsSync(join(r.dir, "node_modules", pkg, "package.json")), `${slug}: ${pkg} did not install`).toBe(true);
+    }
+
     const check = npm(["run", "check"], r.dir);
     expect(check.status, `${check.stdout}\n${check.stderr}`).toBe(0);
-    expect(check.stderr).toContain("check ok: collections-agent");
+    expect(check.stderr).toContain(`check ok: ${slug}`);
   }, 600_000);
 });

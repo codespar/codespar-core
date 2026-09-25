@@ -112,6 +112,33 @@ export function loadKitTemplates(templatesRoot: string = resolveTemplatesDir()):
     }));
 }
 
+/**
+ * The `--template` help, one line per template, DERIVED from the packaged
+ * templates rather than spelled out here.
+ *
+ * It used to be a hand-written sentence naming two kit slugs. Kits `8f130b7`
+ * brought four, and a hand-written list is exactly the thing that goes stale on
+ * the next agent that lands — so the names and their one-liners come from the
+ * lock, which the sync writes.
+ *
+ * It CANNOT throw. This runs while commander is being built, before any command
+ * has been chosen, so a corrupt or absent lock here would break `--help` and
+ * every other subcommand with it. A generic line is a worse help text; a stack
+ * trace on `codespar login` is a broken CLI.
+ */
+export function templateOptionHelp(templatesRoot: string = resolveTemplatesDir()): string {
+  const generic = "Template slug; `--list` shows the available templates with a one-line description each";
+  let templates: Template[];
+  try {
+    templates = listTemplates(templatesRoot);
+  } catch {
+    return generic;
+  }
+  if (templates.length === 0) return generic;
+  const width = Math.max(...templates.map((t) => t.slug.length));
+  return [`${generic}:`, ...templates.map((t) => `  ${t.slug.padEnd(width)}  ${t.description}`)].join("\n");
+}
+
 export function listTemplates(templatesRoot: string = resolveTemplatesDir()): Template[] {
   const kits = loadKitTemplates(templatesRoot);
   const taken = new Set(FRAMEWORK_TEMPLATES.map((t) => t.slug));

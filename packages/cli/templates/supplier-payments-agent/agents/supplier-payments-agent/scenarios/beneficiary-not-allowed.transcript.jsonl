@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"novo@fornecedor-fantasma.example.com","amount_minor":90000,"description":"fornecedor novo"}]}}]}
+{"kind":"assistant_step","reply":"Essa chave nao esta entre os favorecidos do mandato, entao nao consigo pagar. Nada foi enviado. Para incluir um fornecedor novo, e preciso assinar um mandato novo."}

@@ -5,7 +5,6 @@
   },
   "include": [
     "src/**/*.ts",
-    "channels/**/*.ts",
     "test/**/*.ts"
   ]
 }

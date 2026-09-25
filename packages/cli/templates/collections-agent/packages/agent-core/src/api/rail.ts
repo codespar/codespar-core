@@ -18,6 +18,16 @@ import type { PaymentRail, RailLookup, RailOutcome, RailPayment, RailReceipt } f
 import type { Actor } from "../types.js";
 import { describeApiError, isUncertain } from "./client.js";
 
+/** The asymmetric seal as the API serves it, or nulls when this deployment
+ *  does not serve one. Never throws on a shape it does not recognise: a
+ *  receipt is evidence of a payment that already happened, and refusing to
+ *  record it over an unexpected field would trade the record for the proof. */
+function readEd25519Seal(body: unknown): { receipt_sig_ed25519: string | null; receipt_sig_kid: string | null } {
+  const r = body as { receipt_sig_ed25519?: unknown; receipt_sig_kid?: unknown };
+  const str = (v: unknown): string | null => (typeof v === "string" && v.length > 0 ? v : null);
+  return { receipt_sig_ed25519: str(r.receipt_sig_ed25519), receipt_sig_kid: str(r.receipt_sig_kid) };
+}
+
 export class CodeSparRail implements PaymentRail {
   readonly name = "codespar" as const;
 
@@ -89,6 +99,12 @@ export class CodeSparRail implements PaymentRail {
         },
         chain: r.chain,
         receipt_sig: r.receipt_sig,
+        // ent#1633 landed after `@codespar/sdk@0.16.6` was generated, so the
+        // typed response does not carry these two yet. Read off the body
+        // defensively rather than pinning a new SDK for two nullable strings:
+        // a deployment that predates the change answers null, which is the
+        // same answer the columns hold and reads as `unsigned`.
+        ...readEd25519Seal(r),
         actor,
         raw: r,
       };

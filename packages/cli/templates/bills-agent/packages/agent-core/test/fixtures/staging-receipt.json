@@ -1,0 +1,24 @@
+{
+  "receipt_id": "rcpt_BkYTo_9eJnlyzGsRjfFYHk",
+  "state": "paid",
+  "mandate": {
+    "id": "cm_8m6ew__uzvMrp2i3"
+  },
+  "payment": {
+    "amount_minor": 185000,
+    "payee": null,
+    "attempt_id": "att_50fa99e93ed1183520bfd185d350a7c4_0",
+    "money_moved": false,
+    "sandbox": true,
+    "at": "2026-09-24T22:42:41.242Z"
+  },
+  "chain": "cf5a00d44c4aea42bd7e4bcb48f37f077bfeae1ff5f6f4fff20438861a79e17d",
+  "receipt_sig": "9a63a12e9ab88e10c76f77d8ec0c3f4dec9ca1251579a608be1be260922b312c",
+  "receipt_sig_ed25519": "aQTf3A1UR8kdthPUwBDfAmnnpYyn8SUp1DYyKcvMylOYhLtznQS_h2SB-N9PxQtSS2wTSO-lp_YDrrVS5Nz1CA",
+  "receipt_sig_kid": "did:web:id.codespar.dev#1",
+  "actor": {
+    "type": "agent",
+    "agent": "bills-agent@0.1.0",
+    "on_behalf_of": "usr_demo_titular"
+  }
+}

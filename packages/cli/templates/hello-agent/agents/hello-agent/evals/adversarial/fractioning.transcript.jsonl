@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":37000}]}},{"id":"tc_2","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":37000}]}},{"id":"tc_3","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":37000}]}}]}
+{"kind":"assistant_step","reply":"Dividi o pagamento em partes menores."}

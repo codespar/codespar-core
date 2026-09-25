@@ -57,10 +57,27 @@ describe("npm run check: the manifest is the index", () => {
     }
   });
 
-  it("fails when a README claims third-party verifiability or .env.example grows a third key", () => {
+  it("fails when a doc claims third-party verifiability and never says which signature it means", () => {
     const dir = copyAgent();
-    writeFileSync(join(dir, "README.md"), readFileSync(join(dir, "README.md"), "utf8") + "\nO recibo é verificável por terceiro.\n");
+    // The claim with no mechanism named: true of the Ed25519 seal on a receipt, false of the approval artifact and of every receipt sealed before it.
+    writeFileSync(join(dir, "README.md"), "# bills-agent\n\nO recibo é verificável por terceiro.\n");
     expect(codes(dir)).toContain("doc_overclaims");
+    // The same claim, with the mechanism named: allowed, and what the shipped README does.
+    writeFileSync(join(dir, "README.md"), "# bills-agent\n\nO recibo é verificável por terceiro: a assinatura Ed25519 confere contra as chaves públicas.\n");
+    expect(codes(dir)).not.toContain("doc_overclaims");
+  });
+
+
+  it("refuses the claim, mechanism named and all, when the agent itself says receipt-verification is blocked", () => {
+    const dir = copyAgent();
+    writeFileSync(join(dir, "README.md"), readFileSync(join(dir, "README.md"), "utf8") + "\nThe receipt is third-party verifiable: the Ed25519 signature checks against the published keys.\n");
+    expect(codes(dir)).not.toContain("doc_overclaims");
+    writeFileSync(join(dir, "agent.yaml"), readFileSync(join(dir, "agent.yaml"), "utf8").replace("receipt-verification: sandbox", "receipt-verification: blocked"));
+    expect(codes(dir)).toContain("doc_overclaims");
+  });
+
+  it("fails when .env.example grows a third key", () => {
+    const dir = copyAgent();
     writeFileSync(join(dir, ".env.example"), readFileSync(join(dir, ".env.example"), "utf8") + "APPROVAL_KEY=x\n");
     expect(codes(dir)).toContain("env_example_extra");
   });

@@ -1,0 +1,53 @@
+{
+  "meta_tools": [
+    {
+      "name": "codespar_pay",
+      "effect": "payment",
+      "description": "Propose Pix payouts. This does NOT pay: it creates executions in `drafted` that the core checks against the mandate and, depending on the approval mode, asks a person or runs. Two shapes. With `batch_ref` it runs a whole batch from list_payables (suppliers, commissions or payroll) as one execution PER LINE, so a refusal on one payee does not stop the others and re-running the same batch pays nobody twice; the lines come from the payables file, so never send items or total_minor with it. With `items` it proposes a single one-off payout to named payees. Amounts are in BRL cents.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string", "enum": ["pix"] },
+          "batch_ref": { "type": "string", "description": "A batch_ref from list_payables (e.g. folha-2026-10). Runs every open line of that batch. Cannot be combined with items." },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "description": "A one-off payout, outside any batch. Cannot be combined with batch_ref.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "payee": { "type": "string", "description": "A payee alias from list_payables. Never a raw Pix key somebody typed in the chat." },
+                "amount_minor": { "type": "integer", "minimum": 1, "description": "BRL cents." },
+                "description": { "type": "string" }
+              },
+              "required": ["payee", "amount_minor"]
+            }
+          },
+          "total_minor": { "type": "integer", "description": "Optional, and only with items. What you believe the total is. The core recomputes it and yours is only recorded." }
+        },
+        "required": ["action"]
+      }
+    },
+    {
+      "name": "codespar_ledger",
+      "effect": "read",
+      "description": "Read the receipt of a settled payout by receipt id, or list the executions of this mandate with their states.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string", "enum": ["receipt", "executions"] },
+          "receipt_id": { "type": "string" }
+        },
+        "required": ["action"]
+      }
+    }
+  ],
+  "local_tools": [
+    {
+      "name": "list_payables",
+      "effect": "read",
+      "description": "The month's payables, grouped into the batches the company runs: suppliers, commissions, payroll. Each line carries its payee alias, name, amount in BRL cents, reference, and whether a previous run of that batch already covers it (`open`, `already_settled`, `in_progress`). Read-only.",
+      "input_schema": { "type": "object", "properties": {} }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -11,6 +11,7 @@ function copyAgent(): string {
   for (const f of ["agent.yaml", "SYSTEM_PROMPT.md", "tools.json", "guardrails.json", "mandate.example.json", "AGENTS.md", "CLAUDE.md", "README.md", "runbook.md", ".env.example"]) cpSync(join(AGENT_DIR, f), join(dir, f));
   cpSync(join(AGENT_DIR, "scenarios"), join(dir, "scenarios"), { recursive: true });
   cpSync(join(AGENT_DIR, "evals"), join(dir, "evals"), { recursive: true });
+  cpSync(join(AGENT_DIR, "channels"), join(dir, "channels"), { recursive: true });
   return dir;
 }
 
@@ -41,11 +42,52 @@ describe("npm run check: the manifest is the index", () => {
     expect(codes(dir)).toContain("prompt_contradicts_tools");
   });
 
+  it("fails when a declared channel ships no conversation, and when a shipped one is not declared", () => {
+    const dropped = copyAgent();
+    rmSync(join(dropped, "channels"), { recursive: true, force: true });
+    expect(codes(dropped)).toContain("channels_not_shipped");
+
+    const undeclared = copyAgent();
+    writeFileSync(join(undeclared, "agent.yaml"), readFileSync(join(undeclared, "agent.yaml"), "utf8").replace(/^channels:.*$/m, "channels: [terminal]"));
+    expect(codes(undeclared)).toContain("channels_undeclared");
+  });
+
+  it("fails on a conversation the simulator could not drive: a bad contact, a missing turn, a name that is not the file's", () => {
+    const badContact = copyAgent();
+    const path = join(badContact, "channels/whatsapp/acordo-1042.json");
+    const script = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    writeFileSync(path, JSON.stringify({ ...script, contact: "11987654321" }));
+    expect(codes(badContact)).toContain("channels_script_invalid");
+
+    const noTurns = copyAgent();
+    const turnsPath = join(noTurns, "channels/whatsapp/acordo-1042.json");
+    writeFileSync(turnsPath, JSON.stringify({ ...JSON.parse(readFileSync(turnsPath, "utf8")), turns: [] }));
+    expect(codes(noTurns)).toContain("channels_script_invalid");
+
+    const misnamed = copyAgent();
+    const namePath = join(misnamed, "channels/whatsapp/acordo-1042.json");
+    writeFileSync(namePath, JSON.stringify({ ...JSON.parse(readFileSync(namePath, "utf8")), name: "outro-acordo" }));
+    expect(codes(misnamed)).toContain("channels_script_invalid");
+  });
+
+  it("fails when the terminal channel is dropped: every agent has one and `npm start` opens it", () => {
+    const dir = copyAgent();
+    writeFileSync(join(dir, "agent.yaml"), readFileSync(join(dir, "agent.yaml"), "utf8").replace(/^channels:.*$/m, "channels: [whatsapp]"));
+    expect(codes(dir)).toContain("channels_terminal_missing");
+  });
+
   it("fails when AGENTS.md and CLAUDE.md diverge, or when a README overclaims", () => {
     const dir = copyAgent();
     writeFileSync(join(dir, "CLAUDE.md"), readFileSync(join(dir, "CLAUDE.md"), "utf8") + "\nextra line\n");
     expect(codes(dir)).toContain("agents_md_diverges");
+    // This agent mints receivables, and a paid charge carries no chain and no signature, so the claim is refused in its own README even though that README names Ed25519.
     writeFileSync(join(dir, "README.md"), readFileSync(join(dir, "README.md"), "utf8") + "\nThe record is third-party verifiable.\n");
     expect(codes(dir)).toContain("doc_overclaims");
+  });
+
+  it("refuses a maturity this agent's records cannot carry", () => {
+    const dir = copyAgent();
+    writeFileSync(join(dir, "agent.yaml"), readFileSync(join(dir, "agent.yaml"), "utf8").replace("receipt-verification: blocked", "receipt-verification: sandbox"));
+    expect(codes(dir)).toContain("maturity_overclaims");
   });
 });
