@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-09-23T23:05:33.042Z",
-    "sha256": "5a7f86d6fdf069c1e2ea7c0adef59362087f01c1e849bd8630305408ff6c152b",
+    "fetched_at": "2026-09-25T02:00:06.289Z",
+    "sha256": "c308078a0726749fa9e58f5c824c882591b48e253768e090bb9d5bb54e230b7b",
     "etag": null,
     "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 237,
-    "operations": 285,
+    "paths": 239,
+    "operations": 287,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -1569,6 +1569,66 @@
             "payee"
           ],
           "description": "The offer the agent approved. When present it is signed into the receipt, and at close the price and the payee are compared against what actually settled. A divergence is RECORDED on the receipt; it does not abort settlement."
+        },
+        "PaymentActor": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "agent"
+                  ]
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "description": "The agent's own identifier."
+                },
+                "on_behalf_of": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "description": "The consumer the agent is acting for. It must be the consumer this mandate belongs to; any other value is refused with `actor_consumer_mismatch` before anything is read, held or sent."
+                }
+              },
+              "required": [
+                "type",
+                "id",
+                "on_behalf_of"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "human"
+                  ]
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "description": "The person's identifier — a user id, not a name."
+                },
+                "channel": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60,
+                  "description": "Where the person acted from: `whatsapp`, `dashboard`, `cli`."
+                }
+              },
+              "required": [
+                "type",
+                "id"
+              ]
+            }
+          ],
+          "description": "WHO triggered this spend, recorded on the receipt and read back from it. Optional, and absence is a real answer: a spend that sends no actor records `null`, and nothing is ever inferred from `agent_id` — that field names the agent the mandate was SIGNED for, which is an authority, not an event. A person acting through WhatsApp under an agent's mandate and the agent acting unattended are the same row without this field."
         }
       },
       "parameters": {}
@@ -1614,6 +1674,93 @@
                       "authorization_servers",
                       "bearer_methods_supported",
                       "scopes_supported"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/.well-known/codespar-receipt-keys.json": {
+        "get": {
+          "security": [],
+          "summary": "Receipt verification keys (JWKS)",
+          "description": "The public half of the key that signs agentic receipts, so a party with no CodeSpar credential can check one. An agentic receipt carries two seals: `receipt_sig`, an HMAC under the consumer's own secret, which proves the payment to whoever holds that secret and to nobody else; and `receipt_sig_ed25519`, made with the key published here.\n\nTo verify: take `receipt_sig_kid` from the receipt, find the key with that `kid` below, build `codespar-receipt:v1:<receipt_id>:<chain>` and check the base64url signature over those UTF-8 bytes with any Ed25519 verifier. `x` is the raw 32-byte public key, base64url (RFC 8037).\n\nKeys ROTATE and a retired key stays listed — that is what keeps an old receipt verifiable. A revoked key is removed entirely: its private half is assumed compromised, so signatures it made are worth nothing. An empty `keys` means this deployment publishes none, which is consistent with its receipts carrying a null `receipt_sig_kid`.",
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "issuer": {
+                        "type": "string"
+                      },
+                      "algorithm": {
+                        "type": "string"
+                      },
+                      "signing_string": {
+                        "type": "string",
+                        "description": "The template of the bytes a signature covers, stated so a verifier needs nothing else from us."
+                      },
+                      "keys": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "kid": {
+                              "type": "string"
+                            },
+                            "kty": {
+                              "type": "string"
+                            },
+                            "crv": {
+                              "type": "string"
+                            },
+                            "x": {
+                              "type": "string"
+                            },
+                            "alg": {
+                              "type": "string"
+                            },
+                            "use": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "description": "`active` or `retired`. A retired key signs nothing new."
+                            },
+                            "created_at": {
+                              "type": "string"
+                            },
+                            "retired_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "kid",
+                            "kty",
+                            "crv",
+                            "x",
+                            "alg",
+                            "use",
+                            "status",
+                            "created_at",
+                            "retired_at"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "issuer",
+                      "algorithm",
+                      "signing_string",
+                      "keys"
                     ]
                   }
                 }
@@ -2333,7 +2480,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "servers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "servers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/providers/{slug}": {
@@ -2372,7 +2527,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "servers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "servers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/servers": {
@@ -2467,7 +2630,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "servers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "servers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/sessions": {
@@ -2612,7 +2783,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:create",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:create"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List sessions",
@@ -2715,7 +2894,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/sessions/{id}": {
@@ -2817,7 +3004,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:read"
+              ]
+            }
+          ]
         },
         "delete": {
           "summary": "Close a session",
@@ -2887,7 +3082,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:create",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:create"
+              ]
+            }
+          ]
         }
       },
       "/v1/sessions/{id}/tool-calls": {
@@ -3033,7 +3236,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List one session's tool calls",
@@ -3129,7 +3340,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/sessions/{id}/tool-calls/{tc_id}": {
@@ -3244,7 +3463,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/tool-calls": {
@@ -3364,7 +3591,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/tool-calls/{id}": {
@@ -3403,7 +3638,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/webhook-endpoints": {
@@ -3425,7 +3668,8 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 128,
-                      "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)*$"
+                      "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)*$",
+                      "description": "The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up."
                     },
                     "server_id": {
                       "type": "string",
@@ -3484,7 +3728,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List triggers",
@@ -3595,7 +3847,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/triggers": {
@@ -3622,7 +3882,8 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 128,
-                      "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)*$"
+                      "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)*$",
+                      "description": "The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up."
                     },
                     "server_id": {
                       "type": "string",
@@ -3681,7 +3942,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         },
         "get": {
           "deprecated": true,
@@ -3797,7 +4066,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/whoami": {
@@ -3815,7 +4092,8 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "none"
         }
       },
       "/v1/policies": {
@@ -3835,7 +4113,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "policies:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "policies:read"
+              ]
+            }
+          ]
         },
         "post": {
           "description": "Create a new policy rule.",
@@ -3859,7 +4145,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "policies:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "policies:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/policies/{id}": {
@@ -3898,7 +4192,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "policies:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "policies:read"
+              ]
+            }
+          ]
         },
         "patch": {
           "description": "Update a policy rule. Cross-org ids return 404. Invalidates the per-org cache on success.",
@@ -3953,7 +4255,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "policies:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "policies:write"
+              ]
+            }
+          ]
         },
         "delete": {
           "description": "Delete a policy rule. Cross-org ids return 404. Invalidates the per-org cache on success.",
@@ -3992,7 +4302,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "policies:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "policies:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/policies/reorder": {
@@ -4032,7 +4350,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "policies:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "policies:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/policy-evaluations": {
@@ -4064,7 +4390,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "evaluations:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "evaluations:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/evaluations": {
@@ -4097,7 +4431,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "evaluations:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "evaluations:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers": {
@@ -4230,7 +4572,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:write"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List titulars",
@@ -4376,7 +4726,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{id}": {
@@ -4482,7 +4840,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:read"
+              ]
+            }
+          ]
         },
         "patch": {
           "summary": "Update the mutable fields of a titular",
@@ -4646,7 +5012,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/wallets": {
@@ -4672,7 +5046,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:write"
+              ]
+            }
+          ]
         },
         "get": {
           "description": "List wallets in the caller's project. Optional filters: status, agent_id.",
@@ -4698,7 +5080,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/wallets/{id}": {
@@ -4746,7 +5136,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/wallets/{id}/ledger": {
@@ -4813,7 +5211,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:admin",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:admin"
+              ]
+            }
+          ]
         },
         "get": {
           "description": "Paginated ledger view, newest first. Cursor via `before_id`. Optional `kind` filter.",
@@ -4877,7 +5283,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/wallets/{id}/funding-sources": {
@@ -4934,7 +5348,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:admin",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:admin"
+              ]
+            }
+          ]
         },
         "get": {
           "description": "List funding-source bindings for this wallet.",
@@ -4991,7 +5413,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/wallets/{id}/funding-sources/{connection_id}/{currency}": {
@@ -5057,7 +5487,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:admin",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:admin"
+              ]
+            }
+          ]
         }
       },
       "/v1/wallets/{id}/execute": {
@@ -5144,7 +5582,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:admin",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:admin"
+              ]
+            }
+          ]
         }
       },
       "/v1/wallets/{id}/recon-anomalies": {
@@ -5203,7 +5649,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/wallets/{id}/recon-anomalies/{aid}": {
@@ -5268,7 +5722,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:admin",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:admin"
+              ]
+            }
+          ]
         }
       },
       "/v1/agents/{did}/revoke": {
@@ -5389,7 +5851,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "agents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "agents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/approvals": {
@@ -5597,7 +6067,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "approvals:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "approvals:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/approvals/{id}/decide": {
@@ -6180,7 +6658,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "approvals:decide",
+          "security": [
+            {
+              "bearerAuth": [
+                "approvals:decide"
+              ]
+            }
+          ]
         }
       },
       "/v1/approvals/health": {
@@ -6243,7 +6729,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "approvals:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "approvals:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/approvals/{id}": {
@@ -6406,7 +6900,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "approvals:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "approvals:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/approvals/{id}/status": {
@@ -6526,7 +7028,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "approvals:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "approvals:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/generate/servers": {
@@ -6621,7 +7131,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "generate:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "generate:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/audit-events/anchors": {
@@ -6787,7 +7305,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/audit/anchors": {
@@ -6952,7 +7478,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/audit-events/anchors/verify": {
@@ -7208,7 +7742,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/audit/anchors/verify": {
@@ -7465,7 +8007,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/audit-events/export": {
@@ -7684,7 +8234,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/audit-events": {
@@ -7830,7 +8388,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/audit-events/health": {
@@ -8080,7 +8646,327 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/audit-events/verify": {
+        "post": {
+          "summary": "Verify the chain over an interval",
+          "description": "Walks your chain across the interval and answers with a verdict: `verified`, `broken` with the first violated sequence, or `unverified` when a stretch of it could not be checked at all.\n\nBefore this existed a client had to COMPOSE that answer — list the interval, read `watermark_sequence` off `/v1/audit-events/health`, and call the interval verified when every sequence sat at or below it. The deduction is sound and conservative, and it is still the client asserting something this server never said. This operation says it. It runs the same walk as the background verifier: the same link check, the same hash recompute, the same tombstone-witness rule, over the same rows.\n\n`unverified` is NOT a weaker `verified` and NOT a `broken`. It means part of the interval has no verifiable link — rows are missing, or the first row has no predecessor to measure against — so nothing here certifies that stretch either way. `unverified_segments` names them, capped at 20 entries while `unverified_segment_count` stays the true total.\n\nTHE INTERVAL IS STATED IN TIME AND THE CHAIN IS ORDERED BY SEQUENCE. `from`/`to` select rows by `happened_at`; the walk then covers the contiguous sequence span those rows occupy, reported as `sequence_range`, because a link can only be checked against the row immediately before it. That span can hold more rows than the window does, which is why `events_walked` is reported next to `events_in_interval`.\n\nBOUNDED BY ROWS, not by days: at most 50,000 rows in the span, or the request is refused with 413 `interval_too_large` and the count, so you can split it. A day count would bound nothing — `happened_at` is written by whoever appended the event, so an hour-wide window can hold an entire chain.\n\nUnlike `GET /v1/audit-events/health`, this read has NO side effects. It opens no incident, records no unverifiable segment and moves no watermark; poll it as often as you like.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Start of the interval, inclusive. ISO 8601, read against `happened_at`."
+                    },
+                    "to": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "End of the interval, inclusive. ISO 8601, read against `happened_at`."
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "verified",
+                          "unverified",
+                          "broken"
+                        ],
+                        "description": "`verified` — every row in the span linked to the one before it and hashed to its stored `entry_hash`. `broken` — a row was caught lying, named by `first_violation`. `unverified` — nothing was caught, and part of the span has no verifiable link, so it is certified neither way."
+                      },
+                      "interval": {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "to": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "to"
+                        ]
+                      },
+                      "sequence_range": {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "integer"
+                          },
+                          "to": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "to"
+                        ],
+                        "description": "The contiguous sequence span the interval's rows occupy, and what was walked."
+                      },
+                      "events_in_interval": {
+                        "type": "integer",
+                        "description": "Rows whose `happened_at` falls inside the interval."
+                      },
+                      "events_walked": {
+                        "type": "integer",
+                        "description": "Rows inside `sequence_range`. At least `events_in_interval`, and larger when rows written with a `happened_at` outside the window sit between them."
+                      },
+                      "events_verified": {
+                        "type": "integer",
+                        "description": "Rows that passed both checks. Below `events_walked` when the walk stopped at a break."
+                      },
+                      "verified_through_sequence": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "description": "The last sequence that verified. null when the very first row of the span did not, which is also the shape of a break at `sequence_range.from`."
+                      },
+                      "first_violation": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "sequence_number": {
+                            "type": "integer"
+                          },
+                          "check": {
+                            "type": "string",
+                            "enum": [
+                              "chain_link_break_detected",
+                              "chain_integrity_break_detected",
+                              "tombstone_witness_missing"
+                            ],
+                            "description": "Which check fired. `chain_link_break_detected` — this row's `prev_hash` does not match the previous row's `entry_hash`, which is the only cross-row binding there is. `chain_integrity_break_detected` — the row's own fields no longer hash to its stored `entry_hash`. `tombstone_witness_missing` — an anonymized row with no live witness vouching for it, which would otherwise buy silence for free."
+                          },
+                          "detail": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "sequence_number",
+                          "check",
+                          "detail"
+                        ],
+                        "description": "The FIRST violated sequence. The walk stops there; later rows are not reported."
+                      },
+                      "unverified_segments": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "from_sequence": {
+                              "type": "integer",
+                              "description": "Last sequence verified before the hole; 0 when there was no anchor at all."
+                            },
+                            "to_sequence": {
+                              "type": "integer",
+                              "description": "First sequence observed after the hole."
+                            },
+                            "reason": {
+                              "type": "string",
+                              "enum": [
+                                "sequence_gap",
+                                "no_anchor"
+                              ]
+                            },
+                            "detail": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "from_sequence",
+                            "to_sequence",
+                            "reason",
+                            "detail"
+                          ]
+                        },
+                        "description": "A sample, capped at 20. `unverified_segment_count` is the total."
+                      },
+                      "unverified_segment_count": {
+                        "type": "integer"
+                      },
+                      "checked_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When this walk ran. The verdict is about the rows as they stood then."
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "interval",
+                      "sequence_range",
+                      "events_in_interval",
+                      "events_walked",
+                      "events_verified",
+                      "verified_through_sequence",
+                      "first_violation",
+                      "unverified_segments",
+                      "unverified_segment_count",
+                      "checked_at"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request. `invalid_body` when `from` or `to` is missing or not a string, `invalid_iso_8601` when either is not a date this server can parse, `from_after_to` when the interval is inverted.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "invalid_body",
+                          "invalid_iso_8601",
+                          "from_after_to"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "error"
+                    ]
+                  }
+                }
+              }
+            },
+            "413": {
+              "description": "The sequence span covered by the interval holds more rows than one request will walk. Split the interval; `row_count` and `limit` say by how much.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "interval_too_large"
+                        ]
+                      },
+                      "remediation": {
+                        "type": "string"
+                      },
+                      "row_count": {
+                        "type": "integer"
+                      },
+                      "limit": {
+                        "type": "integer"
+                      },
+                      "sequence_range": {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "integer"
+                          },
+                          "to": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "to"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "remediation",
+                      "row_count",
+                      "limit",
+                      "sequence_range"
+                    ]
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "The interval holds no audit events, so there is no verdict to give. Deliberately NOT a `verified` 200: a walk over nothing trivially finds nothing wrong, and a clean verdict for a period the chain says nothing about is the one claim a proof bundle must not carry — a mistyped date and an intact month would read identically.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "interval_empty"
+                        ]
+                      },
+                      "remediation": {
+                        "type": "string"
+                      },
+                      "interval": {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "to": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "to"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "remediation",
+                      "interval"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/audit-events/incidents": {
@@ -8256,7 +9142,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/audit-events/incidents/{id}/acknowledge": {
@@ -8774,7 +9668,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/audit-events/config": {
@@ -8843,7 +9745,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         },
         "patch": {
           "summary": "Change the chain verification thresholds",
@@ -9059,7 +9969,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/bank-consents": {
@@ -9278,7 +10196,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:read"
+              ]
+            }
+          ]
         },
         "post": {
           "summary": "Initiate a bank consent",
@@ -9681,7 +10607,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/bank-consents/{id}": {
@@ -9872,7 +10806,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/ofb/consents/{id}": {
@@ -10068,7 +11010,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/fees": {
@@ -10275,7 +11225,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "fees:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "fees:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/fees/movimentar": {
@@ -10352,7 +11310,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "fees:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "fees:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/fees/governar": {
@@ -10405,7 +11371,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "fees:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "fees:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/cart/meli/connect/start": {
@@ -10501,7 +11475,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/cart/ifood/connect/start": {
@@ -10610,7 +11592,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/cart/sessions": {
@@ -11024,7 +12014,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "cart:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "cart:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/cart/checkout": {
@@ -11284,7 +12282,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "cart:checkout",
+          "security": [
+            {
+              "bearerAuth": [
+                "cart:checkout"
+              ]
+            }
+          ]
         }
       },
       "/v1/cart/nuvemshop/connect/start": {
@@ -11449,7 +12455,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/cards": {
@@ -11622,7 +12636,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "cards:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "cards:read"
+              ]
+            }
+          ]
         },
         "post": {
           "externalDocs": {
@@ -12572,7 +13594,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "cards:issue",
+          "security": [
+            {
+              "bearerAuth": [
+                "cards:issue"
+              ]
+            }
+          ]
         }
       },
       "/v1/cards/{id}": {
@@ -12855,7 +13885,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "cards:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "cards:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/counterparties/{id}": {
@@ -12997,7 +14035,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/servers/{id}/auth-schema": {
@@ -13130,7 +14176,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "servers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "servers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/servers/{id}/tools": {
@@ -13224,7 +14278,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "servers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "servers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/servers/{id}/verify-connection": {
@@ -13660,7 +14722,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/funding-sources/{id}": {
@@ -13851,7 +14921,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:fund",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:fund"
+              ]
+            }
+          ]
         }
       },
       "/v1/consent-records/{id}": {
@@ -14039,7 +15117,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/consent-records": {
@@ -14249,7 +15335,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/funding-sources": {
@@ -14466,7 +15560,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:fund",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:fund"
+              ]
+            }
+          ]
         }
       },
       "/v1/account-applications": {
@@ -14677,7 +15779,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "kyc:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "kyc:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/account-applications/{id}": {
@@ -14831,7 +15941,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "kyc:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "kyc:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/facilitator/x402/executions": {
@@ -15381,7 +16499,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "facilitator:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "facilitator:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/facilitator/x402/executions/{id}": {
@@ -15578,7 +16704,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "facilitator:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "facilitator:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/issuer/cards/{id}": {
@@ -15856,7 +16990,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "cards:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "cards:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/issuer/cards": {
@@ -16610,7 +17752,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "cards:issue",
+          "security": [
+            {
+              "bearerAuth": [
+                "cards:issue"
+              ]
+            }
+          ]
         }
       },
       "/v1/kyc/onboard": {
@@ -16816,7 +17966,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "kyc:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "kyc:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/kyc/onboard/{proposalId}/status": {
@@ -17001,7 +18159,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "kyc:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "kyc:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/providers/{slug}/auth-schema": {
@@ -17141,7 +18307,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "servers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "servers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/providers/{slug}/verify-connection": {
@@ -17692,7 +18866,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/discovery/manifest": {
@@ -17844,7 +19026,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "servers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "servers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/tools/search": {
@@ -17983,7 +19173,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "servers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "servers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/health": {
@@ -18227,7 +19425,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/organizations/{id}": {
@@ -18365,7 +19571,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "projects:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "projects:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/events/{event_id}/replay": {
@@ -18563,7 +19777,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "events:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "events:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/meta-tools/discover": {
@@ -18942,7 +20164,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "servers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "servers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/connect/start": {
@@ -19135,7 +20365,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/tool-calls/{id}/payment-status": {
@@ -19285,7 +20523,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/tool-calls/{id}/payment-status/stream": {
@@ -19357,7 +20603,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/tool-calls/{id}/verification-status": {
@@ -19507,7 +20761,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/tool-calls/{id}/verification-status/stream": {
@@ -19579,7 +20841,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/wallets/{id}/receive": {
@@ -19806,7 +21076,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/wallets/{id}/custody": {
@@ -20047,7 +21325,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/wallets/{id}/transfer": {
@@ -20656,7 +21942,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:admin",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:admin"
+              ]
+            }
+          ]
         }
       },
       "/v1/wallets/{id}/statement-import": {
@@ -20901,7 +22195,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:admin",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:admin"
+              ]
+            }
+          ]
         }
       },
       "/v1/audit/events": {
@@ -21048,7 +22350,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/counterparties": {
@@ -21225,7 +22535,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:write"
+              ]
+            }
+          ]
         },
         "get": {
           "externalDocs": {
@@ -21414,7 +22732,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/commerce-memory/counterparties": {
@@ -21592,7 +22918,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:write"
+              ]
+            }
+          ]
         },
         "get": {
           "deprecated": true,
@@ -21782,7 +23116,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/commerce-memory/counterparties/{id}": {
@@ -21923,7 +23265,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/commerce-memory/interactions": {
@@ -22359,7 +23709,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:write"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List recorded interactions",
@@ -22587,7 +23945,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/commerce-memory/preferences": {
@@ -22816,7 +24182,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:write"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List preferences",
@@ -22996,7 +24370,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/commerce-memory/negotiations": {
@@ -23268,7 +24650,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:write"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List negotiations",
@@ -23471,7 +24861,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/commerce-memory/insights/counterparty-summary": {
@@ -23689,7 +25087,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/commerce-memory/insights/negotiation-stats": {
@@ -23885,7 +25291,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/commerce-memory/insights/top-counterparties": {
@@ -24083,7 +25497,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "commerce-memory:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "commerce-memory:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/connections": {
@@ -24571,7 +25993,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List the connections in this project",
@@ -24758,7 +26188,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/connections/{id}/metadata": {
@@ -25008,7 +26446,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/connections/{id}": {
@@ -25149,7 +26595,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:read"
+              ]
+            }
+          ]
         },
         "delete": {
           "summary": "Delete a revoked connection for good",
@@ -25216,7 +26670,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/connections/{id}/revoke": {
@@ -25432,7 +26894,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/connections/{id}/webhook-secret": {
@@ -25610,7 +27080,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/connections/start": {
@@ -25798,7 +27276,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/connections/engine/{run_id}/status": {
@@ -25966,7 +27452,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/connections/subaccount/{id}/revoke": {
@@ -26202,7 +27696,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/connections/subaccount/{id}/status": {
@@ -26383,7 +27885,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "connections:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "connections:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/consents": {
@@ -26664,7 +28174,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/consents/init": {
@@ -26950,7 +28468,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/consents/{token}": {
@@ -27175,7 +28701,7 @@
         "post": {
           "summary": "Submit a consent and receive the signed mandate",
           "security": [],
-          "description": "Consumes the token and returns the signed consumer mandate. In one transaction: the consumer's secret is provisioned if this is their first consent, the funding source is created from `provider_token` (encrypted through the vault, never stored in the clear), the consent record is written with the IP and user-agent of THIS call, the mandate is signed with the consumer's secret and the token is consumed. No credential: the token is the authentication, and it is one-shot.\n\nWHO may call it is decided by the surface the org chose at creation, and the two are not interchangeable:\n\n- `hosted` — the consumer's browser submits from our page. `attestation` is REFUSED (400 `attestation_not_accepted`): our page witnessed the act, and the IP and user-agent on the consent record are the consumer's.\n- `partner` — your server submits. `attestation` is REQUIRED (400 `attestation_required`): the IP and user-agent recorded are your server's, so the only statement about the human is yours. It is signed into the mandate as `consent_attestation` and cannot be edited afterwards without breaking the signature.\n\n`attestation.method` says how the human authorized: `partner_session` (an authenticated session in your product), `in_person`, `verified_code` (a code YOU issued and verified), or `partner_biometric` (YOU ran a biometric check at the moment of the act). `partner_biometric` is not a flavour of `partner_session`: in a dispute a session says someone was logged in and a biometric says a body was present. We capture and verify no biometric ourselves — this records what YOU assert, sealed by the mandate signature so it cannot be edited afterwards; the evidence behind it stays with you. `asserted_at` is the instant you say they authorized, in Unix seconds. `reference` is your own record id, `[A-Za-z0-9_-]{1,120}`, and never personal data — it is joined into the signed string, so the character set is the schema's, not a suggestion.",
+          "description": "Consumes the token and returns the signed consumer mandate. In one transaction: the consumer's secret is provisioned if this is their first consent, the funding source is created from `provider_token` (encrypted through the vault, never stored in the clear), the consent record is written with the IP and user-agent of THIS call, the mandate is signed with the consumer's secret and the token is consumed. No credential: the token is the authentication, and it is one-shot.\n\nWHO may call it is decided by the surface the org chose at creation, and the two are not interchangeable:\n\n- `hosted` — the consumer's browser submits from our page. `attestation` is REFUSED (400 `attestation_not_accepted`): our page witnessed the act, and the IP and user-agent on the consent record are the consumer's.\n- `partner` — your server submits. `attestation` is REQUIRED (400 `attestation_required`): the IP and user-agent recorded are your server's, so the only statement about the human is yours. It is signed into the mandate as `consent_attestation` and cannot be edited afterwards without breaking the signature.\n\n`attestation.method` says how the human authorized: `partner_session` (an authenticated session in your product), `in_person`, `verified_code` (a code YOU issued and verified), or `partner_biometric` (YOU ran a biometric check at the moment of the act). `partner_biometric` is not a flavour of `partner_session`: in a dispute a session says someone was logged in and a biometric says a body was present. We capture and verify no biometric ourselves — this records what YOU assert, sealed by the mandate signature so it cannot be edited afterwards; the evidence behind it stays with you. `asserted_at` is the instant you say they authorized, in Unix seconds. `reference` is your own record id, `[A-Za-z0-9_-]{1,120}`, and never personal data — it is joined into the signed string, so the character set is the schema's, not a suggestion.\n\n`attestation.evidence` (optional) is what you OBSERVED of the act, signed with the rest of the mandate. `channel` is required and decides which other keys may be present, because a value a channel cannot expose was inferred, and an inferred value inside a signed record reads exactly like an observed one:\n\n- `whatsapp`, `sms`, `email`, `llm_chat` — `contact`, `message_id`, `session_id`, `provider_ts`. These hand you a conversation, not a connection.\n- `web_chat` — the above plus `ip`, `user_agent`, `geo`. A browser has no install, so no `device_id_hash`.\n- `app` — the above plus `device_id_hash`.\n- `other` — everything, because we cannot say what a channel we have not named exposes. An auditor reading `other` knows exactly that.\n\nA key outside its channel's set, or a key the object does not declare, is a 400 `attestation_evidence_invalid` with `details.key` naming it — never a silent drop. `contact` is the e-mail or E.164 phone the consumer acted from; it is hashed server-side into the signed `contact_hash` and never stored in the clear. `device_id_hash` you hash yourself (64 hex characters). `geo` is `{country, region, city}` and refuses coordinates.\n\n`method: \"verified_code\"` additionally REQUIRES `evidence.contact` to carry a contact verification we ran for this consumer in the last 24h (`POST /v1/consumers/{consumerId}/contact-verifications`), or the submit is refused with 409 `contact_verification_required` and the token is left unspent. A rung that is only asserted is not stronger than the one below it.",
           "parameters": [
             {
               "schema": {
@@ -27235,6 +28761,80 @@
                         "reference": {
                           "type": "string",
                           "pattern": "^[A-Za-z0-9_-]{1,120}$"
+                        },
+                        "evidence": {
+                          "type": "object",
+                          "properties": {
+                            "channel": {
+                              "type": "string",
+                              "enum": [
+                                "whatsapp",
+                                "web_chat",
+                                "app",
+                                "llm_chat",
+                                "sms",
+                                "email",
+                                "other"
+                              ]
+                            },
+                            "message_id": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_.:=+-]{1,120}$"
+                            },
+                            "session_id": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_.:=+-]{1,120}$"
+                            },
+                            "provider_ts": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            },
+                            "ip": {
+                              "type": "string",
+                              "format": "ip"
+                            },
+                            "user_agent": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 512
+                            },
+                            "device_id_hash": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            },
+                            "geo": {
+                              "type": "object",
+                              "properties": {
+                                "country": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{2}$"
+                                },
+                                "region": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                },
+                                "city": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                }
+                              },
+                              "required": [
+                                "country"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "contact": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 254
+                            }
+                          },
+                          "required": [
+                            "channel"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -27291,7 +28891,7 @@
               }
             },
             "400": {
-              "description": "The body did not match the schema (`invalid_body`, with the Zod issues in `details.issues`), or the attestation does not match the token's surface: `attestation_required` on `partner` without one, `attestation_not_accepted` on `hosted` with one.",
+              "description": "The body did not match the schema (`invalid_body`, with the Zod issues in `details.issues`), the attestation does not match the token's surface (`attestation_required` on `partner` without one, `attestation_not_accepted` on `hosted` with one), or the evidence carries a key its channel cannot expose or one the object does not declare (`attestation_evidence_invalid`, `details.key`).",
               "content": {
                 "application/json": {
                   "schema": {
@@ -27305,7 +28905,8 @@
                             "enum": [
                               "invalid_body",
                               "attestation_required",
-                              "attestation_not_accepted"
+                              "attestation_not_accepted",
+                              "attestation_evidence_invalid"
                             ]
                           },
                           "message": {
@@ -27383,7 +28984,7 @@
               }
             },
             "409": {
-              "description": "The token was already submitted, or a concurrent submit won the race. Nothing was created twice: the loser rolls back whole.",
+              "description": "The token was already submitted, or a concurrent submit won the race (nothing was created twice: the loser rolls back whole); or `method: \"verified_code\"` was claimed without a contact verification for this consumer in the last 24h, in which case nothing was created at all and the token is still pending.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -27396,7 +28997,8 @@
                             "type": "string",
                             "enum": [
                               "consent_already_resolved",
-                              "consent_race"
+                              "consent_race",
+                              "contact_verification_required"
                             ]
                           },
                           "message": {
@@ -27524,6 +29126,9 @@
                     },
                     "quote": {
                       "$ref": "#/components/schemas/SpendQuote"
+                    },
+                    "actor": {
+                      "$ref": "#/components/schemas/PaymentActor"
                     }
                   },
                   "required": [
@@ -27546,7 +29151,7 @@
               }
             },
             "400": {
-              "description": "The body did not match the schema.",
+              "description": "The body did not match the schema (`invalid_body`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in either case.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -27558,7 +29163,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "invalid_body"
+                              "invalid_body",
+                              "actor_consumer_mismatch"
                             ]
                           },
                           "message": {
@@ -27914,7 +29520,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:spend",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:spend"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumer-payments/execute": {
@@ -27964,6 +29578,9 @@
                     },
                     "quote": {
                       "$ref": "#/components/schemas/SpendQuote"
+                    },
+                    "actor": {
+                      "$ref": "#/components/schemas/PaymentActor"
                     }
                   },
                   "required": [
@@ -27989,7 +29606,7 @@
               }
             },
             "400": {
-              "description": "The body did not match the schema.",
+              "description": "The body did not match the schema (`invalid_body`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in either case.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -28001,7 +29618,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "invalid_body"
+                              "invalid_body",
+                              "actor_consumer_mismatch"
                             ]
                           },
                           "message": {
@@ -28266,7 +29884,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "payments:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "payments:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumer-payments/execute-stream": {
@@ -28313,6 +29939,9 @@
                     },
                     "quote": {
                       "$ref": "#/components/schemas/SpendQuote"
+                    },
+                    "actor": {
+                      "$ref": "#/components/schemas/PaymentActor"
                     }
                   },
                   "required": [
@@ -28338,7 +29967,7 @@
               }
             },
             "400": {
-              "description": "The body did not match the schema.",
+              "description": "The body did not match the schema (`invalid_body`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in either case.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -28350,7 +29979,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "invalid_body"
+                              "invalid_body",
+                              "actor_consumer_mismatch"
                             ]
                           },
                           "message": {
@@ -28520,7 +30150,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "payments:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "payments:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/charges": {
@@ -28710,7 +30348,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         },
         "post": {
           "summary": "Issue a charge",
@@ -29027,7 +30673,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/charges/{chargeId}": {
@@ -29345,7 +30999,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/charges/{chargeId}/cancel": {
@@ -29666,7 +31328,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/test/charges/{chargeId}/pay": {
@@ -30050,7 +31720,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/charges/{chargeId}/sandbox/pay": {
@@ -30435,7 +32113,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/consents": {
@@ -30624,7 +32310,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/funding-sources": {
@@ -30826,7 +32520,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:fund",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:fund"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/dda/subscriptions/{document}": {
@@ -30987,7 +32689,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         },
         "delete": {
           "summary": "End a DDA registration",
@@ -31173,7 +32883,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/dda/boletos": {
@@ -31327,7 +33045,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/pix-keys": {
@@ -31479,7 +33205,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:pix-keys",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:pix-keys"
+              ]
+            }
+          ]
         },
         "post": {
           "summary": "Register a Pix key on the consumer's account",
@@ -31869,7 +33603,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:pix-keys",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:pix-keys"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/pix-keys/{key}": {
@@ -32076,7 +33818,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:pix-keys",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:pix-keys"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/pix/charges/{reference}": {
@@ -32466,7 +34216,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/pix/receivements/{endToEndId}": {
@@ -32851,7 +34609,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/pix/devolutions/{devolutionId}": {
@@ -33098,7 +34864,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/fund/{txId}": {
@@ -33209,7 +34983,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:fund",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:fund"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{id}/wallet": {
@@ -33302,7 +35084,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/mandates/{id}/card": {
@@ -33522,7 +35312,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:read"
+              ]
+            }
+          ]
         },
         "delete": {
           "summary": "Unbind the card from a mandate",
@@ -33615,7 +35413,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/receipts": {
@@ -33656,6 +35462,57 @@
                                 "exception",
                                 "voided"
                               ]
+                            },
+                            "actor": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "agent"
+                                      ]
+                                    },
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "on_behalf_of": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "id",
+                                    "on_behalf_of"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "human"
+                                      ]
+                                    },
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "channel": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "id"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "WHO triggered the spend, as the caller declared it at payment time. Null when they declared none, and null is the honest answer rather than a gap to fill: it is never inferred from `mandate.scope` or from the agent the mandate was signed for. A null here means nobody said, not that an agent did it."
                             },
                             "mandate": {
                               "type": "object",
@@ -33883,6 +35740,20 @@
                             "receipt_sig": {
                               "type": "string"
                             },
+                            "receipt_sig_ed25519": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "base64url Ed25519 signature over `codespar-receipt:v1:<receipt_id>:<chain>`, made with the platform issuer key. Verifiable by anyone: fetch `/.well-known/codespar-receipt-keys.json` (no credential), take the key whose `kid` is the one below, and check the signature over that string. Null on a receipt sealed before this existed, and on one sealed while the key could not be resolved — `receipt_sig` is the HMAC seal either way and is unaffected."
+                            },
+                            "receipt_sig_kid": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "Which published key signed it, `<did:web:...>#<n>`. Keys rotate and a retired key stays published, so an old receipt names its own key rather than leaving a verifier to try each one."
+                            },
                             "exceptions": {
                               "type": "array",
                               "items": {
@@ -33909,12 +35780,15 @@
                           "required": [
                             "receipt_id",
                             "state",
+                            "actor",
                             "mandate",
                             "quote",
                             "payment",
                             "delivery",
                             "chain",
                             "receipt_sig",
+                            "receipt_sig_ed25519",
+                            "receipt_sig_kid",
                             "exceptions"
                           ]
                         }
@@ -33927,7 +35801,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "receipts:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "receipts:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/receipts/{id}": {
@@ -33965,6 +35847,57 @@
                           "exception",
                           "voided"
                         ]
+                      },
+                      "actor": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "agent"
+                                ]
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "on_behalf_of": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "id",
+                              "on_behalf_of"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "human"
+                                ]
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "channel": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "id"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "WHO triggered the spend, as the caller declared it at payment time. Null when they declared none, and null is the honest answer rather than a gap to fill: it is never inferred from `mandate.scope` or from the agent the mandate was signed for. A null here means nobody said, not that an agent did it."
                       },
                       "mandate": {
                         "type": "object",
@@ -34192,6 +36125,20 @@
                       "receipt_sig": {
                         "type": "string"
                       },
+                      "receipt_sig_ed25519": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "base64url Ed25519 signature over `codespar-receipt:v1:<receipt_id>:<chain>`, made with the platform issuer key. Verifiable by anyone: fetch `/.well-known/codespar-receipt-keys.json` (no credential), take the key whose `kid` is the one below, and check the signature over that string. Null on a receipt sealed before this existed, and on one sealed while the key could not be resolved — `receipt_sig` is the HMAC seal either way and is unaffected."
+                      },
+                      "receipt_sig_kid": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Which published key signed it, `<did:web:...>#<n>`. Keys rotate and a retired key stays published, so an old receipt names its own key rather than leaving a verifier to try each one."
+                      },
                       "exceptions": {
                         "type": "array",
                         "items": {
@@ -34218,12 +36165,15 @@
                     "required": [
                       "receipt_id",
                       "state",
+                      "actor",
                       "mandate",
                       "quote",
                       "payment",
                       "delivery",
                       "chain",
                       "receipt_sig",
+                      "receipt_sig_ed25519",
+                      "receipt_sig_kid",
                       "exceptions"
                     ]
                   }
@@ -34275,7 +36225,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "receipts:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "receipts:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/test/fund": {
@@ -34497,7 +36455,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:fund",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:fund"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/fund/sandbox": {
@@ -34730,7 +36696,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:fund",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:fund"
+              ]
+            }
+          ]
         }
       },
       "/v1/test/pix-in": {
@@ -34950,7 +36924,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:fund",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:fund"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/fund/pix-in": {
@@ -35181,7 +37163,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:fund",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:fund"
+              ]
+            }
+          ]
         }
       },
       "/v1/test/settle-pix-in": {
@@ -35446,7 +37436,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:fund",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:fund"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/fund/pix-in/settle": {
@@ -35722,7 +37720,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:fund",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:fund"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/contact-verifications": {
@@ -36088,7 +38094,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:pix-keys",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:pix-keys"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/contact-verifications/{id}/verify": {
@@ -36442,7 +38456,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consumers:pix-keys",
+          "security": [
+            {
+              "bearerAuth": [
+                "consumers:pix-keys"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/dda/subscriptions": {
@@ -36885,7 +38907,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/{consumerId}/pix/devolutions": {
@@ -37541,7 +39571,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/mandates/{id}/receipts": {
@@ -37735,7 +39773,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "receipts:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "receipts:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/receipts/{id}/delivery": {
@@ -37824,6 +39870,57 @@
                           "exception",
                           "voided"
                         ]
+                      },
+                      "actor": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "agent"
+                                ]
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "on_behalf_of": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "id",
+                              "on_behalf_of"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "human"
+                                ]
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "channel": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "id"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "WHO triggered the spend, as the caller declared it at payment time. Null when they declared none, and null is the honest answer rather than a gap to fill: it is never inferred from `mandate.scope` or from the agent the mandate was signed for. A null here means nobody said, not that an agent did it."
                       },
                       "mandate": {
                         "type": "object",
@@ -38051,6 +40148,20 @@
                       "receipt_sig": {
                         "type": "string"
                       },
+                      "receipt_sig_ed25519": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "base64url Ed25519 signature over `codespar-receipt:v1:<receipt_id>:<chain>`, made with the platform issuer key. Verifiable by anyone: fetch `/.well-known/codespar-receipt-keys.json` (no credential), take the key whose `kid` is the one below, and check the signature over that string. Null on a receipt sealed before this existed, and on one sealed while the key could not be resolved — `receipt_sig` is the HMAC seal either way and is unaffected."
+                      },
+                      "receipt_sig_kid": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Which published key signed it, `<did:web:...>#<n>`. Keys rotate and a retired key stays published, so an old receipt names its own key rather than leaving a verifier to try each one."
+                      },
                       "exceptions": {
                         "type": "array",
                         "items": {
@@ -38077,12 +40188,15 @@
                     "required": [
                       "receipt_id",
                       "state",
+                      "actor",
                       "mandate",
                       "quote",
                       "payment",
                       "delivery",
                       "chain",
                       "receipt_sig",
+                      "receipt_sig_ed25519",
+                      "receipt_sig_kid",
                       "exceptions"
                     ],
                     "description": "The receipt as it now stands. On a re-seal its `delivery`, `chain` and `receipt_sig` are new; on an idempotent no-op — a weaker or equal proof, or a voided receipt — it is byte-for-byte what it already was."
@@ -38270,7 +40384,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "receipts:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "receipts:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/mandates": {
@@ -38469,7 +40591,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/mandates/{id}": {
@@ -38631,7 +40761,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/mandates/{id}/pause": {
@@ -38840,7 +40978,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/mandates/{id}/resume": {
@@ -39049,7 +41195,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/mandates/{id}/revoke": {
@@ -39258,7 +41412,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/bank-consents/{id}/callback": {
@@ -39642,7 +41804,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/bank-consents/{id}/refresh-statement": {
@@ -39943,7 +42113,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/bank-consents/{id}/revoke": {
@@ -40235,7 +42413,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/mandates": {
@@ -40439,7 +42625,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/mandates/{id}/pause": {
@@ -40653,7 +42847,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/mandates/{id}/resume": {
@@ -40867,7 +43069,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/consumers/mandates/{id}/revoke": {
@@ -41081,7 +43291,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/ofb/consents": {
@@ -41491,7 +43709,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/ofb/consents/{id}/callback": {
@@ -41880,7 +44106,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/ofb/consents/{id}/refresh-statement": {
@@ -42186,7 +44420,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/ofb/consents/{id}/revoke": {
@@ -42483,7 +44725,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "consents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "consents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/mcp-servers/validate": {
@@ -42657,7 +44907,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mcp-servers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mcp-servers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/mcp-servers": {
@@ -43048,7 +45306,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mcp-servers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mcp-servers:write"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List this project's MCP servers",
@@ -43221,7 +45487,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mcp-servers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "mcp-servers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/mcp-servers/{id}": {
@@ -43440,7 +45714,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mcp-servers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "mcp-servers:read"
+              ]
+            }
+          ]
         },
         "patch": {
           "summary": "Update an MCP server's listing metadata or its active flag",
@@ -43764,7 +46046,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mcp-servers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mcp-servers:write"
+              ]
+            }
+          ]
         },
         "delete": {
           "summary": "Delete an MCP server and its priced tools",
@@ -43859,7 +46149,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mcp-servers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mcp-servers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/mcp-servers/{id}/tools/{tool}": {
@@ -44077,7 +46375,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mcp-servers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mcp-servers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/mcp-servers/platform-fees/sweep": {
@@ -44271,7 +46577,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "platform-fees:sweep",
+          "security": [
+            {
+              "bearerAuth": [
+                "platform-fees:sweep"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/audit/export": {
@@ -44445,7 +46759,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/approvals": {
@@ -44656,7 +46978,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "approvals:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "approvals:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/approvals/{id}/decide": {
@@ -45229,7 +47559,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "approvals:decide",
+          "security": [
+            {
+              "bearerAuth": [
+                "approvals:decide"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/approvals/{id}": {
@@ -45395,7 +47733,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "approvals:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "approvals:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/approvals/health": {
@@ -45490,7 +47836,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "approvals:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "approvals:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/audit/health": {
@@ -45765,7 +48119,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/audit/incidents": {
@@ -45967,7 +48329,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/audit/incidents/{id}/acknowledge": {
@@ -46460,7 +48830,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/audit/config": {
@@ -46561,7 +48939,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:read"
+              ]
+            }
+          ]
         },
         "patch": {
           "deprecated": true,
@@ -46774,7 +49160,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "audit:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "audit:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/data-subjects/{userId}/anonymize": {
@@ -46896,7 +49290,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "data-subjects:anonymize",
+          "security": [
+            {
+              "bearerAuth": [
+                "data-subjects:anonymize"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/agents": {
@@ -47116,7 +49518,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "agents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "agents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/agents/{agentId}/keys/rotate": {
@@ -47320,7 +49730,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "agents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "agents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/agents/{agentId}/keys/{kid}/revoke": {
@@ -47524,7 +49942,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "agents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "agents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/mandates": {
@@ -47918,7 +50344,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:write"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List the org's mandates",
@@ -48177,7 +50611,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/mandates/{id}": {
@@ -48424,7 +50866,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/orgs/{orgId}/mandates/{id}/revoke": {
@@ -48627,7 +51077,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "mandates:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "mandates:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/paywalls": {
@@ -49087,7 +51545,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "paywalls:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "paywalls:write"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List paywalls",
@@ -49314,7 +51780,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "paywalls:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "paywalls:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/paywalls/{id}": {
@@ -49699,7 +52173,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "paywalls:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "paywalls:write"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "Read one paywall",
@@ -49970,7 +52452,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "paywalls:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "paywalls:read"
+              ]
+            }
+          ]
         },
         "delete": {
           "summary": "Delete a paywall",
@@ -50072,7 +52562,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "paywalls:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "paywalls:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/paywalls/{id}/stats": {
@@ -50205,7 +52703,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "paywalls:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "paywalls:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/payables": {
@@ -56093,7 +58599,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "payables:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "payables:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/payables/documents": {
@@ -60729,7 +63243,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "payables:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "payables:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/payables/{payableId}": {
@@ -62919,7 +65441,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "payables:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "payables:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/payables/{payableId}/review": {
@@ -65457,7 +67987,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "payables:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "payables:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/payables/{payableId}/pay": {
@@ -68005,7 +70543,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "payables:pay",
+          "security": [
+            {
+              "bearerAuth": [
+                "payables:pay"
+              ]
+            }
+          ]
         }
       },
       "/v1/projects": {
@@ -68147,7 +70693,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "projects:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "projects:write"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List projects",
@@ -68215,7 +70769,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "projects:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "projects:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/projects/{id}": {
@@ -68328,7 +70890,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "projects:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "projects:read"
+              ]
+            }
+          ]
         },
         "patch": {
           "summary": "Rename a project, change its slug, or promote it to default",
@@ -68513,7 +71083,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "projects:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "projects:write"
+              ]
+            }
+          ]
         },
         "delete": {
           "summary": "Delete a project",
@@ -68623,7 +71201,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "projects:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "projects:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/projects/{id}/settings": {
@@ -68761,7 +71347,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "projects:settings",
+          "security": [
+            {
+              "bearerAuth": [
+                "projects:settings"
+              ]
+            }
+          ]
         },
         "patch": {
           "summary": "Set or reset a project's settings",
@@ -68960,7 +71554,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "projects:settings",
+          "security": [
+            {
+              "bearerAuth": [
+                "projects:settings"
+              ]
+            }
+          ]
         }
       },
       "/v1/projects/{id}/settings/history": {
@@ -69076,7 +71678,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "projects:settings",
+          "security": [
+            {
+              "bearerAuth": [
+                "projects:settings"
+              ]
+            }
+          ]
         }
       },
       "/v1/sellers": {
@@ -69346,7 +71956,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sellers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "sellers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/sellers/{sellerId}": {
@@ -69462,7 +72080,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sellers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sellers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/sellers/{sellerId}/status": {
@@ -69625,7 +72251,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sellers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sellers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/sellers/{sellerId}/pending-settlement": {
@@ -69821,7 +72455,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sellers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sellers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/sellers/{sellerId}/custody": {
@@ -69963,7 +72605,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sellers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sellers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/sellers/{sellerId}/ledger": {
@@ -70181,7 +72831,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sellers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sellers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/payment-links": {
@@ -70705,7 +73363,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "payment-links:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "payment-links:write"
+              ]
+            }
+          ]
         },
         "get": {
           "summary": "List the payment links in this project",
@@ -70922,7 +73588,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "payment-links:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "payment-links:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/payment-links/{id}": {
@@ -71185,7 +73859,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "payment-links:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "payment-links:read"
+              ]
+            }
+          ]
         },
         "patch": {
           "summary": "Update a payment link's title, copy, expiry, redirect or active flag",
@@ -71560,7 +74242,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "payment-links:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "payment-links:write"
+              ]
+            }
+          ]
         },
         "delete": {
           "summary": "Delete a payment link",
@@ -71652,7 +74342,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "payment-links:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "payment-links:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/agents": {
@@ -71796,7 +74494,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "agents:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "agents:read"
+              ]
+            }
+          ]
         },
         "post": {
           "summary": "Register an agent identity and mint its first signing key",
@@ -71957,7 +74663,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "agents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "agents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/sessions/{id}/connections": {
@@ -72097,7 +74811,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/sessions/{id}/mocks": {
@@ -72180,7 +74902,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "sessions:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "sessions:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/sessions/{id}/execute": {
@@ -72547,7 +75277,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/sessions/{id}/proxy_execute": {
@@ -73032,7 +75770,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "proxy:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "proxy:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/sessions/{id}/send": {
@@ -73310,7 +76056,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "tools:execute",
+          "security": [
+            {
+              "bearerAuth": [
+                "tools:execute"
+              ]
+            }
+          ]
         }
       },
       "/v1/agents/{agentId}/keys/rotate": {
@@ -73456,7 +76210,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "agents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "agents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/agents/{agentId}/keys/{kid}/revoke": {
@@ -73603,7 +76365,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "agents:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "agents:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/webhook-endpoints/{id}": {
@@ -73747,7 +76517,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:read"
+              ]
+            }
+          ]
         },
         "delete": {
           "summary": "Delete a webhook endpoint",
@@ -73858,7 +76636,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         },
         "patch": {
           "summary": "Update a webhook endpoint",
@@ -74078,7 +76864,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/triggers/{id}": {
@@ -74227,7 +77021,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:read"
+              ]
+            }
+          ]
         },
         "delete": {
           "deprecated": true,
@@ -74343,7 +77145,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         },
         "patch": {
           "deprecated": true,
@@ -74568,7 +77378,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/webhook-endpoints/{id}/test-fire": {
@@ -74797,7 +77615,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/triggers/{id}/test-fire": {
@@ -75031,7 +77857,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/webhook-endpoints/{id}/rotate-secret": {
@@ -75171,7 +78005,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/triggers/{id}/rotate-secret": {
@@ -75316,7 +78158,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/webhook-endpoints/{id}/deliveries": {
@@ -75478,7 +78328,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/triggers/{id}/deliveries": {
@@ -75645,7 +78503,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/webhook-endpoints/{id}/deliveries/{delivery_id}": {
@@ -75997,7 +78863,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/triggers/{id}/deliveries/{delivery_id}": {
@@ -76354,7 +79228,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/webhook-endpoints/{id}/dlq": {
@@ -76496,7 +79378,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/triggers/{id}/dlq": {
@@ -76643,7 +79533,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/webhook-endpoints/retry-pending": {
@@ -76688,7 +79586,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/triggers/retry-pending": {
@@ -76738,7 +79644,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/webhook-endpoints/deliveries/{delivery_id}/redeliver": {
@@ -76881,7 +79795,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         }
       },
       "/v1/triggers/deliveries/{delivery_id}/redeliver": {
@@ -77029,7 +79951,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "triggers:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "triggers:write"
+              ]
+            }
+          ]
         }
       }
     },

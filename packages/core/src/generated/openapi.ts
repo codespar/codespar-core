@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 5a7f86d6fdf069c1e2ea7c0adef59362087f01c1e849bd8630305408ff6c152b, fetched 2026-09-23T23:05:33.042Z
+// Source: openapi-snapshot.json (sha256 c308078a0726749fa9e58f5c824c882591b48e253768e090bb9d5bb54e230b7b, fetched 2026-09-25T02:00:06.289Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -36,6 +36,66 @@ export interface paths {
                             authorization_servers: string[];
                             bearer_methods_supported: string[];
                             scopes_supported: string[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/codespar-receipt-keys.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Receipt verification keys (JWKS)
+         * @description The public half of the key that signs agentic receipts, so a party with no CodeSpar credential can check one. An agentic receipt carries two seals: `receipt_sig`, an HMAC under the consumer's own secret, which proves the payment to whoever holds that secret and to nobody else; and `receipt_sig_ed25519`, made with the key published here.
+         *
+         *     To verify: take `receipt_sig_kid` from the receipt, find the key with that `kid` below, build `codespar-receipt:v1:<receipt_id>:<chain>` and check the base64url signature over those UTF-8 bytes with any Ed25519 verifier. `x` is the raw 32-byte public key, base64url (RFC 8037).
+         *
+         *     Keys ROTATE and a retired key stays listed — that is what keeps an old receipt verifiable. A revoked key is removed entirely: its private half is assumed compromised, so signatures it made are worth nothing. An empty `keys` means this deployment publishes none, which is consistent with its receipts carrying a null `receipt_sig_kid`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            issuer: string;
+                            algorithm: string;
+                            /** @description The template of the bytes a signature covers, stated so a verifier needs nothing else from us. */
+                            signing_string: string;
+                            keys: {
+                                kid: string;
+                                kty: string;
+                                crv: string;
+                                x: string;
+                                alg: string;
+                                use: string;
+                                /** @description `active` or `retired`. A retired key signs nothing new. */
+                                status: string;
+                                created_at: string;
+                                retired_at: string | null;
+                            }[];
                         };
                     };
                 };
@@ -1392,6 +1452,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
                         event: string;
                         server_id?: string;
                         /** Format: uri */
@@ -1509,6 +1570,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
                         event: string;
                         server_id?: string;
                         /** Format: uri */
@@ -4239,6 +4301,165 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/audit-events/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify the chain over an interval
+         * @description Walks your chain across the interval and answers with a verdict: `verified`, `broken` with the first violated sequence, or `unverified` when a stretch of it could not be checked at all.
+         *
+         *     Before this existed a client had to COMPOSE that answer — list the interval, read `watermark_sequence` off `/v1/audit-events/health`, and call the interval verified when every sequence sat at or below it. The deduction is sound and conservative, and it is still the client asserting something this server never said. This operation says it. It runs the same walk as the background verifier: the same link check, the same hash recompute, the same tombstone-witness rule, over the same rows.
+         *
+         *     `unverified` is NOT a weaker `verified` and NOT a `broken`. It means part of the interval has no verifiable link — rows are missing, or the first row has no predecessor to measure against — so nothing here certifies that stretch either way. `unverified_segments` names them, capped at 20 entries while `unverified_segment_count` stays the true total.
+         *
+         *     THE INTERVAL IS STATED IN TIME AND THE CHAIN IS ORDERED BY SEQUENCE. `from`/`to` select rows by `happened_at`; the walk then covers the contiguous sequence span those rows occupy, reported as `sequence_range`, because a link can only be checked against the row immediately before it. That span can hold more rows than the window does, which is why `events_walked` is reported next to `events_in_interval`.
+         *
+         *     BOUNDED BY ROWS, not by days: at most 50,000 rows in the span, or the request is refused with 413 `interval_too_large` and the count, so you can split it. A day count would bound nothing — `happened_at` is written by whoever appended the event, so an hour-wide window can hold an entire chain.
+         *
+         *     Unlike `GET /v1/audit-events/health`, this read has NO side effects. It opens no incident, records no unverifiable segment and moves no watermark; poll it as often as you like.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Start of the interval, inclusive. ISO 8601, read against `happened_at`. */
+                        from: string;
+                        /** @description End of the interval, inclusive. ISO 8601, read against `happened_at`. */
+                        to: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description `verified` — every row in the span linked to the one before it and hashed to its stored `entry_hash`. `broken` — a row was caught lying, named by `first_violation`. `unverified` — nothing was caught, and part of the span has no verifiable link, so it is certified neither way.
+                             * @enum {string}
+                             */
+                            status: "verified" | "unverified" | "broken";
+                            interval: {
+                                /** Format: date-time */
+                                from: string;
+                                /** Format: date-time */
+                                to: string;
+                            };
+                            /** @description The contiguous sequence span the interval's rows occupy, and what was walked. */
+                            sequence_range: {
+                                from: number;
+                                to: number;
+                            };
+                            /** @description Rows whose `happened_at` falls inside the interval. */
+                            events_in_interval: number;
+                            /** @description Rows inside `sequence_range`. At least `events_in_interval`, and larger when rows written with a `happened_at` outside the window sit between them. */
+                            events_walked: number;
+                            /** @description Rows that passed both checks. Below `events_walked` when the walk stopped at a break. */
+                            events_verified: number;
+                            /** @description The last sequence that verified. null when the very first row of the span did not, which is also the shape of a break at `sequence_range.from`. */
+                            verified_through_sequence: number | null;
+                            /** @description The FIRST violated sequence. The walk stops there; later rows are not reported. */
+                            first_violation: {
+                                sequence_number: number;
+                                /**
+                                 * @description Which check fired. `chain_link_break_detected` — this row's `prev_hash` does not match the previous row's `entry_hash`, which is the only cross-row binding there is. `chain_integrity_break_detected` — the row's own fields no longer hash to its stored `entry_hash`. `tombstone_witness_missing` — an anonymized row with no live witness vouching for it, which would otherwise buy silence for free.
+                                 * @enum {string}
+                                 */
+                                check: "chain_link_break_detected" | "chain_integrity_break_detected" | "tombstone_witness_missing";
+                                detail: string;
+                            } | null;
+                            /** @description A sample, capped at 20. `unverified_segment_count` is the total. */
+                            unverified_segments: {
+                                /** @description Last sequence verified before the hole; 0 when there was no anchor at all. */
+                                from_sequence: number;
+                                /** @description First sequence observed after the hole. */
+                                to_sequence: number;
+                                /** @enum {string} */
+                                reason: "sequence_gap" | "no_anchor";
+                                detail: string;
+                            }[];
+                            unverified_segment_count: number;
+                            /**
+                             * Format: date-time
+                             * @description When this walk ran. The verdict is about the rows as they stood then.
+                             */
+                            checked_at: string;
+                        };
+                    };
+                };
+                /** @description Bad Request. `invalid_body` when `from` or `to` is missing or not a string, `invalid_iso_8601` when either is not a date this server can parse, `from_after_to` when the interval is inverted. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "invalid_body" | "invalid_iso_8601" | "from_after_to";
+                        };
+                    };
+                };
+                /** @description The sequence span covered by the interval holds more rows than one request will walk. Split the interval; `row_count` and `limit` say by how much. */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "interval_too_large";
+                            remediation: string;
+                            row_count: number;
+                            limit: number;
+                            sequence_range: {
+                                from: number;
+                                to: number;
+                            };
+                        };
+                    };
+                };
+                /** @description The interval holds no audit events, so there is no verdict to give. Deliberately NOT a `verified` 200: a walk over nothing trivially finds nothing wrong, and a clean verdict for a period the chain says nothing about is the one claim a proof bundle must not carry — a mistyped date and an intact month would read identically. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "interval_empty";
+                            remediation: string;
+                            interval: {
+                                /** Format: date-time */
+                                from: string;
+                                /** Format: date-time */
+                                to: string;
+                            };
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -14417,6 +14638,17 @@ export interface paths {
          *     - `partner` — your server submits. `attestation` is REQUIRED (400 `attestation_required`): the IP and user-agent recorded are your server's, so the only statement about the human is yours. It is signed into the mandate as `consent_attestation` and cannot be edited afterwards without breaking the signature.
          *
          *     `attestation.method` says how the human authorized: `partner_session` (an authenticated session in your product), `in_person`, `verified_code` (a code YOU issued and verified), or `partner_biometric` (YOU ran a biometric check at the moment of the act). `partner_biometric` is not a flavour of `partner_session`: in a dispute a session says someone was logged in and a biometric says a body was present. We capture and verify no biometric ourselves — this records what YOU assert, sealed by the mandate signature so it cannot be edited afterwards; the evidence behind it stays with you. `asserted_at` is the instant you say they authorized, in Unix seconds. `reference` is your own record id, `[A-Za-z0-9_-]{1,120}`, and never personal data — it is joined into the signed string, so the character set is the schema's, not a suggestion.
+         *
+         *     `attestation.evidence` (optional) is what you OBSERVED of the act, signed with the rest of the mandate. `channel` is required and decides which other keys may be present, because a value a channel cannot expose was inferred, and an inferred value inside a signed record reads exactly like an observed one:
+         *
+         *     - `whatsapp`, `sms`, `email`, `llm_chat` — `contact`, `message_id`, `session_id`, `provider_ts`. These hand you a conversation, not a connection.
+         *     - `web_chat` — the above plus `ip`, `user_agent`, `geo`. A browser has no install, so no `device_id_hash`.
+         *     - `app` — the above plus `device_id_hash`.
+         *     - `other` — everything, because we cannot say what a channel we have not named exposes. An auditor reading `other` knows exactly that.
+         *
+         *     A key outside its channel's set, or a key the object does not declare, is a 400 `attestation_evidence_invalid` with `details.key` naming it — never a silent drop. `contact` is the e-mail or E.164 phone the consumer acted from; it is hashed server-side into the signed `contact_hash` and never stored in the clear. `device_id_hash` you hash yourself (64 hex characters). `geo` is `{country, region, city}` and refuses coordinates.
+         *
+         *     `method: "verified_code"` additionally REQUIRES `evidence.contact` to carry a contact verification we ran for this consumer in the last 24h (`POST /v1/consumers/{consumerId}/contact-verifications`), or the submit is refused with 409 `contact_verification_required` and the token is left unspent. A rung that is only asserted is not stronger than the one below it.
          */
         post: {
             parameters: {
@@ -14440,6 +14672,23 @@ export interface paths {
                             method: "partner_session" | "in_person" | "verified_code" | "partner_biometric";
                             asserted_at: number;
                             reference?: string;
+                            evidence?: {
+                                /** @enum {string} */
+                                channel: "whatsapp" | "web_chat" | "app" | "llm_chat" | "sms" | "email" | "other";
+                                message_id?: string;
+                                session_id?: string;
+                                provider_ts?: number;
+                                /** Format: ip */
+                                ip?: string;
+                                user_agent?: string;
+                                device_id_hash?: string;
+                                geo?: {
+                                    country: string;
+                                    region?: string;
+                                    city?: string;
+                                };
+                                contact?: string;
+                            };
                         };
                     };
                 };
@@ -14464,7 +14713,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The body did not match the schema (`invalid_body`, with the Zod issues in `details.issues`), or the attestation does not match the token's surface: `attestation_required` on `partner` without one, `attestation_not_accepted` on `hosted` with one. */
+                /** @description The body did not match the schema (`invalid_body`, with the Zod issues in `details.issues`), the attestation does not match the token's surface (`attestation_required` on `partner` without one, `attestation_not_accepted` on `hosted` with one), or the evidence carries a key its channel cannot expose or one the object does not declare (`attestation_evidence_invalid`, `details.key`). */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -14473,7 +14722,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "invalid_body" | "attestation_required" | "attestation_not_accepted";
+                                code: "invalid_body" | "attestation_required" | "attestation_not_accepted" | "attestation_evidence_invalid";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -14504,7 +14753,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The token was already submitted, or a concurrent submit won the race. Nothing was created twice: the loser rolls back whole. */
+                /** @description The token was already submitted, or a concurrent submit won the race (nothing was created twice: the loser rolls back whole); or `method: "verified_code"` was claimed without a contact verification for this consumer in the last 24h, in which case nothing was created at all and the token is still pending. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -14513,7 +14762,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "consent_already_resolved" | "consent_race";
+                                code: "consent_already_resolved" | "consent_race" | "contact_verification_required";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -14599,6 +14848,7 @@ export interface paths {
                         attempt_id?: string;
                         ted?: components["schemas"]["TedDestination"];
                         quote?: components["schemas"]["SpendQuote"];
+                        actor?: components["schemas"]["PaymentActor"];
                     };
                 };
             };
@@ -14612,7 +14862,7 @@ export interface paths {
                         "application/json": components["schemas"]["SpendOutcome"];
                     };
                 };
-                /** @description The body did not match the schema. */
+                /** @description The body did not match the schema (`invalid_body`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in either case. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -14621,7 +14871,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "invalid_body";
+                                code: "invalid_body" | "actor_consumer_mismatch";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -14824,6 +15074,7 @@ export interface paths {
                         attempt_id?: string;
                         ted?: components["schemas"]["TedDestination"];
                         quote?: components["schemas"]["SpendQuote"];
+                        actor?: components["schemas"]["PaymentActor"];
                     };
                 };
             };
@@ -14837,7 +15088,7 @@ export interface paths {
                         "application/json": components["schemas"]["SpendOutcome"];
                     };
                 };
-                /** @description The body did not match the schema. */
+                /** @description The body did not match the schema (`invalid_body`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in either case. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -14846,7 +15097,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "invalid_body";
+                                code: "invalid_body" | "actor_consumer_mismatch";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15001,6 +15252,7 @@ export interface paths {
                         attempt_id?: string;
                         ted?: components["schemas"]["TedDestination"];
                         quote?: components["schemas"]["SpendQuote"];
+                        actor?: components["schemas"]["PaymentActor"];
                     };
                 };
             };
@@ -15014,7 +15266,7 @@ export interface paths {
                         "text/event-stream": string;
                     };
                 };
-                /** @description The body did not match the schema. */
+                /** @description The body did not match the schema (`invalid_body`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in either case. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -15023,7 +15275,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "invalid_body";
+                                code: "invalid_body" | "actor_consumer_mismatch";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -17800,6 +18052,18 @@ export interface paths {
                                 receipt_id: string;
                                 /** @enum {string} */
                                 state: "paid" | "delivered" | "exception" | "voided";
+                                /** @description WHO triggered the spend, as the caller declared it at payment time. Null when they declared none, and null is the honest answer rather than a gap to fill: it is never inferred from `mandate.scope` or from the agent the mandate was signed for. A null here means nobody said, not that an agent did it. */
+                                actor: {
+                                    /** @enum {string} */
+                                    type: "agent";
+                                    id: string;
+                                    on_behalf_of: string;
+                                } | {
+                                    /** @enum {string} */
+                                    type: "human";
+                                    id: string;
+                                    channel?: string;
+                                } | null;
                                 mandate: {
                                     id: string;
                                     nonce: string;
@@ -17853,6 +18117,10 @@ export interface paths {
                                 } | null;
                                 chain: string;
                                 receipt_sig: string;
+                                /** @description base64url Ed25519 signature over `codespar-receipt:v1:<receipt_id>:<chain>`, made with the platform issuer key. Verifiable by anyone: fetch `/.well-known/codespar-receipt-keys.json` (no credential), take the key whose `kid` is the one below, and check the signature over that string. Null on a receipt sealed before this existed, and on one sealed while the key could not be resolved — `receipt_sig` is the HMAC seal either way and is unaffected. */
+                                receipt_sig_ed25519: string | null;
+                                /** @description Which published key signed it, `<did:web:...>#<n>`. Keys rotate and a retired key stays published, so an old receipt names its own key rather than leaving a verifier to try each one. */
+                                receipt_sig_kid: string | null;
                                 exceptions: {
                                     code: string;
                                     detail: string;
@@ -17907,6 +18175,18 @@ export interface paths {
                             receipt_id: string;
                             /** @enum {string} */
                             state: "paid" | "delivered" | "exception" | "voided";
+                            /** @description WHO triggered the spend, as the caller declared it at payment time. Null when they declared none, and null is the honest answer rather than a gap to fill: it is never inferred from `mandate.scope` or from the agent the mandate was signed for. A null here means nobody said, not that an agent did it. */
+                            actor: {
+                                /** @enum {string} */
+                                type: "agent";
+                                id: string;
+                                on_behalf_of: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "human";
+                                id: string;
+                                channel?: string;
+                            } | null;
                             mandate: {
                                 id: string;
                                 nonce: string;
@@ -17960,6 +18240,10 @@ export interface paths {
                             } | null;
                             chain: string;
                             receipt_sig: string;
+                            /** @description base64url Ed25519 signature over `codespar-receipt:v1:<receipt_id>:<chain>`, made with the platform issuer key. Verifiable by anyone: fetch `/.well-known/codespar-receipt-keys.json` (no credential), take the key whose `kid` is the one below, and check the signature over that string. Null on a receipt sealed before this existed, and on one sealed while the key could not be resolved — `receipt_sig` is the HMAC seal either way and is unaffected. */
+                            receipt_sig_ed25519: string | null;
+                            /** @description Which published key signed it, `<did:web:...>#<n>`. Keys rotate and a retired key stays published, so an old receipt names its own key rather than leaving a verifier to try each one. */
+                            receipt_sig_kid: string | null;
                             exceptions: {
                                 code: string;
                                 detail: string;
@@ -19869,6 +20153,18 @@ export interface paths {
                             receipt_id: string;
                             /** @enum {string} */
                             state: "paid" | "delivered" | "exception" | "voided";
+                            /** @description WHO triggered the spend, as the caller declared it at payment time. Null when they declared none, and null is the honest answer rather than a gap to fill: it is never inferred from `mandate.scope` or from the agent the mandate was signed for. A null here means nobody said, not that an agent did it. */
+                            actor: {
+                                /** @enum {string} */
+                                type: "agent";
+                                id: string;
+                                on_behalf_of: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "human";
+                                id: string;
+                                channel?: string;
+                            } | null;
                             mandate: {
                                 id: string;
                                 nonce: string;
@@ -19922,6 +20218,10 @@ export interface paths {
                             } | null;
                             chain: string;
                             receipt_sig: string;
+                            /** @description base64url Ed25519 signature over `codespar-receipt:v1:<receipt_id>:<chain>`, made with the platform issuer key. Verifiable by anyone: fetch `/.well-known/codespar-receipt-keys.json` (no credential), take the key whose `kid` is the one below, and check the signature over that string. Null on a receipt sealed before this existed, and on one sealed while the key could not be resolved — `receipt_sig` is the HMAC seal either way and is unaffected. */
+                            receipt_sig_ed25519: string | null;
+                            /** @description Which published key signed it, `<did:web:...>#<n>`. Keys rotate and a retired key stays published, so an old receipt names its own key rather than leaving a verifier to try each one. */
+                            receipt_sig_kid: string | null;
                             exceptions: {
                                 code: string;
                                 detail: string;
@@ -36111,6 +36411,22 @@ export interface components {
             payee: string;
             session_id?: string;
             at?: string;
+        };
+        /** @description WHO triggered this spend, recorded on the receipt and read back from it. Optional, and absence is a real answer: a spend that sends no actor records `null`, and nothing is ever inferred from `agent_id` — that field names the agent the mandate was SIGNED for, which is an authority, not an event. A person acting through WhatsApp under an agent's mandate and the agent acting unattended are the same row without this field. */
+        PaymentActor: {
+            /** @enum {string} */
+            type: "agent";
+            /** @description The agent's own identifier. */
+            id: string;
+            /** @description The consumer the agent is acting for. It must be the consumer this mandate belongs to; any other value is refused with `actor_consumer_mismatch` before anything is read, held or sent. */
+            on_behalf_of: string;
+        } | {
+            /** @enum {string} */
+            type: "human";
+            /** @description The person's identifier — a user id, not a name. */
+            id: string;
+            /** @description Where the person acted from: `whatsapp`, `dashboard`, `cli`. */
+            channel?: string;
         };
     };
     responses: never;
