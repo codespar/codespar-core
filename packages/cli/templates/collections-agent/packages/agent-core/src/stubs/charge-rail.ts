@@ -139,6 +139,8 @@ export class StubChargeRail implements PaymentRail {
       payment: { amount_minor: req.amount_minor, payee: req.payee, attempt_id: req.attempt_id, money_moved: false, sandbox: true, at: raw.paid_at ?? sealed.at },
       chain: null,
       receipt_sig: null,
+      receipt_sig_ed25519: null,
+      receipt_sig_kid: null,
       actor,
       raw: { stub: true, charge_id: out.transaction_id, simulated: true, settled_against: "sandbox_fixture" },
     };

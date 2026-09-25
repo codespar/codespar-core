@@ -1,0 +1,7 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"grafica","amount_minor":40000,"description":"NF 4460, avulsa"}]}}]}
+{"kind":"assistant_step","reply":"Propus R$ 400,00 para a Grafica Litoral. Como e o primeiro pagamento a esse fornecedor, o mandato pediu sua aprovacao."}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_2","name":"list_payables","input":{}}]}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_3","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"grafica","amount_minor":180000,"description":"NF 4471, catalogos"}]}}]}
+{"kind":"assistant_step","reply":"Propus R$ 1.800,00 da NF 4471. Passa de R$ 1.500,00, entao o mandato pediu sua aprovacao."}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_4","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"grafica","amount_minor":30000,"description":"NF 4480, reimpressao"}]}}]}
+{"kind":"assistant_step","reply":"Paguei R$ 300,00 da reimpressao dentro da alcada; o recibo esta no terminal."}

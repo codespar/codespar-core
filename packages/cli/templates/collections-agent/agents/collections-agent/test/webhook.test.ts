@@ -8,14 +8,13 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { announceOutcome } from "../channels/terminal/index.js";
-import { createWebhookHandler, verifySignature } from "../channels/webhook/index.js";
-import { RUNS_DIR, setup } from "../src/setup.js";
+import { announceOutcome, createWebhookHandler, setup, verifySignature } from "@codespar/agent-runtime";
+import { agent } from "../src/kit.js";
 
 function issued(mode: "human" | "mandate" = "mandate") {
   let clock = new Date("2026-09-23T18:00:00Z");
-  const s = setup({ mode, rail: "stub", provider: "replay", transcript: "unused", stateDir: mkdtempSync(join(tmpdir(), "collections-webhook-")), runsDir: mkdtempSync(join(tmpdir(), "collections-webhook-runs-")), now: () => (clock = new Date(clock.getTime() + 1000)), say: () => undefined });
-  s.payer.behave("never");
+  const s = setup(agent, { mode, rail: "stub", provider: "replay", transcript: "unused", stateDir: mkdtempSync(join(tmpdir(), "collections-webhook-")), runsDir: mkdtempSync(join(tmpdir(), "collections-webhook-runs-")), now: () => (clock = new Date(clock.getTime() + 1000)), say: () => undefined });
+  s.payer!.behave("never");
   return s;
 }
 
@@ -96,5 +95,3 @@ describe("channels/webhook", () => {
     }
   });
 });
-
-void RUNS_DIR;

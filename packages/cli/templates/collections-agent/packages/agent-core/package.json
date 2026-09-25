@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.128.0",
-    "@codespar/sdk": "0.16.4",
+    "@codespar/sdk": "0.16.6",
     "yaml": "2.9.1",
     "zod": "3.25.76"
   }

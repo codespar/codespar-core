@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { checkApprovalArtifact, createApprovalArtifact, hmacSigner } from "../src/approval.js";
-import { itemsHash } from "../src/hash.js";
+import { batchHash, itemsHash } from "../src/hash.js";
 import type { Execution } from "../src/state-machine.js";
-import type { Actor, ExecutionItem } from "../src/types.js";
+import type { Actor, ExecutionBatch, ExecutionItem } from "../src/types.js";
 
 const actor: Actor = { type: "human", id: "usr_1", channel: "terminal" };
 const signer = hmacSigner("test", Buffer.alloc(32, 7));
@@ -30,6 +30,7 @@ function execution(items: ExecutionItem[]): Execution<"awaiting_approval"> {
 }
 
 const escola: ExecutionItem = { alias: "escola", beneficiary: "Escola", payee: "escola@exemplo.com.br", amount: 185000, currency: "BRL" };
+const mercado: ExecutionItem = { alias: "mercado", beneficiary: "Mercado", payee: "+5511999990001", amount: 42000, currency: "BRL" };
 
 describe("section 4.2: approval artifact", () => {
   it("has the schema of the spec and an HMAC signature that verifies", () => {
@@ -67,6 +68,39 @@ describe("section 4.2: approval artifact", () => {
     expect(checkApprovalArtifact(signer, artifact, exe, new Date(now.getTime() + 16 * 60 * 1000))).toEqual({ ok: false, problem: "expired" });
     expect(checkApprovalArtifact(hmacSigner("other", Buffer.alloc(32, 9)), artifact, exe, now)).toEqual({ ok: false, problem: "signature_invalid" });
     expect(checkApprovalArtifact(signer, artifact, { ...exe, mandate: { id: "mdt_1", version: 4 } }, now)).toEqual({ ok: false, problem: "wrong_mandate" });
+  });
+
+  it("carries the batch this line belongs to, and the whole of it is signed", () => {
+    const batch: ExecutionBatch = { ref: "folha-2026-10", batch_hash: batchHash([escola, mercado]), index: 0, count: 2 };
+    const exe = { ...execution([escola]), batch };
+    const artifact = createApprovalArtifact(signer, { execution: exe, approver: { type: "person", id: "usr_1", channel: "terminal" }, actor, now });
+    expect(artifact.batch).toEqual(batch);
+    expect(checkApprovalArtifact(signer, artifact, exe, now)).toEqual({ ok: true });
+    // Moving the line inside the list, re-pricing the list, or renaming it:
+    // each is a different set, and the signature covers all of it.
+    for (const changed of [{ ...batch, index: 1 }, { ...batch, count: 3 }, { ...batch, ref: "folha-2026-11" }, { ...batch, batch_hash: batchHash([escola]) }]) {
+      expect(checkApprovalArtifact(signer, { ...artifact, batch: changed }, exe, now)).toEqual({ ok: false, problem: "signature_invalid" });
+      expect(checkApprovalArtifact(signer, artifact, { ...exe, batch: changed }, now)).toEqual({ ok: false, problem: "batch_mismatch" });
+    }
+  });
+
+  it("an artifact with no batch signs the payload it signed before batches existed", () => {
+    const exe = execution([escola]);
+    const artifact = createApprovalArtifact(signer, { execution: exe, approver: { type: "person", id: "usr_1", channel: "terminal" }, actor, now });
+    // Omitted, never null: a bills-agent run has no batch and must not grow a key.
+    expect("batch" in artifact).toBe(false);
+    expect(checkApprovalArtifact(signer, artifact, exe, now)).toEqual({ ok: true });
+    // An execution that gained a batch after the artifact was signed is not the one that was approved.
+    const joined = { ...exe, batch: { ref: "folha-2026-10", batch_hash: batchHash([escola]), index: 0, count: 1 } };
+    expect(checkApprovalArtifact(signer, artifact, joined, now)).toEqual({ ok: false, problem: "batch_mismatch" });
+  });
+
+  it("the batch hash IS the items hash of the whole ordered list, so a reader can recompute it", () => {
+    expect(batchHash([escola, mercado])).toBe(itemsHash([escola, mercado]));
+    // Order is part of it: `index` names a position, and a position only means something in a fixed order.
+    expect(batchHash([mercado, escola])).not.toBe(batchHash([escola, mercado]));
+    // A line dropped is a different set, which is the whole point.
+    expect(batchHash([escola])).not.toBe(batchHash([escola, mercado]));
   });
 
   it("records the escalation trigger when there was one", () => {

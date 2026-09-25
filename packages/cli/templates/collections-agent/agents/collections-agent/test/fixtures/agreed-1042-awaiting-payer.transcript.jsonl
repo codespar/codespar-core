@@ -1,0 +1,4 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "list_agreements", "input": {}}]}
+{"kind": "assistant_step", "reply": "Oi, Joana! Aqui é o atendimento da loja sobre o pedido #1042, R$ 1.200,00 em aberto. Posso fechar assim: à vista com 10% de desconto, R$ 1.080,00, vencendo em 30/09; ou em 3 parcelas de R$ 400,00. Qual prefere?"}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_2", "name": "codespar_charge", "input": {"action": "create", "agreement": "acordo-1042", "instalments": [{"amount_minor": 108000, "due_date": "2026-09-30"}], "total_minor": 108000}}]}
+{"kind": "assistant_step", "reply": "Fechado, Joana! A cobrança de R$ 1.080,00 está emitida e vence em 30/09. Assim que o pagamento cair, eu te aviso por aqui."}

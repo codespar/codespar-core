@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ESCOLA, harness, MERCADO } from "./helpers.js";
+import { ESCOLA, FUNCIONARIA, harness, MERCADO } from "./helpers.js";
 
 const approver = { id: "usr_demo", channel: "terminal" };
 
@@ -520,5 +520,77 @@ describe("multi-item partial failure is named item by item", () => {
     expect(h.bundle.readApprovals()[0]?.items.map((i) => i.payee)).toEqual([ESCOLA, MERCADO]);
     expect(h.store.getOutbox(out.idempotency_key)?.status).toBe("failed");
     expect(h.store.getOutbox(out.idempotency_key)?.response).toEqual(out.outcomes);
+  });
+
+  it("a refusal in the MIDDLE does not stop the items after it: every attempt is sent and every one is named", async () => {
+    const h = harness({ mode: "human", rail: { refusePayees: [MERCADO] } });
+    const d = await h.engine.draft({ items: [{ payee: "escola", amount: 1000 }, { payee: "mercado", amount: 2000 }, { payee: "funcionaria", amount: 3000 }] });
+    if (!d.ok) throw new Error("refused");
+    const out = await h.engine.execute(h.engine.approve(d.execution.id, approver).id);
+    // Section 4.1: the execution closes `failed` because one attempt failed,
+    // and `outcomes` names EVERY item — including the one after the refusal.
+    expect(out.state).toBe("failed");
+    expect(out.outcomes.map((o) => o.status)).toEqual(["settled", "failed", "settled"]);
+    expect(h.rail.payCount).toBe(3); // all three reached the rail; the stub records a refusal too
+    expect(readdirSync(join(h.bundle.dir, "receipts"))).toHaveLength(2);
+  });
+
+  it("an unknown answer in the MIDDLE still sends the siblings, and the execution stays open until it is resolved", async () => {
+    const h = harness({ mode: "human", rail: { uncertainPayees: [MERCADO] } });
+    const d = await h.engine.draft({ items: [{ payee: "escola", amount: 1000 }, { payee: "mercado", amount: 2000 }, { payee: "funcionaria", amount: 3000 }] });
+    if (!d.ok) throw new Error("refused");
+    const out = await h.engine.execute(h.engine.approve(d.execution.id, approver).id);
+    // Open, not closed: one attempt has no outcome at all, and §4.1 says an
+    // execution closes only when every attempt has one.
+    expect(out.state).toBe("executing");
+    expect(out.reason).toBe("rail_uncertain");
+    expect(out.outcomes.map((o) => o.index)).toEqual([0, 2]);
+    expect(out.detail).toContain("psp_dispatch_uncertain");
+    // Reconciliation resolves the unknown one and only then does it close.
+    // The stub answers `in_flight` on the first look and finds the provider
+    // finished on the second, which is the shape a real timeout has.
+    expect((await h.engine.reconcile(d.execution.id)).state).toBe("executing");
+    const closed = await h.engine.reconcile(d.execution.id);
+    expect(closed.state).toBe("settled");
+    expect(closed.outcomes.map((o) => o.status)).toEqual(["settled", "settled", "settled"]);
+  });
+
+  it("an execution with a failed attempt AND an unknown one does not close as failed", async () => {
+    const h = harness({ mode: "human", rail: { refusePayees: [ESCOLA], uncertainPayees: [MERCADO] } });
+    const d = await h.engine.draft({ items: [{ payee: "escola", amount: 1000 }, { payee: "mercado", amount: 2000 }, { payee: "funcionaria", amount: 3000 }] });
+    if (!d.ok) throw new Error("refused");
+    const out = await h.engine.execute(h.engine.approve(d.execution.id, approver).id);
+    // "One of them failed and one of them we cannot see" is not a closed
+    // outcome: reporting `failed` here would call a batch finished while a
+    // payment may still be in flight.
+    expect(out.state).toBe("executing");
+    expect(out.outcomes.map((o) => o.status)).toEqual(["failed", "settled"]);
+    expect((await h.engine.reconcile(d.execution.id)).state).toBe("executing");
+    const closed = await h.engine.reconcile(d.execution.id);
+    expect(closed.state).toBe("failed");
+    expect(closed.outcomes.map((o) => o.status)).toEqual(["failed", "settled", "settled"]);
+  });
+
+  it("why the siblings are sent and not deferred: an attempt that was never sent is recovered by nothing", async () => {
+    // This is the measurement the choice rests on. `reconcile` is read-only by
+    // contract and never dispatches; `resumePending` dispatches only while the
+    // outbox row is still `pending`, and it flips to `sent` before the first
+    // rail call. So an attempt skipped at dispatch is not sent later — it is
+    // never sent, by any path the runtime has.
+    const h = harness({ mode: "human", rail: { uncertainPayees: [MERCADO] } });
+    const d = await h.engine.draft({ items: [{ payee: "escola", amount: 1000 }, { payee: "mercado", amount: 2000 }, { payee: "funcionaria", amount: 3000 }] });
+    if (!d.ok) throw new Error("refused");
+    const out = await h.engine.execute(h.engine.approve(d.execution.id, approver).id);
+    const third = `att_${out.idempotency_key.slice(4)}_2`;
+    // Under the fix the third attempt WAS sent, so the rail knows it.
+    expect(h.store.stubRailGet(third)).toBeDefined();
+    expect(h.store.getOutbox(out.idempotency_key)?.status).toBe("sent");
+    // And that is the only reason it is recoverable: `resumePending` on a
+    // `sent` row reconciles instead of dispatching, and never pays again.
+    const before = h.rail.payCount;
+    expect((await h.engine.resumePending(d.execution.id)).state).toBe("executing");
+    const resumed = await h.engine.resumePending(d.execution.id);
+    expect(h.rail.payCount).toBe(before); // reconciled, never re-sent
+    expect(resumed.state).toBe("settled");
   });
 });

@@ -20,11 +20,11 @@ import { itemsHash, sha256Hex } from "./hash.js";
 import { newId } from "./ids.js";
 import { mandateExpired, payeeAllowed, resolveBeneficiary, windowCap, windowStart, type Mandate } from "./mandate.js";
 import type { Manifest } from "./manifest.js";
-import type { PaymentRail, RailPayment } from "./rail.js";
+import type { PaymentRail, RailOutcome, RailPayment } from "./rail.js";
 import type { MandateStatusReport, MandateStatusSource } from "./revocation.js";
 import { isTerminal, transition, type Execution, type ExecutionState } from "./state-machine.js";
 import type { StateStore } from "./state/store.js";
-import type { Actor, ApprovalArtifact, ApprovalMode, ExecutionItem, ExecutionReason, ItemOutcome } from "./types.js";
+import type { Actor, ApprovalArtifact, ApprovalMode, ExecutionBatch, ExecutionItem, ExecutionReason, ItemOutcome } from "./types.js";
 
 export interface ProposedItem {
   /** An alias from the mandate's named payees, or a raw payee key. */
@@ -54,6 +54,13 @@ export interface Proposal {
   items: ProposedItem[];
   /** What the model said the total was. Recorded; never used to pay. */
   claimed_total?: number;
+  /**
+   * The batch this proposal is one line of, when it is one. The kit computes
+   * it once over the whole ordered list before drafting any of it; the core
+   * stamps it on the execution and every artifact of that execution carries
+   * it. The core never invents one and never fills one in.
+   */
+  batch?: ExecutionBatch;
 }
 
 export type DraftResult =
@@ -119,6 +126,7 @@ export class ExecutionEngine {
 
     const items = proposal.items.map((p) => this.resolveItem(p));
     const total = items.reduce((sum, i) => sum + i.amount, 0);
+    if (proposal.batch) assertBatchBinding(proposal.batch);
     const id = newId("exe");
     const execution: Execution<"drafted"> = {
       id,
@@ -131,6 +139,7 @@ export class ExecutionEngine {
       currency: this.deps.mandate.currency,
       ...(proposal.claimed_total !== undefined ? { model_claimed_total: proposal.claimed_total } : {}),
       items_hash: itemsHash(items),
+      ...(proposal.batch ? { batch: proposal.batch } : {}),
       mandate: { id: this.deps.mandate.id, version: this.deps.mandate.version },
       idempotency_key: `idk_${sha256Hex(`${this.deps.runId}:${id}`).slice(0, 32)}`,
       blocking_reasons: [],
@@ -140,7 +149,7 @@ export class ExecutionEngine {
       updated_at: now.toISOString(),
     };
     this.deps.store.saveExecution(execution);
-    this.record("execution.drafted", id, { items: execution.items, total, model_claimed_total: proposal.claimed_total ?? null, mode: this.deps.mode });
+    this.record("execution.drafted", id, { items: execution.items, total, model_claimed_total: proposal.claimed_total ?? null, mode: this.deps.mode, batch: execution.batch ?? null });
 
     return { ok: true, execution: await this.evaluateDraft(execution) };
   }
@@ -333,20 +342,26 @@ export class ExecutionEngine {
    */
   private async dispatch(execution: Execution<"executing">, payments: RailPayment[]): Promise<Execution> {
     const outcomes: ItemOutcome[] = [...execution.outcomes];
+    const unknown: string[] = [];
     this.deps.store.updateOutbox(execution.idempotency_key, "sent", undefined, this.clock().toISOString());
 
     for (const [index, payment] of payments.entries()) {
       if (outcomes.some((o) => o.index === index)) continue;
-      this.record("rail.dispatch", execution.id, { attempt_id: payment.attempt_id, payee: payment.payee, amount: payment.amount_minor, rail: this.deps.rail.name });
+      // The dispatch line is the request. `idempotency_key` is what makes a retry the same payment, so the bundle names it next to the attempt.
+      this.record("rail.dispatch", execution.id, { attempt_id: payment.attempt_id, payee: payment.payee, amount: payment.amount_minor, rail: this.deps.rail.name, idempotency_key: execution.idempotency_key });
       const outcome = await this.deps.rail.pay(payment);
-      this.record("rail.outcome", execution.id, { attempt_id: payment.attempt_id, status: outcome.status, ...(outcome.status === "failed" || outcome.status === "uncertain" ? { code: outcome.code } : {}) });
+      this.record("rail.outcome", execution.id, { attempt_id: payment.attempt_id, status: outcome.status, ...railAnswer(outcome) });
       if (outcome.status === "uncertain") {
         this.record("rail.uncertain", execution.id, { attempt_id: payment.attempt_id, code: outcome.code, message: outcome.message });
-        return this.leaveUnresolved({ ...execution, outcomes }, `attempt ${payment.attempt_id}: ${outcome.code} — outcome unknown, kept for reconciliation`);
+        // No outcome is recorded because there is none. The siblings are still
+        // sent: an unknown answer about THIS payee says nothing about the next
+        // one, and the execution stays open until reconciliation settles it.
+        unknown.push(`attempt ${payment.attempt_id}: ${outcome.code} — outcome unknown, kept for reconciliation`);
+        continue;
       }
       if (outcome.status === "failed") {
         outcomes.push({ index, attempt_id: payment.attempt_id, status: "failed", code: outcome.code, error: `${outcome.code}: ${outcome.message}` });
-        break;
+        continue;
       }
       if (outcome.status === "accepted") {
         // A receivable was issued; the payer decides the rest. Nothing settles here.
@@ -357,20 +372,28 @@ export class ExecutionEngine {
       outcomes.push({ index, attempt_id: payment.attempt_id, status: "settled", transaction_id: outcome.transaction_id, ...(outcome.receipt_id ? { receipt_id: outcome.receipt_id } : {}) });
       await this.ingestSettlement(execution, index, payment, outcome.receipt_id, PAYMENT_SUCCEEDED);
     }
-    return this.close({ ...execution, outcomes }, payments.length);
+    return this.close({ ...execution, outcomes }, payments.length, unknown.join("; ") || undefined);
   }
 
   /**
    * Closes an `executing` execution from its recorded outcomes: stays while a
-   * receivable is accepted and unpaid, failed if any attempt failed, settled
-   * when every attempt settled, otherwise unresolved.
+   * receivable is accepted and unpaid, stays while any attempt has no outcome
+   * at all, failed if any attempt failed, settled when every attempt settled.
+   *
+   * The order matters. An execution does not close while one of its attempts
+   * is unknown, even when another one failed: "some of this moved and one of
+   * them we cannot see" is not a closed outcome, and closing it as `failed`
+   * would report a batch as finished while a payment may still be in flight.
    */
-  private close(execution: Execution<"executing">, attempts: number): Execution {
+  private close(execution: Execution<"executing">, attempts: number, unknownDetail?: string): Execution {
     const at = this.clock().toISOString();
     const updated: Execution<"executing"> = { ...execution, updated_at: at };
     const accepted = execution.outcomes.filter((o) => o.status === "accepted");
     if (accepted.length > 0) {
       return this.leaveAwaiting(updated, `${accepted.length} receivable(s) issued and unpaid: ${accepted.map((o) => o.transaction_id ?? o.attempt_id).join(", ")}`);
+    }
+    if (execution.outcomes.length < attempts) {
+      return this.leaveUnresolved(updated, unknownDetail ?? `${execution.outcomes.length} of ${attempts} attempt(s) have an outcome`);
     }
     const failed = execution.outcomes.find((o) => o.status === "failed");
     if (failed) {
@@ -438,6 +461,7 @@ export class ExecutionEngine {
     }
   }
 
+
   /**
    * Fetches into the bundle the receipts of settled attempts the bundle does
    * not hold yet (a settlement that arrived by event names a receipt id and
@@ -480,7 +504,7 @@ export class ExecutionEngine {
       const prior = outcomes.find((o) => o.index === index);
       // Settled and failed are final. An accepted receivable is looked at again: its payer may have acted.
       if (prior && prior.status !== "accepted") continue;
-      const seen = await this.deps.rail.lookup(payment.attempt_id, payment);
+      const seen = await this.deps.rail.lookup(payment.attempt_id, payment, prior?.transaction_id);
       const found = seen ? seen.status : "absent";
       const stored = this.deps.store.appendEvent({
         run_id: this.deps.runId,
@@ -494,8 +518,12 @@ export class ExecutionEngine {
       if (stored) this.deps.bundle.event({ ...stored, actor: this.agentActor });
       if (!seen || seen.status === "uncertain" || seen.status === "in_flight") {
         if (prior) continue; // the receivable is known to exist; the rail just did not answer this time
-        unresolved = `attempt ${payment.attempt_id}: ${seen ? seen.status : "unknown to the rail"}; a human decides, nothing is re-sent`;
-        break;
+        // One attempt the rail cannot answer for does not stop us learning
+        // about the others. A lookup moves no money, so there is nothing to
+        // be careful about here, and stopping would mean a later attempt's
+        // settlement is never recorded at all.
+        unresolved ??= `attempt ${payment.attempt_id}: ${seen ? seen.status : "unknown to the rail"}; a human decides, nothing is re-sent`;
+        continue;
       }
       const replace = (outcome: ItemOutcome) => {
         const at = outcomes.findIndex((o) => o.index === index);
@@ -509,7 +537,6 @@ export class ExecutionEngine {
       }
       if (seen.status === "failed") {
         replace({ index, attempt_id: payment.attempt_id, status: "failed", code: seen.code, error: `${seen.code}: ${seen.message}` });
-        if (!prior) break;
         continue;
       }
       replace({ index, attempt_id: payment.attempt_id, status: "settled", transaction_id: seen.transaction_id, ...(seen.receipt_id ? { receipt_id: seen.receipt_id } : {}) });
@@ -643,6 +670,27 @@ export class ExecutionEngine {
     return true;
   }
 
+  /**
+   * A durable claim for work whose unit is bigger than one execution: a batch
+   * line, a scheduled instruction. `claimed` reads which execution covers a
+   * key, `claim` records it. Same cursor table as `markShown`, which is this
+   * with a boolean answer.
+   *
+   * It exists because a tool handler's only durable surface is this engine,
+   * and a batch that must not pay the same payee twice across runs has to
+   * remember which execution already covers each line. What a held claim
+   * MEANS is the kit's to decide: the engine records the pairing and reads
+   * nothing into it, because "settled, so skip" and "denied, so retry" are
+   * the batch's rules and not the state machine's.
+   */
+  claimed(key: string): string | undefined {
+    return this.deps.store.getCursor(`claim:${key}`);
+  }
+
+  claim(key: string, executionId: string): void {
+    this.deps.store.setCursor(`claim:${key}`, executionId);
+  }
+
   // ---- reads --------------------------------------------------------------
 
   get(executionId: string): Execution | undefined {
@@ -651,6 +699,22 @@ export class ExecutionEngine {
 
   list(filter: { state?: ExecutionState | ExecutionState[] } = {}): Execution[] {
     return this.deps.store.listExecutions({ ...filter, mandate_id: this.deps.mandate.id });
+  }
+
+  /**
+   * The items `draft()` would build from these proposals, resolved against
+   * the mandate and WITHOUT the validation that refuses one. It exists for a
+   * caller that must hash a whole list before it drafts any of it — a batch
+   * computing its `batch_hash` — and it does not throw on purpose: a line the
+   * core will refuse is still a line of the presented list, and dropping it
+   * from the hash would make a batch holding a broken line hash the same as
+   * the shorter batch without it, which is the hole `batch_hash` closes.
+   *
+   * It resolves nothing the draft will not resolve identically, which is what
+   * makes the hash computed here the hash the drafts below carry.
+   */
+  preview(items: readonly ProposedItem[]): ExecutionItem[] {
+    return items.map((p) => this.previewItem(p));
   }
 
   // ---- helpers ------------------------------------------------------------
@@ -687,15 +751,19 @@ export class ExecutionEngine {
   }
 
   private resolveItem(proposed: ProposedItem): ExecutionItem {
-    const known = resolveBeneficiary(this.deps.mandate, proposed.payee);
     const amount = Math.trunc(proposed.amount);
     if (!Number.isFinite(amount) || amount <= 0) throw new Error(`amount must be a positive integer in minor units, got ${proposed.amount}`);
     if (proposed.due_date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(proposed.due_date)) throw new Error(`due_date must be YYYY-MM-DD, got ${proposed.due_date}`);
+    return this.previewItem(proposed);
+  }
+
+  private previewItem(proposed: ProposedItem): ExecutionItem {
+    const known = resolveBeneficiary(this.deps.mandate, proposed.payee);
     return {
       ...(known ? { alias: known.alias } : {}),
       beneficiary: known?.name ?? proposed.payee,
       payee: known?.payee ?? proposed.payee,
-      amount,
+      amount: Math.trunc(proposed.amount),
       currency: this.deps.mandate.currency,
       ...(proposed.description ? { description: proposed.description } : {}),
       ...(proposed.due_date ? { due_date: proposed.due_date } : {}),
@@ -712,6 +780,7 @@ export class ExecutionEngine {
       beneficiary: item.beneficiary,
       purpose: this.deps.mandate.purpose,
       agent_id: this.deps.mandate.agent_id,
+      consumer_id: this.deps.mandate.consumer_id,
       ...(item.description ? { description: item.description } : {}),
       ...(item.due_date ? { due_date: item.due_date } : {}),
       actor: this.agentActor,
@@ -758,7 +827,7 @@ export class ExecutionEngine {
   private storeApproval(artifact: ApprovalArtifact): void {
     this.deps.store.saveApproval(artifact);
     this.deps.bundle.approval(artifact);
-    this.record("approval.created", artifact.execution_id, { approval_id: artifact.approval_id, approver: artifact.approver, items_hash: artifact.items_hash, escalation: artifact.escalation ?? null });
+    this.record("approval.created", artifact.execution_id, { approval_id: artifact.approval_id, approver: artifact.approver, items_hash: artifact.items_hash, batch: artifact.batch ?? null, escalation: artifact.escalation ?? null });
   }
 
   private persist<S extends ExecutionState>(execution: Execution<S>): Execution<S> {
@@ -780,5 +849,37 @@ export class ExecutionEngine {
     const execution = this.deps.store.getExecution(executionId);
     if (!execution) throw new Error(`unknown execution ${executionId}`);
     return execution;
+  }
+}
+
+/**
+ * A batch binding is the kit's to compute and the core's to refuse when it
+ * cannot be true. `index` outside `count`, or a `count` of zero, would let a
+ * bundle say "line 5 of 3" and make the "N of M" an artifact reader sees
+ * meaningless, so it is rejected where the execution is minted rather than
+ * carried into the signature.
+ */
+function assertBatchBinding(batch: ExecutionBatch): void {
+  if (!batch.ref.trim()) throw new Error("batch.ref must name the batch");
+  if (!batch.batch_hash.trim()) throw new Error("batch.batch_hash must be the hash of the presented lines");
+  if (!Number.isInteger(batch.count) || batch.count < 1) throw new Error(`batch.count must be a positive integer, got ${batch.count}`);
+  if (!Number.isInteger(batch.index) || batch.index < 0 || batch.index >= batch.count) {
+    throw new Error(`batch.index must be a position inside the batch (0..${batch.count - 1}), got ${batch.index}`);
+  }
+}
+
+/**
+ * What the rail answered about one attempt, as the bundle records it: the
+ * identifiers a reader follows the money by, and never `raw`, which carries
+ * whatever the provider chose to echo back.
+ */
+function railAnswer(outcome: RailOutcome): Record<string, unknown> {
+  switch (outcome.status) {
+    case "accepted":
+      return { transaction_id: outcome.transaction_id, sandbox: outcome.sandbox };
+    case "settled":
+      return { transaction_id: outcome.transaction_id, receipt_id: outcome.receipt_id, money_moved: outcome.money_moved, sandbox: outcome.sandbox };
+    default:
+      return { code: outcome.code, message: outcome.message };
   }
 }

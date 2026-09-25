@@ -263,3 +263,54 @@ describe("outcomeOf: the API's charge view, mapped by fields and never by prose"
     expect(outcomeOf({ ...base, payment_in_flight: true, settlement: "pending" })).toMatchObject({ status: "accepted" });
   });
 });
+
+describe("CodeSparChargeRail: what crosses the wire on a create", () => {
+  it("sends consumer_id, method boleto, due_date, the attempt id as idempotency_key and the amount in major units; refuses without a consumer", async () => {
+    const { CodeSparChargeRail } = await import("../src/api/charge-rail.js");
+    const calls: Array<{ path: string; body: Record<string, unknown> }> = [];
+    const api = {
+      post: async (path: string, opts: { body: Record<string, unknown> }) => {
+        calls.push({ path, body: opts.body });
+        return { id: "chg_wire_1", status: "PROCESSING", local_status: "pending", status_conflict: false, method: "boleto", currency: "BRL", amount: 1080, amount_minor: 108000, due_date: "2026-09-30", payable: false, boleto_bar_code: null, boleto_bank_line: null, pix_copy_paste: null, credit_correlation_armed: false, payment_in_flight: false, settlement: null, issuance_unconfirmed: false };
+      },
+      get: async () => { throw new Error("not called"); },
+    };
+    const rail = new CodeSparChargeRail(api as never);
+    const base = { attempt_id: "att_x_0", mandate_id: "pol_1", amount_minor: 108000, currency: "BRL", payee: DEBTOR, beneficiary: "Joana Ribeiro", purpose: "cobranca", agent_id: "collections-agent", description: "Acordo #1042 - parcela 1/1", due_date: "2026-09-30", actor: { type: "agent" as const, agent: "collections-agent@0.1.0", on_behalf_of: "merchant_demo_loja" } };
+    expect(await rail.pay(base)).toMatchObject({ status: "failed", code: "consumer_id_required" });
+    expect(calls).toHaveLength(0);
+    const out = await rail.pay({ ...base, consumer_id: "merchant_demo_loja" });
+    expect(out).toMatchObject({ status: "accepted", transaction_id: "chg_wire_1", instrument: { payable: false, status: "PROCESSING" } });
+    expect(calls[0]).toEqual({ path: "/v1/charges", body: { consumer_id: "merchant_demo_loja", amount: 1080, currency: "BRL", method: "boleto", description: "Acordo #1042 - parcela 1/1", buyer: { name: "Joana Ribeiro", document: DEBTOR }, due_date: "2026-09-30", idempotency_key: "att_x_0" } });
+  });
+});
+
+describe("paySandboxCharge: the SDK's typed call to the payer route", () => {
+  it("posts to /v1/test/charges/{id}/pay with the key, the project header and the amount; refuses a live key before any request", async () => {
+    const { paySandboxCharge } = await import("../src/api/sandbox-payer.js");
+    const seen: Array<{ url: string; init: RequestInit }> = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+      seen.push({ url: String(url), init: init ?? {} });
+      return new Response(JSON.stringify({ charge_id: "chg_1", status: "paid", local_status: "settled", simulated: true, settled_against: "sandbox_fixture", money_moved: false, quoted_minor: 1000, paid_minor: 1000, payment: "full", idempotent_replay: false }), { status: 200, headers: { "content-type": "application/json" } });
+    }) as typeof fetch;
+    try {
+      const live = await paySandboxCharge({ apiKey: ["csk", "live", "0000000000"].join("_") }, "chg_1").catch((e: Error) => e);
+      expect(live).toBeInstanceOf(Error);
+      expect(seen).toHaveLength(0);
+      const out = await paySandboxCharge({ apiKey: "csk_test_unit_0000", baseUrl: "https://api.example.test/", projectId: "prj_1" }, "chg_1", 1000);
+      expect(out).toMatchObject({ ok: true, state: { charge_id: "chg_1", status: "paid", simulated: true, money_moved: false } });
+      expect(seen[0]?.url).toBe("https://api.example.test/v1/test/charges/chg_1/pay");
+      const headers = new Headers(seen[0]?.init.headers);
+      expect(headers.get("authorization")).toBe("Bearer csk_test_unit_0000");
+      expect(headers.get("x-codespar-project")).toBe("prj_1");
+      expect(headers.get("content-type")).toBe("application/json");
+      expect(seen[0]?.init.body).toBe(JSON.stringify({ amount_minor: 1000 }));
+      const bare = await paySandboxCharge({ apiKey: "csk_test_unit_0000", baseUrl: "https://api.example.test/", projectId: "prj_1" }, "chg_1");
+      expect(bare).toMatchObject({ ok: true });
+      expect(seen[1]?.init.body).toBe("{}");
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+});

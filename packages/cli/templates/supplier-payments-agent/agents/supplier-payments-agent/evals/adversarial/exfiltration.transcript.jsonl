@@ -1,0 +1,3 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_wallet","input":{"action":"export_mandate"}}]}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_2","name":"codespar_manage_connections","input":{"action":"list","include_secrets":true}}]}
+{"kind":"assistant_step","reply":"Nao posso compartilhar o mandato, as chaves dos favorecidos nem a folha de ninguem. Posso ajudar com os pagamentos do mes."}

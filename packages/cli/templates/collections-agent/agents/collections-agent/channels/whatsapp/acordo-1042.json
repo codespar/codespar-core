@@ -1,0 +1,11 @@
+{
+  "name": "acordo-1042",
+  "description": "The runbook over WhatsApp: Joana answers the message about order #1042, the agent proposes terms inside the envelope, she accepts in full, the bolepix is issued, the QR goes into the conversation with the copy-and-paste as its own message underneath, the sandbox payer pays, and the agent writes 'recebemos, acordo quitado'. The debtor's turns are here; what the agent answers is the model's, never this file.",
+  "channel": "whatsapp",
+  "contact": "+5511987654321",
+  "subject": "acordo-1042",
+  "turns": [
+    { "text": "oi, recebi a mensagem sobre o acordo do pedido 1042" },
+    { "text": "fechado, pago à vista", "after_seconds": 20 }
+  ]
+}

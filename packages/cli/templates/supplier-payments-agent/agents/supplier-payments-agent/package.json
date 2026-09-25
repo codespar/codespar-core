@@ -1,0 +1,26 @@
+{
+  "name": "@codespar/supplier-payments-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A company delegates its suppliers, commissions and payroll to an agent that pays them in batches under one signed mandate. A batch is a loop of executions: one refusal does not stop the others, and re-running it pays nobody twice.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "codespar-agent start",
+    "check": "codespar-agent check",
+    "eval": "codespar-agent eval",
+    "resume": "codespar-agent resume",
+    "rerun": "codespar-agent rerun",
+    "reconcile": "codespar-agent reconcile",
+    "inspect": "codespar-agent inspect",
+    "verify": "codespar-agent verify",
+    "approve": "codespar-agent approve",
+    "deny": "codespar-agent deny",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --pool=forks --maxWorkers=1 --root ../.. agents/supplier-payments-agent"
+  },
+  "dependencies": {
+    "@codespar/agent-core": "0.1.0",
+    "@codespar/agent-runtime": "0.1.0"
+  }
+}

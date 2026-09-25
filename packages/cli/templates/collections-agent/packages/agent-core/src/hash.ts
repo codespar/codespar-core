@@ -39,6 +39,19 @@ export function itemsHash(items: readonly ExecutionItem[]): string {
   return `sha256:${sha256Hex(canonicalJson(canonical))}`;
 }
 
+/**
+ * The hash of a batch's ordered lines, bound into every artifact of that
+ * batch. It IS `itemsHash` over the whole list and deliberately not a second
+ * canonicalisation: the same fields decide the set that decide the line, so a
+ * reader who concatenates the batch's lines in order and hashes them gets the
+ * batch's hash back, and any line moved, re-priced, added or dropped changes
+ * it. Order is part of it — `index` names a position, and a position only
+ * means something in a list whose order is fixed.
+ */
+export function batchHash(lines: readonly ExecutionItem[]): string {
+  return itemsHash(lines);
+}
+
 export function hmacSha256Hex(key: Buffer, payload: string): string {
   return createHmac("sha256", key).update(payload).digest("hex");
 }

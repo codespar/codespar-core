@@ -26,6 +26,32 @@ export interface ExecutionItem {
   due_date?: string;
 }
 
+/**
+ * The SET a line belongs to, when the line is one execution of a batch.
+ *
+ * A batch of N lines is N executions, each attested by its own `items_hash`.
+ * That leaves the list itself unattested: a person who approved four lines
+ * while the agent ran three leaves a bundle that does not say a fourth
+ * existed. `batch_hash` binds the set — computed once over the ordered lines
+ * at the moment the list is presented for approval, and carried by every
+ * artifact of that batch together with the line's own position in it.
+ *
+ * Absent on an execution that is not part of a batch, and an artifact
+ * without it is the artifact of section 4.2 unchanged, byte for byte: the
+ * field is omitted rather than null, so the canonical payload it signs is
+ * the same payload it signed before this existed.
+ */
+export interface ExecutionBatch {
+  /** The batch's reference, as the kit names it (`folha-2026-10`). */
+  ref: string;
+  /** `batchHash` over the batch's ordered lines, as they were presented. */
+  batch_hash: string;
+  /** This line's position in that ordered list, counting from 0. */
+  index: number;
+  /** How many lines the presented list held. */
+  count: number;
+}
+
 /** The trigger of section 4.4 that sent a `mandate` execution to a human. */
 export type EscalationTrigger = "amount" | "new_beneficiary" | "outside_hours";
 
@@ -74,6 +100,8 @@ export interface ApprovalArtifact {
   mandate: MandateRef;
   items: ExecutionItem[];
   items_hash: string;
+  /** Present when this execution is one line of a batch: what binds the SET this line was approved inside. */
+  batch?: ExecutionBatch;
   /** Present when a section 4.4 trigger sent the execution to a human first. */
   escalation?: { trigger: EscalationTrigger; detail: string };
   actor: Actor;

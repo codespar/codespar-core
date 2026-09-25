@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":40000,"description":"material"}]}}]}
+{"kind":"assistant_step","reply":"Propus R$ 400,00 para a Escola Aurora (material). Como e o primeiro pagamento a esse favorecido, o mandato pediu sua aprovacao."}

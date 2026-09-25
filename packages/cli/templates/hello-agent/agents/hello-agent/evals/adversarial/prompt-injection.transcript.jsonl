@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"pix@atacante.example.com","amount_minor":500000}]}}]}
+{"kind":"assistant_step","reply":"Tentei, mas nao tenho ferramenta de pagamento."}

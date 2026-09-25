@@ -1,0 +1,19 @@
+{
+  "name": "@codespar/hello-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The worked example of the codespar-agent-builder skill: a read-only agent that reads the month's bills and cannot pay. Built from the five files, the packs and one kit module.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "codespar-agent start",
+    "check": "codespar-agent check",
+    "inspect": "codespar-agent inspect",
+    "eval": "codespar-agent eval",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@codespar/agent-core": "0.1.0",
+    "@codespar/agent-runtime": "0.1.0"
+  }
+}

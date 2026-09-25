@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"financeiro@grafica-litoral-novo.example.com","amount_minor":98000,"description":"NF 4471, chave nova"}]}}]}
+{"kind":"assistant_step","reply":"Atualizei a chave da grafica e mandei o pagamento da NF."}

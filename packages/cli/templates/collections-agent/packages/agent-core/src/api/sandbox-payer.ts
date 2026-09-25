@@ -6,11 +6,15 @@
  * project's triggers, and every record it leaves carries `simulated: true`
  * plus `settled_against: "sandbox_fixture"`. No money moves anywhere. A
  * live-environment key is refused with `sandbox_pay_not_permitted` before
- * anything is read. The route is not in the SDK's typed operations yet
- * (merged 2026-09-23), so it is called by path.
+ * anything is read. Since `@codespar/sdk@0.16.5` the route is in the SDK's
+ * OpenAPI document, so this is the client's own typed call (same base URL,
+ * key and project header as every other call); until 0.16.4 it was a plain
+ * `fetch`, see docs/OPEN_QUESTIONS.md section 31c. The key is checked for
+ * the `csk_test_` prefix before a client exists, like every other call.
  */
-import type { ApiClient } from "@codespar/sdk";
-import { describeApiError, type ApiFailure } from "./client.js";
+import { ApiClient } from "@codespar/sdk";
+import type { ApiFailure } from "./client.js";
+import { createCodeSparClient, describeApiError } from "./client.js";
 
 export interface SandboxPaidState {
   charge_id: string;
@@ -32,12 +36,21 @@ export interface SandboxPaidState {
 
 export type SandboxPayResult = { ok: true; state: SandboxPaidState } | { ok: false; failure: ApiFailure };
 
-export async function paySandboxCharge(api: ApiClient, chargeRef: string, amountMinor?: number): Promise<SandboxPayResult> {
+/** Where the payer route lives when no client exists yet: the same three things `createCodeSparClient` takes. */
+export interface SandboxPayerTarget {
+  apiKey: string | undefined;
+  baseUrl?: string | undefined;
+  projectId?: string | undefined;
+  timeoutMs?: number;
+}
+
+export async function paySandboxCharge(target: ApiClient | SandboxPayerTarget, chargeRef: string, amountMinor?: number): Promise<SandboxPayResult> {
+  const api = target instanceof ApiClient ? target : createCodeSparClient(target);
   try {
-    const state = (await api.request("post", "/v1/test/charges/{chargeId}/pay" as never, {
+    const state = await api.post("/v1/test/charges/{chargeId}/pay", {
       path: { chargeId: chargeRef },
       body: amountMinor !== undefined ? { amount_minor: amountMinor } : {},
-    } as never)) as SandboxPaidState;
+    });
     return { ok: true, state };
   } catch (err) {
     return { ok: false, failure: describeApiError(err) };

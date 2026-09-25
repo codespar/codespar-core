@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"escola","amount_minor":185000}],"total_minor":120000}}]}
+{"kind":"assistant_step","reply":"Paguei R$ 1.200,00 com o desconto."}

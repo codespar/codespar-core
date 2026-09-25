@@ -18,9 +18,60 @@ Then flip the key: `npm start --workspace=agents/collections-agent -- --mode man
 
 Without a key: `npm start --workspace=agents/collections-agent -- --scenario happy-path` runs the same script on the stub rail and the recorded model, in both modes, in under a second. `--scenario charge-expired` shows the other ending.
 
+## The same scene on WhatsApp
+
+The terminal is where the runbook is timed, because the five-minute contract
+is a terminal contract and WhatsApp is deliberately outside it. But the scene
+above is a WhatsApp scene — a debtor replying to a message — so it is worth
+filming on the channel it is written for:
+
+```sh
+npm run whatsapp:emulator                                               # terminal 1
+npm run start:collections -- --channel whatsapp --conversation acordo-1042 --simulate-payer
+```
+
+The conversation goes through a local emulator of the WhatsApp Cloud API
+(`dyvit-wa-sim`, MIT, at a pinned npm version): you type as Joana, the store
+answers, the copy-and-paste arrives as its own message (which is how a person
+actually pays — a code inside a picture cannot be copied), and "recebemos,
+acordo quitado" closes it. No Meta account, no credential. For the phone frame,
+run the emulator's own web app and point it at `http://127.0.0.1:4290`. In
+`approval: human` the operator's question is still on the console, labelled
+`[operador]`, and never in the conversation.
+
+The scene above closes inside one run, which is the demo and not the ordinary
+week. The ordinary week is that Joana agrees today and pays on Friday, and by
+then WhatsApp carries only an approved template. That take is two commands:
+
+```sh
+npm run start:collections -- --channel whatsapp --conversation acordo-1042    # she agrees; nobody pays yet
+npm run poll:collections -- --channel whatsapp --conversation acordo-1042     # days later: the payment landed
+```
+
+The poll comes back to the conversation from the bundle plus `state.db` and
+sends the confirmation as a template from
+`channels/whatsapp/templates.json` — because the 24-hour window has shut. Run
+it while the window is still open and it writes freely instead; which of the
+two is the window's decision, not the command's. Run it twice and nothing is
+sent the second time.
+
+For a take with no typing at all, and for the CI:
+
+```sh
+npm run whatsapp:gate     # three runs from a clean state, plus the one across a shut window
+```
+
+Measured 2026-09-24, against the emulator: three runs, `settled` each time,
+one receivable, one record, two messages in and eight out, the same shape
+every run. That is the
+wave-4 gate — "três execuções do zero sem intervenção" — and it runs on every
+pull request. The fourth run is the week above, compressed: agree, move the
+conversation's clock 26 hours, pay, poll, `settled` with the confirmation
+carried by the `acordo_quitado` template.
+
 ## Measured
 
-First real attempt on staging, 2026-09-23 15:10:49Z, `org_demo`: the conversation, the approval and the dispatch were real; `POST /v1/charges` answered `no_eligible_providers (eligibility_empty)` in 1.15 s because the demo org has no Celcoin connection, the only issuer of the bolepix the sandbox payer can pay. The forty seconds are proven on the stub rail and the fixture payer, not on staging. Details, request ids and the three probes in `docs/OPEN_QUESTIONS.md` section 22.
+Second real run on staging, 2026-09-23 18:03:16Z, `org_demo`, replay provider, `--scenario happy-path --mode human --rail api`: **10 s from the issuance to `settled`** (create answered in 4.1 s, the instrument registered on the second look, the sandbox payer paid, the next look found `settlement: confirmed`), 15 s for the whole scenario. Charge `9fa7974e-9d1c-452e-aa01-64e9272f4f52`, execution `exe_624615ee1de452c5`. The first run of the day stopped at the issuance (no Celcoin on the demo org until ent#1613). Details, request ids and the three walls in `docs/OPEN_QUESTIONS.md` sections 22 and 31.
 
 ## Going to production
 

@@ -1,0 +1,36 @@
+{
+  "name": "{{name}}",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A company delegates its suppliers, commissions and payroll to an agent that pays them in batches under one signed mandate. A batch is a loop of executions: one refusal does not stop the others, and re-running it pays nobody twice.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/agent-core",
+    "packages/agent-runtime",
+    "agents/supplier-payments-agent"
+  ],
+  "scripts": {
+    "start": "npm start --workspace=agents/supplier-payments-agent --",
+    "check": "npm run check --workspaces --if-present --",
+    "test": "vitest run --pool=forks --maxWorkers=1",
+    "typecheck": "tsc --noEmit -p packages/agent-core/tsconfig.json && tsc --noEmit -p packages/agent-runtime/tsconfig.json && tsc --noEmit -p agents/supplier-payments-agent/tsconfig.json",
+    "approve": "npm run approve --workspace=agents/supplier-payments-agent --",
+    "deny": "npm run deny --workspace=agents/supplier-payments-agent --",
+    "eval": "npm run eval --workspace=agents/supplier-payments-agent --",
+    "inspect": "npm run inspect --workspace=agents/supplier-payments-agent --",
+    "reconcile": "npm run reconcile --workspace=agents/supplier-payments-agent --",
+    "rerun": "npm run rerun --workspace=agents/supplier-payments-agent --",
+    "resume": "npm run resume --workspace=agents/supplier-payments-agent --",
+    "verify": "npm run verify --workspace=agents/supplier-payments-agent --"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

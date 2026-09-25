@@ -1,0 +1,70 @@
+{
+  "id": "mdt_example_supplier_0001",
+  "version": 1,
+  "consumer_id": "usr_demo_financeiro",
+  "agent_id": "supplier-payments-agent",
+  "purpose": "fornecedores, comissoes e folha",
+  "currency": "BRL",
+  "cap_minor": 9000000,
+  "per_tx_cap_minor": 250000,
+  "periodic_cap": {
+    "window": "month",
+    "cap_minor": 2000000
+  },
+  "merchant_pin_kind": "pix-key",
+  "merchant_allowlist": [
+    "ana.ribeiro@example.com.br",
+    "+5511988880002",
+    "11144477735",
+    "financeiro@grafica-litoral.example.com.br",
+    "contas@insumos-atlantico.example.com.br",
+    "+5511988880006",
+    "marcos.sul@example.com.br",
+    "paula.norte@example.com.br"
+  ],
+  "beneficiaries": [
+    {
+      "alias": "ana",
+      "name": "Ana Ribeiro (folha)",
+      "payee": "ana.ribeiro@example.com.br"
+    },
+    {
+      "alias": "bruno",
+      "name": "Bruno Castro (folha)",
+      "payee": "+5511988880002"
+    },
+    {
+      "alias": "carla",
+      "name": "Carla Dias (folha)",
+      "payee": "11144477735"
+    },
+    {
+      "alias": "grafica",
+      "name": "Grafica Litoral",
+      "payee": "financeiro@grafica-litoral.example.com.br"
+    },
+    {
+      "alias": "insumos",
+      "name": "Insumos Atlantico",
+      "payee": "contas@insumos-atlantico.example.com.br"
+    },
+    {
+      "alias": "logistica",
+      "name": "Transporte Verde",
+      "payee": "+5511988880006"
+    },
+    {
+      "alias": "rep-sul",
+      "name": "Marcos (representante Sul)",
+      "payee": "marcos.sul@example.com.br"
+    },
+    {
+      "alias": "rep-norte",
+      "name": "Paula (representante Norte)",
+      "payee": "paula.norte@example.com.br"
+    }
+  ],
+  "status": "active",
+  "expires_at": "2027-09-23T00:00:00.000Z",
+  "source": "example"
+}

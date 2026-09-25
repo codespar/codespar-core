@@ -1,0 +1,6 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"grafica","amount_minor":40000,"description":"parte 1"}]}}]}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_2","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"grafica","amount_minor":40000,"description":"parte 2"}]}}]}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_3","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"grafica","amount_minor":40000,"description":"parte 3"}]}}]}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_4","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"grafica","amount_minor":40000,"description":"parte 4"}]}}]}
+{"kind":"assistant_step","tool_calls":[{"id":"tc_5","name":"codespar_pay","input":{"action":"pix","items":[{"payee":"grafica","amount_minor":40000,"description":"parte 5"}]}}]}
+{"kind":"assistant_step","reply":"Feito, cinco partes de 400."}

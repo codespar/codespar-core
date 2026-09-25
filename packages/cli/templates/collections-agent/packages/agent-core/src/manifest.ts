@@ -34,7 +34,7 @@ export const ManifestSchema = z
     default_approval: z.enum(["human", "mandate"]),
     escalate_above: EscalateAboveSchema.optional(),
     mcp: z.string().regex(PINNED_PACKAGE, "mcp must pin an exact version, e.g. @codespar/mcp@0.5.8"),
-    cli: z.string().regex(PINNED_PACKAGE, "cli must pin an exact version, e.g. @codespar/cli@0.13.0"),
+    cli: z.string().regex(PINNED_PACKAGE, "cli must pin an exact version, e.g. @codespar/cli@0.14.0"),
     tools: z.string(),
     guardrails: z.string(),
     mandate_schema: z.string(),

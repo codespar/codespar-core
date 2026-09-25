@@ -11,7 +11,7 @@ escalate_above:
   new_beneficiary: true   # the first payment to each named payee asks a human
   outside_hours: "22:00-07:00"
 mcp: "@codespar/mcp@0.5.8"
-cli: "@codespar/cli@0.13.0"    # what npm publishes on 2026-09-23: ships `agent run`, `eval`, `mandate revoke` (docs/OPEN_QUESTIONS.md §1)
+cli: "@codespar/cli@0.14.0"    # what npm publishes on 2026-09-23: ships `agent run`, `eval`, `mandate revoke`, `init --template bills-agent` (docs/OPEN_QUESTIONS.md §1)
 tools: ./tools.json
 guardrails: ./guardrails.json
 mandate_schema: ./mandate.example.json
@@ -20,7 +20,7 @@ channels: [terminal]
 maturity:
   pix-out: sandbox
   embedded-consent: sandbox
-  receipt-verification: blocked   # waits for Ed25519; the receipt seal is HMAC today
+  receipt-verification: sandbox   # receipts sealed since the API added Ed25519 verify against the published key set: `npm run verify runs/<run-id>/receipts/<id>.json`
 scenarios: ./scenarios/
 evals: ./evals/
 agents_md: ./AGENTS.md

@@ -1,0 +1,23 @@
+{
+  "channel": "whatsapp",
+  "templates": [
+    {
+      "name": "acordo_quitado",
+      "language": "pt_BR",
+      "description": "The cycle closed with the receivable paid, told outside the 24-hour window. The normal collections case: the debtor agrees on Tuesday and pays on Friday, and by then this is the only message WhatsApp will carry. {{1}} is the agreement alias, which is also the only agreement this conversation may name.",
+      "body": "Oi! Recebemos o pagamento do {{1}} e ele esta quitado. Obrigado!"
+    },
+    {
+      "name": "acordo_cobranca_vencida",
+      "language": "pt_BR",
+      "description": "The receivable reached its due date unpaid. The same message the terminal sends free-form, and it has to be its own template: a debtor whose charge expired must not be told the agreement is settled. {{1}} is the agreement alias.",
+      "body": "Oi! A cobranca do {{1}} venceu sem pagamento. Se quiser, emito uma nova dentro das mesmas condicoes."
+    },
+    {
+      "name": "acordo_cobranca_cancelada",
+      "language": "pt_BR",
+      "description": "The receivable was cancelled, so nothing was paid and nothing is owed on it. {{1}} is the agreement alias.",
+      "body": "Oi! A cobranca do {{1}} foi cancelada e nada foi pago. Qualquer coisa, e so falar por aqui."
+    }
+  ]
+}

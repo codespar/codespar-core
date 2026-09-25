@@ -1,0 +1,11 @@
+{
+  "name": "acordo-1103",
+  "description": "The other ending, over WhatsApp: Ana Paula asks to settle order #1103, the bolepix is issued and the QR goes into the conversation, and nobody pays it. The charge expires, the execution closes as failed with reason charge_expired, no record is written, and she is told once and offered a new one. Needs the stub rail's fixture payer (`--payer expires`): the API's sandbox payer only pays.",
+  "channel": "whatsapp",
+  "contact": "+5511976543210",
+  "subject": "acordo-1103",
+  "turns": [
+    { "text": "oi, sou a Ana Paula, do pedido 1103, quero quitar" },
+    { "text": "pode emitir", "after_seconds": 15 }
+  ]
+}

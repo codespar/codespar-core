@@ -7,20 +7,23 @@
   "type": "module",
   "workspaces": [
     "packages/agent-core",
+    "packages/agent-runtime",
     "agents/bills-agent"
   ],
   "scripts": {
     "start": "npm start --workspace=agents/bills-agent --",
     "check": "npm run check --workspaces --if-present --",
     "test": "vitest run --pool=forks --maxWorkers=1",
-    "typecheck": "tsc --noEmit -p packages/agent-core/tsconfig.json && tsc --noEmit -p agents/bills-agent/tsconfig.json",
+    "typecheck": "tsc --noEmit -p packages/agent-core/tsconfig.json && tsc --noEmit -p packages/agent-runtime/tsconfig.json && tsc --noEmit -p agents/bills-agent/tsconfig.json",
     "approve": "npm run approve --workspace=agents/bills-agent --",
     "consent": "npm run consent --workspace=agents/bills-agent --",
     "deny": "npm run deny --workspace=agents/bills-agent --",
     "eval": "npm run eval --workspace=agents/bills-agent --",
+    "inspect": "npm run inspect --workspace=agents/bills-agent --",
     "reconcile": "npm run reconcile --workspace=agents/bills-agent --",
     "rerun": "npm run rerun --workspace=agents/bills-agent --",
-    "resume": "npm run resume --workspace=agents/bills-agent --"
+    "resume": "npm run resume --workspace=agents/bills-agent --",
+    "verify": "npm run verify --workspace=agents/bills-agent --"
   },
   "devDependencies": {
     "@types/node": "22.20.4",

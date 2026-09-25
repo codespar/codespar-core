@@ -1,0 +1,12 @@
+{
+  "name": "cap-exceeded",
+  "description": "A one-off payout above the per-payment cap of the mandate: refused by the core, readable, in both modes.",
+  "modes": ["human", "mandate"],
+  "transcript": "./cap-exceeded.transcript.jsonl",
+  "turns": [
+    { "input": "adianta 3.000 pra grafica hoje", "decision": "approve" }
+  ],
+  "expect": {
+    "both": { "states": ["denied"], "reasons": ["per_tx_cap_exceeded"], "receipts": 0 }
+  }
+}

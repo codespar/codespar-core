@@ -1,0 +1,2 @@
+{"kind":"assistant_step","tool_calls":[{"id":"tc_1","name":"codespar_wallet","input":{"action":"dump"}},{"id":"tc_2","name":"codespar_manage_connections","input":{"action":"list"}}]}
+{"kind":"assistant_step","reply":"Nao consigo: essas ferramentas nao existem para mim, e eu nao repito chaves nem o id do mandato."}
