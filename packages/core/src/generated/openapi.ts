@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 eaea0786c0ae2af755059d93cd8330397398e0bdeac43112206d9d0f22b74d3c, fetched 2026-09-25T02:44:14.269Z
+// Source: openapi-snapshot.json (sha256 35fc87bbb02c3e6464b220079813bcebda46b5e1e19081217e6c76c942c3ae8f, fetched 2026-09-25T17:41:30.628Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -1456,7 +1456,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
                         event: string;
                         server_id?: string;
                         /** Format: uri */
@@ -1574,7 +1574,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
                         event: string;
                         server_id?: string;
                         /** Format: uri */
@@ -9728,7 +9728,7 @@ export interface paths {
          * Read graded dependency health, as this credential's tenant sees it
          * @description Six dependency checks and the schema version, graded into one `status`. The checks run in parallel behind a three-second budget each; one that throws or times out is reported in its own failed shape with `message` carrying the reason, and the response still carries the other five. So the operation is expected back in under four seconds however badly the database is behaving.
          *
-         *     GRADE ON `status`, AND READ THE RULE BEFORE WRITING THE ALERT, because the rule is narrower than "anything off nominal". `down` means `db.ok` or `vault.ok` is false. `degraded` means one of exactly four things: `embeddings.status` is `empty`, `fx_rates.status` is anything other than `fresh`, `telemetry.status` is `stale`, or `connections.status` is `none`. Everything else grades `healthy`.
+         *     GRADE ON `status`, AND READ THE RULE BEFORE WRITING THE ALERT, because the rule is narrower than "anything off nominal". `down` means `db.ok` or `vault.ok` is false. `degraded` means one of exactly four things: `embeddings.status` is `empty`, `fx_rates.status` is anything other than `usable`, `telemetry.status` is `stale`, or `connections.status` is `none`. Everything else grades `healthy`.
          *
          *     THREE NON-NOMINAL VALUES DO NOT MOVE THE GRADE, and an alert that wants them has to read the field rather than the grade: `embeddings.status` `low` (fewer than half the tool rows carry an embedding), `connections.status` `partial` (one or two connections rather than three or more), and `telemetry.status` `idle` (a quiet hour that still had traffic inside the day). All three come back `healthy` at the top level, on purpose — none of them stops a call from being served.
          *
@@ -9755,7 +9755,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /**
-                             * @description `down` iff the database or the vault check failed. `degraded` iff embeddings are empty, FX is not fresh, telemetry is stale, or the tenant has no connection. `healthy` otherwise — which includes embeddings `low`, connections `partial` and telemetry `idle`.
+                             * @description `down` iff the database or the vault check failed. `degraded` iff embeddings are empty, the FX rate is not usable, telemetry is stale, or the tenant has no connection. `healthy` otherwise — which includes embeddings `low`, connections `partial` and telemetry `idle`.
                              * @enum {string}
                              */
                             status: "healthy" | "degraded" | "down";
@@ -9791,16 +9791,16 @@ export interface paths {
                                 fx_rates: {
                                     /**
                                      * Format: date-time
-                                     * @description When the USD/BRL rate was last fetched. Null when no rate has ever been stored, and null when the check itself failed.
+                                     * @description The market timestamp BCB stamped on the newest USD/BRL PTAX close we hold — NOT the time our fetcher last ran. BCB publishes Mon-Fri, so on a Monday this is routinely Friday. Null when no rate has ever been stored, and null when the check itself failed.
                                      */
                                     last_fetched_at: string | null;
-                                    /** @description Age of that fetch in hours, to one decimal. */
+                                    /** @description Age of that close in hours, to one decimal. */
                                     hours_old: number | null;
                                     /**
-                                     * @description `stale` past 72 hours, which is the age at which the router stops normalizing across currencies. `missing` when there is no row, or when the check failed. Anything other than `fresh` grades the response `degraded`.
+                                     * @description Whether the router will normalize on this rate, derived from `hours_old`: `usable` inside 72 hours, `stale` past it — which is the age at which the router stops normalizing across currencies. `missing` when there is no row, or when the check failed. Anything other than `usable` grades the response `degraded`. The value deliberately says nothing about recency: a `usable` rate can be three days old over a weekend, and nothing here reports whether the fetcher ran.
                                      * @enum {string}
                                      */
-                                    status: "fresh" | "stale" | "missing";
+                                    status: "usable" | "stale" | "missing";
                                     /** @description Present only when the check failed or timed out. */
                                     message?: string;
                                 };
@@ -9897,6 +9897,12 @@ export interface paths {
                             name: string;
                             /** Format: date-time */
                             created_at: string;
+                            /** @description Set while the organization's kill switch is pressed and every agent money door refuses `org_paused` (ent#1648); null otherwise. The full state, and pressing or releasing it, is `/v1/orgs/{orgId}/pause`. */
+                            spend_pause: {
+                                /** Format: date-time */
+                                paused_at: string | null;
+                                reason: string | null;
+                            } | null;
                         };
                     };
                 };
@@ -20434,7 +20440,7 @@ export interface paths {
         };
         /**
          * Read one consumer allowance
-         * @description The same 14-field projection the listing returns, by id, from the same table and under the same organization predicate.
+         * @description The same 14-field projection the listing returns, by id, from the same table and under the same organization predicate, plus `org_paused` / `org_paused_at`: whether the organization's kill switch is pressed (ent#1648).
          *
          *     This path has NO alias. Its four siblings are registered twice each, under `/v1/mandates/...` and `/v1/consumers/mandates/...`; this one is registered once, because point reads of an allowance did not exist before it and there was no older spelling to keep alive.
          */
@@ -20485,6 +20491,13 @@ export interface paths {
                             expires_at: string;
                             /** Format: date-time */
                             created_at: string;
+                            /** @description True while the organization has paused ALL agent spend (the kill switch, ent#1648). `status` is still this allowance's own stored state: a pause changes no mandate. While this is true every spend under this allowance is refused `org_paused`, so a caller that checks before executing should treat it as "do not execute" whatever `status` says. */
+                            org_paused: boolean;
+                            /**
+                             * Format: date-time
+                             * @description When the organization paused. Null when `org_paused` is false.
+                             */
+                            org_paused_at: string | null;
                         };
                     };
                 };
@@ -25240,7 +25253,7 @@ export interface paths {
          * Issue an org-side mandate (off by default, see the 501)
          * @description OFF BY DEFAULT, AND THE FIRST THING THIS ROUTE DOES IS CHECK THAT. Unless the deployment has explicitly enabled org-side issuance, every call is 501 `not_implemented` before any row is written. On a default deployment that 501 is the expected answer, not an outage.
          *
-         *     TAKE THE FLAG AS THE GATE, NOT THE 501's SENTENCE AS THE STATE. The message on that 501 says the aggregate spend cap 'is not yet enforced by any spend path'. That sentence is older than the wallet gate and no longer describes the system: `POST /v1/wallets/{id}/execute` charges a mandate before the payment is attempted, decrements `remaining_amount` under a guard that refuses an over-cap spend, and writes the consumption row this document returns from `GET /v1/orgs/{orgId}/mandates/{id}`. So a mandate issued here is enforceable; whether it can be issued at all is the deployment's flag.
+         *     The 501 is about offering issuance, not about enforcement: `POST /v1/wallets/{id}/execute` charges a mandate before the payment is attempted, decrements `remaining_amount` under a guard that refuses an over-cap spend, and writes the consumption row this document returns from `GET /v1/orgs/{orgId}/mandates/{id}`. So a mandate issued here is enforceable; whether it can be issued at all is the deployment's flag.
          *
          *     When enabled, issuance is gated by the org's policy rules for `codespar:mandate:issue`, evaluated before any write. The three non-allowed outcomes are distinct on purpose: 403 `policy_denied` is a rule refusing, 413 `payload_too_large` is an input too big to evaluate, and 503 `policy_engine_error` means the engine could NOT evaluate. The 503 is infrastructure and is retriable; the 403 is not.
          *
@@ -25626,6 +25639,194 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "mandate_already_expired";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/orgs/{orgId}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the organization kill switch
+         * @description Whether the organization has paused ALL agent spend. While `paused` is true every agent money door of the organization refuses with `org_paused` (403): consumer payments and spends under a mandate, payment links, consumer withdrawals and transfers, card authorizations, the money-moving meta-tool actions, the org programmable wallet, an inbound Pix devolution, and raw tools the deny-list classifies as a fund transfer. Reads, inbound charges, mandate revoke/pause and x402-in keep running. `GET /v1/mandates/{id}` carries the same flag as `org_paused`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    orgId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            org_id: string;
+                            paused: boolean;
+                            /** Format: date-time */
+                            paused_at: string | null;
+                            /** @description Why it was paused; null when not paused. */
+                            reason: string | null;
+                            /** @description The admin's user id, or `key:<id>` for a bearer key. Null when not paused. */
+                            paused_by: string | null;
+                            /** @enum {string|null} */
+                            paused_by_source: "bearer_key" | "user_token_verified" | "header_asserted" | null;
+                            /**
+                             * Format: date-time
+                             * @description The last resume, kept after a new pause.
+                             */
+                            resumed_at: string | null;
+                            /** @description Increases by one on every pause and every resume. */
+                            generation: number;
+                        };
+                    };
+                };
+                /** @description The `{orgId}` in the path is not the authenticated org. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Pause all agent spend of the organization (kill switch)
+         * @description Stops every agent money door of the organization, test and live projects alike, until a person resumes it. Once this call answers, no new reservation is taken: a spend that already reserved its funds finishes, like an in-flight hold on a frozen wallet.
+         *
+         *     A bearer key needs the `organizations:pause` scope; the dashboard path needs an admin. Idempotent: pausing a paused organization answers `changed: false` and keeps the original pause. Resuming is NOT an API-key operation: it is done from the dashboard by a verified admin. Publishes `commerce.organization.paused` to every project of the organization and appends `org_spend_paused` to its audit chain.
+         *
+         *     Card authorizations are refused at the issuer that waits for our answer (Pomelo). Bridge decides before we hear of it: freeze those cards at the issuer as well.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    orgId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description False when the organization was already in the requested state. */
+                            changed: boolean;
+                            pause: {
+                                org_id: string;
+                                paused: boolean;
+                                /** Format: date-time */
+                                paused_at: string | null;
+                                /** @description Why it was paused; null when not paused. */
+                                reason: string | null;
+                                /** @description The admin's user id, or `key:<id>` for a bearer key. Null when not paused. */
+                                paused_by: string | null;
+                                /** @enum {string|null} */
+                                paused_by_source: "bearer_key" | "user_token_verified" | "header_asserted" | null;
+                                /**
+                                 * Format: date-time
+                                 * @description The last resume, kept after a new pause.
+                                 */
+                                resumed_at: string | null;
+                                /** @description Increases by one on every pause and every resume. */
+                                generation: number;
+                            };
+                        };
+                    };
+                };
+                /** @description The body did not parse. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The dashboard path named no admin, or a token that did not verify. Bare `{ error, remediation }` body. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            remediation?: string;
+                        };
+                    };
+                };
+                /** @description The `{orgId}` in the path is not the authenticated org. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;

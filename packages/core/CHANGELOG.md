@@ -1,5 +1,43 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.8 — 2026-09-25
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: 287 -> 289 operacoes, duas
+  rotas novas e nenhuma removida. Seis operacoes mudaram de forma ou de texto;
+  `components` nao muda.
+
+  Kill switch da organizacao (ent#1648, enterprise #1652 + #1653):
+
+      GET  /v1/orgs/{orgId}/pause   estado do kill switch (`paused`, `reason`,
+                                    `paused_by`, `paused_by_source`,
+                                    `generation`); escopo `projects:read`
+      POST /v1/orgs/{orgId}/pause   pausa todo gasto de agente da organizacao;
+                                    escopo novo `organizations:pause`.
+                                    Idempotente (`changed: false`). Retomar
+                                    nao e operacao de chave de API
+
+  Enquanto pausada, toda porta de dinheiro de agente responde 403
+  `org_paused`. `GET /v1/mandates/{id}` ganha `org_paused` e `org_paused_at`
+  (obrigatorios) e `GET /v1/organizations/{id}` ganha `spend_pause`
+  (obrigatorio, anulavel). `POST /v1/webhook-endpoints` e `POST /v1/triggers`
+  passam a listar `commerce.organization.paused` e
+  `commerce.organization.resumed` entre os eventos emitidos.
+
+  `GET /v1/health` (enterprise #1582): `checks.fx_rates.status` troca `fresh`
+  por `usable` (`usable` | `stale` | `missing`), derivado de `hours_old`, e
+  `last_fetched_at` passa a ser o carimbo de mercado do fechamento PTAX mais
+  novo, nao a hora em que o fetcher rodou. Quem compara com `"fresh"` deixa de
+  casar.
+
+  `POST /v1/orgs/{orgId}/mandates` (enterprise #1649): so texto. O 501 passa a
+  dizer que trata de oferecer a emissao, nao de aplicar o teto.
+
+- A CLI nao deriva comando novo (97 derivados seguem 97): as duas rotas novas
+  caem em `orgs`, grupo sem comando derivado. Nao muda de conteudo: depende de
+  `@codespar/sdk` por faixa.
+
 ## 0.16.7 — 2026-09-24
 
 ### Changed
