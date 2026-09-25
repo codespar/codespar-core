@@ -19,21 +19,28 @@ import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 
 import {
+  assertLocalDepsVendored,
   buildTemplate,
   checkAgainstLock,
   diffTrees,
+  discoverKitsPackages,
+  vendoredPackagesFor,
   fingerprintDir,
   hashTree,
   nextStepsFor,
   parseManifestScalars,
   readLock,
+  renderKitTemplateRows,
   rootScriptsFor,
   syncKitTemplates,
   treeFingerprint,
+  updateReadmeKitRows,
   verifyPackaged,
   LOCK_BASENAME,
+  README_BLOCK_END,
+  README_BLOCK_START,
 } from "../../scripts/sync-kit-templates.mjs";
-import { listTemplates, loadKitTemplates } from "../commands/init.js";
+import { listTemplates, loadKitTemplates, templateOptionHelp } from "../commands/init.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_DIR = join(HERE, "../..");
@@ -210,9 +217,23 @@ describe("the generated root of a template", () => {
     expect(scripts.start).toBe("npm start --workspace=agents/demo-agent --");
     expect(scripts.consent).toBe("npm run consent --workspace=agents/demo-agent --");
     expect(scripts.eval).toBe("npm run eval --workspace=agents/demo-agent --");
-    expect(scripts.check).toBe("npm run check --workspaces --if-present --");
     expect(scripts.test).toBe("vitest run");
     expect(scripts.typecheck).toContain("agents/demo-agent/tsconfig.json");
+  });
+
+  it("does NOT copy the kits root's own check, which runs repo-level gates a template has no files for", () => {
+    // 25/09: the kits root check became
+    // `node scripts/check-plugin.mjs && npm run check --workspaces …`, and
+    // `scripts/` is not copied into a template, so a scaffold's `npm run check`
+    // died on the missing file before reaching the agent. The e2e gate caught
+    // it; this keeps it caught.
+    const scripts = rootScriptsFor(
+      "demo-agent",
+      { check: "codespar-agent check" },
+      { check: "node scripts/check-plugin.mjs && npm run check --workspaces --if-present --" },
+    );
+    expect(scripts.check).toBe("npm run check --workspaces --if-present --");
+    expect(scripts.check).not.toContain("scripts/");
   });
 
   it("prints the consent step only for an agent that has a consent script", () => {
@@ -251,7 +272,7 @@ describe("buildTemplate", () => {
       description: "A demo agent for the sync test.",
       version: "0.1.0",
       cli: "@codespar/cli@0.13.0",
-      agent_core: "0.1.0",
+      vendored: { "@codespar/agent-core": "0.1.0" },
       next_steps: ["cp agents/demo-agent/.env.example agents/demo-agent/.env   # then fill in your keys", "npm install", "npm run consent -- --yes", "npm start"],
     });
     expect(entry.hash).toBe(fingerprintDir(out));
@@ -282,6 +303,126 @@ describe("buildTemplate", () => {
   });
 });
 
+/**
+ * Adds a second kits-local package to a fixture and points the agent at it:
+ * `agents/demo-agent` -> `@codespar/agent-runtime` -> `@codespar/agent-core`,
+ * which is the shape kits `8f130b7` introduced when it split the shared runner
+ * out of the core. The runtime owns the `codespar-agent` bin, so it is what the
+ * agent's scripts actually call.
+ */
+function addRuntimePackage(dir: string, opts: { corePin?: string } = {}): void {
+  write(
+    dir,
+    "packages/agent-runtime/package.json",
+    JSON.stringify(
+      {
+        name: "@codespar/agent-runtime",
+        version: "0.1.0",
+        private: true,
+        type: "module",
+        main: "./src/index.ts",
+        bin: { "codespar-agent": "./bin.mjs" },
+        dependencies: { "@codespar/agent-core": opts.corePin ?? "0.1.0" },
+      },
+      null,
+      2,
+    ),
+  );
+  write(dir, "packages/agent-runtime/src/index.ts", "export const runtime = true;\n");
+  write(dir, "packages/agent-runtime/tsconfig.json", '{ "extends": "../../tsconfig.base.json" }\n');
+  write(dir, "packages/agent-runtime/bin.mjs", "#!/usr/bin/env node\n");
+  const pkgFile = join(dir, "agents/demo-agent/package.json");
+  const pkg = JSON.parse(readFileSync(pkgFile, "utf8"));
+  pkg.dependencies["@codespar/agent-runtime"] = "0.1.0";
+  pkg.scripts.check = "codespar-agent check";
+  writeFileSync(pkgFile, JSON.stringify(pkg, null, 2));
+}
+
+describe("vendoring the kits' own packages", () => {
+  it("walks the agent's local dependencies transitively and vendors every one", () => {
+    const { dir, commit } = fixtureKits();
+    addRuntimePackage(dir);
+    write(dir, "packages/agent-core/tsconfig.json", '{ "extends": "../../tsconfig.base.json" }\n');
+    const out = scratch("built-split-");
+
+    const kitsPackages = discoverKitsPackages(dir);
+    expect([...kitsPackages.keys()].sort()).toEqual(["@codespar/agent-core", "@codespar/agent-runtime"]);
+
+    // The agent names only the runtime's sibling directly; the core arrives
+    // because the runtime depends on it.
+    const chosen = vendoredPackagesFor({
+      agentName: "demo-agent",
+      agentPkg: JSON.parse(readFileSync(join(dir, "agents/demo-agent/package.json"), "utf8")),
+      kitsPackages,
+    });
+    expect(chosen.map((p) => p.source)).toEqual(["packages/agent-core", "packages/agent-runtime"]);
+
+    const entry = buildTemplate({ kitsDir: dir, agentName: "demo-agent", outDir: out, commit, repo: "file://kits" });
+    expect(existsSync(join(out, "packages/agent-runtime/bin.mjs"))).toBe(true);
+    expect(existsSync(join(out, "packages/agent-core/src/index.ts"))).toBe(true);
+    expect(entry.vendored).toEqual({ "@codespar/agent-core": "0.1.0", "@codespar/agent-runtime": "0.1.0" });
+
+    const pkg = JSON.parse(readFileSync(join(out, "package.json"), "utf8"));
+    expect(pkg.workspaces).toEqual(["packages/agent-core", "packages/agent-runtime", "agents/demo-agent"]);
+    // The runtime is typechecked too. Vendoring code the root never looks at
+    // is how a green `npm run typecheck` stops meaning anything.
+    expect(pkg.scripts.typecheck).toBe(
+      "tsc --noEmit -p packages/agent-core/tsconfig.json && tsc --noEmit -p packages/agent-runtime/tsconfig.json && tsc --noEmit -p agents/demo-agent/tsconfig.json",
+    );
+    expect(readFileSync(join(out, "README.md"), "utf8")).toContain("`packages/agent-runtime/` — @codespar/agent-runtime 0.1.0");
+  });
+
+  it("refuses a pin that disagrees on a TRANSITIVE package, not just on the one the agent names", () => {
+    const { dir, commit } = fixtureKits();
+    addRuntimePackage(dir, { corePin: "0.9.0" });
+    const out = scratch("built-split-pin-");
+    expect(() => buildTemplate({ kitsDir: dir, agentName: "demo-agent", outDir: out, commit })).toThrow(
+      /packages\/agent-runtime depends on @codespar\/agent-core@0\.9\.0 but the kits tree carries 0\.1\.0/,
+    );
+  });
+
+  it("CONTROL: the completeness guard refuses a tree that names a local package it does not carry", () => {
+    // The defect of 25/09, planted. Before this guard, `buildTemplate` vendored
+    // one hard-coded directory and returned SUCCESS for a template whose
+    // `npm install` dies with `404 @codespar/agent-runtime`, because that
+    // package is `private: true` and was never published. The guard is normally
+    // satisfied by the closure walk, so the only way to watch it refuse is to
+    // hand it the incomplete list a pre-fix build would have produced.
+    const { dir, commit } = fixtureKits();
+    addRuntimePackage(dir);
+    const out = scratch("built-split-guard-");
+    buildTemplate({ kitsDir: dir, agentName: "demo-agent", outDir: out, commit });
+
+    const kitsPackages = discoverKitsPackages(dir);
+    const coreOnly = [{ name: "@codespar/agent-core", source: "packages/agent-core", version: "0.1.0" }];
+    expect(() => assertLocalDepsVendored({ outDir: out, agentName: "demo-agent", kitsPackages, vendored: coreOnly })).toThrow(
+      /agents\/demo-agent depends on @codespar\/agent-runtime.*does not vendor.*not published/s,
+    );
+
+    // And it passes on the tree the build actually produced, so the refusal
+    // above is about the missing package and not about the walk being broken.
+    expect(() =>
+      assertLocalDepsVendored({
+        outDir: out,
+        agentName: "demo-agent",
+        kitsPackages,
+        vendored: [...kitsPackages.values()].map((p) => ({ name: p.name, source: p.source, version: p.version })),
+      }),
+    ).not.toThrow();
+  });
+
+  it("a single-package kit still builds: the list is derived, so one package is not a special case", () => {
+    const { dir, commit } = fixtureKits();
+    const out = scratch("built-single-");
+    const entry = buildTemplate({ kitsDir: dir, agentName: "demo-agent", outDir: out, commit });
+    expect(entry.vendored).toEqual({ "@codespar/agent-core": "0.1.0" });
+    expect(JSON.parse(readFileSync(join(out, "package.json"), "utf8")).workspaces).toEqual([
+      "packages/agent-core",
+      "agents/demo-agent",
+    ]);
+  });
+});
+
 describe("syncKitTemplates + the release gate, against a local kits repository", () => {
   it("syncs a tag, records the commit it resolved to, and both halves of the gate pass", () => {
     const { dir, commit } = fixtureKits();
@@ -291,7 +432,7 @@ describe("syncKitTemplates + the release gate, against a local kits repository",
     expect(agents).toEqual(["demo-agent"]);
     expect(lock.kits_ref).toBe("v0.1.0");
     expect(lock.commit).toBe(commit);
-    expect(lock.agent_core).toEqual({ source: "packages/agent-core", version: "0.1.0" });
+    expect(lock.vendored_packages).toEqual([{ name: "@codespar/agent-core", source: "packages/agent-core", version: "0.1.0" }]);
 
     const onDisk = readLock(join(templatesDir, LOCK_BASENAME));
     expect(onDisk.format).toBe(1);
@@ -358,11 +499,15 @@ describe("the packaged kit templates (offline half of the release gate)", () => 
     expect(r.ok).toBe(true);
   });
 
-  it("ships bills-agent and collections-agent, pinned to one kits commit, with the kits' own cli pin untouched", () => {
+  it("ships every kit the lock names, pinned to one commit, with the cli pin untouched and every vendored package on disk", () => {
     const lock = readLock(join(TEMPLATES_DIR, LOCK_BASENAME));
-    expect(Object.keys(lock.templates)).toEqual(["bills-agent", "collections-agent"]);
+    // Which agents exist is the kits repo's decision, so it is read rather
+    // than spelled out: a list written here goes stale on the next agent that
+    // lands, which is the whole reason the sync discovers them.
+    expect(Object.keys(lock.templates).length).toBeGreaterThanOrEqual(2);
     expect(lock.commit).toMatch(/^[0-9a-f]{40}$/);
     expect(lock.kits_repo).toBe("https://github.com/codespar/agent-starter-kits");
+
     for (const slug of Object.keys(lock.templates)) {
       const root = join(TEMPLATES_DIR, slug);
       const manifest = parseManifestScalars(readFileSync(join(root, "agents", slug, "agent.yaml"), "utf8"));
@@ -370,10 +515,33 @@ describe("the packaged kit templates (offline half of the release gate)", () => 
       expect(manifest.cli).toBe(lock.templates[slug].cli);
       expect(manifest.cli).toMatch(/^@codespar\/cli@\d+\.\d+\.\d+$/);
       expect(existsSync(join(root, "_gitignore"))).toBe(true);
-      expect(existsSync(join(root, "packages/agent-core/package.json"))).toBe(true);
       expect(existsSync(join(root, "agents", slug, ".env.example"))).toBe(true);
+
+      // The packaged half of the completeness guard: every package this
+      // template's lock entry says it vendors has a directory behind it and is
+      // a workspace. A pin with no directory sends `npm install` to the
+      // registry for a package that was never published there.
+      const vendored = Object.keys(lock.templates[slug].vendored);
+      expect(vendored.length).toBeGreaterThan(0);
+      const sources = vendored.map((name) => {
+        const entry = lock.vendored_packages.find((p: { name: string }) => p.name === name);
+        expect(entry, `${name} is in ${slug}'s vendored map and not in vendored_packages`).toBeDefined();
+        return entry.source as string;
+      });
+      for (const source of sources) {
+        expect(existsSync(join(root, source, "package.json")), `${slug} does not carry ${source}`).toBe(true);
+      }
       const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-      expect(pkg.workspaces).toEqual(["packages/agent-core", `agents/${slug}`]);
+      expect(pkg.workspaces).toEqual([...sources.sort(), `agents/${slug}`]);
+
+      // And every kits-local pin the agent declares is one of them, at the
+      // version the lock recorded.
+      const agentPkg = JSON.parse(readFileSync(join(root, "agents", slug, "package.json"), "utf8"));
+      for (const [dep, pin] of Object.entries<string>(agentPkg.dependencies ?? {})) {
+        if (!dep.startsWith("@codespar/agent-")) continue;
+        expect(vendored, `${slug} pins ${dep} but vendors only ${vendored.join(", ")}`).toContain(dep);
+        expect(pin).toBe(lock.templates[slug].vendored[dep]);
+      }
     }
   });
 
@@ -391,7 +559,8 @@ describe("the template listing", () => {
 
     const lock = readLock(join(TEMPLATES_DIR, LOCK_BASENAME));
     const kits = all.slice(4);
-    expect(kits.map((t) => t.slug)).toEqual(["bills-agent", "collections-agent"]);
+    // Read from the lock, sorted, rather than named here.
+    expect(kits.map((t) => t.slug)).toEqual(Object.keys(lock.templates).sort());
     for (const t of kits) {
       expect(t.kind).toBe("kit");
       expect(t.description).toBe(lock.templates[t.slug].description);
@@ -399,6 +568,59 @@ describe("the template listing", () => {
       expect(t.nextSteps).toEqual(lock.templates[t.slug].next_steps);
       expect(t.framework).toContain(lock.commit.slice(0, 7));
     }
+  });
+
+  it("the --template help names every template with its description, and never throws", () => {
+    const help = templateOptionHelp(TEMPLATES_DIR);
+    for (const t of listTemplates(TEMPLATES_DIR)) {
+      expect(help, `${t.slug} is missing from the --template help`).toContain(t.slug);
+      expect(help).toContain(t.description);
+    }
+
+    // CONTROL: this text is built while commander is being assembled, before a
+    // command is chosen, so a broken lock must not take the whole CLI down with
+    // it. A generic line is a worse help text; a stack trace on `codespar
+    // login` is a broken CLI.
+    const broken = scratch("templates-broken-");
+    writeFileSync(join(broken, LOCK_BASENAME), "{ not json");
+    expect(() => loadKitTemplates(broken)).toThrow();
+    const fallback = templateOptionHelp(broken);
+    expect(fallback).toContain("--list");
+    expect(fallback.split("\n")).toHaveLength(1);
+  });
+
+  it("the README's kit rows are the lock's, so the table cannot drift from the templates", () => {
+    const lock = readLock(join(TEMPLATES_DIR, LOCK_BASENAME));
+    const readme = readFileSync(join(PACKAGE_DIR, "README.md"), "utf8");
+    const start = readme.indexOf(README_BLOCK_START);
+    const end = readme.indexOf(README_BLOCK_END);
+    expect(start, `README.md has no ${README_BLOCK_START}`).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const block = readme.slice(start + README_BLOCK_START.length, end).trim();
+    expect(block, "run `npm run sync:kit-templates` in packages/cli and commit the README too").toBe(
+      renderKitTemplateRows(lock.templates),
+    );
+  });
+
+  it("updateReadmeKitRows rewrites only the marked block, and refuses a file without one", () => {
+    const dir = scratch("readme-");
+    const file = join(dir, "README.md");
+    const templates = { "z-agent": { description: "Zed." }, "a-agent": { description: "Ay." } };
+
+    writeFileSync(file, `before\n${README_BLOCK_START}\n| old | row |\n${README_BLOCK_END}\nafter\n`);
+    expect(updateReadmeKitRows(file, templates)).toBe(true);
+    expect(readFileSync(file, "utf8")).toBe(
+      `before\n${README_BLOCK_START}\n| \`a-agent\` | Starter kit — Ay. |\n| \`z-agent\` | Starter kit — Zed. |\n${README_BLOCK_END}\nafter\n`,
+    );
+    // Idempotent: a second run changes nothing and says so.
+    expect(updateReadmeKitRows(file, templates)).toBe(false);
+
+    writeFileSync(file, "no markers here\n");
+    expect(() => updateReadmeKitRows(file, templates)).toThrow(/has no <!-- kit-templates:start -->/);
+
+    // No README at all is not an error: the sync tests write into a scratch
+    // directory with no package around it.
+    expect(updateReadmeKitRows(join(dir, "absent.md"), templates)).toBe(false);
   });
 
   it("a package without the lock has no kit templates and still lists the framework ones", () => {

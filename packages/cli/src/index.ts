@@ -18,7 +18,7 @@ import {
   startConnectCommand,
 } from "./commands/connect.js";
 import { tailLogsCommand } from "./commands/logs.js";
-import { initCommand } from "./commands/init.js";
+import { initCommand, templateOptionHelp } from "./commands/init.js";
 import { discoverCommand } from "./commands/discover.js";
 import { chargeCommand } from "./commands/charge.js";
 import { spendCommand } from "./commands/spend.js";
@@ -738,10 +738,7 @@ program
 program
   .command("init [name]")
   .description("Scaffold a new commerce agent from a template")
-  .option(
-    "-t, --template <slug>",
-    "Template slug: a framework template (pix-agent, ecommerce-checkout, streaming-chat, multi-tenant) or a starter-kit agent (bills-agent, collections-agent); `--list` shows them all",
-  )
+  .option("-t, --template <slug>", templateOptionHelp())
   .option("-y, --yes", "Use default template without prompting")
   .option("-l, --list", "List the available templates, with a one-line description each, and exit")
   .action(async (name: string | undefined, opts: { template?: string; yes?: boolean; list?: boolean }) => {
