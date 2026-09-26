@@ -1,5 +1,51 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.9 — 2026-09-26
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: 289 operacoes seguem 289,
+  nenhuma rota nova e nenhuma removida. Quinze operacoes mudaram de forma ou de
+  texto, e `components.schemas.SpendOutcome` ganha dois campos.
+
+  Replay de tentativa liquidada (ent#1671, enterprise #1683): apresentar o
+  `attempt_id` de uma tentativa ja liquidada, com o mesmo valor, recebedor,
+  mandato, trilho e cotacao, devolve o 200 ORIGINAL, verbatim, sem despachar
+  nada. Afeta:
+
+      POST /v1/consumers/mandates/{id}/spend
+      POST /v1/consumer-payments/execute
+      POST /v1/consumer-payments/execute-stream   (so texto)
+
+  `SpendOutcome` ganha `attempt_id` e `idempotent_replay`, os dois
+  obrigatorios. O 409 das duas primeiras ganha `attempt_id_conflict` (mesmo
+  `attempt_id`, pagamento diferente; `mismatched_fields` diz o que difere) e
+  `attempt_id_unavailable` (outro projeto da organizacao ja tem esse
+  `attempt_id`). `psp_attempt_in_flight` passa a mandar repetir o MESMO
+  `attempt_id` quando a primeira chamada responder. Sem `attempt_id` nao ha
+  idempotencia: duas chamadas sao dois pagamentos.
+
+  Conexao OAuth vencida (enterprise #1691): `POST
+  /v1/providers/{slug}/verify-connection` ganha o codigo `connection_expired`
+  (424, com `expires_at`); `status` das rotas de `/v1/connections` ganha
+  descricao dizendo que `expired` inclui o token OAuth vencido.
+
+  Consentimento Open Finance (enterprise #1685), em `/v1/bank-consents` e no
+  alias `/v1/ofb/consents`: o 409 de `callback` ganha `consent_expired`
+  (terminal) e o 409 de `refresh-statement` ganha `consent_expired` (terminal)
+  e `consent_token_expired` (nao terminal: o consentimento segue `authorised`).
+
+  `POST /v1/sessions` (enterprise #1688, #1694): corpo ganha `agent_id`
+  opcional, o agente registrado que a sessao representa; o texto de `servers`
+  passa a dizer 0–20 (o schema ja nao tinha minimo).
+
+  `POST /v1/agents/{did}/revoke` (enterprise #1655, #1657): so texto. Revogar
+  passa a impedir gasto sob mandatos do consumidor vinculados a chave do
+  agente, cartao incluido.
+
+- A CLI nao deriva comando novo (nenhuma operacao nova). Nao muda de conteudo:
+  depende de `@codespar/sdk` por faixa.
+
 ## 0.16.8 — 2026-09-25
 
 ### Changed

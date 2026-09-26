@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 35fc87bbb02c3e6464b220079813bcebda46b5e1e19081217e6c76c942c3ae8f, fetched 2026-09-25T17:41:30.628Z
+// Source: openapi-snapshot.json (sha256 89d3d64c1b8583b7aa553e10e7940b375cf8bf49c069bbce73d38b8c1a8c334c, fetched 2026-09-26T13:48:25.860Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -839,7 +839,7 @@ export interface paths {
         put?: never;
         /**
          * Open a session
-         * @description A session is the unit an agent's tool calls, policy evaluations and audit entries hang off. `servers` names the connected MCP servers it may reach (1-20), and every id must be one `GET /v1/servers` returns for this project — an id that is not gets 400 `unknown_servers` with the offenders listed, which is a different body from the schema `invalid_body` above it.
+         * @description A session is the unit an agent's tool calls, policy evaluations and audit entries hang off. `servers` names the connected MCP servers it may reach (0–20), and every id must be one `GET /v1/servers` returns for this project — an id that is not gets 400 `unknown_servers` with the offenders listed, which is a different body from the schema `invalid_body` above it.
          *
          *     `mocks` and `chaos` are accepted only on a project whose environment is `test`: a live-environment project gets 403 mocks_not_permitted, a payload over 64 KiB gets 413, and a malformed one gets 400 with RFC 6901 pointers pointing at the offending field.
          */
@@ -855,6 +855,8 @@ export interface paths {
                     "application/json": {
                         servers: string[];
                         user_id?: string;
+                        /** @description The registered agent this session acts as (its handle). Approvals raised in the session are attributed to it. Must name an active agent of this org, or the request answers 422. */
+                        agent_id?: string;
                         mocks?: {
                             [key: string]: unknown;
                         };
@@ -2795,9 +2797,9 @@ export interface paths {
          *
          *     `revoked` is not `retired`. Retired is a graceful exit; revoked is authority withdrawn, possibly adversarial. Both are reachable states and this verb writes the second one.
          *
-         *     WHAT IT STOPS: the agent can no longer be paid as an `agent:<id>` payee, and can no longer mint a new KYA-bearing mandate.
+         *     WHAT IT STOPS: the agent can no longer be paid as an `agent:<id>` payee, can no longer mint a new KYA-bearing mandate, and can no longer spend under consumer mandates bound to its key: every consumer lane, card included, refuses them. The mandates themselves are not revoked -- the consumer signed them -- they stop clearing the spend-time check.
          *
-         *     WHAT IT DOES NOT STOP: spending under mandates already signed. Those were signed by the CONSUMER, and a tenant's administration verb does not revoke a third party's authorization. The consequence is that revoking does not by itself halt money already authorized — see ent#1067. If that is what you need, revoke the mandates.
+         *     WHAT IT DOES NOT STOP: spending under consumer mandates not bound to a key (issued before that binding existed, or while the agent was unregistered), because they name no key a revocation could reach. The deployment can refuse those for every agent (CONSUMER_MANDATE_AGENT_ENFORCE); otherwise, revoke those mandates.
          *
          *     A `{did}` belonging to another org returns 404, not 403: 403 would confirm that the identity exists, which is what a caller sweeping DIDs is asking.
          */
@@ -9335,7 +9337,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9349,6 +9351,8 @@ export interface paths {
                             alternative?: string;
                             /** @description Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished. */
                             caveat?: string;
+                            /** @description Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired. */
+                            expires_at?: string;
                         };
                     };
                 };
@@ -9368,7 +9372,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9382,6 +9386,8 @@ export interface paths {
                             alternative?: string;
                             /** @description Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished. */
                             caveat?: string;
+                            /** @description Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired. */
+                            expires_at?: string;
                         };
                     };
                 };
@@ -9396,7 +9402,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9410,10 +9416,12 @@ export interface paths {
                             alternative?: string;
                             /** @description Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished. */
                             caveat?: string;
+                            /** @description Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired. */
+                            expires_at?: string;
                         };
                     };
                 };
-                /** @description `not_connected`. There is no usable credential to test: no active connection for this project and provider, or the vault returned nothing for the reference it holds. This body carries the extra `hint` / `alternative` steer. */
+                /** @description `not_connected`. There is no usable credential to test: no active connection for this project and provider, or the vault returned nothing for the reference it holds. This body carries the extra `hint` / `alternative` steer. Or `connection_expired`: the project has an authorization-code OAuth connection whose access token passed its expiry, and nothing refreshes it, so the fix is to reconnect. That body carries `expires_at` and no sandbox steer. */
                 424: {
                     headers: {
                         [name: string]: unknown;
@@ -9424,7 +9432,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9438,6 +9446,8 @@ export interface paths {
                             alternative?: string;
                             /** @description Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished. */
                             caveat?: string;
+                            /** @description Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired. */
+                            expires_at?: string;
                         };
                     };
                 };
@@ -9452,7 +9462,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9466,6 +9476,8 @@ export interface paths {
                             alternative?: string;
                             /** @description Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished. */
                             caveat?: string;
+                            /** @description Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired. */
+                            expires_at?: string;
                         };
                     };
                 };
@@ -9480,7 +9492,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9494,6 +9506,8 @@ export interface paths {
                             alternative?: string;
                             /** @description Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished. */
                             caveat?: string;
+                            /** @description Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired. */
+                            expires_at?: string;
                         };
                     };
                 };
@@ -9508,7 +9522,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9522,6 +9536,8 @@ export interface paths {
                             alternative?: string;
                             /** @description Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished. */
                             caveat?: string;
+                            /** @description Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired. */
+                            expires_at?: string;
                         };
                     };
                 };
@@ -12982,7 +12998,10 @@ export interface paths {
                                 server_id: string;
                                 /** @description Mirrors the catalog's `auth_type` at connect time: api_key, path_secret, cert, hmac_signed, jwt_ecdsa, two_header, oauth, cdp or none. Left open because the column is plain text. */
                                 auth_type: string;
-                                /** @enum {string} */
+                                /**
+                                 * @description `expired` includes an OAuth connection whose access token passed `expires_at`: nothing refreshes it yet, calls through it answer `connection_expired`, and the fix is to reconnect. `?status=` filters on this same value.
+                                 * @enum {string}
+                                 */
                                 status: "pending" | "connected" | "revoked" | "expired";
                                 display_name: string | null;
                                 /** @description Provider metadata the OAuth callback wrote (scope, refresh ref) or the provisioning projection wrote (account_id). Always present; null for a key registered through POST /v1/connections, which never sets it. */
@@ -13075,7 +13094,10 @@ export interface paths {
                             server_id: string;
                             /** @description Mirrors the catalog's `auth_type` at connect time: api_key, path_secret, cert, hmac_signed, jwt_ecdsa, two_header, oauth, cdp or none. Left open because the column is plain text. */
                             auth_type: string;
-                            /** @enum {string} */
+                            /**
+                             * @description `expired` includes an OAuth connection whose access token passed `expires_at`: nothing refreshes it yet, calls through it answer `connection_expired`, and the fix is to reconnect. `?status=` filters on this same value.
+                             * @enum {string}
+                             */
                             status: "pending" | "connected" | "revoked" | "expired";
                             display_name: string | null;
                             /** @description Provider metadata the OAuth callback wrote (scope, refresh ref) or the provisioning projection wrote (account_id). Always present; null for a key registered through POST /v1/connections, which never sets it. */
@@ -13115,7 +13137,10 @@ export interface paths {
                             server_id: string;
                             /** @description Mirrors the catalog's `auth_type` at connect time: api_key, path_secret, cert, hmac_signed, jwt_ecdsa, two_header, oauth, cdp or none. Left open because the column is plain text. */
                             auth_type: string;
-                            /** @enum {string} */
+                            /**
+                             * @description `expired` includes an OAuth connection whose access token passed `expires_at`: nothing refreshes it yet, calls through it answer `connection_expired`, and the fix is to reconnect. `?status=` filters on this same value.
+                             * @enum {string}
+                             */
                             status: "pending" | "connected" | "revoked" | "expired";
                             display_name: string | null;
                             /** @description Provider metadata the OAuth callback wrote (scope, refresh ref) or the provisioning projection wrote (account_id). Always present; null for a key registered through POST /v1/connections, which never sets it. */
@@ -13302,7 +13327,10 @@ export interface paths {
                             server_id: string;
                             /** @description Mirrors the catalog's `auth_type` at connect time: api_key, path_secret, cert, hmac_signed, jwt_ecdsa, two_header, oauth, cdp or none. Left open because the column is plain text. */
                             auth_type: string;
-                            /** @enum {string} */
+                            /**
+                             * @description `expired` includes an OAuth connection whose access token passed `expires_at`: nothing refreshes it yet, calls through it answer `connection_expired`, and the fix is to reconnect. `?status=` filters on this same value.
+                             * @enum {string}
+                             */
                             status: "pending" | "connected" | "revoked" | "expired";
                             display_name: string | null;
                             /** @description Provider metadata the OAuth callback wrote (scope, refresh ref) or the provisioning projection wrote (account_id). Always present; null for a key registered through POST /v1/connections, which never sets it. */
@@ -13421,7 +13449,10 @@ export interface paths {
                             server_id: string;
                             /** @description Mirrors the catalog's `auth_type` at connect time: api_key, path_secret, cert, hmac_signed, jwt_ecdsa, two_header, oauth, cdp or none. Left open because the column is plain text. */
                             auth_type: string;
-                            /** @enum {string} */
+                            /**
+                             * @description `expired` includes an OAuth connection whose access token passed `expires_at`: nothing refreshes it yet, calls through it answer `connection_expired`, and the fix is to reconnect. `?status=` filters on this same value.
+                             * @enum {string}
+                             */
                             status: "pending" | "connected" | "revoked" | "expired";
                             display_name: string | null;
                             /** @description Provider metadata the OAuth callback wrote (scope, refresh ref) or the provisioning projection wrote (account_id). Always present; null for a key registered through POST /v1/connections, which never sets it. */
@@ -13565,7 +13596,10 @@ export interface paths {
                             server_id: string;
                             /** @description Mirrors the catalog's `auth_type` at connect time: api_key, path_secret, cert, hmac_signed, jwt_ecdsa, two_header, oauth, cdp or none. Left open because the column is plain text. */
                             auth_type: string;
-                            /** @enum {string} */
+                            /**
+                             * @description `expired` includes an OAuth connection whose access token passed `expires_at`: nothing refreshes it yet, calls through it answer `connection_expired`, and the fix is to reconnect. `?status=` filters on this same value.
+                             * @enum {string}
+                             */
                             status: "pending" | "connected" | "revoked" | "expired";
                             display_name: string | null;
                             /** @description Provider metadata the OAuth callback wrote (scope, refresh ref) or the provisioning projection wrote (account_id). Always present; null for a key registered through POST /v1/connections, which never sets it. */
@@ -14835,6 +14869,8 @@ export interface paths {
          *     The cumulative cap is checked and CONSUMED under an advisory lock, and the wallet hold is taken inside that same lock. The lock is released before the provider call, so a slow provider does not serialize everyone else.
          *
          *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.
+         *
+         *     **A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail and quote, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.
          */
         post: {
             parameters: {
@@ -14932,7 +14968,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Local state refuses. `psp_attempt_in_flight`: the same attempt is already in flight. `psp_attempt_uncertain`: an earlier attempt ended with an unknown outcome and this intent is PINNED to it, so present the same `attempt_id` again, never a new one. `psp_attempt_conflict`: the earlier attempt was already compensated. */
+                /** @description Local state refuses. `psp_attempt_in_flight`: the same attempt is already in flight; retry the SAME `attempt_id` once it has answered, never a new one. `psp_attempt_uncertain`: an earlier attempt ended with an unknown outcome and this intent is PINNED to it, so present the same `attempt_id` again, never a new one. `psp_attempt_conflict`: the earlier attempt was already compensated. `attempt_id_conflict`: this `attempt_id` was already used for a different payment (`mismatched_fields` names what differs); nothing was held or sent. `attempt_id_unavailable`: another project of this organization holds this `attempt_id`; use a new one. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -14941,7 +14977,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict";
+                                code: "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15062,6 +15098,8 @@ export interface paths {
          *     3. The destination must be NAMED in a signed list of the mandate, and a merchant-list wildcard `"*"` NEVER authorizes money out. Which list is accepted is mid-rollout, so read this one carefully: the target rule is `withdrawal_allowlist` alone, and while the rollout flag is off a destination named explicitly in the signed `merchant_allowlist` is ALSO accepted, with the stricter rule's refusal recorded rather than applied. Tolerance never widens what passes: a wildcard is refused on both paths, and a destination in neither list is refused with its own code. Build against `withdrawal_allowlist`: it is the list that keeps working when the flag turns on.
          *
          *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.
+         *
+         *     **A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail and quote, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.
          */
         post: {
             parameters: {
@@ -15138,7 +15176,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Local state refuses, on the same three conditions as the by-id route. */
+                /** @description Local state refuses, on the same five conditions as the by-id route. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -15147,7 +15185,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict";
+                                code: "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15242,6 +15280,8 @@ export interface paths {
          *     The outcome is the same object the sibling route returns, carried on the last event. A client that does not need to follow progress should use `/execute`: streaming does not make settlement faster, it makes it observable while it runs.
          *
          *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.
+         *
+         *     **A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail and quote, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.
          */
         post: {
             parameters: {
@@ -21012,7 +21052,11 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The consent's current status does not permit this transition. `details.from` and `details.to` carry the pair. `pending` may become `authorised`, `revoked` or `expired`; `authorised` may become `revoked`, `expired` or `consumed`; `revoked`, `expired` and `consumed` are terminal and permit nothing. */
+                /**
+                 * @description `illegal_transition`: the consent's current status does not permit authorisation. `details.from` and `details.to` carry the pair.
+                 *
+                 *     `consent_expired`: the consent is `pending` and its validity window (`details.expires_at`) has elapsed. TERMINAL: the grant can no longer be authorised. The status stays `pending` on the row and is read as expired by this route, so it still occupies this project's one open consent for the consumer at this bank: revoke it, then initiate a new consent. Another project is not blocked by it.
+                 */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -21021,7 +21065,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "illegal_transition";
+                                code: "illegal_transition" | "consent_expired";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -21178,7 +21222,13 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `consent_not_authorised`: the consent is not in `authorised`. `details.status` carries what it is. */
+                /**
+                 * @description `consent_not_authorised`: the consent is not in `authorised`. `details.status` carries what it is.
+                 *
+                 *     `consent_expired`: the consent's validity window (`details.expires_at`) has elapsed. The consent is moved to `expired` by this same call and nothing is fetched. TERMINAL: initiate a new consent.
+                 *
+                 *     `consent_token_expired`: the consent is still valid but its access token (`details.token_expires_at`) has expired. NOT terminal: the consent stays `authorised`, because the grant is alive at the bank and the token is renewable. Nothing was fetched; do not initiate a new consent.
+                 */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -21187,7 +21237,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "consent_not_authorised";
+                                code: "consent_not_authorised" | "consent_expired" | "consent_token_expired";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -22154,7 +22204,11 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The consent's current status does not permit this transition. `details.from` and `details.to` carry the pair. `pending` may become `authorised`, `revoked` or `expired`; `authorised` may become `revoked`, `expired` or `consumed`; `revoked`, `expired` and `consumed` are terminal and permit nothing. */
+                /**
+                 * @description `illegal_transition`: the consent's current status does not permit authorisation. `details.from` and `details.to` carry the pair.
+                 *
+                 *     `consent_expired`: the consent is `pending` and its validity window (`details.expires_at`) has elapsed. TERMINAL: the grant can no longer be authorised. The status stays `pending` on the row and is read as expired by this route, so it still occupies this project's one open consent for the consumer at this bank: revoke it, then initiate a new consent. Another project is not blocked by it.
+                 */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -22163,7 +22217,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "illegal_transition";
+                                code: "illegal_transition" | "consent_expired";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -22315,7 +22369,13 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `consent_not_authorised`: the consent is not in `authorised`. `details.status` carries what it is. */
+                /**
+                 * @description `consent_not_authorised`: the consent is not in `authorised`. `details.status` carries what it is.
+                 *
+                 *     `consent_expired`: the consent's validity window (`details.expires_at`) has elapsed. The consent is moved to `expired` by this same call and nothing is fetched. TERMINAL: initiate a new consent.
+                 *
+                 *     `consent_token_expired`: the consent is still valid but its access token (`details.token_expires_at`) has expired. NOT terminal: the consent stays `authorised`, because the grant is alive at the bank and the token is renewable. Nothing was fetched; do not initiate a new consent.
+                 */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -22324,7 +22384,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "consent_not_authorised";
+                                code: "consent_not_authorised" | "consent_expired" | "consent_token_expired";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -36582,6 +36642,10 @@ export interface components {
             } | null;
             /** @description The lifecycle steps, in order, each with a timestamp and an outcome. */
             audit: unknown[];
+            /** @description The attempt this payment settled under: the `attempt_id` sent, or the fresh one minted when none was. Presenting it again reads this outcome instead of paying again. */
+            attempt_id: string;
+            /** @description True when this `attempt_id` had already settled and this is its recorded outcome, answered again: every other field is the ORIGINAL response, verbatim, and nothing was sent, held, sealed or published by this call. False on the call that settled it. */
+            idempotent_replay: boolean;
         };
         /** @description The destination of a TED, the Brazilian same-day bank wire. Present this object on a spend to send a wire instead of a Pix: its presence is what switches the rail, and what makes the three TED requirements on those operations bind. Money leaves the consumer's own sub-account, never a pooled one. */
         TedDestination: {
