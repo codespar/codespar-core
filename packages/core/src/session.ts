@@ -124,6 +124,8 @@ export async function createSession(
     servers: req.servers,
     user_id: userId,
     ...(config.mocks !== undefined ? { mocks: config.mocks } : {}),
+    // Same conditional spread: without an agent the body stays byte-identical.
+    ...(config.agentId !== undefined ? { agent_id: config.agentId } : {}),
   };
   const data = await safeFetch(
     `${baseUrl}/v1/sessions`,

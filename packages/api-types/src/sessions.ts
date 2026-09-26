@@ -5,8 +5,16 @@ export const SessionStatusSchema = z.enum(["active", "closed", "error"]);
 export type SessionStatus = z.infer<typeof SessionStatusSchema>;
 
 export const CreateSessionRequestSchema = z.object({
-  servers: z.array(z.string()).min(1).max(20),
+  // 0..20: the API accepts an empty list (meta-tool sessions are server-less
+  // by design; enterprise sessions.ts, CreateSessionSchema). The .min(1) here
+  // drifted from the served contract and refused a body the API takes.
+  servers: z.array(z.string().min(1)).max(20),
   user_id: z.string().min(1).max(128).optional(),
+  // The registered agent the session acts as, by handle (enterprise 0274,
+  // codespar-enterprise#1688). Approvals raised in the session count for that
+  // agent's reputation. Must name an active agent of the org, or the API
+  // answers 422 agent_not_registered / agent_not_active.
+  agent_id: z.string().min(1).max(128).optional(),
 });
 export type CreateSessionRequest = z.infer<typeof CreateSessionRequestSchema>;
 

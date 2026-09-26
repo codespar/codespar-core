@@ -9,13 +9,5 @@
     "rather than accumulated. This file is not a place to silence new findings.",
     "Regenerate a fingerprint with: node scripts/check-publish-drift.mjs --json"
   ],
-  "waivers": [
-    {
-      "name": "@codespar/api-types",
-      "version": "0.5.0",
-      "fingerprint": "d77dae43ecfca2fe5aa7fb188706fc9bc59b08b890180a9edd4ab4d2d1077c09",
-      "issue": "core#132",
-      "note": "The two_header auth type (#72) landed after 0.5.0 was published; the published AuthTypeSchema does not contain it. Additive to a schema, so 0.5.1 vs 0.6.0 is a release decision."
-    }
-  ]
+  "waivers": []
 }

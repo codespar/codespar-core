@@ -53,6 +53,17 @@ export interface SessionConfig {
    * maps.
    */
   mocks?: Record<string, MockValue>;
+  /**
+   * The registered agent this session acts as, by its handle. Approvals raised
+   * in the session are attributed to that agent (its public reputation counts
+   * them). It must name an ACTIVE agent of your org, or `POST /v1/sessions`
+   * answers 422 (`agent_not_registered` / `agent_not_active`). Omit it and the
+   * session carries no agent, as before.
+   *
+   * Not the same as the `userId` you pass to `create`: that one is whoever the
+   * session is for (your end user or consumer); this is the agent acting.
+   */
+  agentId?: string;
 }
 
 /* ── Tools ────────────────────────────────────────────────────── */
