@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 35fc87bbb02c3e6464b220079813bcebda46b5e1e19081217e6c76c942c3ae8f, fetched 2026-09-25T17:41:30.628Z
+// Source: openapi-snapshot.json (sha256 5fd25bcf1404b8c890d25d122e96b67a5407b92038a9d5ba5db3897b3664454f, fetched 2026-09-26T00:36:44.656Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -855,6 +855,8 @@ export interface paths {
                     "application/json": {
                         servers: string[];
                         user_id?: string;
+                        /** @description The registered agent this session acts as (its handle). Approvals raised in the session are attributed to it. Must name an active agent of this org, or the request answers 422. */
+                        agent_id?: string;
                         mocks?: {
                             [key: string]: unknown;
                         };
@@ -2795,9 +2797,9 @@ export interface paths {
          *
          *     `revoked` is not `retired`. Retired is a graceful exit; revoked is authority withdrawn, possibly adversarial. Both are reachable states and this verb writes the second one.
          *
-         *     WHAT IT STOPS: the agent can no longer be paid as an `agent:<id>` payee, and can no longer mint a new KYA-bearing mandate.
+         *     WHAT IT STOPS: the agent can no longer be paid as an `agent:<id>` payee, can no longer mint a new KYA-bearing mandate, and can no longer spend under consumer mandates bound to its key: every consumer lane, card included, refuses them. The mandates themselves are not revoked -- the consumer signed them -- they stop clearing the spend-time check.
          *
-         *     WHAT IT DOES NOT STOP: spending under mandates already signed. Those were signed by the CONSUMER, and a tenant's administration verb does not revoke a third party's authorization. The consequence is that revoking does not by itself halt money already authorized — see ent#1067. If that is what you need, revoke the mandates.
+         *     WHAT IT DOES NOT STOP: spending under consumer mandates not bound to a key (issued before that binding existed, or while the agent was unregistered), because they name no key a revocation could reach. The deployment can refuse those for every agent (CONSUMER_MANDATE_AGENT_ENFORCE); otherwise, revoke those mandates.
          *
          *     A `{did}` belonging to another org returns 404, not 403: 403 would confirm that the identity exists, which is what a caller sweeping DIDs is asking.
          */

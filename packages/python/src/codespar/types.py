@@ -61,6 +61,11 @@ class SessionConfig:
     metadata: dict[str, str] | None = None
     project_id: str | None = None
     mocks: dict[str, MockValue] | None = None
+    # The registered agent the session acts as, by handle. Approvals raised in
+    # the session count for that agent. Must name an active agent of the org,
+    # or the API answers 422 (agent_not_registered / agent_not_active). Not the
+    # same as ``user_id``, which is whoever the session is for.
+    agent_id: str | None = None
 
 
 @dataclass(slots=True)

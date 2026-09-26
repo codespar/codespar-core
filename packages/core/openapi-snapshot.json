@@ -1,8 +1,8 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-09-25T17:41:30.628Z",
-    "sha256": "35fc87bbb02c3e6464b220079813bcebda46b5e1e19081217e6c76c942c3ae8f",
+    "fetched_at": "2026-09-26T00:36:44.656Z",
+    "sha256": "5fd25bcf1404b8c890d25d122e96b67a5407b92038a9d5ba5db3897b3664454f",
     "etag": null,
     "last_modified": null,
     "info": {
@@ -2668,6 +2668,12 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 128
+                    },
+                    "agent_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "description": "The registered agent this session acts as (its handle). Approvals raised in the session are attributed to it. Must name an active agent of this org, or the request answers 422."
                     },
                     "mocks": {
                       "type": "object",
@@ -5741,7 +5747,7 @@
       "/v1/agents/{did}/revoke": {
         "post": {
           "summary": "Revoke an agent identity",
-          "description": "Take authority away from an agent identity: sets its status to `revoked` and cascades to every one of its non-revoked signing keys, in one transaction.\n\n`revoked` is not `retired`. Retired is a graceful exit; revoked is authority withdrawn, possibly adversarial. Both are reachable states and this verb writes the second one.\n\nWHAT IT STOPS: the agent can no longer be paid as an `agent:<id>` payee, and can no longer mint a new KYA-bearing mandate.\n\nWHAT IT DOES NOT STOP: spending under mandates already signed. Those were signed by the CONSUMER, and a tenant's administration verb does not revoke a third party's authorization. The consequence is that revoking does not by itself halt money already authorized — see ent#1067. If that is what you need, revoke the mandates.\n\nA `{did}` belonging to another org returns 404, not 403: 403 would confirm that the identity exists, which is what a caller sweeping DIDs is asking.",
+          "description": "Take authority away from an agent identity: sets its status to `revoked` and cascades to every one of its non-revoked signing keys, in one transaction.\n\n`revoked` is not `retired`. Retired is a graceful exit; revoked is authority withdrawn, possibly adversarial. Both are reachable states and this verb writes the second one.\n\nWHAT IT STOPS: the agent can no longer be paid as an `agent:<id>` payee, can no longer mint a new KYA-bearing mandate, and can no longer spend under consumer mandates bound to its key: every consumer lane, card included, refuses them. The mandates themselves are not revoked -- the consumer signed them -- they stop clearing the spend-time check.\n\nWHAT IT DOES NOT STOP: spending under consumer mandates not bound to a key (issued before that binding existed, or while the agent was unregistered), because they name no key a revocation could reach. The deployment can refuse those for every agent (CONSUMER_MANDATE_AGENT_ENFORCE); otherwise, revoke those mandates.\n\nA `{did}` belonging to another org returns 404, not 403: 403 would confirm that the identity exists, which is what a caller sweeping DIDs is asking.",
           "parameters": [
             {
               "schema": {

@@ -1,5 +1,21 @@
 # codespar (Python SDK) — CHANGELOG
 
+## 0.12.0
+
+### Added
+
+- `agent_id` on `create()` and `SessionConfig`: the registered agent the
+  session acts as, by handle. Approvals raised in the session count for that
+  agent's public reputation. It must name an active agent of the org, or the
+  API answers 422 (`agent_not_registered` / `agent_not_active`). Sent only when
+  set, so without it the request body is byte-identical. Parity with
+  `@codespar/sdk` 0.16.9 (`SessionConfig.agentId`).
+
+### Fixed
+
+- `codespar.__version__` reported 0.10.2 while the package was 0.11.0; it now
+  matches the published version.
+
 ## 0.11.0
 
 Offline V3 mandate verification lands as the `codespar.mandate`

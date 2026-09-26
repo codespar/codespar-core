@@ -1,5 +1,27 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.9 — 2026-09-25
+
+### Added
+
+- `SessionConfig.agentId`: o agente registrado que a sessão representa, pelo
+  handle. As aprovações levantadas na sessão contam para a reputação pública
+  desse agente. Precisa nomear um agente ATIVO da org, ou o
+  `POST /v1/sessions` responde 422 (`agent_not_registered` /
+  `agent_not_active`). Enviado como `agent_id` só quando presente: sem ele, o
+  corpo é o mesmo byte a byte. Não é o `userId` do `create`, que continua sendo
+  para quem a sessão é (enterprise 0274, codespar-enterprise#1688).
+
+### Changed
+
+- `@codespar/api-types` 0.5.1: `CreateSessionRequestSchema` aceita `agent_id`
+  e deixa de exigir pelo menos um servidor. O `.min(1)` recusava um corpo que a
+  API aceita (sessões de meta-tool não têm servidor).
+- Snapshot do OpenAPI relido do documento servido: o campo `agent_id` da sessão
+  e o texto novo do `POST /v1/agents/{did}/revoke` (revogar a chave para o
+  gasto sob mandatos de consumidor vinculados a ela, codespar-enterprise#1655,
+  #1657).
+
 ## 0.16.8 — 2026-09-25
 
 ### Changed

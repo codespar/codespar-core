@@ -152,6 +152,9 @@ class AsyncCodeSpar:
         # body byte-identical to the pre-PRD shape (R18 wire-neutral).
         if resolved.mocks is not None:
             body["mocks"] = resolved.mocks
+        # Omitted when absent, so the body is byte-identical without an agent.
+        if resolved.agent_id is not None:
+            body["agent_id"] = resolved.agent_id
 
         data = await request_json(
             self._client,
@@ -229,6 +232,7 @@ class AsyncCodeSpar:
             "metadata",
             "project_id",
             "mocks",
+            "agent_id",
         }
         unknown = set(kwargs) - allowed
         if unknown:
