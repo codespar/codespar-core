@@ -1,8 +1,8 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-09-25T17:41:30.628Z",
-    "sha256": "35fc87bbb02c3e6464b220079813bcebda46b5e1e19081217e6c76c942c3ae8f",
+    "fetched_at": "2026-09-26T13:48:25.860Z",
+    "sha256": "89d3d64c1b8583b7aa553e10e7940b375cf8bf49c069bbce73d38b8c1a8c334c",
     "etag": null,
     "last_modified": null,
     "info": {
@@ -1450,6 +1450,14 @@
               "type": "array",
               "items": {},
               "description": "The lifecycle steps, in order, each with a timestamp and an outcome."
+            },
+            "attempt_id": {
+              "type": "string",
+              "description": "The attempt this payment settled under: the `attempt_id` sent, or the fresh one minted when none was. Presenting it again reads this outcome instead of paying again."
+            },
+            "idempotent_replay": {
+              "type": "boolean",
+              "description": "True when this `attempt_id` had already settled and this is its recorded outcome, answered again: every other field is the ORIGINAL response, verbatim, and nothing was sent, held, sealed or published by this call. False on the call that settled it."
             }
           },
           "required": [
@@ -1459,7 +1467,9 @@
             "payment",
             "wallet",
             "receipt",
-            "audit"
+            "audit",
+            "attempt_id",
+            "idempotent_replay"
           ]
         },
         "TedDestination": {
@@ -2649,7 +2659,7 @@
       "/v1/sessions": {
         "post": {
           "summary": "Open a session",
-          "description": "A session is the unit an agent's tool calls, policy evaluations and audit entries hang off. `servers` names the connected MCP servers it may reach (1-20), and every id must be one `GET /v1/servers` returns for this project — an id that is not gets 400 `unknown_servers` with the offenders listed, which is a different body from the schema `invalid_body` above it.\n\n`mocks` and `chaos` are accepted only on a project whose environment is `test`: a live-environment project gets 403 mocks_not_permitted, a payload over 64 KiB gets 413, and a malformed one gets 400 with RFC 6901 pointers pointing at the offending field.",
+          "description": "A session is the unit an agent's tool calls, policy evaluations and audit entries hang off. `servers` names the connected MCP servers it may reach (0–20), and every id must be one `GET /v1/servers` returns for this project — an id that is not gets 400 `unknown_servers` with the offenders listed, which is a different body from the schema `invalid_body` above it.\n\n`mocks` and `chaos` are accepted only on a project whose environment is `test`: a live-environment project gets 403 mocks_not_permitted, a payload over 64 KiB gets 413, and a malformed one gets 400 with RFC 6901 pointers pointing at the offending field.",
           "requestBody": {
             "content": {
               "application/json": {
@@ -2668,6 +2678,12 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 128
+                    },
+                    "agent_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "description": "The registered agent this session acts as (its handle). Approvals raised in the session are attributed to it. Must name an active agent of this org, or the request answers 422."
                     },
                     "mocks": {
                       "type": "object",
@@ -5741,7 +5757,7 @@
       "/v1/agents/{did}/revoke": {
         "post": {
           "summary": "Revoke an agent identity",
-          "description": "Take authority away from an agent identity: sets its status to `revoked` and cascades to every one of its non-revoked signing keys, in one transaction.\n\n`revoked` is not `retired`. Retired is a graceful exit; revoked is authority withdrawn, possibly adversarial. Both are reachable states and this verb writes the second one.\n\nWHAT IT STOPS: the agent can no longer be paid as an `agent:<id>` payee, and can no longer mint a new KYA-bearing mandate.\n\nWHAT IT DOES NOT STOP: spending under mandates already signed. Those were signed by the CONSUMER, and a tenant's administration verb does not revoke a third party's authorization. The consequence is that revoking does not by itself halt money already authorized — see ent#1067. If that is what you need, revoke the mandates.\n\nA `{did}` belonging to another org returns 404, not 403: 403 would confirm that the identity exists, which is what a caller sweeping DIDs is asking.",
+          "description": "Take authority away from an agent identity: sets its status to `revoked` and cascades to every one of its non-revoked signing keys, in one transaction.\n\n`revoked` is not `retired`. Retired is a graceful exit; revoked is authority withdrawn, possibly adversarial. Both are reachable states and this verb writes the second one.\n\nWHAT IT STOPS: the agent can no longer be paid as an `agent:<id>` payee, can no longer mint a new KYA-bearing mandate, and can no longer spend under consumer mandates bound to its key: every consumer lane, card included, refuses them. The mandates themselves are not revoked -- the consumer signed them -- they stop clearing the spend-time check.\n\nWHAT IT DOES NOT STOP: spending under consumer mandates not bound to a key (issued before that binding existed, or while the agent was unregistered), because they name no key a revocation could reach. The deployment can refuse those for every agent (CONSUMER_MANDATE_AGENT_ENFORCE); otherwise, revoke those mandates.\n\nA `{did}` belonging to another org returns 404, not 403: 403 would confirm that the identity exists, which is what a caller sweeping DIDs is asking.",
           "parameters": [
             {
               "schema": {
@@ -18408,6 +18424,7 @@
                           "server_unknown",
                           "verify_unsupported",
                           "not_connected",
+                          "connection_expired",
                           "provider_rejected",
                           "provider_unreachable",
                           "redirect_not_followed",
@@ -18441,6 +18458,10 @@
                       "caveat": {
                         "type": "string",
                         "description": "Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished."
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "description": "Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired."
                       }
                     },
                     "required": [
@@ -18495,6 +18516,7 @@
                               "server_unknown",
                               "verify_unsupported",
                               "not_connected",
+                              "connection_expired",
                               "provider_rejected",
                               "provider_unreachable",
                               "redirect_not_followed",
@@ -18528,6 +18550,10 @@
                           "caveat": {
                             "type": "string",
                             "description": "Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished."
+                          },
+                          "expires_at": {
+                            "type": "string",
+                            "description": "Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired."
                           }
                         },
                         "required": [
@@ -18563,6 +18589,7 @@
                           "server_unknown",
                           "verify_unsupported",
                           "not_connected",
+                          "connection_expired",
                           "provider_rejected",
                           "provider_unreachable",
                           "redirect_not_followed",
@@ -18596,6 +18623,10 @@
                       "caveat": {
                         "type": "string",
                         "description": "Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished."
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "description": "Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired."
                       }
                     },
                     "required": [
@@ -18608,7 +18639,7 @@
               }
             },
             "424": {
-              "description": "`not_connected`. There is no usable credential to test: no active connection for this project and provider, or the vault returned nothing for the reference it holds. This body carries the extra `hint` / `alternative` steer.",
+              "description": "`not_connected`. There is no usable credential to test: no active connection for this project and provider, or the vault returned nothing for the reference it holds. This body carries the extra `hint` / `alternative` steer. Or `connection_expired`: the project has an authorization-code OAuth connection whose access token passed its expiry, and nothing refreshes it, so the fix is to reconnect. That body carries `expires_at` and no sandbox steer.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -18629,6 +18660,7 @@
                           "server_unknown",
                           "verify_unsupported",
                           "not_connected",
+                          "connection_expired",
                           "provider_rejected",
                           "provider_unreachable",
                           "redirect_not_followed",
@@ -18662,6 +18694,10 @@
                       "caveat": {
                         "type": "string",
                         "description": "Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished."
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "description": "Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired."
                       }
                     },
                     "required": [
@@ -18695,6 +18731,7 @@
                           "server_unknown",
                           "verify_unsupported",
                           "not_connected",
+                          "connection_expired",
                           "provider_rejected",
                           "provider_unreachable",
                           "redirect_not_followed",
@@ -18728,6 +18765,10 @@
                       "caveat": {
                         "type": "string",
                         "description": "Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished."
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "description": "Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired."
                       }
                     },
                     "required": [
@@ -18761,6 +18802,7 @@
                           "server_unknown",
                           "verify_unsupported",
                           "not_connected",
+                          "connection_expired",
                           "provider_rejected",
                           "provider_unreachable",
                           "redirect_not_followed",
@@ -18794,6 +18836,10 @@
                       "caveat": {
                         "type": "string",
                         "description": "Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished."
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "description": "Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired."
                       }
                     },
                     "required": [
@@ -18827,6 +18873,7 @@
                           "server_unknown",
                           "verify_unsupported",
                           "not_connected",
+                          "connection_expired",
                           "provider_rejected",
                           "provider_unreachable",
                           "redirect_not_followed",
@@ -18860,6 +18907,10 @@
                       "caveat": {
                         "type": "string",
                         "description": "Added only for a `cert` rail in the test environment, where the connect cannot be completed at all rather than merely being unfinished."
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "description": "Present on `connection_expired` only: the ISO instant the connection's OAuth access token expired."
                       }
                     },
                     "required": [
@@ -25625,7 +25676,8 @@
                           "connected",
                           "revoked",
                           "expired"
-                        ]
+                        ],
+                        "description": "`expired` includes an OAuth connection whose access token passed `expires_at`: nothing refreshes it yet, calls through it answer `connection_expired`, and the fix is to reconnect. `?status=` filters on this same value."
                       },
                       "display_name": {
                         "type": [
@@ -25725,7 +25777,8 @@
                           "connected",
                           "revoked",
                           "expired"
-                        ]
+                        ],
+                        "description": "`expired` includes an OAuth connection whose access token passed `expires_at`: nothing refreshes it yet, calls through it answer `connection_expired`, and the fix is to reconnect. `?status=` filters on this same value."
                       },
                       "display_name": {
                         "type": [
@@ -26116,7 +26169,8 @@
                                 "connected",
                                 "revoked",
                                 "expired"
-                              ]
+                              ],
+                              "description": "`expired` includes an OAuth connection whose access token passed `expires_at`: nothing refreshes it yet, calls through it answer `connection_expired`, and the fix is to reconnect. `?status=` filters on this same value."
                             },
                             "display_name": {
                               "type": [
@@ -26294,7 +26348,8 @@
                           "connected",
                           "revoked",
                           "expired"
-                        ]
+                        ],
+                        "description": "`expired` includes an OAuth connection whose access token passed `expires_at`: nothing refreshes it yet, calls through it answer `connection_expired`, and the fix is to reconnect. `?status=` filters on this same value."
                       },
                       "display_name": {
                         "type": [
@@ -26535,7 +26590,8 @@
                           "connected",
                           "revoked",
                           "expired"
-                        ]
+                        ],
+                        "description": "`expired` includes an OAuth connection whose access token passed `expires_at`: nothing refreshes it yet, calls through it answer `connection_expired`, and the fix is to reconnect. `?status=` filters on this same value."
                       },
                       "display_name": {
                         "type": [
@@ -26761,7 +26817,8 @@
                               "connected",
                               "revoked",
                               "expired"
-                            ]
+                            ],
+                            "description": "`expired` includes an OAuth connection whose access token passed `expires_at`: nothing refreshes it yet, calls through it answer `connection_expired`, and the fix is to reconnect. `?status=` filters on this same value."
                           },
                           "display_name": {
                             "type": [
@@ -29113,7 +29170,7 @@
       "/v1/consumers/mandates/{id}/spend": {
         "post": {
           "summary": "Spend under a mandate already projected here",
-          "description": "Moves money out under a mandate already projected into this organization, addressed by id. This is the path the `codespar_pay` meta-tool takes internally, so the behaviour here is the behaviour an agent gets; the route exists so a caller who does not use the SDK reaches the same place. One difference: this route runs the organization's policy rules under `consumer_payment:execute`, for the mandate's agent, before the payment starts, exactly like `/v1/consumer-payments/execute`.\n\nWith `ted` present the provider leg is a real bank transfer, debited from the consumer's own sub-account. Without `ted`, `payee` is a Pix key or a copy-and-paste string.\n\n**TED carries three requirements the other payment methods do not, and all three bind BEFORE any money step:**\n\n1. `attempt_id` is MANDATORY. A TED has no copy-and-paste string and no nonce to derive correlation from, and two TEDs under the same mandate must never collide on a derived id.\n2. `payee` must EQUAL the destination's canonical string, `ted:<ispb>:<branch>:<account>`, alphanumerics only and upper-cased. The comparison normalizes whitespace and nothing else, so an entry carrying a dot or a hyphen does NOT match. The rule is what makes the signed-allowlist pin and the wire name the SAME destination: without it, an approved payee fronts for a different bank account.\n3. The destination must be NAMED in a signed list of the mandate, and a merchant-list wildcard `\"*\"` NEVER authorizes money out. Which list is accepted is mid-rollout, so read this one carefully: the target rule is `withdrawal_allowlist` alone, and while the rollout flag is off a destination named explicitly in the signed `merchant_allowlist` is ALSO accepted, with the stricter rule's refusal recorded rather than applied. Tolerance never widens what passes: a wildcard is refused on both paths, and a destination in neither list is refused with its own code. Build against `withdrawal_allowlist`: it is the list that keeps working when the flag turns on.\n\nThe cumulative cap is checked and CONSUMED under an advisory lock, and the wallet hold is taken inside that same lock. The lock is released before the provider call, so a slow provider does not serialize everyone else.\n\n**There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.",
+          "description": "Moves money out under a mandate already projected into this organization, addressed by id. This is the path the `codespar_pay` meta-tool takes internally, so the behaviour here is the behaviour an agent gets; the route exists so a caller who does not use the SDK reaches the same place. One difference: this route runs the organization's policy rules under `consumer_payment:execute`, for the mandate's agent, before the payment starts, exactly like `/v1/consumer-payments/execute`.\n\nWith `ted` present the provider leg is a real bank transfer, debited from the consumer's own sub-account. Without `ted`, `payee` is a Pix key or a copy-and-paste string.\n\n**TED carries three requirements the other payment methods do not, and all three bind BEFORE any money step:**\n\n1. `attempt_id` is MANDATORY. A TED has no copy-and-paste string and no nonce to derive correlation from, and two TEDs under the same mandate must never collide on a derived id.\n2. `payee` must EQUAL the destination's canonical string, `ted:<ispb>:<branch>:<account>`, alphanumerics only and upper-cased. The comparison normalizes whitespace and nothing else, so an entry carrying a dot or a hyphen does NOT match. The rule is what makes the signed-allowlist pin and the wire name the SAME destination: without it, an approved payee fronts for a different bank account.\n3. The destination must be NAMED in a signed list of the mandate, and a merchant-list wildcard `\"*\"` NEVER authorizes money out. Which list is accepted is mid-rollout, so read this one carefully: the target rule is `withdrawal_allowlist` alone, and while the rollout flag is off a destination named explicitly in the signed `merchant_allowlist` is ALSO accepted, with the stricter rule's refusal recorded rather than applied. Tolerance never widens what passes: a wildcard is refused on both paths, and a destination in neither list is refused with its own code. Build against `withdrawal_allowlist`: it is the list that keeps working when the flag turns on.\n\nThe cumulative cap is checked and CONSUMED under an advisory lock, and the wallet hold is taken inside that same lock. The lock is released before the provider call, so a slow provider does not serialize everyone else.\n\n**There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.\n\n**A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail and quote, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.",
           "parameters": [
             {
               "schema": {
@@ -29320,7 +29377,7 @@
               }
             },
             "409": {
-              "description": "Local state refuses. `psp_attempt_in_flight`: the same attempt is already in flight. `psp_attempt_uncertain`: an earlier attempt ended with an unknown outcome and this intent is PINNED to it, so present the same `attempt_id` again, never a new one. `psp_attempt_conflict`: the earlier attempt was already compensated.",
+              "description": "Local state refuses. `psp_attempt_in_flight`: the same attempt is already in flight; retry the SAME `attempt_id` once it has answered, never a new one. `psp_attempt_uncertain`: an earlier attempt ended with an unknown outcome and this intent is PINNED to it, so present the same `attempt_id` again, never a new one. `psp_attempt_conflict`: the earlier attempt was already compensated. `attempt_id_conflict`: this `attempt_id` was already used for a different payment (`mismatched_fields` names what differs); nothing was held or sent. `attempt_id_unavailable`: another project of this organization holds this `attempt_id`; use a new one.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -29334,7 +29391,9 @@
                             "enum": [
                               "psp_attempt_in_flight",
                               "psp_attempt_uncertain",
-                              "psp_attempt_conflict"
+                              "psp_attempt_conflict",
+                              "attempt_id_conflict",
+                              "attempt_id_unavailable"
                             ]
                           },
                           "message": {
@@ -29566,7 +29625,7 @@
       "/v1/consumer-payments/execute": {
         "post": {
           "summary": "Spend by presenting the signed mandate",
-          "description": "The same lifecycle as the by-id route, for a caller who carries the signed envelope instead of a mandate already projected here. Use this one when the mandate arrives from the consumer at call time; use `/consumers/mandates/{id}/spend` when it is already registered here.\n\n`signature` is the 64-character hexadecimal HMAC over the canonical mandate. The body's `agent_id` is checked against the SIGNED one: attribution of the spend belongs to the mandate, not to the caller.\n\n**TED carries three requirements the other payment methods do not, and all three bind BEFORE any money step:**\n\n1. `attempt_id` is MANDATORY. A TED has no copy-and-paste string and no nonce to derive correlation from, and two TEDs under the same mandate must never collide on a derived id.\n2. `payee` must EQUAL the destination's canonical string, `ted:<ispb>:<branch>:<account>`, alphanumerics only and upper-cased. The comparison normalizes whitespace and nothing else, so an entry carrying a dot or a hyphen does NOT match. The rule is what makes the signed-allowlist pin and the wire name the SAME destination: without it, an approved payee fronts for a different bank account.\n3. The destination must be NAMED in a signed list of the mandate, and a merchant-list wildcard `\"*\"` NEVER authorizes money out. Which list is accepted is mid-rollout, so read this one carefully: the target rule is `withdrawal_allowlist` alone, and while the rollout flag is off a destination named explicitly in the signed `merchant_allowlist` is ALSO accepted, with the stricter rule's refusal recorded rather than applied. Tolerance never widens what passes: a wildcard is refused on both paths, and a destination in neither list is refused with its own code. Build against `withdrawal_allowlist`: it is the list that keeps working when the flag turns on.\n\n**There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.",
+          "description": "The same lifecycle as the by-id route, for a caller who carries the signed envelope instead of a mandate already projected here. Use this one when the mandate arrives from the consumer at call time; use `/consumers/mandates/{id}/spend` when it is already registered here.\n\n`signature` is the 64-character hexadecimal HMAC over the canonical mandate. The body's `agent_id` is checked against the SIGNED one: attribution of the spend belongs to the mandate, not to the caller.\n\n**TED carries three requirements the other payment methods do not, and all three bind BEFORE any money step:**\n\n1. `attempt_id` is MANDATORY. A TED has no copy-and-paste string and no nonce to derive correlation from, and two TEDs under the same mandate must never collide on a derived id.\n2. `payee` must EQUAL the destination's canonical string, `ted:<ispb>:<branch>:<account>`, alphanumerics only and upper-cased. The comparison normalizes whitespace and nothing else, so an entry carrying a dot or a hyphen does NOT match. The rule is what makes the signed-allowlist pin and the wire name the SAME destination: without it, an approved payee fronts for a different bank account.\n3. The destination must be NAMED in a signed list of the mandate, and a merchant-list wildcard `\"*\"` NEVER authorizes money out. Which list is accepted is mid-rollout, so read this one carefully: the target rule is `withdrawal_allowlist` alone, and while the rollout flag is off a destination named explicitly in the signed `merchant_allowlist` is ALSO accepted, with the stricter rule's refusal recorded rather than applied. Tolerance never widens what passes: a wildcard is refused on both paths, and a destination in neither list is refused with its own code. Build against `withdrawal_allowlist`: it is the list that keeps working when the flag turns on.\n\n**There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.\n\n**A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail and quote, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.",
           "requestBody": {
             "content": {
               "application/json": {
@@ -29729,7 +29788,7 @@
               }
             },
             "409": {
-              "description": "Local state refuses, on the same three conditions as the by-id route.",
+              "description": "Local state refuses, on the same five conditions as the by-id route.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -29743,7 +29802,9 @@
                             "enum": [
                               "psp_attempt_in_flight",
                               "psp_attempt_uncertain",
-                              "psp_attempt_conflict"
+                              "psp_attempt_conflict",
+                              "attempt_id_conflict",
+                              "attempt_id_unavailable"
                             ]
                           },
                           "message": {
@@ -29930,7 +29991,7 @@
       "/v1/consumer-payments/execute-stream": {
         "post": {
           "summary": "Spend by presenting the mandate, with the steps streamed",
-          "description": "Same body and same gates as `/v1/consumer-payments/execute`. Only the response transport differs: the lifecycle steps (mandate verification, funding-source routing, hold, provider debit, receipt seal) arrive as `text/event-stream` events as they happen, instead of one JSON at the end.\n\nThe outcome is the same object the sibling route returns, carried on the last event. A client that does not need to follow progress should use `/execute`: streaming does not make settlement faster, it makes it observable while it runs.\n\n**There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.",
+          "description": "Same body and same gates as `/v1/consumer-payments/execute`. Only the response transport differs: the lifecycle steps (mandate verification, funding-source routing, hold, provider debit, receipt seal) arrive as `text/event-stream` events as they happen, instead of one JSON at the end.\n\nThe outcome is the same object the sibling route returns, carried on the last event. A client that does not need to follow progress should use `/execute`: streaming does not make settlement faster, it makes it observable while it runs.\n\n**There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.\n\n**A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail and quote, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.",
           "requestBody": {
             "content": {
               "application/json": {
@@ -41716,7 +41777,7 @@
               }
             },
             "409": {
-              "description": "The consent's current status does not permit this transition. `details.from` and `details.to` carry the pair. `pending` may become `authorised`, `revoked` or `expired`; `authorised` may become `revoked`, `expired` or `consumed`; `revoked`, `expired` and `consumed` are terminal and permit nothing.",
+              "description": "`illegal_transition`: the consent's current status does not permit authorisation. `details.from` and `details.to` carry the pair.\n\n`consent_expired`: the consent is `pending` and its validity window (`details.expires_at`) has elapsed. TERMINAL: the grant can no longer be authorised. The status stays `pending` on the row and is read as expired by this route, so it still occupies this project's one open consent for the consumer at this bank: revoke it, then initiate a new consent. Another project is not blocked by it.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -41728,7 +41789,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "illegal_transition"
+                              "illegal_transition",
+                              "consent_expired"
                             ]
                           },
                           "message": {
@@ -42025,7 +42087,7 @@
               }
             },
             "409": {
-              "description": "`consent_not_authorised`: the consent is not in `authorised`. `details.status` carries what it is.",
+              "description": "`consent_not_authorised`: the consent is not in `authorised`. `details.status` carries what it is.\n\n`consent_expired`: the consent's validity window (`details.expires_at`) has elapsed. The consent is moved to `expired` by this same call and nothing is fetched. TERMINAL: initiate a new consent.\n\n`consent_token_expired`: the consent is still valid but its access token (`details.token_expires_at`) has expired. NOT terminal: the consent stays `authorised`, because the grant is alive at the bank and the token is renewable. Nothing was fetched; do not initiate a new consent.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -42037,7 +42099,9 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "consent_not_authorised"
+                              "consent_not_authorised",
+                              "consent_expired",
+                              "consent_token_expired"
                             ]
                           },
                           "message": {
@@ -44018,7 +44082,7 @@
               }
             },
             "409": {
-              "description": "The consent's current status does not permit this transition. `details.from` and `details.to` carry the pair. `pending` may become `authorised`, `revoked` or `expired`; `authorised` may become `revoked`, `expired` or `consumed`; `revoked`, `expired` and `consumed` are terminal and permit nothing.",
+              "description": "`illegal_transition`: the consent's current status does not permit authorisation. `details.from` and `details.to` carry the pair.\n\n`consent_expired`: the consent is `pending` and its validity window (`details.expires_at`) has elapsed. TERMINAL: the grant can no longer be authorised. The status stays `pending` on the row and is read as expired by this route, so it still occupies this project's one open consent for the consumer at this bank: revoke it, then initiate a new consent. Another project is not blocked by it.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -44030,7 +44094,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "illegal_transition"
+                              "illegal_transition",
+                              "consent_expired"
                             ]
                           },
                           "message": {
@@ -44332,7 +44397,7 @@
               }
             },
             "409": {
-              "description": "`consent_not_authorised`: the consent is not in `authorised`. `details.status` carries what it is.",
+              "description": "`consent_not_authorised`: the consent is not in `authorised`. `details.status` carries what it is.\n\n`consent_expired`: the consent's validity window (`details.expires_at`) has elapsed. The consent is moved to `expired` by this same call and nothing is fetched. TERMINAL: initiate a new consent.\n\n`consent_token_expired`: the consent is still valid but its access token (`details.token_expires_at`) has expired. NOT terminal: the consent stays `authorised`, because the grant is alive at the bank and the token is renewable. Nothing was fetched; do not initiate a new consent.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -44344,7 +44409,9 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "consent_not_authorised"
+                              "consent_not_authorised",
+                              "consent_expired",
+                              "consent_token_expired"
                             ]
                           },
                           "message": {
