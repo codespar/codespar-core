@@ -1,5 +1,51 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.11 — 2026-09-27
+
+### Changed (verdict of `verifyMandateToken`, codespar-core#123, p2-identity#6)
+
+`@codespar/sdk/mandate` said `verified: true` about things it had not checked.
+It is now strict. `verified` is true only when all of these hold:
+
+- **Both Ed25519 signatures are carried and verify.** A token without
+  `agent_sig` (only the platform signed) is not verified; neither is one without
+  `issuer_sig`. A signature the token carries but no key was supplied for
+  (`skipped`) no longer counts as a pass either: `verifyMandateToken(t, {
+  agentPublicKey })` alone is now `verified: false` with
+  `failures: ["issuer_sig_unchecked"]`.
+- **The agent signature is checked under the key the token names.** The signed
+  `agent_kid` names it; the unsigned envelope `kid` may not rename it
+  (`kid_mismatch`). The new `agentDidDocument` option takes the agent's
+  did:web document and uses only the `verificationMethod` whose `id` equals
+  that kid, so a retired key listed beside the active one no longer verifies a
+  token that names the active one (`kid_not_in_document` when the kid is not
+  there). A raw `agentPublicKey` still works and means "this is the key for
+  the token's kid"; the two options are mutually exclusive.
+- **The token has not expired.** A clock past `expires_at` gives
+  `expired: true` and `verified: false`. The clock is `Date.now()` unless
+  `now` (UNIX seconds) is passed.
+
+New on `MandateVerification`: `failures` (stable codes, empty exactly when
+`verified` is true), `expired`, `issuedAt`.
+
+### Added
+
+- **V4 tokens** (`format_version: 4`, enterprise ent#657): the signing string
+  inserts the signed `issued_at` before `agent_kid` (15 fields). Byte-locked
+  against the enterprise `canonical.v4.fixture.json`. V3 and V2 decode and
+  reconstruct as before. A `format_version` this module does not know (5+) is
+  now `mandate_format_unsupported` instead of being reconstructed with the V3
+  tail and failing as if tampered.
+
+### Not changed
+
+- The API mints V3 today, and every Ed25519-signed token it mints carries both
+  signatures (enterprise `dualSignMandateV3`, the only mint site), so the
+  strict verdict refuses no token the API issues inside its window. V2 tokens
+  carry no Ed25519 signature and were already never verified offline.
+- "Was this key active when it signed" (D3) is still not checkable offline:
+  the did:web document publishes retired keys without their retirement time.
+
 ## 0.16.10 — 2026-09-27
 
 ### Changed

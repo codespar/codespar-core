@@ -73,6 +73,11 @@ beforeEach(() => {
   stderr = "";
   answers = {};
   process.exitCode = undefined;
+  // The fixture expires 2025-01-01T00:00:00Z. This file is about where keys
+  // come from, so the clock sits inside the window (expiry:
+  // mandate-verify-strict.test.ts). Only Date is faked; timers stay real.
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(((fx.input.expires_at as number) - 3600) * 1000);
   globalThis.fetch = (async (url: string | URL) => {
     const u = String(url);
     asked.push(u);
@@ -91,6 +96,7 @@ beforeEach(() => {
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  vi.useRealTimers();
   vi.restoreAllMocks();
   process.exitCode = undefined;
 });

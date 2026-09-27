@@ -47,6 +47,8 @@ interface SigResult {
   /** Where the public key came from; null when nothing supplied one. */
   source: DidSource | "flag" | null;
   detail?: string;
+  /** Network mode: no key could be resolved to check it against. */
+  unresolved?: boolean;
 }
 
 /** did:web platform issuer DID: the agent DID's validated host segment, alone. */
@@ -95,7 +97,32 @@ function verifyAgainst(
 }
 
 /**
- * Verify a V3 mandate presentation token.
+ * Why a token is not verified. The codes of `@codespar/sdk/mandate` and the
+ * Python `codespar.mandate`, in the same order, plus `*_key_unresolved` for a
+ * network-mode key that no source supplied.
+ */
+type Failure =
+  | "kid_mismatch"
+  | "kid_not_in_document"
+  | "agent_sig_absent"
+  | "agent_sig_unchecked"
+  | "agent_sig_invalid"
+  | "agent_key_unresolved"
+  | "issuer_sig_absent"
+  | "issuer_sig_unchecked"
+  | "issuer_sig_invalid"
+  | "issuer_key_unresolved"
+  | "expired";
+
+function failureFor(who: "agent" | "issuer", r: SigResult): Failure | null {
+  if (!r.present) return `${who}_sig_absent`;
+  if (r.status === "verified") return null;
+  if (r.unresolved) return `${who}_key_unresolved`;
+  return r.status === "skipped" ? `${who}_sig_unchecked` : `${who}_sig_invalid`;
+}
+
+/**
+ * Verify a V3 or V4 mandate presentation token.
  *
  *   codespar mandate verify <token>
  *
@@ -108,10 +135,12 @@ function verifyAgainst(
  * `--resolver <url>` opts into a resolver for any DID, announced on stderr
  * when it is the source. The two DIDs resolve in parallel.
  *
- * A signature the token carries must verify for an overall pass. In offline mode
- * a signature with no supplied key is "skipped" (not proven, not failed); at
- * least one signature must verify and none may fail. In network mode an
- * unresolvable key is a failure. Exit code is non-zero on any failure.
+ * "Verified" means all of it was checked: both signatures are carried and
+ * verify, the agent signature under the key the token names (its signed
+ * `agent_kid`; the document's other keys, retired ones included, are not
+ * tried), and the clock is not past `expires_at`. A signature the token does
+ * not carry, or one no key was supplied for, is not a pass. Exit code is
+ * non-zero whenever the token is not verified.
  */
 export async function mandateVerifyCommand(
   token: string,
@@ -136,7 +165,11 @@ export async function mandateVerifyCommand(
   const signingString = reconstructSigningString(m as unknown as Record<string, unknown>);
   const offline = Boolean(opts.agentPubkey || opts.issuerPubkey);
 
-  const agentKid = t.kid ?? m.agent_kid ?? undefined;
+  // The signed agent_kid names the key; the envelope kid is an unsigned copy
+  // and may not rename it. V2 signs no kid, so there the envelope is all there is.
+  const signedKid = typeof m.agent_kid === "string" ? m.agent_kid : undefined;
+  const agentKid = signedKid ?? t.kid;
+  const kidMismatch = signedKid !== undefined && t.kid !== undefined && t.kid !== signedKid;
   const agentDid = agentKid ? agentDidFromKid(agentKid) : undefined;
   const issuerDid = opts.issuerDid ?? (agentDid ? platformIssuerDid(agentDid) : null);
   // Validate every URL and host before any request, so a typo is a CliError
@@ -156,15 +189,18 @@ export async function mandateVerifyCommand(
   const [agentResolved, issuerResolved] = offline
     ? [null, null]
     : await Promise.all([
-        t.agent_sig && agentDid
-          ? resolveDidKeys(agentDid, { ...resolveOpts, preferredKid: agentKid })
-          : null,
+        t.agent_sig && agentDid && !kidMismatch ? resolveDidKeys(agentDid, resolveOpts) : null,
         t.issuer_sig && issuerDid ? resolveDidKeys(issuerDid, resolveOpts) : null,
       ]);
 
   // ── Agent signature ──────────────────────────────────────────────
   const agent: SigResult = { present: Boolean(t.agent_sig), status: "skipped", source: null };
-  if (t.agent_sig) {
+  let kidNotInDocument = false;
+  if (t.agent_sig && kidMismatch) {
+    agent.status = "failed";
+    agent.kid = agentKid;
+    agent.detail = `the envelope kid ${t.kid} is not the signed agent_kid`;
+  } else if (t.agent_sig) {
     if (offline) {
       if (opts.agentPubkey) {
         const pub = parsePubkeyHex(opts.agentPubkey);
@@ -180,6 +216,7 @@ export async function mandateVerifyCommand(
     } else {
       if (!agentDid || !agentResolved) {
         agent.status = "failed";
+        agent.unresolved = true;
         agent.source = null;
         agent.detail = "token carries no agent_kid to resolve";
       } else {
@@ -187,12 +224,22 @@ export async function mandateVerifyCommand(
         agent.source = resolved.source;
         if (resolved.keys.length === 0) {
           agent.status = "failed";
+          agent.unresolved = true;
           agent.detail = `could not resolve ${agentDid}: ${resolved.detail}`;
         } else {
           announceSource(agentDid, resolved);
-          const hit = verifyAgainst(signingString, t.agent_sig, resolved.keys);
-          agent.status = hit ? "verified" : "failed";
-          agent.kid = hit?.kid ?? agentKid;
+          agent.kid = agentKid;
+          // Only the key the token names. The document lists retired keys on
+          // purpose (their past signatures stay checkable), so trying every
+          // key let a retired one verify a token naming the active one.
+          const named = resolved.keys.filter((k) => k.kid === agentKid);
+          if (named.length === 0) {
+            agent.status = "failed";
+            kidNotInDocument = true;
+            agent.detail = `${agentDid}'s document has no Ed25519 key ${agentKid}`;
+          } else {
+            agent.status = verifyAgainst(signingString, t.agent_sig, named) ? "verified" : "failed";
+          }
         }
       }
     }
@@ -215,15 +262,17 @@ export async function mandateVerifyCommand(
     } else {
       if (!issuerDid || !issuerResolved) {
         issuer.status = "failed";
+        issuer.unresolved = true;
         issuer.source = null;
         issuer.detail = "no issuer DID (pass --issuer-did)";
       } else {
-        // The envelope names the agent kid, not the issuer's, so try every
-        // Ed25519 key the issuer document publishes.
+        // The token names no issuer key (the envelope kid is the agent's), so
+        // every Ed25519 key the issuer document publishes is tried.
         const resolved = issuerResolved;
         issuer.source = resolved.source;
         if (resolved.keys.length === 0) {
           issuer.status = "failed";
+          issuer.unresolved = true;
           issuer.detail = `could not resolve ${issuerDid}: ${resolved.detail}`;
         } else {
           announceSource(issuerDid, resolved);
@@ -235,18 +284,30 @@ export async function mandateVerifyCommand(
     }
   }
 
-  const anyVerified = agent.status === "verified" || issuer.status === "verified";
-  const anyFailed = agent.status === "failed" || issuer.status === "failed";
-  const verified = anyVerified && !anyFailed;
-
   const expiresIso = Number.isFinite(m.expires_at)
     ? new Date(m.expires_at * 1000).toISOString()
     : null;
+  // The API refuses a mandate only once the clock is past expires_at.
   const expired = Number.isFinite(m.expires_at) ? m.expires_at * 1000 < Date.now() : false;
+  const issuedAt = typeof m.issued_at === "number" ? m.issued_at : null;
+  const issuedIso = issuedAt !== null ? new Date(issuedAt * 1000).toISOString() : null;
+
+  const failures: Failure[] = [];
+  if (kidMismatch && t.agent_sig) failures.push("kid_mismatch");
+  else if (kidNotInDocument) failures.push("kid_not_in_document");
+  else {
+    const f = failureFor("agent", agent);
+    if (f) failures.push(f);
+  }
+  const issuerFailure = failureFor("issuer", issuer);
+  if (issuerFailure) failures.push(issuerFailure);
+  if (expired) failures.push("expired");
+  const verified = failures.length === 0;
 
   if (opts.json) {
     json({
       verified,
+      failures,
       mode: offline ? "offline" : "network",
       format_version: m.format_version,
       signatures: {
@@ -270,6 +331,8 @@ export async function mandateVerifyCommand(
         expires_at: m.expires_at,
         expires_at_iso: expiresIso,
         expired,
+        issued_at: issuedAt,
+        issued_at_iso: issuedIso,
         format_version: m.format_version,
       },
     });
@@ -302,12 +365,40 @@ export async function mandateVerifyCommand(
       "expires_at",
       expiresIso ? `${m.expires_at} (${expiresIso})${expired ? c.yellow("  [expired]") : ""}` : String(m.expires_at),
     ],
+    ...(issuedIso ? ([["issued_at", `${issuedAt} (${issuedIso})`]] as [string, string][]) : []),
     ["format", `v${m.format_version}`],
   ]);
 
   if (!verified) {
-    info("A NOT-verified result means a carried signature failed or could not be checked. See the per-signature status above.");
+    info(`Not verified: ${failures.map(describeFailure).join("; ")}.`);
     process.exitCode = 1;
+  }
+}
+
+function describeFailure(f: Failure): string {
+  switch (f) {
+    case "kid_mismatch":
+      return "the envelope kid differs from the signed agent_kid";
+    case "kid_not_in_document":
+      return "the agent's DID document has no key under the kid the token names";
+    case "agent_sig_absent":
+      return "the token carries no agent signature";
+    case "issuer_sig_absent":
+      return "the token carries no issuer signature";
+    case "agent_sig_unchecked":
+      return "the agent signature was not checked (no --agent-pubkey)";
+    case "issuer_sig_unchecked":
+      return "the issuer signature was not checked (no --issuer-pubkey)";
+    case "agent_sig_invalid":
+      return "the agent signature did not verify";
+    case "issuer_sig_invalid":
+      return "the issuer signature did not verify";
+    case "agent_key_unresolved":
+      return "no source supplied the agent's key";
+    case "issuer_key_unresolved":
+      return "no source supplied the issuer's key";
+    case "expired":
+      return "the mandate is past expires_at";
   }
 }
 

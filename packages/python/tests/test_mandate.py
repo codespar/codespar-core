@@ -1,5 +1,5 @@
 """
-Offline V3 mandate verification (``codespar.mandate``).
+Offline V3/V4 mandate verification (``codespar.mandate``).
 
 Byte-locks the canonical signing string against the shared freeze at
 ``tests/_fixtures/canonical.v3.fixture.json`` — the same JSON the enterprise
@@ -30,6 +30,9 @@ from codespar.mandate import (
 
 FIXTURE_PATH = Path(__file__).parent / "_fixtures" / "canonical.v3.fixture.json"
 FX: dict[str, Any] = json.loads(FIXTURE_PATH.read_text())
+# The fixture expires 2025-01-01T00:00:00Z; verdicts that expect a pass read the
+# clock inside its window (expiry itself: test_mandate_strict.py).
+NOW = FX["input"]["expires_at"] - 3600
 
 try:
     import cryptography  # noqa: F401
@@ -158,6 +161,7 @@ def test_verify_mandate_token_both_signatures() -> None:
         TOKEN,
         agent_public_key=FX["agent_pubkey_hex"],
         issuer_public_key=FX["issuer_pubkey_hex"],
+        now=NOW,
     )
     assert res.verified is True
     assert res.agent.status == "verified"
@@ -172,16 +176,18 @@ def test_verify_mandate_token_accepts_raw_bytes_keys() -> None:
         TOKEN,
         agent_public_key=bytes.fromhex(FX["agent_pubkey_hex"]),
         issuer_public_key=bytes.fromhex(FX["issuer_pubkey_hex"]),
+        now=NOW,
     )
     assert res.verified is True
 
 
 @requires_crypto
-def test_verify_mandate_token_agent_only_skips_issuer() -> None:
-    res = verify_mandate_token(TOKEN, agent_public_key=FX["agent_pubkey_hex"])
+def test_verify_mandate_token_agent_only_skips_issuer_and_is_not_verified() -> None:
+    res = verify_mandate_token(TOKEN, agent_public_key=FX["agent_pubkey_hex"], now=NOW)
     assert res.agent.status == "verified"
     assert res.issuer.status == "skipped"
-    assert res.verified is True
+    assert res.verified is False
+    assert res.failures == ["issuer_sig_unchecked"]
 
 
 @requires_crypto

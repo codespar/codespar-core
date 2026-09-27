@@ -1,5 +1,5 @@
 """
-Offline V3 mandate verification for the CodeSpar Python SDK.
+Offline V3/V4 mandate verification for the CodeSpar Python SDK.
 
 A third party holding only a presentation token and a raw Ed25519 public key
 (from the agent's ``did:web`` document) can reconstruct the exact signing string
@@ -23,7 +23,9 @@ from __future__ import annotations
 
 import base64
 import json
-from dataclasses import dataclass
+import time
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from typing import Any
 
 __all__ = [
@@ -62,7 +64,11 @@ class DecodedMandateToken:
 
 @dataclass
 class SignatureCheck:
-    """Per-signature outcome. ``skipped`` = present but no key supplied."""
+    """Per-signature outcome.
+
+    ``skipped`` = carried but no key supplied; ``absent`` = the token does not
+    carry it. Neither is a pass.
+    """
 
     present: bool
     # "verified" | "failed" | "skipped" | "absent"
@@ -72,14 +78,34 @@ class SignatureCheck:
 
 @dataclass
 class MandateVerification:
-    """Result of :func:`verify_mandate_token`."""
+    """Result of :func:`verify_mandate_token`.
+
+    ``verified`` is ``True`` iff BOTH Ed25519 signatures are carried and
+    verify, the agent's under the key the token names, and the token is not
+    expired. ``failures`` says why it is ``False`` (empty exactly when it is
+    ``True``), with the same codes as ``@codespar/sdk/mandate``: ``kid_mismatch``,
+    ``kid_not_in_document``, ``agent_sig_absent`` / ``_unchecked`` /
+    ``_invalid``, ``issuer_sig_absent`` / ``_unchecked`` / ``_invalid``,
+    ``expired``.
+    """
 
     verified: bool
     mandate: dict[str, Any]
     agent: SignatureCheck
     issuer: SignatureCheck
     agent_did: str | None = None
+    # The key the token names: the signed agent_kid (V3+), else the envelope kid.
     kid: str | None = None
+    failures: list[str] = field(default_factory=list)
+    expired: bool = False
+    # V4: the signed issuance time, UNIX seconds.
+    issued_at: int | None = None
+
+
+# Only the formats whose signing string this module knows. A later format
+# reconstructed with an older tail would fail as "tampered", which is the wrong
+# answer: it is unreadable here, not forged.
+_SUPPORTED_FORMATS = (2, 3, 4)
 
 
 def _b64url_decode(s: str) -> bytes:
@@ -116,10 +142,15 @@ def _is_valid_fields(r: dict[str, Any]) -> bool:
     if not isinstance(secret_version, int) or isinstance(secret_version, bool):
         return False
     # V3 binds the KYC'd principal and the signing key into the signed string.
-    if version == 3:
+    if version in (3, 4):
         if not isinstance(r.get("principal_kyc_ref"), str):
             return False
         if not isinstance(r.get("agent_kid"), str):
+            return False
+    # V4 adds the signed issuance time.
+    if version == 4:
+        issued_at = r.get("issued_at")
+        if not isinstance(issued_at, int) or isinstance(issued_at, bool):
             return False
     return True
 
@@ -141,7 +172,11 @@ def decode_mandate_token(token: str) -> DecodedMandateToken:
         raise MandateDecodeError("invalid_payload")
 
     version = raw.get("format_version")
-    if not isinstance(version, int) or isinstance(version, bool) or version < 2:
+    if (
+        not isinstance(version, int)
+        or isinstance(version, bool)
+        or version not in _SUPPORTED_FORMATS
+    ):
         raise MandateDecodeError("mandate_format_unsupported")
 
     if not _is_valid_fields(raw):
@@ -170,12 +205,12 @@ def decode_mandate_token(token: str) -> DecodedMandateToken:
 def reconstruct_signing_string(fields: dict[str, Any]) -> str:
     r"""Reconstruct the canonical signing string the Ed25519 signatures cover.
 
-    Field order (V3 = 14 fields, 13 ``:`` separators): V2's 12 fields then the
-    two V3-only fields (``principal_kyc_ref``, ``agent_kid``). Absent optionals
-    render empty; ``purposes`` is comma-joined after a lexicographic sort with
+    Field order: V2 = 12 fields; V3 = V2 + ``principal_kyc_ref`` +
+    ``agent_kid`` (14); V4 = V3 with ``issued_at`` inserted before
+    ``agent_kid`` (15), so ``agent_kid`` stays last. Absent optionals render
+    empty; ``purposes`` is comma-joined after a lexicographic sort with
     escaping (``\`` -> ``\\`` first, then ``,`` -> ``\,``). Colons inside
-    ``agent_kid`` (from ``did:web``) are emitted verbatim. The V3 tail is
-    appended only for ``format_version >= 3``.
+    ``agent_kid`` (from ``did:web``) are emitted verbatim.
     """
 
     def esc(member: str) -> str:
@@ -199,6 +234,9 @@ def reconstruct_signing_string(fields: dict[str, Any]) -> str:
     ]
     if version >= 3:
         parts.append(_s(fields.get("principal_kyc_ref")))
+    if version >= 4:
+        parts.append(_s(fields.get("issued_at")))
+    if version >= 3:
         parts.append(_s(fields.get("agent_kid")))
     return ":".join(parts)
 
@@ -253,6 +291,35 @@ def agent_did_from_kid(kid: str) -> str:
     return kid if idx == -1 else kid[:idx]
 
 
+def _key_for_kid(document: Mapping[str, Any], kid: str) -> bytes | None:
+    """The raw Ed25519 key a DID document publishes under exactly ``kid``."""
+    methods = document.get("verificationMethod")
+    if not isinstance(methods, list):
+        return None
+    for vm in methods:
+        if not isinstance(vm, Mapping) or vm.get("id") != kid:
+            continue
+        jwk = vm.get("publicKeyJwk")
+        if (
+            not isinstance(jwk, Mapping)
+            or jwk.get("kty") != "OKP"
+            or jwk.get("crv") != "Ed25519"
+            or not isinstance(jwk.get("x"), str)
+        ):
+            return None
+        try:
+            pub = _b64url_decode(jwk["x"])
+        except Exception:
+            return None
+        return pub if len(pub) == 32 else None
+    return None
+
+
+def _failure_for(who: str, status: str) -> str:
+    suffix = {"absent": "absent", "skipped": "unchecked"}.get(status, "invalid")
+    return f"{who}_sig_{suffix}"
+
+
 def _check_signature(
     signing_string: str,
     sig: str | None,
@@ -271,50 +338,87 @@ def verify_mandate_token(
     token: str,
     *,
     agent_public_key: str | bytes | bytearray | None = None,
+    agent_did_document: Mapping[str, Any] | None = None,
     issuer_public_key: str | bytes | bytearray | None = None,
+    now: float | None = None,
 ) -> MandateVerification:
-    """Offline-verify a V3 mandate presentation token against supplied keys.
+    """Offline-verify a V3 or V4 mandate presentation token.
 
-    Pure and network-free: pass the agent and/or issuer public keys (hex string
-    or raw bytes, from their ``did:web`` documents). A signature with a supplied
-    key that validates is ``verified``; a supplied key that fails is ``failed``;
-    a carried signature with no supplied key is ``skipped``; a signature the
-    token does not carry is ``absent``. ``verified`` is ``True`` iff at least one
-    signature verified and none failed.
+    Pure and network-free. Pass the issuer public key and either the agent
+    public key (hex string or raw bytes; passing it asserts it is the key
+    published under the token's ``agent_kid``) or the agent's parsed
+    ``did:web`` document as ``agent_did_document``, from which only the
+    ``verificationMethod`` whose ``id`` equals the signed ``agent_kid`` is
+    used. ``now`` is the clock for the expiry check, in UNIX seconds (default:
+    the current time).
 
-    Raises :class:`MandateDecodeError` on an undecodable token, and
+    ``verified`` is ``True`` only when both signatures are carried and verify
+    and the token has not expired; a carried signature with no key is
+    ``skipped`` and counts against it. A V2 token carries no Ed25519
+    signature and is never verified here.
+
+    Raises :class:`MandateDecodeError` on an undecodable token, ``TypeError``
+    when both ``agent_public_key`` and ``agent_did_document`` are given, and
     ``RuntimeError`` if a key is supplied but the ``cryptography`` extra is not
     installed.
     """
+    if agent_public_key is not None and agent_did_document is not None:
+        raise TypeError("pass agent_public_key or agent_did_document, not both")
     decoded = decode_mandate_token(token)
     mandate = decoded.mandate
     signing_string = reconstruct_signing_string(mandate)
+    failures: list[str] = []
 
-    kid_value = decoded.kid or mandate.get("agent_kid")
-    kid = kid_value if isinstance(kid_value, str) else None
+    # The signed agent_kid names the key; the envelope kid is an unsigned copy
+    # and may not rename it.
+    signed_kid_value = mandate.get("agent_kid")
+    signed_kid = signed_kid_value if isinstance(signed_kid_value, str) else None
+    kid = signed_kid if signed_kid is not None else decoded.kid
+    kid_mismatch = signed_kid is not None and decoded.kid is not None and decoded.kid != signed_kid
     agent_did = agent_did_from_kid(kid) if kid is not None else None
 
-    agent = _check_signature(
-        signing_string,
-        decoded.agent_sig,
-        _to_pubkey(agent_public_key),
-        kid,
-    )
+    kid_missing = False
+    if agent_did_document is not None:
+        agent_key = _key_for_kid(agent_did_document, kid) if kid is not None else None
+        kid_missing = agent_key is None
+    else:
+        agent_key = _to_pubkey(agent_public_key)
+
+    if kid_mismatch:
+        failures.append("kid_mismatch")
+        agent = SignatureCheck(present=decoded.agent_sig is not None, status="failed", kid=kid)
+    elif kid_missing and decoded.agent_sig is not None:
+        failures.append("kid_not_in_document")
+        agent = SignatureCheck(present=True, status="failed", kid=kid)
+    else:
+        agent = _check_signature(signing_string, decoded.agent_sig, agent_key, kid)
+        if agent.status != "verified":
+            failures.append(_failure_for("agent", agent.status))
+
     issuer = _check_signature(
         signing_string,
         decoded.issuer_sig,
         _to_pubkey(issuer_public_key),
         None,
     )
+    if issuer.status != "verified":
+        failures.append(_failure_for("issuer", issuer.status))
 
-    any_verified = agent.status == "verified" or issuer.status == "verified"
-    any_failed = agent.status == "failed" or issuer.status == "failed"
+    clock = time.time() if now is None else now
+    # The API refuses a mandate only once the clock is past expires_at.
+    expired = clock > mandate["expires_at"]
+    if expired:
+        failures.append("expired")
 
+    issued_at_value = mandate.get("issued_at")
     return MandateVerification(
-        verified=any_verified and not any_failed,
+        verified=not failures,
         mandate=mandate,
         agent=agent,
         issuer=issuer,
         agent_did=agent_did,
         kid=kid,
+        failures=failures,
+        expired=expired,
+        issued_at=issued_at_value if isinstance(issued_at_value, int) else None,
     )

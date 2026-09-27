@@ -1,5 +1,34 @@
 # codespar (Python SDK) — CHANGELOG
 
+## 0.12.0
+
+`codespar.mandate` is strict, in parity with `@codespar/sdk/mandate` 0.16.11
+and `codespar mandate verify` 0.17.0 (codespar-core#123, p2-identity#6).
+
+### Changed
+
+- `verify_mandate_token(...).verified` is `True` only when both Ed25519
+  signatures are carried and verify, the agent's under the key the token
+  names, and the token is not expired. It used to be `True` with the agent
+  signature stripped, with a signature left unchecked (no key given), and
+  after `expires_at`. `verify_mandate_token(t, agent_public_key=...)` alone is
+  now `verified=False` with `failures == ["issuer_sig_unchecked"]`.
+- The key is the one the signed `agent_kid` names; an envelope `kid` that
+  differs is refused (`kid_mismatch`).
+- `__version__` says `0.12.0`; it had said `0.10.2` through 0.11.0.
+
+### Added
+
+- `agent_did_document=`: the agent's parsed did:web document; only the
+  `verificationMethod` whose `id` equals the signed `agent_kid` is used, so a
+  retired key listed beside the active one does not verify a token naming the
+  active one. Mutually exclusive with `agent_public_key` (`TypeError`).
+- `now=` (UNIX seconds) for the expiry check; default is the current time.
+- `MandateVerification.failures`, `.expired`, `.issued_at`.
+- V4 tokens (`format_version: 4`, signed `issued_at`), byte-locked against the
+  enterprise fixture. An unknown later format raises
+  `MandateDecodeError("mandate_format_unsupported")`.
+
 ## 0.11.0
 
 Offline V3 mandate verification lands as the `codespar.mandate`

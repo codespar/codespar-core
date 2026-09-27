@@ -172,3 +172,32 @@ describe("mandate-codec — helpers", () => {
     );
   });
 });
+
+describe("mandate-codec — V4 (issued_at signed)", () => {
+  const fx4 = JSON.parse(
+    readFileSync(join(__dirname, "fixtures/canonical.v4.fixture.json"), "utf8"),
+  ) as V3Fixture & { input: { issued_at: number } };
+
+  it("reproduces the frozen 15-field V4 canonical string byte-for-byte", () => {
+    expect(reconstructSigningString(fx4.input as unknown as Record<string, unknown>)).toBe(
+      fx4.canonical_string,
+    );
+  });
+
+  it("the V4 fixture signatures verify over that string", () => {
+    expect(verifyEd25519(fx4.canonical_string, fx4.agent_sig_b64url, parsePubkeyHex(fx4.agent_pubkey_hex)!)).toBe(true);
+    expect(verifyEd25519(fx4.canonical_string, fx4.issuer_sig_b64url, parsePubkeyHex(fx4.issuer_pubkey_hex)!)).toBe(true);
+  });
+
+  it("rejects a V4 payload without issued_at", () => {
+    const { issued_at, ...rest } = fx4.input;
+    void issued_at;
+    const res = decodeToken(makeToken(rest as unknown as Record<string, unknown>, { signature: "00" }));
+    expect(res).toEqual({ ok: false, error: "invalid_payload" });
+  });
+
+  it("a later format is unsupported, not reconstructed with an older tail", () => {
+    const res = decodeToken(makeToken({ ...fx4.input, format_version: 5 }, { signature: "00" }));
+    expect(res).toEqual({ ok: false, error: "mandate_format_unsupported" });
+  });
+});

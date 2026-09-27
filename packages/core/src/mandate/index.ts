@@ -1,5 +1,5 @@
 /**
- * `@codespar/sdk/mandate` — offline V3 mandate verification.
+ * `@codespar/sdk/mandate` — offline V3/V4 mandate verification.
  *
  * A third party holding only a presentation token and a raw Ed25519 public key
  * (from the agent's did:web document) can reconstruct the exact signing string
@@ -15,16 +15,16 @@
  * if (!res.verified) throw new Error("mandate signature invalid");
  * ```
  *
- * The byte format is frozen by the shared `canonical.v3.fixture.json` (the same
- * freeze the enterprise codec and the CLI pin), so all three impls stay in lock
- * step. `node:crypto` is a Node builtin, not an npm dependency — the SDK's
+ * The byte format is frozen by the shared `canonical.v3.fixture.json` and
+ * `canonical.v4.fixture.json` (the same freezes the enterprise codec and the CLI
+ * pin), so all three impls stay in lock step. `node:crypto` is a Node builtin, not an npm dependency — the SDK's
  * zero-runtime-dependency guarantee is intact.
  */
 import { createPublicKey, verify as nodeVerify, type KeyObject } from "node:crypto";
 
 /**
- * The signed mandate fields. The two V3-only fields (`principal_kyc_ref`,
- * `agent_kid`) are absent on V2 mandates and required on V3.
+ * The signed mandate fields. `principal_kyc_ref` and `agent_kid` are absent on
+ * V2 and required from V3 on; `issued_at` is required on V4 and absent before.
  */
 export interface MandateFields {
   format_version: number;
@@ -42,10 +42,12 @@ export interface MandateFields {
   parent_id?: string | null;
   denomination?: string | null;
   secret_version: number;
-  /** V3-only. Reference to the proofed CPF/CNPJ (Celcoin KYC) the agent acts for. */
+  /** V3+. Reference to the proofed CPF/CNPJ (Celcoin KYC) the agent acts for. */
   principal_kyc_ref?: string | null;
-  /** V3-only. The agent key id (`<agent_did>#<n>`) that signed this mandate. */
+  /** V3+. The agent key id (`<agent_did>#<n>`) that signed this mandate. */
   agent_kid?: string | null;
+  /** V4-only. Issuance time, UNIX seconds. Signed, so it cannot be moved. */
+  issued_at?: number;
 }
 
 /** A decoded presentation token: the signed fields plus the signature envelope. */
@@ -85,7 +87,10 @@ export function decodeMandateToken(token: string): MandateDecodeResult {
 
   const r = raw as Record<string, unknown>;
   const version = r["format_version"];
-  if (typeof version !== "number" || !Number.isInteger(version) || version < 2) {
+  // Only the formats whose signing string this module knows. A later format
+  // reconstructed with an older tail would fail as "tampered", which is the
+  // wrong answer: it is unreadable here, not forged.
+  if (typeof version !== "number" || !SUPPORTED_FORMATS.includes(version)) {
     return { ok: false, error: "mandate_format_unsupported" };
   }
   if (!isValidMandateFields(r)) {
@@ -109,6 +114,8 @@ export function decodeMandateToken(token: string): MandateDecodeResult {
   return { ok: true, token: decoded };
 }
 
+const SUPPORTED_FORMATS: readonly number[] = [2, 3, 4];
+
 function isValidMandateFields(r: Record<string, unknown>): boolean {
   if (typeof r["format_version"] !== "number") return false;
   if (typeof r["id"] !== "string") return false;
@@ -119,9 +126,12 @@ function isValidMandateFields(r: Record<string, unknown>): boolean {
   if (!Array.isArray(r["purposes"])) return false;
   if (typeof r["expires_at"] !== "number") return false;
   if (typeof r["secret_version"] !== "number") return false;
-  if (r["format_version"] === 3) {
+  if (r["format_version"] === 3 || r["format_version"] === 4) {
     if (typeof r["principal_kyc_ref"] !== "string") return false;
     if (typeof r["agent_kid"] !== "string") return false;
+  }
+  if (r["format_version"] === 4) {
+    if (typeof r["issued_at"] !== "number" || !Number.isInteger(r["issued_at"])) return false;
   }
   return true;
 }
@@ -129,13 +139,13 @@ function isValidMandateFields(r: Record<string, unknown>): boolean {
 /**
  * Reconstruct the canonical signing string the Ed25519 signatures cover.
  *
- * Field order (V3 = 14 fields, 13 `:` separators): V2's 12 fields then the two
- * V3-only fields (principal_kyc_ref, agent_kid). Absent optionals render empty
- * so the separator count is invariant. `purposes` is comma-joined after a
- * lexicographic sort with escaping (`\` → `\\` first, then `,` → `\,`). Colons
- * inside `agent_kid` (from `did:web`) are emitted verbatim — the string is a
- * one-way serialization, never re-split. The V3 tail is appended only for
- * `format_version >= 3`, so a V2 mandate reconstructs to its 12-field form.
+ * Field order: V2 = 12 fields; V3 = V2 + principal_kyc_ref + agent_kid (14);
+ * V4 = V3 with issued_at inserted before agent_kid (15), so agent_kid stays the
+ * last field. Absent optionals render empty so the separator count is
+ * invariant. `purposes` is comma-joined after a lexicographic sort with
+ * escaping (`\` → `\\` first, then `,` → `\,`). Colons inside `agent_kid` (from
+ * `did:web`) are emitted verbatim — the string is a one-way serialization,
+ * never re-split.
  */
 export function reconstructSigningString(f: Record<string, unknown>): string {
   const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/,/g, "\\,");
@@ -159,9 +169,9 @@ export function reconstructSigningString(f: Record<string, unknown>): string {
     f["denomination"] ?? "",
     String(f["secret_version"]),
   ];
-  if (version >= 3) {
-    parts.push(f["principal_kyc_ref"] ?? "", f["agent_kid"] ?? "");
-  }
+  if (version >= 3) parts.push(f["principal_kyc_ref"] ?? "");
+  if (version >= 4) parts.push(f["issued_at"] == null ? "" : String(f["issued_at"]));
+  if (version >= 3) parts.push(f["agent_kid"] ?? "");
   return parts.join(":");
 }
 
@@ -219,7 +229,10 @@ export function agentDidFromKid(kid: string): string {
   return hash === -1 ? kid : kid.slice(0, hash);
 }
 
-/** Per-signature outcome. `skipped` = present but no key supplied to check it. */
+/**
+ * Per-signature outcome. `skipped` = carried but no key supplied to check it;
+ * `absent` = the token does not carry it. Neither is a pass.
+ */
 export type SignatureStatus = "verified" | "failed" | "skipped" | "absent";
 
 export interface SignatureCheck {
@@ -229,42 +242,89 @@ export interface SignatureCheck {
   kid?: string;
 }
 
+/**
+ * Why a token is not verified. Stable machine codes, in this order:
+ *   - `kid_mismatch`: the envelope `kid` differs from the signed `agent_kid`;
+ *   - `kid_not_in_document`: the agent DID document has no Ed25519 key under
+ *     the kid the token names (no other key is tried);
+ *   - `agent_sig_absent` / `issuer_sig_absent`: the token does not carry it;
+ *   - `agent_sig_unchecked` / `issuer_sig_unchecked`: carried, no key given;
+ *   - `agent_sig_invalid` / `issuer_sig_invalid`: checked and did not verify;
+ *   - `expired`: the clock is past `expires_at`.
+ */
+export type MandateVerificationFailure =
+  | "kid_mismatch"
+  | "kid_not_in_document"
+  | "agent_sig_absent"
+  | "agent_sig_unchecked"
+  | "agent_sig_invalid"
+  | "issuer_sig_absent"
+  | "issuer_sig_unchecked"
+  | "issuer_sig_invalid"
+  | "expired";
+
 export interface VerifyMandateOptions {
-  /** Raw 32-byte Ed25519 agent public key — hex string or bytes. */
+  /**
+   * Raw 32-byte Ed25519 agent public key — hex string or bytes. Passing a raw
+   * key asserts it is the key published under the token's `agent_kid`; to have
+   * the verifier pick it, pass `agentDidDocument` instead.
+   */
   agentPublicKey?: string | Uint8Array;
+  /**
+   * The agent's did:web document (parsed JSON). Only the `verificationMethod`
+   * whose `id` equals the token's signed `agent_kid` is used: a retired key
+   * listed beside it does not verify a token that names another kid.
+   * Mutually exclusive with `agentPublicKey`.
+   */
+  agentDidDocument?: unknown;
   /** Raw 32-byte Ed25519 issuer (platform) public key — hex string or bytes. */
   issuerPublicKey?: string | Uint8Array;
+  /** The clock for the expiry check, in UNIX seconds. Default: now. */
+  now?: number;
 }
 
 export interface MandateVerification {
-  /** True iff at least one carried signature verified and none failed. */
+  /**
+   * True iff BOTH Ed25519 signatures are carried and verify, under the key the
+   * token names, and the token is not expired. Nothing unchecked counts.
+   */
   verified: boolean;
+  /** Why `verified` is false; empty exactly when it is true. */
+  failures: MandateVerificationFailure[];
+  /** The clock was past `expires_at`. */
+  expired: boolean;
   mandate: MandateFields;
   /** The bare agent DID (kid without its `#fragment`), when present. */
   agentDid?: string;
-  /** The agent key id from the envelope, when present. */
+  /** The agent key id the token names: the signed `agent_kid` (V3+), else the envelope `kid`. */
   kid?: string;
+  /** V4: the signed issuance time, UNIX seconds. */
+  issuedAt?: number;
   agent: SignatureCheck;
   issuer: SignatureCheck;
 }
 
 /**
- * Offline-verify a V3 mandate presentation token against supplied public keys.
+ * Offline-verify a V3 or V4 mandate presentation token against supplied keys.
  *
- * Pure and network-free: you pass the agent and/or issuer public keys (from
- * their did:web documents) and it checks the signatures the token carries. A
- * signature with a supplied key that validates is `verified`; a supplied key
- * that fails is `failed`; a carried signature with no supplied key is `skipped`;
- * a signature the token doesn't carry is `absent`. `verified` is true iff at
- * least one signature verified and none failed.
+ * Pure and network-free: you pass the issuer public key and the agent's public
+ * key (or its DID document) and it checks both signatures. `verified` is true
+ * only when both signatures are carried and verify, the agent signature under
+ * the key the token names, and the token has not expired. A V2 token carries
+ * no Ed25519 signature and is never verified here (its only proof is the org
+ * HMAC, which needs the org secret).
  *
- * Throws only on a token that cannot be decoded (so a caller can distinguish a
- * malformed token from a well-formed but unverified one).
+ * Throws on a token that cannot be decoded (so a caller can distinguish a
+ * malformed token from a well-formed but unverified one), and when both
+ * `agentPublicKey` and `agentDidDocument` are given.
  */
 export function verifyMandateToken(
   token: string,
   opts: VerifyMandateOptions = {},
 ): MandateVerification {
+  if (opts.agentPublicKey !== undefined && opts.agentDidDocument !== undefined) {
+    throw new TypeError("pass agentPublicKey or agentDidDocument, not both");
+  }
   const decoded = decodeMandateToken(token);
   if (!decoded.ok) {
     throw new Error(`cannot decode mandate token: ${decoded.error}`);
@@ -272,25 +332,80 @@ export function verifyMandateToken(
   const t = decoded.token;
   const m = t.mandate;
   const signingString = reconstructSigningString(m as unknown as Record<string, unknown>);
+  const failures: MandateVerificationFailure[] = [];
 
-  const kid = t.kid ?? m.agent_kid ?? undefined;
+  // The signed agent_kid names the key; the envelope kid is an unsigned copy
+  // and may not rename it.
+  const signedKid = typeof m.agent_kid === "string" ? m.agent_kid : undefined;
+  const kid = signedKid ?? t.kid;
+  const kidMismatch = signedKid !== undefined && t.kid !== undefined && t.kid !== signedKid;
   const agentDid = kid ? agentDidFromKid(kid) : undefined;
 
-  const agent = checkSignature(signingString, t.agent_sig, toPubkey(opts.agentPublicKey), kid);
-  const issuer = checkSignature(signingString, t.issuer_sig, toPubkey(opts.issuerPublicKey), undefined);
+  let agentKey: Buffer | null;
+  let kidMissing = false;
+  if (opts.agentDidDocument !== undefined) {
+    agentKey = kid ? keyForKid(opts.agentDidDocument, kid) : null;
+    kidMissing = agentKey === null;
+  } else {
+    agentKey = toPubkey(opts.agentPublicKey);
+  }
 
-  const anyVerified = agent.status === "verified" || issuer.status === "verified";
-  const anyFailed = agent.status === "failed" || issuer.status === "failed";
+  let agent: SignatureCheck;
+  if (kidMismatch) {
+    failures.push("kid_mismatch");
+    agent = { present: Boolean(t.agent_sig), status: "failed", ...(kid ? { kid } : {}) };
+  } else if (kidMissing && t.agent_sig) {
+    failures.push("kid_not_in_document");
+    agent = { present: true, status: "failed", ...(kid ? { kid } : {}) };
+  } else {
+    agent = checkSignature(signingString, t.agent_sig, agentKey, kid);
+    if (agent.status !== "verified") failures.push(failureFor("agent", agent.status));
+  }
+  const issuer = checkSignature(signingString, t.issuer_sig, toPubkey(opts.issuerPublicKey), undefined);
+  if (issuer.status !== "verified") failures.push(failureFor("issuer", issuer.status));
+
+  const now = opts.now ?? Date.now() / 1000;
+  // The API refuses a mandate only once the clock is past expires_at.
+  const expired = now > m.expires_at;
+  if (expired) failures.push("expired");
 
   const result: MandateVerification = {
-    verified: anyVerified && !anyFailed,
+    verified: failures.length === 0,
+    failures,
+    expired,
     mandate: m,
     agent,
     issuer,
   };
   if (agentDid) result.agentDid = agentDid;
   if (kid) result.kid = kid;
+  if (typeof m.issued_at === "number") result.issuedAt = m.issued_at;
   return result;
+}
+
+function failureFor(
+  who: "agent" | "issuer",
+  status: Exclude<SignatureStatus, "verified">,
+): MandateVerificationFailure {
+  const suffix = status === "absent" ? "absent" : status === "skipped" ? "unchecked" : "invalid";
+  return `${who}_sig_${suffix}` as MandateVerificationFailure;
+}
+
+/** The raw Ed25519 key a DID document publishes under exactly `kid`, or null. */
+function keyForKid(doc: unknown, kid: string): Buffer | null {
+  if (!doc || typeof doc !== "object") return null;
+  const methods = (doc as { verificationMethod?: unknown }).verificationMethod;
+  if (!Array.isArray(methods)) return null;
+  for (const vm of methods as Array<Record<string, unknown> | null>) {
+    if (!vm || vm["id"] !== kid) continue;
+    const jwk = vm["publicKeyJwk"] as Record<string, unknown> | undefined;
+    if (!jwk || jwk["kty"] !== "OKP" || jwk["crv"] !== "Ed25519" || typeof jwk["x"] !== "string") {
+      return null;
+    }
+    const pub = Buffer.from(jwk["x"], "base64url");
+    return pub.length === 32 ? pub : null;
+  }
+  return null;
 }
 
 function checkSignature(
