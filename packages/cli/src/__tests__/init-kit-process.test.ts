@@ -12,7 +12,7 @@
  * CODESPAR_CLI_KIT_E2E=1 — set in the CI job that owns it, not in `npm test`.
  */
 
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -43,16 +43,34 @@ function cli(args: string[], cwd: string) {
   return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
 }
 
-function npm(args: string[], cwd: string, timeout = 300_000) {
-  const r = spawnSync(NPM, args, {
-    cwd,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-    timeout,
-    shell: process.platform === "win32",
-    env: { ...process.env, CODESPAR_API_KEY: "", ANTHROPIC_API_KEY: "" },
+/**
+ * Asynchronous on purpose. A scaffold's `npm test` runs for over a minute on a
+ * CI runner, and a `spawnSync` that long blocks the vitest worker's event loop
+ * past its RPC timeout: every case passed and the run still failed on
+ * `Timeout calling "onTaskUpdate"`.
+ */
+function npm(args: string[], cwd: string, timeout = 300_000): Promise<{ status: number | null; stdout: string; stderr: string }> {
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(NPM, args, {
+      cwd,
+      stdio: ["ignore", "pipe", "pipe"],
+      shell: process.platform === "win32",
+      env: { ...process.env, CODESPAR_API_KEY: "", ANTHROPIC_API_KEY: "" },
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8").on("data", (d: string) => (stdout += d));
+    child.stderr.setEncoding("utf8").on("data", (d: string) => (stderr += d));
+    const timer = setTimeout(() => child.kill("SIGTERM"), timeout);
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+    child.on("close", (status) => {
+      clearTimeout(timer);
+      resolvePromise({ status, stdout, stderr });
+    });
   });
-  return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
 }
 
 function scaffold(slug: string, name: string) {
@@ -130,22 +148,22 @@ describe("codespar init --template <kit>", () => {
 });
 
 describe.skipIf(!E2E)("the scaffold works standalone (CODESPAR_CLI_KIT_E2E=1)", () => {
-  it("bills-agent: npm install, npm run check, npm test, one turn on the replay provider", () => {
+  it("bills-agent: npm install, npm run check, npm test, one turn on the replay provider", async () => {
     const r = scaffold("bills-agent", "e2e-bills");
     expect(r.status, r.stderr).toBe(0);
 
-    const install = npm(["install", "--no-audit", "--no-fund", "--loglevel=error"], r.dir);
+    const install = await npm(["install", "--no-audit", "--no-fund", "--loglevel=error"], r.dir);
     expect(install.status, install.stderr).toBe(0);
     expect(existsSync(join(r.dir, "node_modules/@codespar/agent-core/package.json"))).toBe(true);
 
-    const check = npm(["run", "check"], r.dir);
+    const check = await npm(["run", "check"], r.dir);
     expect(check.status, `${check.stdout}\n${check.stderr}`).toBe(0);
     expect(check.stderr).toContain("check ok: bills-agent");
 
-    const test = npm(["test"], r.dir);
+    const test = await npm(["test"], r.dir);
     expect(test.status, `${test.stdout}\n${test.stderr}`).toBe(0);
 
-    const turn = npm(["start", "--silent", "--", "--input", "pague a escola de outubro", "--approve", "--json"], join(r.dir, "agents/bills-agent"));
+    const turn = await npm(["start", "--silent", "--", "--input", "pague a escola de outubro", "--approve", "--json"], join(r.dir, "agents/bills-agent"));
     expect(turn.status, `${turn.stdout}\n${turn.stderr}`).toBe(0);
     const doc = JSON.parse(turn.stdout);
     expect(doc.executions[0].state).toBe("settled");
@@ -161,11 +179,11 @@ describe.skipIf(!E2E)("the scaffold works standalone (CODESPAR_CLI_KIT_E2E=1)", 
     (JSON.parse(readFileSync(join(TEMPLATES, "kits.lock.json"), "utf8")) as { templates: Record<string, unknown> }).templates,
   ).filter((slug) => slug !== "bills-agent");
 
-  it.each(others)("%s: npm install, npm run check and npm test", (slug) => {
+  it.each(others)("%s: npm install, npm run check and npm test", async (slug) => {
     const r = scaffold(slug, `e2e-${slug}`);
     expect(r.status, r.stderr).toBe(0);
 
-    const install = npm(["install", "--no-audit", "--no-fund", "--loglevel=error"], r.dir);
+    const install = await npm(["install", "--no-audit", "--no-fund", "--loglevel=error"], r.dir);
     expect(install.status, install.stderr).toBe(0);
     // The vendored packages resolved through the workspace link rather than
     // being fetched: this is the 404 of 25/09, asked of the installed tree.
@@ -176,14 +194,14 @@ describe.skipIf(!E2E)("the scaffold works standalone (CODESPAR_CLI_KIT_E2E=1)", 
       expect(existsSync(join(r.dir, "node_modules", pkg, "package.json")), `${slug}: ${pkg} did not install`).toBe(true);
     }
 
-    const check = npm(["run", "check"], r.dir);
+    const check = await npm(["run", "check"], r.dir);
     expect(check.status, `${check.stdout}\n${check.stderr}`).toBe(0);
     expect(check.stderr).toContain(`check ok: ${slug}`);
 
     // The kit's own suite, as a scaffold runs it. Until kits b766575 the
     // vendored runtime carried tests that read the kits monorepo (sibling
     // agents, the root `scripts/`), so this was red in every template.
-    const test = npm(["test"], r.dir);
+    const test = await npm(["test"], r.dir);
     expect(test.status, `${test.stdout}\n${test.stderr}`).toBe(0);
 
     // A WhatsApp kit's README starts with `npm run whatsapp:emulator` at the
@@ -192,7 +210,7 @@ describe.skipIf(!E2E)("the scaffold works standalone (CODESPAR_CLI_KIT_E2E=1)", 
     // this proves the script and its file resolve without holding a port.
     const scripts = (JSON.parse(readFileSync(join(r.dir, "package.json"), "utf8")) as { scripts: Record<string, string> }).scripts;
     if ("whatsapp:emulator" in scripts) {
-      const emulator = npm(["run", "whatsapp:emulator", "--", "--prepare"], r.dir);
+      const emulator = await npm(["run", "whatsapp:emulator", "--", "--prepare"], r.dir);
       expect(emulator.status, `${emulator.stdout}\n${emulator.stderr}`).toBe(0);
       expect(emulator.stderr).toContain("whatsapp emulator ready");
     }
