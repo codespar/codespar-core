@@ -19,30 +19,39 @@
  * There is no receipt object for a receivable; the paid charge as the API
  * reports it is what the bundle keeps, marked `kind: "charge"` and unsealed.
  */
-import type { ApiClient } from "@codespar/sdk";
+import type { ApiClient, ApiOperation, ApiSuccess } from "@codespar/sdk";
 import type { PaymentRail, RailLookup, RailOutcome, RailPayment, RailReceipt } from "../rail.js";
 import type { Actor, ChargeInstrument } from "../types.js";
-import { describeApiError, isUncertain } from "./client.js";
+import { describeApiError, isUncertain, type ApiErrorCode } from "./client.js";
 
-/** The `/v1/charges` answer, as the SDK types it. */
-export interface ChargeView {
-  id: string | null;
-  status: string;
-  local_status: string;
-  status_conflict: boolean;
-  method: string;
-  currency: string;
-  amount: number;
-  amount_minor: number;
-  due_date: string | null;
-  payable: boolean;
-  boleto_bar_code: string | null;
-  boleto_bank_line: string | null;
-  pix_copy_paste: string | null;
-  credit_correlation_armed: boolean;
-  payment_in_flight: boolean;
-  settlement: "confirmed" | "pending" | "unconfirmable" | null;
-  issuance_unconfirmed: boolean;
+/** The `/v1/charges/{chargeId}` answer, as the SDK's generated OpenAPI types it. The create answers the same shape, and the compiler holds them together. */
+export type ChargeView = ApiSuccess<ApiOperation<"/v1/charges/{chargeId}", "get">>;
+
+/**
+ * Documented as the read's 409. The create does not document it, and the
+ * create's error path below still treats it as uncertain, which is the safe
+ * reading of a code the route is not known to send (OPEN_QUESTIONS §8).
+ */
+const ISSUANCE_UNCONFIRMED: ApiErrorCode<ApiOperation<"/v1/charges/{chargeId}", "get">> = "issuance_unconfirmed";
+
+/** The read's other 409: the reference matched more than one charge. Terminal for that reference; the API answers by the charge id. */
+const REFERENCE_AMBIGUOUS: ApiErrorCode<ApiOperation<"/v1/charges/{chargeId}", "get">> = "charge_reference_ambiguous";
+
+type ChargeRead =
+  | { kind: "view"; view: ChargeView }
+  | { kind: "missing" }
+  | { kind: "in_flight" }
+  | { kind: "failed"; outcome: Extract<RailOutcome, { status: "failed" }> }
+  | { kind: "uncertain"; outcome: Extract<RailOutcome, { status: "uncertain" }> };
+
+/**
+ * When the charge settled, if the answer says so. `settled_at` is a column of
+ * the charge row, but the SDK's type for the read does not carry it, so this
+ * is the one field here read outside the type (OPEN_QUESTIONS §8).
+ */
+function settledAt(view: ChargeView): string | undefined {
+  const value: unknown = (view as Record<string, unknown>)["settled_at"];
+  return typeof value === "string" && value !== "" ? value : undefined;
 }
 
 export function instrumentOf(view: ChargeView): ChargeInstrument {
@@ -82,7 +91,7 @@ export class CodeSparChargeRail implements PaymentRail {
     if (!payment.consumer_id) return { status: "failed", code: "consumer_id_required", message: "a receivable settles into the principal's account; the policy names no consumer_id" };
     let view: ChargeView;
     try {
-      view = (await this.api.post("/v1/charges", {
+      view = await this.api.post("/v1/charges", {
         body: {
           consumer_id: payment.consumer_id,
           amount: payment.amount_minor / 100,
@@ -93,13 +102,13 @@ export class CodeSparChargeRail implements PaymentRail {
           due_date: payment.due_date,
           idempotency_key: payment.attempt_id,
         },
-      })) as ChargeView;
+      });
     } catch (err) {
       const failure = describeApiError(err);
-      if (isUncertain(failure) || failure.code === "issuance_unconfirmed") return { status: "uncertain", code: failure.code, message: failure.message };
+      if (isUncertain(failure) || failure.code === ISSUANCE_UNCONFIRMED) return { status: "uncertain", code: failure.code, message: failure.message };
       return { status: "failed", code: failure.code, message: failure.message };
     }
-    if (view.issuance_unconfirmed || !view.id) return { status: "uncertain", code: "issuance_unconfirmed", message: "the issuer's answer to the create was lost; the key is reserved and a later read resolves it" };
+    if (view.issuance_unconfirmed || !view.id) return { status: "uncertain", code: ISSUANCE_UNCONFIRMED, message: "the issuer's answer to the create was lost; the key is reserved and a later read resolves it" };
     if (view.amount_minor !== payment.amount_minor) {
       // The API understood another amount than the one approved. The receivable exists; withdraw it rather than leave a debt nobody approved.
       const withdrawn = await this.withdraw(view.id);
@@ -107,7 +116,7 @@ export class CodeSparChargeRail implements PaymentRail {
     }
     const outcome = outcomeOf(view);
     // `in_flight` is excluded above (`issuance_unconfirmed` / no id); the create answers a state, never "still running".
-    return outcome.status === "in_flight" ? { status: "uncertain", code: "issuance_unconfirmed", message: "the create answered no readable state" } : outcome;
+    return outcome.status === "in_flight" ? { status: "uncertain", code: ISSUANCE_UNCONFIRMED, message: "the create answered no readable state" } : outcome;
   }
 
   /**
@@ -119,37 +128,48 @@ export class CodeSparChargeRail implements PaymentRail {
     const byId = transactionId ? await this.read(transactionId) : { kind: "missing" as const };
     if (byId.kind === "view") return outcomeOf(byId.view);
     if (byId.kind === "in_flight") return { status: "in_flight" };
-    if (byId.kind === "uncertain") return byId.outcome;
+    if (byId.kind === "failed" || byId.kind === "uncertain") return byId.outcome;
     const byKey = await this.read(attemptId);
     if (byKey.kind === "view") return outcomeOf(byKey.view);
     if (byKey.kind === "in_flight") return { status: "in_flight" };
-    if (byKey.kind === "uncertain") return byKey.outcome;
+    if (byKey.kind === "failed" || byKey.kind === "uncertain") return byKey.outcome;
     return undefined;
   }
 
-  private async read(chargeRef: string): Promise<{ kind: "view"; view: ChargeView } | { kind: "missing" } | { kind: "in_flight" } | { kind: "uncertain"; outcome: Extract<RailOutcome, { status: "uncertain" }> }> {
+  /**
+   * A 409 is branched on its code, never on the status alone: only `issuance_unconfirmed` means "still issuing".
+   * `charge_reference_ambiguous` is terminal for the reference and fails explicitly instead of being polled forever,
+   * and a 409 whose code this kit does not read is a failure too.
+   */
+  private async read(chargeRef: string): Promise<ChargeRead> {
     try {
-      const view = (await this.api.get("/v1/charges/{chargeId}", { path: { chargeId: chargeRef } })) as ChargeView;
+      const view = await this.api.get("/v1/charges/{chargeId}", { path: { chargeId: chargeRef } });
       return { kind: "view", view };
     } catch (err) {
       const failure = describeApiError(err);
       if (failure.status === 404) return { kind: "missing" };
-      if (failure.status === 409) return { kind: "in_flight" };
+      if (failure.status === 409) {
+        if (failure.code === ISSUANCE_UNCONFIRMED) return { kind: "in_flight" };
+        const message =
+          failure.code === REFERENCE_AMBIGUOUS
+            ? `the reference ${chargeRef} matches more than one charge, and the API answers for the charge id only; which one is this attempt's is not assumed, so reconcile it by the charge id`
+            : `GET /v1/charges/${chargeRef} answered 409 with a code this kit does not read (${failure.code}); it is not read as a charge still issuing`;
+        return { kind: "failed", outcome: { status: "failed", code: failure.code, message } };
+      }
       return { kind: "uncertain", outcome: { status: "uncertain", code: failure.code, message: failure.message } };
     }
   }
 
   async receipt(chargeId: string, actor: Actor): Promise<RailReceipt | undefined> {
     try {
-      const view = (await this.api.get("/v1/charges/{chargeId}", { path: { chargeId } })) as ChargeView;
-      const raw = view as ChargeView & { settled_at?: string };
+      const view = await this.api.get("/v1/charges/{chargeId}", { path: { chargeId } });
       return {
         receipt_id: chargeId,
         kind: "charge",
         state: view.local_status === "settled" ? "paid" : view.local_status,
         mandate: { id: "n/a" },
         // The read names no buyer, so the payee is not on this record; the execution's item names the debtor.
-        payment: { amount_minor: view.amount_minor, payee: null, attempt_id: chargeId, money_moved: false, sandbox: true, at: raw.settled_at ?? new Date().toISOString() },
+        payment: { amount_minor: view.amount_minor, payee: null, attempt_id: chargeId, money_moved: false, sandbox: true, at: settledAt(view) ?? new Date().toISOString() },
         chain: null,
         receipt_sig: null,
         receipt_sig_ed25519: null,

@@ -104,6 +104,38 @@ describe("a conversation a later process comes back to", () => {
   });
 });
 
+describe("when the provider's clock disagrees with ours", () => {
+  /** A provider whose window is shut whatever ours says: free text is refused the way Meta refuses it, templates go. */
+  class ShutProvider extends Recorder {
+    override async deliver(to: string, body: OutboundBody): Promise<SentMessage> {
+      if (body.kind === "template") return super.deliver(to, body);
+      return { id: "", state: "failed", refused: { rule: "session_window_closed", detail: "the provider refused the free-form message (400/131047)" } };
+    }
+  }
+
+  it("believes the provider: after a 131047 the window reads shut, and a template still goes", async () => {
+    const { channel: c, backend } = channel(TUESDAY, Math.floor(TUESDAY.getTime() / 1000) - 3600, new ShutProvider());
+    expect(c.sessionOpen).toBe(true);
+    const sent = await c.say("Recebemos, acordo quitado.");
+    expect(sent.refused?.rule).toBe("session_window_closed");
+    expect(c.sessionOpen).toBe(false);
+    expect(c.sessionRemainingSeconds).toBe(0);
+    // Refused by our own rule from here, so a second free-form message never reaches the provider.
+    expect((await c.say("de novo")).refused?.detail).toContain("more than 24h");
+    const template = await c.send({ kind: "template", template: "acordo_quitado", language: "pt_BR", variables: ["acordo-1042"] });
+    expect(template.refused).toBeUndefined();
+    expect(backend.delivered).toHaveLength(1);
+  });
+
+  it("reopens when the person writes again, because that is what opens a window at Meta too", () => {
+    const window = new SessionWindow([], { lastInboundAt: Math.floor(TUESDAY.getTime() / 1000) - 3600 });
+    window.observeProviderShut();
+    expect(window.open(TUESDAY)).toBe(false);
+    window.observeInbound(Math.floor(TUESDAY.getTime() / 1000));
+    expect(window.open(TUESDAY)).toBe(true);
+  });
+});
+
 describe("the local registry refuses what Meta would refuse", () => {
   it("a name the agent never declared", async () => {
     const { channel: c, backend } = channel(FRIDAY, Math.floor(TUESDAY.getTime() / 1000));

@@ -26,8 +26,8 @@
  * `npm run whatsapp:emulator` is the command.
  */
 import type { ConversationScript } from "@codespar/agent-core";
-import type { ChannelBackend, InboundMessage, OutboundBody, SentMessage } from "../types.js";
-import { toGraphNumber, WhatsAppCloudApi, type CloudApiOptions } from "./cloud-api.js";
+import type { ChannelBackend, InboundMessage, OutboundBody, SentMessage, StatusUpdate } from "../types.js";
+import { WhatsAppCloudApi, type CloudApiOptions } from "./cloud-api.js";
 
 export const EMULATOR_ENV = {
   url: "WHATSAPP_SIM_URL",
@@ -93,16 +93,21 @@ export class EmulatorDriver {
     return this.post("/_sim/clock", { advance_hours: hours });
   }
 
-  /** The person writes. The emulator answers with a signed inbound webhook to our receiver. */
-  inbound(options: { phoneNumberId: string; from: string; text: string; sentAt?: Date }): Promise<unknown> {
+  /** The person writes, or taps a quick reply. The emulator answers with a signed inbound webhook to our receiver. */
+  inbound(options: { phoneNumberId: string; from: string; text: string; sentAt?: Date } | { phoneNumberId: string; from: string; reply: { id: string; title: string }; sentAt?: Date }): Promise<unknown> {
     return this.post("/_sim/inbound", {
       phone_number_id: options.phoneNumberId,
-      // Without the `+`, matching what `deliver` sends as `to`: the emulator keys
-      // its conversation on the literal string, so the two forms are two people.
-      from: toGraphNumber(options.from),
-      text: options.text,
+      from: options.from,
+      ...("reply" in options
+        ? { type: "interactive", interactive: { type: "button_reply", button_reply: { id: options.reply.id, title: options.reply.title } } }
+        : { text: options.text }),
       ...(options.sentAt ? { sent_at: options.sentAt.toISOString() } : {}),
     });
+  }
+
+  /** Reports a delivery status for a message the business sent, as the provider would: `read`, or `failed` with a reason. */
+  status(options: { status: "read" | "failed"; messageId: string; reason?: string }): Promise<unknown> {
+    return this.post("/_sim/status", { status: options.status, message_id: options.messageId, ...(options.reason ? { reason: options.reason } : {}) });
   }
 
   /** The priced timeline, which is the emulator's own reason for existing. Read for the console, never asserted on. */
@@ -156,20 +161,21 @@ export class WhatsAppEmulator implements ChannelBackend {
 
   async next(): Promise<InboundMessage | undefined> {
     if (this.closed) return undefined;
-    const text = await this.nextText();
-    if (text === undefined) return undefined;
-    // The person writes THROUGH the emulator: it mints the message id and posts
-    // the signed webhook our receiver verifies, so a scripted turn takes the
-    // same path a real one would.
-    await this.options.driver.inbound({
-      phoneNumberId: this.options.config.phoneNumberId,
-      from: this.options.conversation.contact,
-      text,
-    });
+    const turn = await this.nextTurn();
+    if (turn === undefined) return undefined;
+    // The person writes (or taps) THROUGH the emulator: it mints the message id
+    // and posts the signed webhook our receiver verifies, so a scripted turn
+    // takes the same path a real one would.
+    const who = { phoneNumberId: this.options.config.phoneNumberId, from: this.options.conversation.contact };
+    await this.options.driver.inbound(typeof turn === "string" ? { ...who, text: turn } : { ...who, reply: turn });
     return this.api.next();
   }
 
-  private async nextText(): Promise<string | undefined> {
+  onStatus(listener: (status: StatusUpdate) => void): void {
+    this.api.onStatus(listener);
+  }
+
+  private async nextTurn(): Promise<string | { id: string; title: string } | undefined> {
     const script = this.options.script;
     if (script) {
       const turn = script.turns[this.turn];
@@ -178,8 +184,12 @@ export class WhatsAppEmulator implements ChannelBackend {
       // The person's own pause, on the emulator's clock. A conversation that
       // happens over days is what closes the 24-hour window.
       if (turn.after_seconds > 0) await this.options.driver.advanceHours(turn.after_seconds / 3600);
-      return turn.text;
+      return turn.reply ? { id: turn.reply.id, title: turn.reply.title ?? turn.reply.id } : turn.text;
     }
+    return this.nextText();
+  }
+
+  private async nextText(): Promise<string | undefined> {
     if (!this.options.ask) return undefined;
     let answer: string;
     try {

@@ -10,3 +10,4 @@ export * from "./scenarios.js";
 export * from "./adversarial.js";
 export * from "./inspect.js";
 export { main } from "./cli.js";
+export { pollWhatsApp, type PollWhatsAppOptions } from "./commands/poll-whatsapp.js";

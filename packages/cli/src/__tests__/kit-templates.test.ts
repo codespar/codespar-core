@@ -20,7 +20,9 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import {
   assertLocalDepsVendored,
+  assertRootScriptsResolve,
   buildTemplate,
+  channelRootScriptsFor,
   checkAgainstLock,
   diffTrees,
   discoverKitsPackages,
@@ -28,6 +30,7 @@ import {
   fingerprintDir,
   hashTree,
   nextStepsFor,
+  parseManifestList,
   parseManifestScalars,
   readLock,
   renderKitTemplateRows,
@@ -208,6 +211,19 @@ describe("parseManifestScalars", () => {
       ['schema: 1', "name: bills-agent", "version: 0.1.0", "approval: [human, mandate]", "escalate_above:", "  amount: 150000", 'cli: "@codespar/cli@0.13.0"    # what npm publishes', "channels: [terminal]"].join("\n"),
     );
     expect(m).toEqual({ schema: "1", name: "bills-agent", version: "0.1.0", cli: "@codespar/cli@0.13.0" });
+  });
+});
+
+describe("parseManifestList", () => {
+  it("reads a flow list and a block list, and an absent key as none", () => {
+    expect(parseManifestList("schema: 1\nchannels: [terminal, whatsapp]   # the second is the point\n", "channels")).toEqual(["terminal", "whatsapp"]);
+    expect(parseManifestList("channels:\n  - terminal\n  - \"whatsapp\"  # quoted\nname: x\n", "channels")).toEqual(["terminal", "whatsapp"]);
+    expect(parseManifestList("schema: 1\nchannels_note: [whatsapp]\n", "channels")).toEqual([]);
+    expect(parseManifestList("channels: []\n", "channels")).toEqual([]);
+  });
+
+  it("refuses a value it cannot read rather than reading it as no channels", () => {
+    expect(() => parseManifestList("channels: whatsapp\n", "channels")).toThrow(/neither a flow list nor a block list/);
   });
 });
 
@@ -423,6 +439,102 @@ describe("vendoring the kits' own packages", () => {
   });
 });
 
+/**
+ * Gives the fixture's agent the WhatsApp channel and the kits root the script
+ * that channel's README tells its user to run, the shape kits 3eddd46 has.
+ */
+const EMULATOR_SOURCE = '#!/usr/bin/env node\nexport const EMULATOR_VERSION = "0.3.0";\n';
+function addWhatsAppChannel(dir: string, opts: { command?: string | null; file?: boolean } = {}): void {
+  const manifestFile = join(dir, "agents/demo-agent/agent.yaml");
+  writeFileSync(manifestFile, `${readFileSync(manifestFile, "utf8")}channels: [terminal, whatsapp]   # the second is the point\n`);
+  const rootFile = join(dir, "package.json");
+  const root = JSON.parse(readFileSync(rootFile, "utf8"));
+  if (opts.command !== null) root.scripts["whatsapp:emulator"] = opts.command ?? "node scripts/whatsapp-emulator.mjs";
+  root.scripts["whatsapp:gate"] = "node scripts/whatsapp-gate.mjs";
+  writeFileSync(rootFile, JSON.stringify(root, null, 2));
+  if (opts.file !== false) write(dir, "scripts/whatsapp-emulator.mjs", EMULATOR_SOURCE);
+  write(dir, "scripts/whatsapp-gate.mjs", "// runs two agents\n");
+}
+
+describe("the kits root scripts a channel brings along", () => {
+  it("a WhatsApp agent's template carries whatsapp:emulator, its file verbatim, and nothing else from scripts/", () => {
+    const { dir, commit } = fixtureKits();
+    addWhatsAppChannel(dir);
+    const out = scratch("built-wa-");
+    const entry = buildTemplate({ kitsDir: dir, agentName: "demo-agent", outDir: out, commit });
+
+    expect(readFileSync(join(out, "scripts/whatsapp-emulator.mjs"), "utf8")).toBe(EMULATOR_SOURCE);
+    const pkg = JSON.parse(readFileSync(join(out, "package.json"), "utf8"));
+    expect(pkg.scripts["whatsapp:emulator"]).toBe("node scripts/whatsapp-emulator.mjs");
+    // The gate runs two agents out of the kits tree; a one-agent template
+    // carrying it would carry a script that cannot run.
+    expect(pkg.scripts["whatsapp:gate"]).toBeUndefined();
+    expect(existsSync(join(out, "scripts/whatsapp-gate.mjs"))).toBe(false);
+    expect(entry.root_scripts).toEqual({ "whatsapp:emulator": "node scripts/whatsapp-emulator.mjs" });
+    expect(readFileSync(join(out, "README.md"), "utf8")).toContain("`npm run whatsapp:emulator` — `scripts/whatsapp-emulator.mjs`");
+  });
+
+  it("an agent without the channel carries no scripts/ and no root_scripts entry", () => {
+    const { dir, commit } = fixtureKits();
+    const out = scratch("built-no-wa-");
+    const entry = buildTemplate({ kitsDir: dir, agentName: "demo-agent", outDir: out, commit });
+    expect(existsSync(join(out, "scripts"))).toBe(false);
+    expect("root_scripts" in entry).toBe(false);
+  });
+
+  it("refuses a channel whose kits root script is missing, is not one `node <file>`, or names no file", () => {
+    const missing = fixtureKits();
+    addWhatsAppChannel(missing.dir, { command: null });
+    expect(() => buildTemplate({ kitsDir: missing.dir, agentName: "demo-agent", outDir: scratch("built-wa-1-"), commit: missing.commit })).toThrow(
+      /declares the whatsapp channel.*`whatsapp:emulator`.*no such script/,
+    );
+
+    const chained = fixtureKits();
+    addWhatsAppChannel(chained.dir, { command: "node scripts/prep.mjs && node scripts/whatsapp-emulator.mjs" });
+    expect(() => buildTemplate({ kitsDir: chained.dir, agentName: "demo-agent", outDir: scratch("built-wa-2-"), commit: chained.commit })).toThrow(
+      /carries only a `node <kits file>` script/,
+    );
+
+    const escaping = fixtureKits();
+    addWhatsAppChannel(escaping.dir, { command: "node ../elsewhere.mjs" });
+    expect(() => buildTemplate({ kitsDir: escaping.dir, agentName: "demo-agent", outDir: scratch("built-wa-3-"), commit: escaping.commit })).toThrow(
+      /carries only a `node <kits file>` script/,
+    );
+
+    const absent = fixtureKits();
+    addWhatsAppChannel(absent.dir, { file: false });
+    expect(() => buildTemplate({ kitsDir: absent.dir, agentName: "demo-agent", outDir: scratch("built-wa-4-"), commit: absent.commit })).toThrow(
+      /runs scripts\/whatsapp-emulator\.mjs, which is not a file in the kits tree/,
+    );
+  });
+
+  it("refuses a channel script that would shadow one of the agent's own", () => {
+    expect(() =>
+      rootScriptsFor("demo-agent", { "whatsapp:emulator": "x" }, {}, [], [
+        { name: "whatsapp:emulator", command: "node scripts/whatsapp-emulator.mjs", file: "scripts/whatsapp-emulator.mjs" },
+      ]),
+    ).toThrow(/would shadow/);
+    expect(channelRootScriptsFor({ agentName: "demo-agent", channels: ["terminal"], kitsDir: "/nonexistent", kitsRootScripts: {} })).toEqual([]);
+  });
+
+  it("CONTROL: the root-script guard refuses a built tree whose script names a file it does not carry", () => {
+    // The 0.16.0/0.17.0 defect, planted: a README step whose script the
+    // template does not have. The guard reads the generated package.json, not
+    // the list that chose the scripts, so deleting the file is enough to watch
+    // it refuse.
+    const { dir, commit } = fixtureKits();
+    addWhatsAppChannel(dir);
+    const out = scratch("built-wa-guard-");
+    buildTemplate({ kitsDir: dir, agentName: "demo-agent", outDir: out, commit });
+    expect(() => assertRootScriptsResolve({ outDir: out })).not.toThrow();
+
+    rmSync(join(out, "scripts/whatsapp-emulator.mjs"));
+    expect(() => assertRootScriptsResolve({ outDir: out })).toThrow(
+      /root script `whatsapp:emulator` runs scripts\/whatsapp-emulator\.mjs, which the template does not carry/,
+    );
+  });
+});
+
 describe("syncKitTemplates + the release gate, against a local kits repository", () => {
   it("syncs a tag, records the commit it resolved to, and both halves of the gate pass", () => {
     const { dir, commit } = fixtureKits();
@@ -533,6 +645,18 @@ describe("the packaged kit templates (offline half of the release gate)", () => 
       }
       const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
       expect(pkg.workspaces).toEqual([...sources.sort(), `agents/${slug}`]);
+
+      // A WhatsApp agent's README starts with `npm run whatsapp:emulator` at
+      // the root; every template whose agent declares the channel answers it.
+      const channels = parseManifestList(readFileSync(join(root, "agents", slug, "agent.yaml"), "utf8"), "channels");
+      if (channels.includes("whatsapp")) {
+        expect(pkg.scripts["whatsapp:emulator"], `${slug} declares whatsapp and has no whatsapp:emulator`).toBe("node scripts/whatsapp-emulator.mjs");
+        expect(existsSync(join(root, "scripts/whatsapp-emulator.mjs"))).toBe(true);
+        expect(lock.templates[slug].root_scripts).toEqual({ "whatsapp:emulator": "node scripts/whatsapp-emulator.mjs" });
+      } else {
+        expect(existsSync(join(root, "scripts")), `${slug} declares no channel that needs scripts/`).toBe(false);
+      }
+      expect(() => assertRootScriptsResolve({ outDir: root })).not.toThrow();
 
       // And every kits-local pin the agent declares is one of them, at the
       // version the lock recorded.

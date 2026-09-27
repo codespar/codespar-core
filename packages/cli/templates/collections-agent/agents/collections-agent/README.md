@@ -71,9 +71,11 @@ Cloud API's own response shape and posts back the same signed
 `x-hub-signature-256` webhooks, so what runs against it is the adapter itself.
 It also has a clock we can move (`POST /_sim/clock`), which a replay finishing
 in seconds cannot otherwise have. No Meta account, no credential, and no
-traffic that leaves the machine. What it does NOT cover is measured, with the
-exact payloads, in `docs/OPEN_QUESTIONS.md` §46 — chief among them that it
-prices the 24-hour window but does not enforce it.
+traffic that leaves the machine. What it did not cover at 0.1.1 was measured, with
+the exact payloads, in `docs/OPEN_QUESTIONS.md` §46; 0.2.0 closed
+all five, chief among them that it ENFORCES the 24-hour window with Meta's
+own 400/131047 instead of only pricing it, and the pinned 0.3.0 corrects the
+four places 0.2.0 differed from its release note.
 
 `--scripted` replays the debtor's turns from `channels/whatsapp/<name>.json`,
 which is what an agent ships for this channel: the contact the conversation is
@@ -179,11 +181,13 @@ nothing. It runs in the CI, which starts the emulator in its own step.
 
 A fourth run covers the case the other three cannot reach: agree, move the
 conversation's clock 26 hours, let the sandbox payer pay, poll. It asserts the
-execution settled and the confirmation went out as a TEMPLATE. Read that
-precisely: the emulator PRICES the 24-hour window and does not ENFORCE it
-(`docs/OPEN_QUESTIONS.md` §46a), so what passes is OUR choice of carrier and
-not the provider refusing the alternative. The day the emulator enforces the
-window, that run gets stronger without changing.
+execution settled and the confirmation went out as a TEMPLATE, and it asks the
+emulator directly whether it would have carried the free-form alternative: it
+must answer 400/131047, as Meta does (`docs/OPEN_QUESTIONS.md` §46a). A fifth
+run moves the two clocks apart — the conversation's 26 hours, the agent's one —
+so our window reads open while the provider's is shut; the free-form
+confirmation is refused with 131047 and the poll tells the person by the
+template instead, once.
 
 ## The sandbox payer
 

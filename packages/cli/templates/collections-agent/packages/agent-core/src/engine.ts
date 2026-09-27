@@ -12,19 +12,21 @@
  * meantime is caught at the last gate, which is the only one that matters.
  */
 import { checkApprovalArtifact, createApprovalArtifact, type ApprovalSigner } from "./approval.js";
-import type { ProofBundle } from "./bundle.js";
+import { maskPayee, type ProofBundle } from "./bundle.js";
 import { evaluateEscalation, type Escalation } from "./escalate.js";
 import { CHARGE_CANCELLED, CHARGE_EXPIRED, CHARGE_PAID, PAYMENT_FAILED, PAYMENT_SUCCEEDED, type PublishedEvent } from "./events.js";
 import type { Guardrails } from "./guardrails.js";
-import { itemsHash, sha256Hex } from "./hash.js";
+import { batchAttemptId, itemsHash, sha256Hex } from "./hash.js";
 import { newId } from "./ids.js";
 import { mandateExpired, payeeAllowed, resolveBeneficiary, windowCap, windowStart, type Mandate } from "./mandate.js";
 import type { Manifest } from "./manifest.js";
-import type { PaymentRail, RailOutcome, RailPayment } from "./rail.js";
+import { checkQuote, quoteFromApproval } from "./quote.js";
+import { spendApprovalOf, type PaymentRail, type RailOutcome, type RailPayment, type SealedSpendApproval, type SpendApproval } from "./rail.js";
+import { sameApprovalHash } from "./receipt-chain.js";
 import type { MandateStatusReport, MandateStatusSource } from "./revocation.js";
 import { isTerminal, transition, type Execution, type ExecutionState } from "./state-machine.js";
 import type { StateStore } from "./state/store.js";
-import type { Actor, ApprovalArtifact, ApprovalMode, ExecutionBatch, ExecutionItem, ExecutionReason, ItemOutcome } from "./types.js";
+import type { Actor, ApprovalArtifact, ApprovalMode, ExecutionBatch, ExecutionComposition, ExecutionItem, ExecutionReason, ItemOutcome } from "./types.js";
 
 export interface ProposedItem {
   /** An alias from the mandate's named payees, or a raw payee key. */
@@ -61,6 +63,13 @@ export interface Proposal {
    * it. The core never invents one and never fills one in.
    */
   batch?: ExecutionBatch;
+  /**
+   * What the proposal's amount is composed of, when it is composed of lines
+   * (a cart behind one order). The kit computes `compositionHash` over the
+   * resolved lines; the core stamps it on the execution and every artifact of
+   * it, and never computes, fills in or reads the lines.
+   */
+  composition?: ExecutionComposition;
 }
 
 export type DraftResult =
@@ -93,6 +102,14 @@ type Verdict =
   | { kind: "escalate"; escalation: Escalation };
 
 type Gate = "draft" | "approve" | "execute";
+
+/**
+ * How many spent generations of one batch line's attempt id a dispatch walks
+ * past before it reports the line failed. Each one is a payment the provider
+ * already refused for this exact line, so eight is a line that keeps failing,
+ * not a line still looking for its id.
+ */
+const MAX_ATTEMPT_GENERATION = 8;
 
 /** Open executions reserve the window: a cap is a ceiling on what may be committed, not a balance. */
 const WINDOW_STATES: ExecutionState[] = ["awaiting_approval", "approved", "executing", "settled"];
@@ -127,6 +144,7 @@ export class ExecutionEngine {
     const items = proposal.items.map((p) => this.resolveItem(p));
     const total = items.reduce((sum, i) => sum + i.amount, 0);
     if (proposal.batch) assertBatchBinding(proposal.batch);
+    if (proposal.composition) assertCompositionBinding(proposal.composition);
     const id = newId("exe");
     const execution: Execution<"drafted"> = {
       id,
@@ -140,6 +158,7 @@ export class ExecutionEngine {
       ...(proposal.claimed_total !== undefined ? { model_claimed_total: proposal.claimed_total } : {}),
       items_hash: itemsHash(items),
       ...(proposal.batch ? { batch: proposal.batch } : {}),
+      ...(proposal.composition ? { composition: proposal.composition } : {}),
       mandate: { id: this.deps.mandate.id, version: this.deps.mandate.version },
       idempotency_key: `idk_${sha256Hex(`${this.deps.runId}:${id}`).slice(0, 32)}`,
       blocking_reasons: [],
@@ -149,9 +168,56 @@ export class ExecutionEngine {
       updated_at: now.toISOString(),
     };
     this.deps.store.saveExecution(execution);
-    this.record("execution.drafted", id, { items: execution.items, total, model_claimed_total: proposal.claimed_total ?? null, mode: this.deps.mode, batch: execution.batch ?? null });
+    this.record("execution.drafted", id, { items: execution.items, total, model_claimed_total: proposal.claimed_total ?? null, mode: this.deps.mode, batch: execution.batch ?? null, ...(execution.composition ? { composition: execution.composition } : {}) });
 
     return { ok: true, execution: await this.evaluateDraft(execution) };
+  }
+
+  /**
+   * The proposal behind an OPEN execution changed, and the execution follows
+   * it: a customer who changes the cart after the order was approved is
+   * changing the order, not opening a second one. The items, the total, the
+   * `items_hash` and the composition are replaced; the state, the approval
+   * and the idempotency key are NOT.
+   *
+   * That is the point. No transition happens here and nothing is judged: an
+   * `approved` execution keeps the artifact it was approved with, and the
+   * last gate (`execute`) compares the two and sends it back to
+   * `awaiting_approval` with `items_hash_mismatch` — the same edge a list
+   * tampered after approval takes, reached honestly. An `awaiting_approval`
+   * one is judged again by whoever decides it, on what it says now.
+   *
+   * The payees may not change, in number or in order: a restatement changes
+   * what is charged or paid, never to whom. Nothing is dispatched by an open
+   * execution, so no attempt can exist under the key it keeps.
+   */
+  restate(executionId: string, proposal: Proposal): Execution {
+    const execution = this.mustGet(executionId);
+    if (execution.state !== "awaiting_approval" && execution.state !== "approved") throw new Error(`execution ${executionId} is ${execution.state}; only an open execution (awaiting_approval, approved) can be restated`);
+    if (proposal.batch) throw new Error("a batch line is not restated; the batch is presented again");
+    if (proposal.composition) assertCompositionBinding(proposal.composition);
+    const items = proposal.items.map((p) => this.resolveItem(p));
+    const before = execution.items.map((i) => i.payee);
+    if (items.length !== before.length || items.some((item, i) => item.payee !== before[i])) throw new Error(`execution ${executionId}: a restatement may not change the payees`);
+    const total = items.reduce((sum, i) => sum + i.amount, 0);
+    const { composition: _composition, model_claimed_total: _claimed, ...rest } = execution;
+    const restated: Execution = {
+      ...rest,
+      items,
+      total,
+      ...(proposal.claimed_total !== undefined ? { model_claimed_total: proposal.claimed_total } : {}),
+      items_hash: itemsHash(items),
+      ...(proposal.composition ? { composition: proposal.composition } : {}),
+      updated_at: this.clock().toISOString(),
+    };
+    this.deps.store.saveExecution(restated);
+    this.record("execution.restated", execution.id, {
+      state: execution.state,
+      items_hash: { from: execution.items_hash, to: restated.items_hash },
+      total: { from: execution.total, to: total },
+      composition: { from: execution.composition ?? null, to: restated.composition ?? null },
+    });
+    return restated;
   }
 
   // ---- deterministic policy ---------------------------------------------
@@ -177,6 +243,14 @@ export class ExecutionEngine {
       // At draft in `human` the person is told; at any later gate, or in `mandate`, it is a refusal. escalate_above never widens the allowlist.
       if (gate === "draft" && this.deps.mode === "human") return { kind: "block", reason: "beneficiary_not_allowed", detail };
       return { kind: "deny", reason: "beneficiary_not_allowed", detail };
+    }
+
+    // A receivable closed `charge_reference_ambiguous` was issued and may still be paid. Another one to the same payee is how a debtor pays twice.
+    const unreconciled = this.deps.store
+      .listExecutions({ state: "failed", mandate_id: mandate.id })
+      .find((e) => e.id !== execution.id && e.reason === "charge_reference_ambiguous" && e.items.some((i) => execution.items.some((mine) => mine.payee === i.payee)));
+    if (unreconciled) {
+      return { kind: "deny", reason: "charge_reference_ambiguous", detail: `execution ${unreconciled.id} issued a receivable to this payee whose reference turned ambiguous; reconcile it by the charge id before issuing another` };
     }
 
     const over = execution.items.find((i) => i.amount > mandate.per_tx_cap_minor);
@@ -295,7 +369,7 @@ export class ExecutionEngine {
     if (!artifact) throw new Error(`execution ${executionId} is approved without an approval artifact`);
 
     // Everything below is one transaction: the last policy run, the artifact check, the outbox row and the state change land together or not at all.
-    const payments = this.paymentsFor(execution);
+    const payments = this.paymentsFor(execution, artifact);
     const decided = this.deps.store.transaction((): Execution => {
       // The approval was given under one mandate; a re-signed one (new version) is a new authorization, and the person decides again under it.
       const current = { id: this.deps.mandate.id, version: this.deps.mandate.version };
@@ -310,6 +384,9 @@ export class ExecutionEngine {
         }
         return this.persist(transition(this.withoutApproval(approved), "awaiting_approval", { at, actor: this.agentActor, reason: "items_hash_mismatch", detail: `approval ${artifact.approval_id} does not match what would be executed (${check.problem})` }));
       }
+      // The API only records a quote that disagrees with the spend, and pays anyway. The kit does not send one.
+      const unquoted = payments.map(checkQuote).find((q) => !q.ok);
+      if (unquoted && !unquoted.ok) return this.persist(transition(approved, "denied", { at, actor: this.agentActor, reason: "quote_mismatch", detail: `${unquoted.code}: ${unquoted.detail}; nothing was sent` }));
 
       const verdict = this.policy(execution, now, "execute", artifact.approver.type === "person");
       if (verdict.kind === "deny" || verdict.kind === "block") {
@@ -343,14 +420,33 @@ export class ExecutionEngine {
   private async dispatch(execution: Execution<"executing">, payments: RailPayment[]): Promise<Execution> {
     const outcomes: ItemOutcome[] = [...execution.outcomes];
     const unknown: string[] = [];
+    const sealMismatches: string[] = [];
     this.deps.store.updateOutbox(execution.idempotency_key, "sent", undefined, this.clock().toISOString());
 
-    for (const [index, payment] of payments.entries()) {
+    const generations: Record<number, number> = { ...execution.attempt_generations };
+    for (const [index, presented] of payments.entries()) {
       if (outcomes.some((o) => o.index === index)) continue;
+      let payment = presented;
       // The dispatch line is the request. `idempotency_key` is what makes a retry the same payment, so the bundle names it next to the attempt.
       this.record("rail.dispatch", execution.id, { attempt_id: payment.attempt_id, payee: payment.payee, amount: payment.amount_minor, rail: this.deps.rail.name, idempotency_key: execution.idempotency_key });
-      const outcome = await this.deps.rail.pay(payment);
+      let outcome = await this.deps.rail.pay(payment);
       this.record("rail.outcome", execution.id, { attempt_id: payment.attempt_id, status: outcome.status, ...railAnswer(outcome) });
+      // A batch line whose derived id the rail holds as failed-with-no-money
+      // moves to the next generation of it, and only on that answer (see
+      // `batchAttemptId`). The generation is saved before the next id goes
+      // out, so a crash or an unknown answer is reconciled against the id
+      // that was actually sent.
+      while (execution.batch && outcome.status === "failed" && outcome.spent && (generations[index] ?? 0) < MAX_ATTEMPT_GENERATION) {
+        const generation = (generations[index] ?? 0) + 1;
+        const next = batchAttemptId(execution.mandate.id, execution.batch, index, generation);
+        this.record("rail.attempt_spent", execution.id, { attempt_id: payment.attempt_id, code: outcome.code, next_attempt_id: next, generation });
+        generations[index] = generation;
+        this.deps.store.saveExecution({ ...execution, outcomes, attempt_generations: { ...generations }, updated_at: this.clock().toISOString() });
+        payment = { ...payment, attempt_id: next };
+        this.record("rail.dispatch", execution.id, { attempt_id: payment.attempt_id, payee: payment.payee, amount: payment.amount_minor, rail: this.deps.rail.name, idempotency_key: execution.idempotency_key });
+        outcome = await this.deps.rail.pay(payment);
+        this.record("rail.outcome", execution.id, { attempt_id: payment.attempt_id, status: outcome.status, ...railAnswer(outcome) });
+      }
       if (outcome.status === "uncertain") {
         this.record("rail.uncertain", execution.id, { attempt_id: payment.attempt_id, code: outcome.code, message: outcome.message });
         // No outcome is recorded because there is none. The siblings are still
@@ -360,7 +456,7 @@ export class ExecutionEngine {
         continue;
       }
       if (outcome.status === "failed") {
-        outcomes.push({ index, attempt_id: payment.attempt_id, status: "failed", code: outcome.code, error: `${outcome.code}: ${outcome.message}` });
+        outcomes.push({ index, attempt_id: payment.attempt_id, status: "failed", code: outcome.code, error: `${outcome.code}: ${outcome.message}`, ...(outcome.held ? { held: outcome.held } : {}) });
         continue;
       }
       if (outcome.status === "accepted") {
@@ -369,10 +465,13 @@ export class ExecutionEngine {
         this.recordInstrument(execution.id, payment.attempt_id, outcome.transaction_id, outcome.instrument);
         continue;
       }
-      outcomes.push({ index, attempt_id: payment.attempt_id, status: "settled", transaction_id: outcome.transaction_id, ...(outcome.receipt_id ? { receipt_id: outcome.receipt_id } : {}) });
-      await this.ingestSettlement(execution, index, payment, outcome.receipt_id, PAYMENT_SUCCEEDED);
+      outcomes.push({ index, attempt_id: payment.attempt_id, status: "settled", transaction_id: outcome.transaction_id, ...(outcome.receipt_id ? { receipt_id: outcome.receipt_id } : {}), ...(outcome.replayed ? { replayed: true as const } : {}) });
+      const mismatch = await this.ingestSettlement(execution, index, payment, outcome.receipt_id, PAYMENT_SUCCEEDED);
+      if (mismatch) sealMismatches.push(mismatch);
     }
-    return this.close({ ...execution, outcomes }, payments.length, unknown.join("; ") || undefined);
+    const closed = this.close({ ...execution, outcomes, ...(Object.keys(generations).length > 0 ? { attempt_generations: generations } : {}) }, payments.length, unknown.join("; ") || undefined);
+    if (sealMismatches.length > 0) throw new ReceiptSealMismatchError(execution.id, sealMismatches);
+    return closed;
   }
 
   /**
@@ -395,10 +494,13 @@ export class ExecutionEngine {
     if (execution.outcomes.length < attempts) {
       return this.leaveUnresolved(updated, unknownDetail ?? `${execution.outcomes.length} of ${attempts} attempt(s) have an outcome`);
     }
-    const failed = execution.outcomes.find((o) => o.status === "failed");
+    // An ambiguous receivable outranks any other failure: it is the one outcome that must be reconciled rather than issued again.
+    const failed = execution.outcomes.find((o) => o.status === "failed" && o.code === "charge_reference_ambiguous") ?? execution.outcomes.find((o) => o.status === "failed");
     if (failed) {
       this.deps.store.updateOutbox(execution.idempotency_key, "failed", execution.outcomes, at);
-      const reason: ExecutionReason = failed.code === "charge_expired" || failed.code === "charge_cancelled" ? failed.code : "rail_failed";
+      // `org_paused` is the API refusing the spend itself: the kill switch was pressed after the gate read the status. Nothing moved.
+      const reason: ExecutionReason =
+        failed.code === "charge_expired" || failed.code === "charge_cancelled" || failed.code === "org_paused" || failed.code === "charge_reference_ambiguous" ? failed.code : "rail_failed";
       return this.persist(transition(updated, "failed", { at, actor: this.agentActor, reason, detail: failed.error ?? "rail refused" }));
     }
     if (execution.outcomes.filter((o) => o.status === "settled").length === attempts) {
@@ -439,7 +541,8 @@ export class ExecutionEngine {
     if (stored) this.deps.bundle.event({ ...stored, actor: this.agentActor });
   }
 
-  private async ingestSettlement(execution: Execution, index: number, payment: RailPayment, receiptId: string | null, eventType: PublishedEvent): Promise<void> {
+  /** Records a settled attempt and fetches its receipt; answers the seal mismatch, if the receipt disagrees with what was paid. */
+  private async ingestSettlement(execution: Execution, index: number, payment: RailPayment, receiptId: string | null, eventType: PublishedEvent): Promise<string | undefined> {
     // The rail's answer is the settlement event the API publishes (section 4.3): `commerce.payment.succeeded` for a payout, `commerce.charge.paid` for a receivable. Keyed by attempt so a replay is a no-op.
     const appended = this.deps.store.appendEvent({
       run_id: this.deps.runId,
@@ -450,15 +553,38 @@ export class ExecutionEngine {
       at: this.clock().toISOString(),
     });
     if (appended) this.deps.bundle.event({ ...appended, actor: this.agentActor, item_index: index });
-    if (receiptId) await this.saveReceipt(execution.id, receiptId);
+    return receiptId ? this.saveReceipt(execution.id, receiptId, payment) : undefined;
   }
 
-  private async saveReceipt(executionId: string, receiptId: string): Promise<void> {
+  /**
+   * The bundle's copy is the receipt as it was sealed, payee included. A
+   * payment receipt whose sealed payee is not the payee this attempt paid —
+   * including one that sealed no payee — is recorded and answered as a
+   * mismatch, which the caller raises once the execution's outcome is saved:
+   * the money is where the rail says it is, and it is the EVIDENCE that
+   * disagrees. The same holds for the approval link (§3): a receipt that
+   * seals other hashes than the ones this attempt sent, or none, does not
+   * say this payment was made against the approved list. A rail that cannot
+   * report the link leaves it `undefined`, and nothing is compared. A paid
+   * charge carries no seal, so there is nothing to compare at all.
+   */
+  private async saveReceipt(executionId: string, receiptId: string, payment: RailPayment): Promise<string | undefined> {
     const receipt = await this.deps.rail.receipt(receiptId, this.agentActor);
-    if (receipt) {
-      const path = this.deps.bundle.receipt(receipt);
-      this.record("receipt.saved", executionId, { receipt_id: receiptId, path });
+    if (!receipt) return undefined;
+    const path = this.deps.bundle.receipt(receipt, { approval_id: this.deps.store.getExecution(executionId)?.approval_id });
+    this.record("receipt.saved", executionId, { receipt_id: receiptId, path });
+    if (receipt.kind === "charge") return undefined;
+    const mismatches: string[] = [];
+    if (receipt.payment.payee !== payment.payee) {
+      const sealed = receipt.payment.payee === null ? null : maskPayee(receipt.payment.payee);
+      this.record("receipt.seal_mismatch", executionId, { receipt_id: receiptId, attempt_id: payment.attempt_id, sealed_payee: sealed, paid_payee: maskPayee(payment.payee) });
+      mismatches.push(`receipt ${receiptId} seals payee ${sealed ?? "none"}; attempt ${payment.attempt_id} paid ${maskPayee(payment.payee)}`);
     }
+    if (receipt.approval !== undefined && payment.approval && !sealsApproval(receipt.approval, payment.approval)) {
+      this.record("receipt.seal_mismatch", executionId, { receipt_id: receiptId, attempt_id: payment.attempt_id, sealed_approval: receipt.approval, sent_approval: payment.approval });
+      mismatches.push(`receipt ${receiptId} seals approval ${receipt.approval ? receipt.approval.items_hash : "none"}; attempt ${payment.attempt_id} sent ${payment.approval.items_hash}`);
+    }
+    return mismatches.length > 0 ? mismatches.join("; ") : undefined;
   }
 
 
@@ -470,12 +596,17 @@ export class ExecutionEngine {
   async collectReceipts(executionId: string): Promise<string[]> {
     const execution = this.mustGet(executionId);
     const held = new Set(this.deps.bundle.listReceipts().map((f) => f.replace(/\.json$/, "")));
+    const payments = this.paymentsFor(execution, this.approvalOf(execution));
     const fetched: string[] = [];
+    const sealMismatches: string[] = [];
     for (const outcome of execution.outcomes) {
-      if (outcome.status !== "settled" || !outcome.receipt_id || held.has(outcome.receipt_id)) continue;
-      await this.saveReceipt(execution.id, outcome.receipt_id);
+      const payment = payments[outcome.index];
+      if (outcome.status !== "settled" || !outcome.receipt_id || held.has(outcome.receipt_id) || !payment) continue;
+      const mismatch = await this.saveReceipt(execution.id, outcome.receipt_id, payment);
+      if (mismatch) sealMismatches.push(mismatch);
       fetched.push(outcome.receipt_id);
     }
+    if (sealMismatches.length > 0) throw new ReceiptSealMismatchError(execution.id, sealMismatches);
     return fetched;
   }
 
@@ -492,13 +623,14 @@ export class ExecutionEngine {
   async reconcile(executionId: string): Promise<Execution> {
     const execution = this.mustGet(executionId);
     if (execution.state !== "executing") return execution;
-    const payments = this.paymentsFor(execution);
+    const payments = this.paymentsFor(execution, this.approvalOf(execution));
     const outbox = this.deps.store.getOutbox(execution.idempotency_key);
     if (outbox?.status === "pending") {
       return this.leaveUnresolved(execution as Execution<"executing">, "outbox pending: nothing was ever sent; `resume` dispatches it, reconcile does not");
     }
 
     const outcomes: ItemOutcome[] = [...execution.outcomes];
+    const sealMismatches: string[] = [];
     let unresolved: string | undefined;
     for (const [index, payment] of payments.entries()) {
       const prior = outcomes.find((o) => o.index === index);
@@ -536,15 +668,17 @@ export class ExecutionEngine {
         continue;
       }
       if (seen.status === "failed") {
-        replace({ index, attempt_id: payment.attempt_id, status: "failed", code: seen.code, error: `${seen.code}: ${seen.message}` });
+        replace({ index, attempt_id: payment.attempt_id, status: "failed", code: seen.code, error: `${seen.code}: ${seen.message}`, ...(seen.held ? { held: seen.held } : {}) });
         continue;
       }
-      replace({ index, attempt_id: payment.attempt_id, status: "settled", transaction_id: seen.transaction_id, ...(seen.receipt_id ? { receipt_id: seen.receipt_id } : {}) });
-      await this.ingestSettlement(execution, index, payment, seen.receipt_id, prior ? CHARGE_PAID : PAYMENT_SUCCEEDED);
+      replace({ index, attempt_id: payment.attempt_id, status: "settled", transaction_id: seen.transaction_id, ...(seen.receipt_id ? { receipt_id: seen.receipt_id } : {}), ...(seen.replayed ? { replayed: true as const } : {}) });
+      const mismatch = await this.ingestSettlement(execution, index, payment, seen.receipt_id, prior ? CHARGE_PAID : PAYMENT_SUCCEEDED);
+      if (mismatch) sealMismatches.push(mismatch);
     }
     const updated: Execution<"executing"> = { ...(execution as Execution<"executing">), outcomes };
-    if (unresolved) return this.leaveUnresolved(updated, unresolved);
-    return this.close(updated, payments.length);
+    const reconciled = unresolved ? this.leaveUnresolved(updated, unresolved) : this.close(updated, payments.length);
+    if (sealMismatches.length > 0) throw new ReceiptSealMismatchError(execution.id, sealMismatches);
+    return reconciled;
   }
 
   /**
@@ -559,7 +693,7 @@ export class ExecutionEngine {
     const outbox = this.deps.store.getOutbox(execution.idempotency_key);
     if (outbox?.status !== "pending") return this.reconcile(executionId);
     this.record("rail.resume", execution.id, { detail: "outbox pending: nothing was ever sent; dispatching once under the same attempt ids" });
-    return this.dispatch(execution as Execution<"executing">, this.paymentsFor(execution));
+    return this.dispatch(execution as Execution<"executing">, this.paymentsFor(execution, this.approvalOf(execution)));
   }
 
   /** Time-based exits: an open execution past its approval TTL closes as `expired`. */
@@ -770,21 +904,44 @@ export class ExecutionEngine {
     };
   }
 
-  private paymentsFor(execution: Execution): RailPayment[] {
-    return execution.items.map((item, index) => ({
-      attempt_id: `att_${execution.idempotency_key.slice(4)}_${index}`,
-      mandate_id: execution.mandate.id,
-      amount_minor: item.amount,
-      currency: item.currency,
-      payee: item.payee,
-      beneficiary: item.beneficiary,
-      purpose: this.deps.mandate.purpose,
-      agent_id: this.deps.mandate.agent_id,
-      consumer_id: this.deps.mandate.consumer_id,
-      ...(item.description ? { description: item.description } : {}),
-      ...(item.due_date ? { due_date: item.due_date } : {}),
-      actor: this.agentActor,
-    }));
+  /**
+   * The attempts of an execution. Each carries the quote of the SAME line of
+   * the approval artifact — what was approved, not what the execution says
+   * now — so a line that drifted after approval is a quote that disagrees,
+   * refused before the call. Each also carries the artifact's hashes, which
+   * the API seals into the receipt (OPEN_QUESTIONS §3): the artifact is fixed
+   * per execution, so a reconcile presents the same approval the first
+   * dispatch did, and a batch line's hashes are the same on every machine.
+   */
+  private paymentsFor(execution: Execution, artifact: ApprovalArtifact): RailPayment[] {
+    return execution.items.map((item, index) => {
+      // A batch line is the same attempt, with the same quote, on every run of the same list, wherever it runs (§39c); anything else is its execution's own.
+      const quote = quoteFromApproval(artifact, index, this.deps.mandate.purpose, { stable: execution.batch !== undefined });
+      return {
+        attempt_id: execution.batch
+          ? batchAttemptId(execution.mandate.id, execution.batch, index, execution.attempt_generations?.[index] ?? 0)
+          : `att_${execution.idempotency_key.slice(4)}_${index}`,
+        mandate_id: execution.mandate.id,
+        amount_minor: item.amount,
+        currency: item.currency,
+        payee: item.payee,
+        beneficiary: item.beneficiary,
+        purpose: this.deps.mandate.purpose,
+        agent_id: this.deps.mandate.agent_id,
+        consumer_id: this.deps.mandate.consumer_id,
+        ...(item.description ? { description: item.description } : {}),
+        ...(item.due_date ? { due_date: item.due_date } : {}),
+        ...(quote ? { quote } : {}),
+        approval: spendApprovalOf(artifact),
+        actor: this.agentActor,
+      };
+    });
+  }
+
+  private approvalOf(execution: Execution): ApprovalArtifact {
+    const artifact = execution.approval_id ? this.deps.store.getApproval(execution.approval_id) : undefined;
+    if (!artifact) throw new Error(`execution ${execution.id} is ${execution.state} without an approval artifact`);
+    return artifact;
   }
 
   private withoutApproval(execution: Execution<"approved">): Execution<"approved"> {
@@ -827,7 +984,7 @@ export class ExecutionEngine {
   private storeApproval(artifact: ApprovalArtifact): void {
     this.deps.store.saveApproval(artifact);
     this.deps.bundle.approval(artifact);
-    this.record("approval.created", artifact.execution_id, { approval_id: artifact.approval_id, approver: artifact.approver, items_hash: artifact.items_hash, batch: artifact.batch ?? null, escalation: artifact.escalation ?? null });
+    this.record("approval.created", artifact.execution_id, { approval_id: artifact.approval_id, approver: artifact.approver, items_hash: artifact.items_hash, batch: artifact.batch ?? null, ...(artifact.composition ? { composition: artifact.composition } : {}), escalation: artifact.escalation ?? null });
   }
 
   private persist<S extends ExecutionState>(execution: Execution<S>): Execution<S> {
@@ -868,6 +1025,13 @@ function assertBatchBinding(batch: ExecutionBatch): void {
   }
 }
 
+/** A composition binding is the kit's to compute and the core's to refuse when it cannot be true. */
+function assertCompositionBinding(composition: ExecutionComposition): void {
+  if (!composition.ref.trim()) throw new Error("composition.ref must name what was composed");
+  if (!/^sha256:[0-9a-f]{64}$/.test(composition.composition_hash)) throw new Error("composition.composition_hash must be the compositionHash of the resolved lines");
+  if (!Number.isInteger(composition.line_count) || composition.line_count < 1) throw new Error(`composition.line_count must be a positive integer, got ${composition.line_count}`);
+}
+
 /**
  * What the rail answered about one attempt, as the bundle records it: the
  * identifiers a reader follows the money by, and never `raw`, which carries
@@ -878,8 +1042,33 @@ function railAnswer(outcome: RailOutcome): Record<string, unknown> {
     case "accepted":
       return { transaction_id: outcome.transaction_id, sandbox: outcome.sandbox };
     case "settled":
-      return { transaction_id: outcome.transaction_id, receipt_id: outcome.receipt_id, money_moved: outcome.money_moved, sandbox: outcome.sandbox };
+      return { transaction_id: outcome.transaction_id, receipt_id: outcome.receipt_id, money_moved: outcome.money_moved, sandbox: outcome.sandbox, ...(outcome.replayed ? { idempotent_replay: true } : {}) };
+    case "failed":
+      return { code: outcome.code, message: outcome.message, ...(outcome.spent ? { spent: true } : {}), ...(outcome.held ? { held: outcome.held } : {}) };
     default:
       return { code: outcome.code, message: outcome.message };
+  }
+}
+
+/** The approval link a receipt sealed is the one a spend sent: the same hashes, in either spelling of the `sha256:` prefix. */
+function sealsApproval(sealed: SealedSpendApproval | null, sent: SpendApproval): boolean {
+  return sealed !== null && sameApprovalHash(sealed.items_hash, sent.items_hash) && sameApprovalHash(sealed.batch_hash, sent.batch_hash ?? null);
+}
+
+/**
+ * A payment settled and the receipt CodeSpar sealed for it names a different
+ * payee, or none, or seals another approval than the one the spend sent.
+ * Raised after the execution's outcome is saved, never instead of it: the
+ * rail's answer is the record of where the money went, and this error is
+ * about the evidence. Not a warning, because a receipt that does not name
+ * what was paid proves nothing about that payment.
+ */
+export class ReceiptSealMismatchError extends Error {
+  constructor(
+    readonly executionId: string,
+    readonly mismatches: string[],
+  ) {
+    super(`execution ${executionId}: the sealed receipt does not seal what was paid — ${mismatches.join("; ")}`);
+    this.name = "ReceiptSealMismatchError";
   }
 }

@@ -109,6 +109,9 @@ export async function startWhatsApp(options: StartWhatsAppOptions): Promise<numb
     messages_in: log.filter((l) => l.direction === "in").length,
     messages_out: log.filter((l) => l.direction === "out" && !l.refused).length,
     refused,
+    // What the provider reported undelivered after it left, and which outcome each one was telling.
+    delivery_failed: log.filter((l) => l.direction === "status" && l.state === "failed").map((l) => ({ message_id: l.message_id, errors: l.errors ?? [], ...(l.about ? { about: l.about } : {}) })),
+    taps: log.filter((l) => l.kind === "reply").map((l) => ({ id: l.reply?.id ?? null, turn: !l.refused, ...(l.refused ? { refused: l.refused.rule } : {}) })),
     log: relative(process.cwd(), `${s.bundle.dir}/channel.jsonl`),
     ...(cost ? { simulated_cost: cost } : {}),
   };

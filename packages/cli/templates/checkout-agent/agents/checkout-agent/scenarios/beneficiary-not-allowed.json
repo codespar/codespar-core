@@ -1,0 +1,42 @@
+{
+  "name": "beneficiary-not-allowed",
+  "description": "The charge asked in another person's name and document: the store's customer book does not name it. In human the order goes to the attendant carrying the blocking reason, and a yes cannot approve it (denied, beneficiary_not_allowed); in mandate it is refused at draft.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "transcript": "./beneficiary-not-allowed.transcript.jsonl",
+  "turns": [
+    {
+      "input": "oi, sou a Marina, quero uma aula avulsa, mas emite no CPF da minha mae, 123.456.789-09",
+      "decision": "approve"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [
+        "denied"
+      ],
+      "reasons": [
+        "beneficiary_not_allowed"
+      ],
+      "receipts": 0,
+      "charges_issued": 0
+    },
+    "human": {
+      "trails": [
+        [
+          "awaiting_approval",
+          "denied"
+        ]
+      ]
+    },
+    "mandate": {
+      "trails": [
+        [
+          "denied"
+        ]
+      ]
+    }
+  }
+}

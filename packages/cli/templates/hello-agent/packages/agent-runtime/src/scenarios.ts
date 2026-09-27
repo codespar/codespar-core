@@ -14,7 +14,7 @@ import type { ApprovalMode, Execution } from "@codespar/agent-core";
 import type { Agent } from "./agent.js";
 import type { RailKind } from "./kit.js";
 import { setup, type Setup } from "./setup.js";
-import { announceOutcome, handleExecution } from "./terminal.js";
+import { announceOutcome, followUp, handleExecution } from "./terminal.js";
 
 const TurnSchema = z
   .object({
@@ -204,7 +204,13 @@ export async function runScenario(agent: Agent, scenario: Scenario, options: Run
       for (const stuck of s.engine.list({ state: "executing" })) await s.engine.reconcile(stuck.id);
     }
     // Whatever closed after the conversation is told to the counterparty once, as the poll or the webhook would.
-    if (awaitsPayer) for (const e of s.engine.list()) if (e.run_id === s.runId) announceOutcome(e, s, tell);
+    if (awaitsPayer) {
+      for (const e of s.engine.list()) {
+        if (e.run_id !== s.runId) continue;
+        announceOutcome(e, s, tell);
+        await followUp(e, s, say);
+      }
+    }
 
     const events = s.store.listEvents({ run_id: s.runId });
     for (const e of events) {

@@ -1,0 +1,25 @@
+{
+  "approval": "human",
+  "escalate_above": {
+    "amount": 50000
+  },
+  "velocity": {
+    "window_hours": 24
+  },
+  "outside_hours_action": "refuse",
+  "model_total_mismatch": "refuse",
+  "approval_ttl_minutes": 15,
+  "timezone": "America/Sao_Paulo",
+  "envelope": {
+    "max_discount_pct": 12,
+    "max_order_discount_pct": 8,
+    "min_margin_pct": 20,
+    "max_units_per_line": 10,
+    "max_order_minor": 200000,
+    "due_date_window_days": 3,
+    "service_hours": "08:00-20:00",
+    "coupons": [
+      { "code": "BEMVINDO10", "discount_pct": 10, "min_order_minor": 15000, "expires_at": "2026-12-31" }
+    ]
+  }
+}

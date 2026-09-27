@@ -20,6 +20,7 @@ import { handleExecution, type TerminalOptions } from "../../terminal.js";
 import type { Setup } from "../../setup.js";
 import type { OutboundBody } from "../types.js";
 import { instrumentBodies } from "./present.js";
+import { statusGraceMs } from "./open.js";
 import type { WhatsAppChannel } from "./index.js";
 
 export interface ConverseOptions {
@@ -63,6 +64,7 @@ class Outbox {
 export async function converse(options: ConverseOptions): Promise<ConverseResult> {
   const { setup: s, channel, approver, say } = options;
   const outbox = new Outbox(channel);
+  let toldOutcome = false;
   const replies: string[] = [];
   const toolCalls: Array<{ name: string; refused: boolean }> = [];
   let turns = 0;
@@ -77,7 +79,10 @@ export async function converse(options: ConverseOptions): Promise<ConverseResult
     setup: s,
     approver,
     say,
-    tell: (line: string) => outbox.push({ kind: "text", text: line }),
+    tell: (line: string, about?: Execution) => {
+      if (about) toldOutcome = true;
+      outbox.push({ kind: "text", text: line, ...(about ? { about: { execution_id: about.id, state: about.state } } : {}) });
+    },
     presentInstrument,
     ...(options.decision ? { decision: options.decision } : {}),
     ...(options.ask ? { ask: options.ask } : {}),
@@ -105,6 +110,8 @@ export async function converse(options: ConverseOptions): Promise<ConverseResult
       replies.push(result.reply);
     }
     await outbox.drain();
+    // An outcome told in this run may still come back failed; give the provider its bounded moment before the receiver closes.
+    if (toldOutcome) await channel.settle(statusGraceMs());
   } finally {
     await channel.close();
   }

@@ -1,0 +1,10 @@
+{
+  "name": "acordo-1042-retomada",
+  "description": "The day after: the charge for order #1042 expired, the poll told Joana with the acordo_cobranca_vencida template, and she answers by TAPPING its 'Emitir nova' button instead of typing. The tap is a turn whose text is the intent the template declares for that button, never the button's title and never the model's reading of it; the agent issues again and the payer pays.",
+  "channel": "whatsapp",
+  "contact": "+5511987654321",
+  "subject": "acordo-1042",
+  "turns": [
+    { "reply": { "id": "emitir_nova", "title": "Emitir nova" } }
+  ]
+}

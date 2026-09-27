@@ -62,7 +62,7 @@ const kit: AgentKit = {
   npm start -- --scenario <name>                    run a scenario pack (${"see scenarios/"})
 options: --mode human|mandate  --provider anthropic|replay  --transcript <file>  --rail stub|api  --user <id>  --json
          --now <ISO 8601>  pin the run to that instant (escalation hours, timestamps); env CODESPAR_AGENT_NOW is the same thing
-a batch runs one execution per line: in \`human\` the operator decides each one, and every artifact carries the batch_hash of the list it was one of`,
+a batch runs one execution per line: in \`human\` the terminal asks once for the list (todas / todas exceto 3,7 / nenhuma), and every artifact carries the batch_hash of the list it was one of`,
 
   buildRail: (ctx) => {
     if (ctx.kind === "api") {

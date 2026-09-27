@@ -15,9 +15,9 @@ import type { ConversationScript, ProofBundle } from "@codespar/agent-core";
 import type { Agent } from "../../agent.js";
 import type { Setup } from "../../setup.js";
 import { knownSubjects, loadTemplates } from "../index.js";
-import type { ChannelBackend, Conversation } from "../types.js";
+import type { ChannelBackend, ChannelLogLine, Conversation } from "../types.js";
 import { WhatsAppChannel } from "./index.js";
-import { toGraphNumber, WhatsAppCloudApi, loadCloudApiConfig, type CloudApiConfig } from "./cloud-api.js";
+import { WhatsAppCloudApi, loadCloudApiConfig, type CloudApiConfig } from "./cloud-api.js";
 import { EmulatorDriver, EMULATOR_DEFAULTS, EMULATOR_ENV, WhatsAppEmulator } from "./emulator.js";
 import type { SessionState } from "./session.js";
 
@@ -52,6 +52,41 @@ export interface OpenWhatsAppOptions {
   session?: SessionState | undefined;
   /** Draws the conversation on the operator's console. */
   render?: ((line: string) => void) | undefined;
+  /** What earlier runs wrote for this conversation: a status about one of their messages is tied back to it. */
+  priorLines?: ReadonlyArray<ChannelLogLine> | undefined;
+}
+
+/**
+ * How long a command that has just told an outcome waits for status webhooks
+ * before it reports the outcome as told. A provider reports a failed delivery
+ * AFTER the send answered, and a process that has exited hears nothing; this
+ * bounds the wait. `WHATSAPP_STATUS_GRACE_MS` overrides it (0 turns it off).
+ */
+export function statusGraceMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = Number(env["WHATSAPP_STATUS_GRACE_MS"]);
+  return Number.isFinite(raw) && raw >= 0 && env["WHATSAPP_STATUS_GRACE_MS"]?.trim() ? raw : 1000;
+}
+
+/** The cursor that says an outcome's message came back `failed`, so a later poll reports it as not told rather than as told. */
+export function undeliveredCursor(executionId: string, state: string): string {
+  return `undelivered:${executionId}:${state}`;
+}
+
+/**
+ * A `failed` status is an event in the proof bundle, always. When the message
+ * told an outcome it is `message.debtor.failed`, and the cursor above is taken:
+ * the cursor that says the person was told (`markTold`) stays held — a failed
+ * delivery is not retried by itself, because the usual cause (not a WhatsApp
+ * number, blocked) fails again — but nothing reports that outcome as told.
+ */
+export function recordDeliveryFailure(s: Setup, line: ChannelLogLine): void {
+  const payload = { message_id: line.message_id, errors: line.errors ?? [], channel: "whatsapp" };
+  if (!line.about) {
+    s.engine.note("message.failed", null, payload);
+    return;
+  }
+  s.store.setCursor(undeliveredCursor(line.about.execution_id, line.about.state), JSON.stringify(payload));
+  s.engine.note("message.debtor.failed", line.about.execution_id, { ...payload, state: line.about.state });
 }
 
 export interface OpenedWhatsApp {
@@ -102,7 +137,7 @@ export function buildWhatsApp(options: OpenWhatsAppOptions): OpenedWhatsApp | { 
       webhookPort: Number(env[EMULATOR_ENV.webhookPort]?.trim() || EMULATOR_DEFAULTS.webhookPort),
     };
     driver = new EmulatorDriver(url);
-    sessionKey = `${config.phoneNumberId}:${toGraphNumber(options.conversation.contact)}`;
+    sessionKey = `${config.phoneNumberId}:${options.conversation.contact}`;
     backend = new WhatsAppEmulator({
       config,
       conversation: { contact: options.conversation.contact },
@@ -129,6 +164,8 @@ export function buildWhatsApp(options: OpenWhatsAppOptions): OpenedWhatsApp | { 
     say,
     render: options.render ?? say,
     ...(options.session ? { session: options.session } : {}),
+    ...(options.priorLines ? { priorLines: options.priorLines } : {}),
+    onDeliveryFailed: (line) => recordDeliveryFailure(s, line),
   });
 
   return { channel, ...(driver ? { driver } : {}), ...(sessionKey ? { sessionKey } : {}) };

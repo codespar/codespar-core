@@ -9,6 +9,7 @@ import { MandateSchema, type Mandate } from "../src/mandate.js";
 import { ManifestSchema, type Manifest } from "../src/manifest.js";
 import { StateStore } from "../src/state/store.js";
 import { LocalMandateStatusStub } from "../src/stubs/mandate-status.js";
+import type { PaymentRail } from "../src/rail.js";
 import type { MandateStatusSource } from "../src/revocation.js";
 import { StubRail, type StubRailOptions } from "../src/stubs/rail.js";
 import type { ApprovalMode } from "../src/types.js";
@@ -91,6 +92,8 @@ export interface HarnessOptions {
   mandate?: Partial<Mandate>;
   manifest?: Partial<Manifest>;
   rail?: StubRailOptions;
+  /** What the engine dispatches to instead of the stub itself, e.g. the stub with a different receipt. `rail` on the harness stays the stub. */
+  wrapRail?: (stub: StubRail) => PaymentRail;
   dir?: string;
   runId?: string;
   /** The section 4.7 status source; the local stub unless a test wires the API one. */
@@ -109,7 +112,7 @@ export function harness(options: HarnessOptions = {}): Harness {
   const mode = options.mode ?? "human";
   const deps: EngineDeps = {
     store,
-    rail,
+    rail: options.wrapRail ? options.wrapRail(rail) : rail,
     status: options.status ?? gate,
     signer: hmacSigner("test", Buffer.alloc(32, 1)),
     manifest: testManifest(options.manifest),

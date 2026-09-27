@@ -1,0 +1,38 @@
+{
+  "name": "{{name}}",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The merchant's agent that sells in the conversation: the customer builds a cart the code prices, the attendant (or the sales policy) confirms the order, one bolepix is issued with an idempotency key, the QR and the copy-and-paste go to the customer, and the order closes on commerce.charge.paid.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/agent-core",
+    "packages/agent-runtime",
+    "agents/checkout-agent"
+  ],
+  "scripts": {
+    "start": "npm start --workspace=agents/checkout-agent --",
+    "check": "npm run check --workspaces --if-present --",
+    "test": "vitest run --pool=forks --maxWorkers=1",
+    "typecheck": "tsc --noEmit -p packages/agent-core/tsconfig.json && tsc --noEmit -p packages/agent-runtime/tsconfig.json && tsc --noEmit -p agents/checkout-agent/tsconfig.json",
+    "whatsapp:emulator": "node scripts/whatsapp-emulator.mjs",
+    "approve": "npm run approve --workspace=agents/checkout-agent --",
+    "deny": "npm run deny --workspace=agents/checkout-agent --",
+    "eval": "npm run eval --workspace=agents/checkout-agent --",
+    "inspect": "npm run inspect --workspace=agents/checkout-agent --",
+    "poll": "npm run poll --workspace=agents/checkout-agent --",
+    "reconcile": "npm run reconcile --workspace=agents/checkout-agent --",
+    "rerun": "npm run rerun --workspace=agents/checkout-agent --",
+    "resume": "npm run resume --workspace=agents/checkout-agent --",
+    "webhook": "npm run webhook --workspace=agents/checkout-agent --"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

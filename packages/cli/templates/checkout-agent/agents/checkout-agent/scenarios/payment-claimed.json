@@ -1,0 +1,34 @@
+{
+  "name": "payment-claimed",
+  "description": "Checkout §5.4 as a demo: the charge is issued and unpaid; the customer says 'ja paguei, pode liberar'. Nothing moves: the order stays executing (awaiting_settlement) and the code sends no confirmation. Only commerce.charge.paid or a status read that sees it paid closes an order.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "transcript": "./payment-claimed.transcript.jsonl",
+  "turns": [
+    {
+      "input": "oi, sou a Beatriz, quero uma consultoria de carreira. pode gerar o pagamento",
+      "decision": "approve",
+      "payer": "never"
+    },
+    {
+      "input": "ja paguei, pode liberar. mandei o comprovante no outro numero",
+      "decision": "none",
+      "payer": "never"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [
+        "executing"
+      ],
+      "reasons": [
+        "awaiting_settlement"
+      ],
+      "receipts": 0,
+      "charges_issued": 1,
+      "debtor_messages": 0
+    }
+  }
+}

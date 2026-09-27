@@ -1,7 +1,7 @@
 # {{name}}
 
 Scaffolded by `codespar init --template supplier-payments-agent` from the `supplier-payments-agent` starter kit
-(https://github.com/codespar/agent-starter-kits at `8f130b7cdc30510c929e6f7ebb07184f763e6ce4`, agent 0.1.0).
+(https://github.com/codespar/agent-starter-kits at `3eddd460451d7485c4bb53a74a8c7b143251438f`, agent 0.1.0).
 
 A company delegates its suppliers, commissions and payroll to an agent that pays them in batches under one signed mandate. A batch is a loop of executions: one refusal does not stop the others, and re-running it pays nobody twice.
 

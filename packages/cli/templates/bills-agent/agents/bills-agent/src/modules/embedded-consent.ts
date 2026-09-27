@@ -72,7 +72,7 @@ export async function runEmbeddedConsent(options: ConsentOptions): Promise<Manda
 
   // The consumer's "browser" is this terminal: the submit is the same call the hosted page makes,
   // plus the attestation the partner surface requires. Sandbox rails accept a placeholder token.
-  const submitted = (await api.request("post", "/v1/consents/{token}/submit" as never, {
+  const submitted = await api.post("/v1/consents/{token}/submit", {
     path: { token: init.token },
     body: {
       consumer_id: consumerId,
@@ -81,9 +81,10 @@ export async function runEmbeddedConsent(options: ConsentOptions): Promise<Manda
       display_label: "bills-agent (sandbox)",
       attestation: { method: "in_person", asserted_at: Math.floor(now().getTime() / 1000), reference: "terminal" },
     },
-  } as never)) as { mandate_id: string; mandate: Record<string, unknown>; signature: string };
+  });
 
   const signed = submitted.mandate;
+  const allowlist = signed["merchant_allowlist"];
   const mandate = MandateSchema.parse({
     id: submitted.mandate_id,
     version: 1,
@@ -95,8 +96,8 @@ export async function runEmbeddedConsent(options: ConsentOptions): Promise<Manda
     per_tx_cap_minor: Number(signed["per_tx_cap_minor"]),
     ...(signed["periodic_cap"] ? { periodic_cap: signed["periodic_cap"] } : {}),
     merchant_pin_kind: String(signed["merchant_pin_kind"]),
-    merchant_allowlist: signed["merchant_allowlist"],
-    beneficiaries: example.beneficiaries.filter((b) => (signed["merchant_allowlist"] as string[]).includes(b.payee)),
+    merchant_allowlist: allowlist,
+    beneficiaries: example.beneficiaries.filter((b) => Array.isArray(allowlist) && allowlist.includes(b.payee)),
     status: "active",
     expires_at: new Date(Number(signed["expires_at"]) * 1000).toISOString(),
     signature: submitted.signature,

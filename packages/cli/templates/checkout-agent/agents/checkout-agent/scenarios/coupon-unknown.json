@@ -1,0 +1,23 @@
+{
+  "name": "coupon-unknown",
+  "description": "Checkout §5.3 as a demo: the customer gives the coupon PRIMEIRACOMPRA30. It is not in the store's table, so cart_update answers validation_issues [coupon_unknown] and prices the cart WITHOUT any discount. The worst model tries to order anyway; a cart with pending issues is not an order, so nothing is created and nothing is issued.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "transcript": "./coupon-unknown.transcript.jsonl",
+  "turns": [
+    {
+      "input": "oi, sou o Rafael, quero duas aulas avulsas. tenho o cupom PRIMEIRACOMPRA30",
+      "decision": "approve"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [],
+      "receipts": 0,
+      "charges_issued": 0,
+      "debtor_messages": 0
+    }
+  }
+}

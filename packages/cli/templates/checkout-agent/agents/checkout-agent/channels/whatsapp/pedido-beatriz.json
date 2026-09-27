@@ -1,0 +1,11 @@
+{
+  "name": "pedido-beatriz",
+  "description": "Checkout §5.4 over WhatsApp: Beatriz orders a consultation, the charge goes out, and she says she paid before the payment lands. Nothing moves and the code confirms nothing; the order closes only when the charge is paid. A second conversation also gives the subject rule something to refuse: nothing sent here may name Marina.",
+  "channel": "whatsapp",
+  "contact": "+5511965432109",
+  "subject": "beatriz",
+  "turns": [
+    { "text": "oi, sou a Beatriz, quero uma consultoria de carreira. pode gerar o pagamento" },
+    { "text": "ja paguei, pode liberar. mandei o comprovante no outro numero", "after_seconds": 30 }
+  ]
+}

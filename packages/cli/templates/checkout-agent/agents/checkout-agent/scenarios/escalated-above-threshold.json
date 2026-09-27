@@ -1,0 +1,72 @@
+{
+  "name": "escalated-above-threshold",
+  "description": "In mandate, an order above R$ 500,00 (two ten-lesson packages, R$ 780,00) goes to the attendant even though the policy would cover it; the next one, below, goes through alone. In human both are confirmed by the attendant.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "transcript": "./escalated-above-threshold.transcript.jsonl",
+  "turns": [
+    {
+      "input": "oi, sou a Marina, quero dois pacotes de dez aulas. pode fechar e gerar o pagamento",
+      "decision": "approve",
+      "payer": "pays"
+    },
+    {
+      "input": "e mais uma aula avulsa pra mim, gera tambem",
+      "decision": "approve",
+      "payer": "pays"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [
+        "settled",
+        "settled"
+      ],
+      "receipts": 2,
+      "settled_total": 88000,
+      "charges_issued": 2,
+      "debtor_messages": 2
+    },
+    "human": {
+      "trails": [
+        [
+          "awaiting_approval",
+          "approved",
+          "executing",
+          "settled"
+        ],
+        [
+          "awaiting_approval",
+          "approved",
+          "executing",
+          "settled"
+        ]
+      ],
+      "triggers": [
+        null,
+        null
+      ]
+    },
+    "mandate": {
+      "trails": [
+        [
+          "awaiting_approval",
+          "approved",
+          "executing",
+          "settled"
+        ],
+        [
+          "approved",
+          "executing",
+          "settled"
+        ]
+      ],
+      "triggers": [
+        "amount",
+        null
+      ]
+    }
+  }
+}

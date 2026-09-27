@@ -18,7 +18,7 @@
  * text: a debtor's own words are in `transcript.jsonl` and are not this
  * command's to re-publish.
  */
-import { maskPayee, type ApprovalArtifact, type ExecutionBatch, type ProofBundle } from "@codespar/agent-core";
+import { maskPayee, type ApprovalArtifact, type ExecutionBatch, type ExecutionComposition, type ProofBundle } from "@codespar/agent-core";
 import { formatMinor } from "./default-kit.js";
 
 export interface InspectItem {
@@ -87,6 +87,8 @@ export interface InspectExecution {
     items_hash: string;
     /** The set binding as the ARTIFACT carries it, which is the signed copy. */
     batch: ExecutionBatch | null;
+    /** What the single amount was composed of (a cart), as the artifact signed it. */
+    composition?: ExecutionComposition;
     mandate: { id: string; version: number };
     escalation: { trigger: string; detail: string } | null;
   } | null;
@@ -453,6 +455,7 @@ export function assembleTimeline(bundle: ProofBundle): InspectReport {
       expires_at: artifact.expires_at,
       items_hash: artifact.items_hash,
       batch: batchBinding(artifact.batch),
+      ...(artifact.composition ? { composition: artifact.composition } : {}),
       mandate: artifact.mandate,
       escalation: artifact.escalation ? { trigger: artifact.escalation.trigger, detail: redact(artifact.escalation.detail) ?? "" } : null,
     };
@@ -575,6 +578,7 @@ function executionLines(execution: InspectExecution): Array<{ at: string; label:
   if (approval) {
     const wrapped = [`${approval.approval_id} · items_hash ${approval.items_hash}`, `under mandate ${approval.mandate.id} v${approval.mandate.version} · the artifact expires ${clock(approval.expires_at)}`];
     if (approval.batch) wrapped.push(`line ${approval.batch.index + 1} of ${approval.batch.count} of batch ${approval.batch.ref} · batch_hash ${approval.batch.batch_hash}`);
+    if (approval.composition) wrapped.push(`composed of ${approval.composition.line_count} line(s) of ${approval.composition.ref} · composition_hash ${approval.composition.composition_hash}`);
     if (approval.escalation) wrapped.push(`escalated by ${approval.escalation.trigger}: ${approval.escalation.detail}`);
     lines.push({ at: approval.approved_at, label: "approved", text: approverLabel(approval.approver), wrapped });
   }

@@ -16,6 +16,42 @@ export interface ToolContext {
   engine: ExecutionEngine;
   /** Fires when a payment tool created an execution; the channel decides what to do with it (ask, or run). */
   onExecution: (execution: Execution) => Promise<Execution>;
+  /**
+   * Fires ONCE for a batch, before its first line is drafted, when the channel
+   * can take one gesture for the whole list. Absent on a channel that decides
+   * line by line (the one-shot, the scenario runner), and then nothing changes:
+   * each line reaches `onExecution` and is decided there. The gesture never
+   * approves anything itself; every line is still drafted, still reaches
+   * `onExecution`, and still mints its own artifact.
+   */
+  onBatch?: (batch: BatchPresentation) => Promise<BatchGesture | undefined>;
+}
+
+/** What a person sees when a whole batch is put in front of them: the list, its total, and the hash of the list. */
+export interface BatchPresentation {
+  ref: string;
+  label: string;
+  /** `batchHash` of the ordered lines. The gesture is a decision about THIS hash and no other. */
+  batch_hash: string;
+  count: number;
+  total_minor: number;
+  /** The total as the kit writes money. */
+  total: string;
+  lines: Array<{
+    index: number;
+    beneficiary: string;
+    amount_minor: number;
+    amount: string;
+    /** A line a previous run already covers is shown, and does not run again whatever the gesture says. */
+    status: "open" | "already_settled" | "in_progress" | "attempt_id_conflict";
+  }>;
+}
+
+/** The decision a person took on a presented batch: which positions they approved and which they vetoed. */
+export interface BatchGesture {
+  batch_hash: string;
+  approved: number[];
+  vetoed: number[];
 }
 
 export type ToolHandler = (input: Record<string, unknown>, ctx: ToolContext) => Promise<unknown>;
@@ -28,6 +64,7 @@ export interface AgentLoopOptions {
   bundle: ProofBundle;
   engine: ExecutionEngine;
   onExecution: ToolContext["onExecution"];
+  onBatch?: ToolContext["onBatch"] | undefined;
   /** A hard stop on tool round-trips per turn, so a looping model cannot run forever. */
   maxSteps?: number;
   clock?: () => Date;
@@ -91,7 +128,7 @@ export class AgentLoop {
   }
 
   private async dispatch(call: ToolCall, executions: Execution[]): Promise<{ refused: boolean; content: unknown }> {
-    const { bundle, handlers, engine, onExecution } = this.options;
+    const { bundle, handlers, engine, onExecution, onBatch } = this.options;
     bundle.transcript({ at: this.now(), kind: "tool_call", tool_call_id: call.id, name: call.name, input: call.input });
 
     if (!this.allowed.has(call.name)) {
@@ -110,6 +147,7 @@ export class AgentLoop {
           executions.push(settledOrNot);
           return settledOrNot;
         },
+        ...(onBatch ? { onBatch } : {}),
       });
       return { refused: false, content };
     } catch (err) {

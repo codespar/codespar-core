@@ -21,6 +21,7 @@ import {
   resolveFixedClock,
   type AgentRuntime,
   type ApprovalMode,
+  type ConversationScript,
   type Execution,
   type Guardrails,
   type LoadedManifest,
@@ -29,6 +30,7 @@ import {
   type PaymentRail,
   type StubChargeRailOptions,
   type StubRailOptions,
+  type ToolContext,
   type ToolHandler,
 } from "@codespar/agent-core";
 import { AnthropicRuntime } from "@codespar/agent-core/providers/anthropic";
@@ -95,7 +97,15 @@ export interface Setup {
   system: string;
   handlers: Record<string, ToolHandler>;
   tools: ReturnType<typeof loadToolsFile>;
-  makeLoop(runtime: AgentRuntime, onExecution: (execution: Execution) => Promise<Execution>): AgentLoop;
+  /**
+   * The conversation this run is bound to, when a channel binds one (WhatsApp):
+   * its contact and its subject. Set by the channel's start, read by a kit
+   * whose rules depend on who the person is — a sale is charged to the
+   * customer the conversation is with, and to nobody else.
+   */
+  conversation?: ConversationScript | undefined;
+  /** `onBatch` is for a channel that takes one gesture per batch; without it every line is decided in `onExecution`. */
+  makeLoop(runtime: AgentRuntime, onExecution: (execution: Execution) => Promise<Execution>, onBatch?: ToolContext["onBatch"]): AgentLoop;
   makeRuntime(): AgentRuntime;
   close(): void;
 }
@@ -166,7 +176,7 @@ export function setup(agent: Agent, options: SetupOptions = {}): Setup {
   // Section 11: mode, rail and mandate id. The VERSION rides with the id, so a reader knows which signing of the mandate authorised the run without opening the snapshot.
   bundle.meta({ run_id: runId, agent: `${manifest.manifest.name}@${manifest.manifest.version}`, mode, rail: railKind, mandate_id: mandate.id, mandate_version: mandate.version, started_at: (now ?? (() => new Date()))().toISOString() });
 
-  const policyExtension = agent.kit.policyExtension?.({ agentDir: agent.dir, manifest, guardrails });
+  const policyExtension = agent.kit.policyExtension?.({ agentDir: agent.dir, manifest, guardrails, store });
   const engine = new ExecutionEngine({
     store,
     rail,
@@ -214,7 +224,7 @@ export function setup(agent: Agent, options: SetupOptions = {}): Setup {
     handlers: {},
     tools,
     makeRuntime,
-    makeLoop: (runtime, onExecution) => new AgentLoop({ runtime, tools, handlers: s.handlers, system, bundle, engine, onExecution, ...(now ? { clock: now } : {}) }),
+    makeLoop: (runtime, onExecution, onBatch) => new AgentLoop({ runtime, tools, handlers: s.handlers, system, bundle, engine, onExecution, ...(onBatch ? { onBatch } : {}), ...(now ? { clock: now } : {}) }),
     close: () => store.close(),
   };
   s.handlers = agent.kit.handlers(s);

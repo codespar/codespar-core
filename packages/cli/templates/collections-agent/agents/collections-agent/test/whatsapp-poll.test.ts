@@ -11,11 +11,11 @@
  * what the guardrails and the window comparison read.
  *
  * What is asserted is which CARRIER the confirmation went out on and that the
- * cycle closed, never the wording. Read the template assertions precisely:
- * the emulator prices the 24-hour window and does not enforce it
- * (docs/OPEN_QUESTIONS.md §46a), so what passes here is OUR choice of
- * carrier, made by the session window, and not the provider refusing the
- * alternative.
+ * cycle closed, never the wording. Here the carrier is chosen by the session
+ * window with both clocks moved together; since 0.2.0 the emulator also
+ * refuses the free-form alternative with 131047 (docs/OPEN_QUESTIONS.md
+ * §46a), and `npm run whatsapp:gate` asks it to, and drives the case where
+ * the two clocks disagree.
  *
  * The conversing cases SKIP without the emulator, like the rest of the
  * channel suite; `npm run whatsapp:gate` fails rather than skipping, so the
@@ -72,9 +72,15 @@ interface PollPayload {
   channel: { backend: string; session_open: boolean; messages_out: number; refused: Array<{ rule: string }>; log: string } | null;
 }
 
+/**
+ * One scratch per case: its state, its runs, and its own conversation on the
+ * emulator (#42). The agree and the poll of a case share it, which is the
+ * point; two cases never do.
+ */
 function scratch(label: string) {
   const stateDir = mkdtempSync(join(tmpdir(), `collections-wa-poll-${label}-`));
-  return { COLLECTIONS_STATE_DIR: stateDir, COLLECTIONS_RUNS_DIR: join(stateDir, "runs") };
+  const phoneNumberId = `9${String(Math.floor(Math.random() * 1e11)).padStart(11, "0")}`;
+  return { COLLECTIONS_STATE_DIR: stateDir, COLLECTIONS_RUNS_DIR: join(stateDir, "runs"), WHATSAPP_SIM_PHONE_NUMBER_ID: phoneNumberId };
 }
 
 function agent(args: string[], env: Record<string, string>) {

@@ -12,27 +12,12 @@
  * `fetch`, see docs/OPEN_QUESTIONS.md section 31c. The key is checked for
  * the `csk_test_` prefix before a client exists, like every other call.
  */
-import { ApiClient } from "@codespar/sdk";
+import { ApiClient, type ApiOperation, type ApiSuccess } from "@codespar/sdk";
 import type { ApiFailure } from "./client.js";
 import { createCodeSparClient, describeApiError } from "./client.js";
 
-export interface SandboxPaidState {
-  charge_id: string;
-  status: "paid";
-  local_status: string;
-  currency: string;
-  quoted_minor: number;
-  paid_minor: number;
-  payment: "full" | "partial" | "over";
-  paid_via: string;
-  wallet_id: string;
-  ledger_entry_id: string | null;
-  event: { id: string; type: string } | null;
-  simulated: boolean;
-  settled_against: string | null;
-  money_moved: false;
-  idempotent_replay: boolean;
-}
+/** What the payer route answers, as the SDK's generated OpenAPI types it. */
+export type SandboxPaidState = ApiSuccess<ApiOperation<"/v1/test/charges/{chargeId}/pay", "post">>;
 
 export type SandboxPayResult = { ok: true; state: SandboxPaidState } | { ok: false; failure: ApiFailure };
 

@@ -20,6 +20,7 @@ import {
   isMetaBaseUrl,
   loadCloudApiConfig,
   parseInbound,
+  providerRefusal,
   verifyChallenge,
   verifyWebhookSignature,
   WhatsAppCloudApi,
@@ -228,5 +229,49 @@ describe("deliver, with the network replaced by an assertion", () => {
     const sent = await backend.deliver("+5511987654321", { kind: "text", text: "Oi!" });
     expect(sent.state).toBe("failed");
     expect(sent.refused?.rule).toBe("provider_refused");
+  });
+});
+
+describe("what Meta's error body says, read rather than collapsed into a status", () => {
+  const body = (error: unknown) => JSON.stringify({ error });
+
+  it("reads 131047 as the window rule it is, so a caller can answer it with a template", () => {
+    const refusal = providerRefusal(400, body({ code: 131047, message: "(#131047) Message failed to send", error_data: { details: "the 24h customer service window closed" } }));
+    expect(refusal.rule).toBe("session_window_closed");
+    expect(refusal.detail).toContain("400/131047");
+    expect(refusal.detail).toContain("the 24h customer service window closed");
+  });
+
+  it("keeps any other code a provider refusal, with the code named", () => {
+    expect(providerRefusal(400, body({ code: 131026, message: "Message undeliverable" }))).toEqual({ rule: "provider_refused", detail: "400/131026 from the Cloud API" });
+  });
+
+  it("does not mistake a body without Meta's envelope for anything but the status", () => {
+    expect(providerRefusal(502, "<html>bad gateway</html>")).toEqual({ rule: "provider_refused", detail: "502 from the Cloud API" });
+  });
+});
+
+describe("a redelivered message is the same message", () => {
+  it("hands a message on once however many times it arrives, and says it dropped the rest", async () => {
+    const lines: string[] = [];
+    const port = 40000 + Math.floor(Math.random() * 20000);
+    const backend = new WhatsAppCloudApi({ config: { ...CONFIG, webhookPort: port }, conversation: { contact: "+5511987654321" }, say: (l) => lines.push(l) });
+    await backend.open();
+    try {
+      const raw = JSON.stringify({
+        entry: [{ changes: [{ value: { messages: [{ id: "wamid.ONCE", from: "5511987654321", timestamp: "1758643200", type: "text", text: { body: "fechado" } }] } }] }],
+      });
+      for (let i = 0; i < 2; i++) {
+        const response = await fetch(`http://127.0.0.1:${port}/`, { method: "POST", headers: { "x-hub-signature-256": sign(raw) }, body: raw });
+        // Still 200: Meta retries anything else, and a duplicate is not an error.
+        expect(response.status).toBe(200);
+      }
+      expect((await backend.next())?.id).toBe("wamid.ONCE");
+      const second = await Promise.race([backend.next(), new Promise((resolve) => setTimeout(() => resolve("nothing"), 200))]);
+      expect(second).toBe("nothing");
+      expect(lines).toContain("[whatsapp] duplicate delivery of wamid.ONCE dropped");
+    } finally {
+      await backend.close();
+    }
   });
 });

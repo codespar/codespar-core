@@ -1,0 +1,6 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "list_catalog", "input": {}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_2", "name": "cart_update", "input": {"lines": [{"sku": "aula-avulsa", "quantity": 2}]}}]}
+{"kind": "assistant_step", "reply": "Oi, Marina! Duas aulas avulsas de violao: R$ 200,00. Fecho o pedido?"}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_3", "name": "codespar_charge", "input": {"action": "create", "customer": "marina", "total_minor": 20000}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_4", "name": "codespar_charge", "input": {"action": "issue"}}]}
+{"kind": "assistant_step", "reply": "A cobranca venceu sem pagamento. Se quiser, emito uma nova para o mesmo pedido."}

@@ -1,0 +1,10 @@
+{
+  "name": "pedido-marina-retomada",
+  "description": "The day after: an outcome of Marina's order closed that the agent has no template of its own for, and the poll sent the registry's fallback (pedido_atualizacao). Marina answers by TAPPING 'Falar agora'. The tap is a turn whose text is the intent the fallback declares for that button, and the agent reads the order's status and tells her in free text, since her tap reopened the 24-hour window.",
+  "channel": "whatsapp",
+  "contact": "+5511976543210",
+  "subject": "marina",
+  "turns": [
+    { "reply": { "id": "falar_agora", "title": "Falar agora" } }
+  ]
+}

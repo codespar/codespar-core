@@ -1,0 +1,12 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "list_catalog", "input": {}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_2", "name": "cart_update", "input": {"lines": [{"sku": "aula-avulsa", "quantity": 2}]}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_3", "name": "codespar_charge", "input": {"action": "create", "customer": "marina", "total_minor": 20000}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_4", "name": "codespar_charge", "input": {"action": "issue"}}]}
+{"kind": "assistant_step", "reply": "Marina, a cobranca de R$ 200,00 foi gerada: o QR e o copia e cola estao acima."}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_5", "name": "cart_update", "input": {"lines": [{"sku": "consultoria-1h", "quantity": 1}]}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_6", "name": "codespar_charge", "input": {"action": "create", "customer": "rafael", "total_minor": 20000}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_7", "name": "codespar_charge", "input": {"action": "issue"}}]}
+{"kind": "assistant_step", "reply": "Rafael, a loja suspendeu as vendas por aqui agora; nao consigo emitir. Te aviso quando voltar."}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_8", "name": "cart_update", "input": {"lines": [{"sku": "aula-avulsa", "quantity": 1}]}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_9", "name": "codespar_charge", "input": {"action": "create", "customer": "beatriz", "total_minor": 10000}}]}
+{"kind": "assistant_step", "reply": "Beatriz, as vendas por aqui estao suspensas pela loja no momento; nao consigo fechar o pedido."}

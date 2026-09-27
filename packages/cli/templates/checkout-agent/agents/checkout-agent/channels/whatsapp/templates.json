@@ -1,0 +1,49 @@
+{
+  "channel": "whatsapp",
+  "templates": [
+    {
+      "name": "pedido_confirmado",
+      "language": "pt_BR",
+      "description": "The order's charge was paid, told outside the 24-hour window: the customer ordered in the evening and paid the next day, and by then this is the only message WhatsApp will carry. {{1}} is the order's total as the code computed it.",
+      "body": "Oi! Recebemos o pagamento do seu pedido de {{1}}. Pedido confirmado, obrigado!"
+    },
+    {
+      "name": "pedido_cobranca_vencida",
+      "language": "pt_BR",
+      "description": "The order's charge reached its due date unpaid. It has to be its own template: a customer whose charge expired must not be told the order is confirmed. {{1}} is the order's total.",
+      "body": "Oi! A cobranca do seu pedido de {{1}} venceu sem pagamento. Se quiser, emito uma nova por aqui.",
+      "buttons": [
+        {
+          "id": "emitir_nova",
+          "title": "Emitir nova",
+          "intent": "quero que voce emita uma nova cobranca para o meu pedido"
+        },
+        {
+          "id": "agora_nao",
+          "title": "Agora nao",
+          "intent": "agora nao quero uma nova cobranca para o meu pedido"
+        }
+      ]
+    },
+    {
+      "name": "pedido_cobranca_cancelada",
+      "language": "pt_BR",
+      "description": "The order's charge was cancelled, so nothing was paid and nothing is owed on it. {{1}} is the order's total.",
+      "body": "Oi! A cobranca do seu pedido de {{1}} foi cancelada e nada foi pago. Qualquer coisa, e so falar por aqui."
+    },
+    {
+      "name": "pedido_atualizacao",
+      "language": "pt_BR",
+      "description": "The FALLBACK: sent by a poll, outside the 24-hour window, when an outcome closed that the agent has no template of its own for (a charge the rail failed to issue, a proposal denied or expired days later). It states NOTHING about the outcome, so it can never be the wrong news; it asks the person to answer, and an answer reopens the window, inside which the agent says what happened in free text. Takes no variables.",
+      "body": "Oi! Temos uma atualizacao sobre o seu atendimento. Responda esta mensagem para continuarmos por aqui.",
+      "fallback": true,
+      "buttons": [
+        {
+          "id": "falar_agora",
+          "title": "Falar agora",
+          "intent": "quero saber qual e a atualizacao do meu atendimento"
+        }
+      ]
+    }
+  ]
+}

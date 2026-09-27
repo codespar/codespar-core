@@ -8,10 +8,12 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { outcomeOf, type ChargeView } from "../src/api/charge-rail.js";
+import { CodeSparChargeRail, outcomeOf, type ChargeView } from "../src/api/charge-rail.js";
+import { createCodeSparClient } from "../src/api/client.js";
 import { hmacSigner } from "../src/approval.js";
 import { ProofBundle } from "../src/bundle.js";
 import { ExecutionEngine, type EngineDeps, type PolicyExtension } from "../src/engine.js";
+import type { PaymentRail, RailPayment } from "../src/rail.js";
 import { itemsHash } from "../src/hash.js";
 import { StateStore } from "../src/state/store.js";
 import { LocalMandateStatusStub } from "../src/stubs/mandate-status.js";
@@ -21,7 +23,7 @@ import { testGuardrails, testManifest, testMandate } from "./helpers.js";
 const DEBTOR = "11144477735";
 const OTHER = "22233344450";
 
-function receivables(options: { mode?: "human" | "mandate"; rail?: StubChargeRailOptions; policyExtension?: PolicyExtension; dir?: string } = {}) {
+function receivables(options: { mode?: "human" | "mandate"; rail?: StubChargeRailOptions; policyExtension?: PolicyExtension; dir?: string; dispatchTo?: PaymentRail } = {}) {
   const dir = options.dir ?? mkdtempSync(join(tmpdir(), "agent-core-recv-"));
   let now = new Date("2026-09-23T18:00:00Z");
   const clock = () => now;
@@ -32,7 +34,7 @@ function receivables(options: { mode?: "human" | "mandate"; rail?: StubChargeRai
   const mode = options.mode ?? "mandate";
   const deps: EngineDeps = {
     store,
-    rail,
+    rail: options.dispatchTo ?? rail,
     status: gate,
     signer: hmacSigner("test", Buffer.alloc(32, 2)),
     manifest: testManifest({ name: "collections-agent", escalate_above: {}, maturity: { "bolepix-receivables": "sandbox" } }),
@@ -312,5 +314,103 @@ describe("paySandboxCharge: the SDK's typed call to the payer route", () => {
     } finally {
       globalThis.fetch = realFetch;
     }
+  });
+});
+
+describe("CodeSparChargeRail.read: a 409 is branched on its code, never on the status alone", () => {
+  const VIEW = { id: "chg_409", status: "PROCESSING", local_status: "pending", status_conflict: false, method: "boleto", currency: "BRL", amount: 1080, amount_minor: 108000, due_date: "2026-09-30", payable: false, boleto_bar_code: null, boleto_bank_line: null, pix_copy_paste: null, credit_correlation_armed: false, payment_in_flight: false, settlement: null, issuance_unconfirmed: false };
+
+  /** The real client over a stubbed fetch: the create answers `VIEW`, every read answers `readAnswer`. */
+  function wired(readAnswer: { status: number; body?: unknown }) {
+    const seen: Array<{ method: string; path: string }> = [];
+    const fetchStub = (async (url: string | URL | Request, init?: RequestInit) => {
+      const { pathname } = new URL(String(url));
+      const method = init?.method ?? "GET";
+      seen.push({ method, path: pathname });
+      const answer = method === "POST" ? { status: 200, body: VIEW } : readAnswer;
+      return new Response(answer.body === undefined ? "" : JSON.stringify(answer.body), { status: answer.status, headers: { "content-type": "application/json" } });
+    }) as typeof fetch;
+    return { seen, fetchStub, rail: new CodeSparChargeRail(createCodeSparClient({ apiKey: "csk_test_unit_0000", baseUrl: "https://api.example.test/" })) };
+  }
+
+  async function withFetch<T>(fetchStub: typeof fetch, run: () => Promise<T>): Promise<T> {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = fetchStub;
+    try {
+      return await run();
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  }
+
+  const payment: RailPayment = { attempt_id: "att_409_0", mandate_id: "pol_1", amount_minor: 108000, currency: "BRL", payee: DEBTOR, purpose: "cobranca", agent_id: "collections-agent", consumer_id: "merchant_demo", due_date: "2026-09-30", actor: { type: "agent", agent: "collections-agent@0.1.0", on_behalf_of: "merchant_demo" } };
+  const conflict = (code: string) => ({ status: 409, body: { error: { code, message: "conflict" }, request_id: null } });
+
+  it("issuance_unconfirmed is the one 409 that means still issuing: in_flight, and the key is not read after the id", async () => {
+    const w = wired(conflict("issuance_unconfirmed"));
+    expect(await withFetch(w.fetchStub, () => w.rail.lookup(payment.attempt_id, payment, "chg_409"))).toEqual({ status: "in_flight" });
+    expect(w.seen).toEqual([{ method: "GET", path: "/v1/charges/chg_409" }]);
+  });
+
+  it("charge_reference_ambiguous is terminal for the reference: failed with that code, by the id and by the key, and never polled as in flight", async () => {
+    const byId = wired(conflict("charge_reference_ambiguous"));
+    const outById = await withFetch(byId.fetchStub, () => byId.rail.lookup(payment.attempt_id, payment, "chg_409"));
+    expect(outById).toMatchObject({ status: "failed", code: "charge_reference_ambiguous", message: expect.stringContaining("by the charge id") });
+    expect(byId.seen).toEqual([{ method: "GET", path: "/v1/charges/chg_409" }]);
+
+    const byKey = wired(conflict("charge_reference_ambiguous"));
+    const outByKey = await withFetch(byKey.fetchStub, () => byKey.rail.lookup(payment.attempt_id, payment));
+    expect(outByKey).toMatchObject({ status: "failed", code: "charge_reference_ambiguous", message: expect.stringContaining(payment.attempt_id) });
+    expect(byKey.seen).toEqual([{ method: "GET", path: `/v1/charges/${payment.attempt_id}` }]);
+  });
+
+  it("a 409 with a code this kit does not read, or with no code at all, is a failure and not in_flight", async () => {
+    const unknown = wired(conflict("charge_conflict_new_kind"));
+    expect(await withFetch(unknown.fetchStub, () => unknown.rail.lookup(payment.attempt_id, payment, "chg_409"))).toMatchObject({ status: "failed", code: "charge_conflict_new_kind", message: expect.stringContaining("not read as a charge still issuing") });
+    const bare = wired({ status: 409 });
+    const out = await withFetch(bare.fetchStub, () => bare.rail.lookup(payment.attempt_id, payment, "chg_409"));
+    expect(out).toMatchObject({ status: "failed" });
+    expect(out).not.toEqual({ status: "in_flight" });
+  });
+
+  it("through the engine: an issued receivable whose read turns ambiguous closes failed (charge_reference_ambiguous), instead of staying executing", async () => {
+    const w = wired(conflict("charge_reference_ambiguous"));
+    const h = receivables({ dispatchTo: w.rail });
+    const d = await h.engine.draft({ items: [{ payee: "acordo-1", amount: 108000, due_date: "2026-09-30", description: "acordo 1042, a vista" }] });
+    if (!d.ok) throw new Error("refused");
+    const issued = await withFetch(w.fetchStub, () => h.engine.execute(d.execution.id));
+    expect(issued).toMatchObject({ state: "executing", reason: "awaiting_settlement" });
+    const closed = await withFetch(w.fetchStub, () => h.engine.reconcile(issued.id));
+    expect(closed.state).toBe("failed");
+    expect(closed.reason).toBe("charge_reference_ambiguous");
+    expect(closed.history.at(-1)).toMatchObject({ from: "executing", to: "failed", reason: "charge_reference_ambiguous" });
+  });
+
+  it("reconcile, never reissue: resume and reconcile send nothing for it, and a new charge to the same payee is refused before it reaches the API", async () => {
+    const w = wired(conflict("charge_reference_ambiguous"));
+    const h = receivables({ dispatchTo: w.rail });
+    const d = await h.engine.draft({ items: [{ payee: "acordo-1", amount: 108000, due_date: "2026-09-30" }] });
+    if (!d.ok) throw new Error("refused");
+    const issued = await withFetch(w.fetchStub, () => h.engine.execute(d.execution.id));
+    const closed = await withFetch(w.fetchStub, () => h.engine.reconcile(issued.id));
+    expect(closed.reason).toBe("charge_reference_ambiguous");
+    const creates = () => w.seen.filter((r) => r.method === "POST" && r.path === "/v1/charges").length;
+    expect(creates()).toBe(1);
+    const requestsBefore = w.seen.length;
+
+    // `resume` walks `executing` only, and both entry points return a terminal execution untouched.
+    expect(h.engine.list({ state: "executing" })).toHaveLength(0);
+    expect(await withFetch(w.fetchStub, () => h.engine.resumePending(closed.id))).toMatchObject({ state: "failed", reason: "charge_reference_ambiguous" });
+    expect(await withFetch(w.fetchStub, () => h.engine.reconcile(closed.id))).toMatchObject({ state: "failed", reason: "charge_reference_ambiguous" });
+    expect(w.seen.length).toBe(requestsBefore);
+
+    // The same debt asked for again: denied at draft, nothing sent.
+    const again = await withFetch(w.fetchStub, () => h.engine.draft({ items: [{ payee: "acordo-1", amount: 108000, due_date: "2026-10-15" }] }));
+    expect(again).toMatchObject({ ok: true, execution: { state: "denied", reason: "charge_reference_ambiguous" } });
+    expect(creates()).toBe(1);
+
+    // Another payee is not held up by it.
+    const other = await withFetch(w.fetchStub, () => h.engine.draft({ items: [{ payee: OTHER, amount: 5000, due_date: "2026-09-30" }] }));
+    expect(other).toMatchObject({ ok: true, execution: { state: "approved" } });
   });
 });

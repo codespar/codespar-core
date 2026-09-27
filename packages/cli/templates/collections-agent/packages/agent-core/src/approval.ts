@@ -13,7 +13,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "n
 import { dirname, join } from "node:path";
 import { canonicalJson, hexEqual, hmacSha256Hex, itemsHash } from "./hash.js";
 import type { Execution } from "./state-machine.js";
-import type { Actor, ApprovalArtifact, EscalationTrigger, ExecutionBatch } from "./types.js";
+import type { Actor, ApprovalArtifact, EscalationTrigger, ExecutionBatch, ExecutionComposition } from "./types.js";
 import { newId } from "./ids.js";
 
 export const APPROVAL_KEY_ID = "local-dev-stub";
@@ -78,6 +78,8 @@ export function createApprovalArtifact(signer: ApprovalSigner, input: CreateAppr
     // null — on an execution that is not part of a batch, so the payload a
     // bills-agent artifact signs is unchanged by this field existing.
     ...(execution.batch ? { batch: execution.batch } : {}),
+    // What the single amount was composed of, when it was composed of lines. Same rule as `batch`: omitted, never null.
+    ...(execution.composition ? { composition: execution.composition } : {}),
     ...(input.escalation ? { escalation: input.escalation } : {}),
     actor: input.actor,
   };
@@ -89,12 +91,18 @@ export function createApprovalArtifact(signer: ApprovalSigner, input: CreateAppr
 
 export type ApprovalCheck =
   | { ok: true }
-  | { ok: false; problem: "signature_invalid" | "items_hash_mismatch" | "expired" | "wrong_execution" | "wrong_mandate" | "batch_mismatch" };
+  | { ok: false; problem: "signature_invalid" | "items_hash_mismatch" | "expired" | "wrong_execution" | "wrong_mandate" | "batch_mismatch" | "composition_mismatch" };
 
 /** Two batch bindings are the same binding, or one is absent and so is the other. */
 function sameBatch(a: ExecutionBatch | undefined, b: ExecutionBatch | undefined): boolean {
   if (a === undefined || b === undefined) return a === b;
   return a.ref === b.ref && a.batch_hash === b.batch_hash && a.index === b.index && a.count === b.count;
+}
+
+/** Two compositions are the same binding, or one is absent and so is the other. */
+function sameComposition(a: ExecutionComposition | undefined, b: ExecutionComposition | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return a.ref === b.ref && a.composition_hash === b.composition_hash && a.line_count === b.line_count;
 }
 
 /**
@@ -118,6 +126,10 @@ export function checkApprovalArtifact(
   // line was one OF. An execution that gained, lost or moved its place in a
   // batch after approval is not the one that was approved.
   if (!sameBatch(artifact.batch, execution.batch)) return { ok: false, problem: "batch_mismatch" };
+  // The item's amount is attested above; this is what that amount was made of.
+  // A cart recomposed at a constant total leaves `items_hash` unchanged and
+  // this hash changed, and that is the only thing that sees it.
+  if (!sameComposition(artifact.composition, execution.composition)) return { ok: false, problem: "composition_mismatch" };
   if (new Date(artifact.expires_at).getTime() <= now.getTime()) return { ok: false, problem: "expired" };
   return { ok: true };
 }

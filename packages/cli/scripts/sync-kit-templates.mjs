@@ -16,6 +16,8 @@
 //   packages/<pkg>/         every kits-local package this agent needs,
 //                           transitively, verbatim (none of them is on npm)
 //   agents/<name>/          the agent, verbatim
+//   scripts/<file>          only when the agent's channels need a kits root
+//                           script (CHANNEL_ROOT_SCRIPTS), verbatim
 //
 // WHICH packages is derived, not listed. It used to be the one hard-coded
 // `packages/agent-core`, which was true until the kits split the shared runner
@@ -71,6 +73,22 @@ export const ROOT_FILES_VERBATIM = [
   ["vitest.config.ts", "vitest.config.ts"],
 ];
 export const AGENT_CORE_DIR = "packages/agent-core";
+
+/**
+ * Kits ROOT scripts a template carries because its agent declares the channel
+ * they serve, by channel. The name is listed here; the command and the file it
+ * runs are the kits root's own, read at build time and copied verbatim.
+ *
+ * `whatsapp:emulator` is the one a WhatsApp agent's README tells its user to
+ * run first ("terminal 1, at the repo root"). Until 0.18.0 a template carried
+ * no kits root script at all, so a scaffolded `collections-agent` answered that
+ * first step with "Missing script". `whatsapp:gate` is deliberately absent: it
+ * runs the collections-agent AND the checkout-agent from the kits tree, so a
+ * single-agent template cannot carry it.
+ */
+export const CHANNEL_ROOT_SCRIPTS = {
+  whatsapp: ["whatsapp:emulator"],
+};
 
 const GENERATED_FILES = ["package.json", "README.md"];
 
@@ -142,6 +160,33 @@ export function parseManifestScalars(text) {
     out[m[1]] = value;
   }
   return out;
+}
+
+/**
+ * One top-level list of an agent.yaml, flow (`channels: [terminal, whatsapp]`)
+ * or block (`channels:` then `  - whatsapp`). `[]` when the key is absent. A
+ * value that is neither is refused rather than read as empty: an agent whose
+ * channels this script cannot read would silently lose its channel scripts.
+ */
+export function parseManifestList(text, key) {
+  const lines = text.split(/\r?\n/);
+  const at = lines.findIndex((l) => l.startsWith(`${key}:`));
+  if (at === -1) return [];
+  const value = lines[at].slice(key.length + 1).replace(/\s+#.*$/, "").trim();
+  const unquote = (s) => s.trim().replace(/^(["'])(.*)\1$/, "$2");
+  if (value.startsWith("[") && value.endsWith("]")) {
+    return value.slice(1, -1).split(",").map(unquote).filter((s) => s !== "");
+  }
+  if (value === "") {
+    const items = [];
+    for (const raw of lines.slice(at + 1)) {
+      const m = /^\s+-\s+(.*?)\s*(#.*)?$/.exec(raw);
+      if (m) items.push(unquote(m[1]));
+      else if (/^\S/.test(raw)) break;
+    }
+    return items;
+  }
+  throw new SyncError(`agent.yaml \`${key}:\` is neither a flow list nor a block list: ${value}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -277,6 +322,57 @@ export function assertLocalDepsVendored({ outDir, agentName, kitsPackages, vendo
   }
 }
 
+/**
+ * The kits root scripts this agent's channels bring along (CHANNEL_ROOT_SCRIPTS),
+ * each with the kits root's own command and the one file it runs.
+ *
+ * Only the shape `node <file>` is accepted. A command chaining several steps, or
+ * running something other than one kits file, is refused rather than guessed
+ * at: the template would carry a script whose other half it does not have,
+ * which is the `check-plugin.mjs` defect of 25/09 in a new place.
+ */
+export function channelRootScriptsFor({ agentName, channels, kitsDir, kitsRootScripts }) {
+  const out = [];
+  for (const channel of channels) {
+    for (const name of CHANNEL_ROOT_SCRIPTS[channel] ?? []) {
+      const command = kitsRootScripts[name];
+      if (command === undefined) {
+        throw new SyncError(
+          `agents/${agentName} declares the ${channel} channel, whose template carries the kits root script \`${name}\`, and the kits root package.json has no such script`,
+        );
+      }
+      const m = /^node ([\w./-]+)$/.exec(command);
+      if (!m || m[1].startsWith("/") || m[1].split("/").includes("..")) {
+        throw new SyncError(`the kits root script \`${name}\` is \`${command}\`; a template carries only a \`node <kits file>\` script`);
+      }
+      if (!fs.existsSync(path.join(kitsDir, m[1])) || !fs.statSync(path.join(kitsDir, m[1])).isFile()) {
+        throw new SyncError(`the kits root script \`${name}\` runs ${m[1]}, which is not a file in the kits tree`);
+      }
+      out.push({ name, command, file: m[1] });
+    }
+  }
+  return out;
+}
+
+/**
+ * The guard for the scripts above, asked of the BUILT tree the way
+ * `assertLocalDepsVendored` asks it of the manifests: every `node <path>` in the
+ * generated root package.json must name a file the template carries. It reads
+ * the scripts as written, not the list that chose them, so it catches a root
+ * script whose file was never copied whatever produced the script.
+ */
+export function assertRootScriptsResolve({ outDir }) {
+  const pkg = readJson(path.join(outDir, "package.json"));
+  for (const [name, command] of Object.entries(pkg.scripts ?? {})) {
+    for (const m of command.matchAll(/(?:^|&&\s*|;\s*)node ([^\s;&|]+)/g)) {
+      const file = path.join(outDir, m[1]);
+      if (!fs.existsSync(file)) {
+        throw new SyncError(`the template's root script \`${name}\` runs ${m[1]}, which the template does not carry`);
+      }
+    }
+  }
+}
+
 /** Agents under `agents/*` that carry an agent.yaml. */
 export function discoverAgents(kitsDir) {
   const root = path.join(kitsDir, "agents");
@@ -293,8 +389,10 @@ export function discoverAgents(kitsDir) {
  * `test`/`typecheck`, narrowed to this one agent, plus a pass-through for
  * every other script the agent declares, so `npm run consent -- --yes` at
  * the template root reaches the agent exactly as it does in the kits repo.
+ * `channelScripts` are the kits root scripts the agent's channels bring along
+ * (`channelRootScriptsFor`), under their kits names and commands.
  */
-export function rootScriptsFor(agentName, agentScripts, kitsRootScripts, typecheckSources = [AGENT_CORE_DIR]) {
+export function rootScriptsFor(agentName, agentScripts, kitsRootScripts, typecheckSources = [AGENT_CORE_DIR], channelScripts = []) {
   const ws = `agents/${agentName}`;
   const scripts = {
     start: `npm start --workspace=${ws} --`,
@@ -316,6 +414,12 @@ export function rootScriptsFor(agentName, agentScripts, kitsRootScripts, typeche
     // looked at.
     typecheck: [...typecheckSources, ws].map((src) => `tsc --noEmit -p ${src}/tsconfig.json`).join(" && "),
   };
+  for (const { name, command } of channelScripts) {
+    if (name in scripts || name in agentScripts) {
+      throw new SyncError(`the kits root script \`${name}\` would shadow a script agents/${agentName} or the template root already has`);
+    }
+    scripts[name] = command;
+  }
   for (const name of Object.keys(agentScripts).sort()) {
     if (name in scripts) continue;
     scripts[name] = `npm run ${name} --workspace=${ws} --`;
@@ -331,7 +435,7 @@ export function nextStepsFor(agentName, agentScripts) {
   return steps;
 }
 
-function generatedPackageJson({ agentName, agentPkg, kitsRootPkg, vendored, typecheckSources }) {
+function generatedPackageJson({ agentName, agentPkg, kitsRootPkg, vendored, typecheckSources, channelScripts }) {
   const manifest = {
     name: "{{name}}",
     version: "0.1.0",
@@ -340,14 +444,14 @@ function generatedPackageJson({ agentName, agentPkg, kitsRootPkg, vendored, type
     license: kitsRootPkg.license ?? "MIT",
     type: "module",
     workspaces: [...vendored.map((p) => p.source), `agents/${agentName}`],
-    scripts: rootScriptsFor(agentName, agentPkg.scripts ?? {}, kitsRootPkg.scripts ?? {}, typecheckSources),
+    scripts: rootScriptsFor(agentName, agentPkg.scripts ?? {}, kitsRootPkg.scripts ?? {}, typecheckSources, channelScripts),
     devDependencies: kitsRootPkg.devDependencies ?? {},
   };
   if (kitsRootPkg.engines) manifest.engines = kitsRootPkg.engines;
   return `${JSON.stringify(manifest, null, 2)}\n`;
 }
 
-function generatedReadme({ agentName, agentPkg, agentManifest, commit, repo, vendored, steps }) {
+function generatedReadme({ agentName, agentPkg, agentManifest, commit, repo, vendored, steps, channelScripts }) {
   const names = vendored.map((p) => `\`${p.name}\``);
   const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
   return [
@@ -368,6 +472,15 @@ function generatedReadme({ agentName, agentPkg, agentManifest, commit, repo, ven
     ...steps.map((s) => `  ${s}`),
     "```",
     "",
+    ...(channelScripts.length === 0
+      ? []
+      : [
+          "The kits root scripts this agent's channels use are carried too, verbatim, and",
+          "run at this root as they do in the kits repo:",
+          "",
+          ...channelScripts.map((s) => `  - \`npm run ${s.name}\` — \`${s.file}\``),
+          "",
+        ]),
     `The agent's guide is [\`agents/${agentName}/README.md\`](agents/${agentName}/README.md); its commands run at this root`,
     `(\`npm run check\`, \`npm run eval\`, \`npm test\`) or inside \`agents/${agentName}/\`. The manifest pins`,
     `\`cli: "${agentManifest.cli ?? "?"}"\`, the CLI version whose \`agent run\`/\`eval\` this agent was written for.`,
@@ -395,6 +508,8 @@ export function buildTemplate({ kitsDir, agentName, outDir, commit, repo = DEFAU
   }
   const agentPkg = readJson(path.join(agentDir, "package.json"));
   const kitsRootPkg = readJson(path.join(kitsDir, "package.json"));
+  const channels = parseManifestList(fs.readFileSync(manifestFile, "utf8"), "channels");
+  const channelScripts = channelRootScriptsFor({ agentName, channels, kitsDir, kitsRootScripts: kitsRootPkg.scripts ?? {} });
 
   const vendored = vendoredPackagesFor({ agentName, agentPkg, kitsPackages });
   if (vendored.length === 0) {
@@ -409,6 +524,10 @@ export function buildTemplate({ kitsDir, agentName, outDir, commit, repo = DEFAU
   }
   for (const pkg of vendored) copyDirVerbatim(path.join(kitsDir, pkg.source), path.join(outDir, pkg.source));
   copyDirVerbatim(agentDir, path.join(outDir, "agents", agentName));
+  for (const { file } of channelScripts) {
+    fs.mkdirSync(path.dirname(path.join(outDir, file)), { recursive: true });
+    fs.copyFileSync(path.join(kitsDir, file), path.join(outDir, file));
+  }
   assertLocalDepsVendored({ outDir, agentName, kitsPackages, vendored });
 
   // `init` substitutes `{{name}}` in every file it copies. The generated files
@@ -424,12 +543,13 @@ export function buildTemplate({ kitsDir, agentName, outDir, commit, repo = DEFAU
   const typecheckSources = vendored.filter((p) => fs.existsSync(path.join(outDir, p.source, "tsconfig.json"))).map((p) => p.source);
   fs.writeFileSync(
     path.join(outDir, "package.json"),
-    generatedPackageJson({ agentName, agentPkg, kitsRootPkg, vendored, typecheckSources }),
+    generatedPackageJson({ agentName, agentPkg, kitsRootPkg, vendored, typecheckSources, channelScripts }),
   );
   fs.writeFileSync(
     path.join(outDir, "README.md"),
-    generatedReadme({ agentName, agentPkg, agentManifest, commit, repo, vendored, steps }),
+    generatedReadme({ agentName, agentPkg, agentManifest, commit, repo, vendored, steps, channelScripts }),
   );
+  assertRootScriptsResolve({ outDir });
 
   return {
     source: `agents/${agentName}`,
@@ -438,6 +558,9 @@ export function buildTemplate({ kitsDir, agentName, outDir, commit, repo = DEFAU
     cli: agentManifest.cli ?? "",
     mcp: agentManifest.mcp ?? "",
     vendored: Object.fromEntries(vendored.map((p) => [p.name, p.version])),
+    // Omitted, never empty, so a template without a channel script keeps the
+    // entry shape it had before 0.18.0.
+    ...(channelScripts.length === 0 ? {} : { root_scripts: Object.fromEntries(channelScripts.map((s) => [s.name, s.command])) }),
     next_steps: steps,
     hash: fingerprintDir(outDir),
   };

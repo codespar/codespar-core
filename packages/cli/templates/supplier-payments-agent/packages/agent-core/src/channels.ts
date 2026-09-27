@@ -47,16 +47,22 @@ export const ConversationScriptSchema = z
      * different one, which is the secrecy rule as code rather than as prose.
      */
     subject: z.string().min(1).optional(),
-    /** The person's turns, in order. */
+    /**
+     * The person's turns, in order: something they TYPED (`text`), or a quick
+     * reply they TAPPED (`reply`, the id of a button a declared template
+     * offers). Exactly one of the two.
+     */
     turns: z
       .array(
         z
           .object({
-            text: z.string().min(1),
+            text: z.string().min(1).optional(),
+            reply: z.object({ id: z.string().min(1), title: z.string().min(1).optional() }).strict().optional(),
             /** Seconds after the previous inbound turn, on the run's clock. Keeps a scripted run deterministic. */
             after_seconds: z.number().int().nonnegative().default(0),
           })
-          .strict(),
+          .strict()
+          .refine((t) => (t.text === undefined) !== (t.reply === undefined), { message: "a turn is either text the person typed or a reply they tapped, exactly one" }),
       )
       .nonempty(),
   })
@@ -86,6 +92,26 @@ export const TEMPLATE_REGISTRY_FILE = "templates.json";
  * match is a `132000` from the Cloud API and there is no reason to learn that
  * in production.
  */
+/**
+ * A quick-reply button a template offers, and what tapping it MEANS.
+ *
+ * `intent` is the turn the model receives when the person taps it — written
+ * here, by whoever wrote the template, and never by the model. A tap carries
+ * an id and a title; the title is copy and can change, the id cannot, and the
+ * intent is what the id stands for. An id this registry does not declare is
+ * not a turn at all.
+ */
+export const QuickReplySchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9_]{1,64}$/, "a reply id is lower-case letters, digits and underscores"),
+    /** What the button says. Meta caps a quick reply at 20 characters. */
+    title: z.string().min(1).max(20),
+    intent: z.string().min(1),
+  })
+  .strict();
+
+export type QuickReply = z.infer<typeof QuickReplySchema>;
+
 export const WhatsAppTemplateSchema = z
   .object({
     /** Meta's own naming rule for a template. */
@@ -94,6 +120,15 @@ export const WhatsAppTemplateSchema = z
     language: z.string().regex(/^[a-z]{2}(_[A-Z]{2})?$/, 'expected a language code, e.g. "pt_BR"'),
     description: z.string().min(1),
     body: z.string().min(1),
+    /** Quick replies the template carries (Meta allows up to three on a template). */
+    buttons: z.array(QuickReplySchema).max(3).optional(),
+    /**
+     * The template a poll sends when the outcome it must tell has no copy of
+     * its own: it says there is news and asks the person to answer, and states
+     * nothing about the outcome — so it can never be the wrong news. Exactly
+     * one per registry, taking no variables (`npm run check`).
+     */
+    fallback: z.boolean().optional(),
   })
   .strict();
 
@@ -120,11 +155,22 @@ export const TemplateRegistrySchema = z
   .strict()
   .superRefine((registry, ctx) => {
     const seen = new Set<string>();
+    const replyIds = new Set<string>();
     for (const [i, template] of registry.templates.entries()) {
       if (seen.has(template.name)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["templates", i, "name"], message: `${template.name} is declared twice` });
       seen.add(template.name);
+      // A tap is resolved by its id alone, so one id means one intent across the whole registry.
+      for (const [j, button] of (template.buttons ?? []).entries()) {
+        if (replyIds.has(button.id)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["templates", i, "buttons", j, "id"], message: `reply id ${button.id} is declared twice` });
+        replyIds.add(button.id);
+      }
     }
   });
+
+/** Every quick reply the registry declares, by id: the only taps that can become a turn. */
+export function declaredReplies(templates: readonly WhatsAppTemplate[]): Map<string, QuickReply> {
+  return new Map(templates.flatMap((t) => t.buttons ?? []).map((b) => [b.id, b]));
+}
 
 export type TemplateRegistry = z.infer<typeof TemplateRegistrySchema>;
 

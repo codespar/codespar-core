@@ -1,0 +1,32 @@
+{
+  "name": "cap-exceeded",
+  "description": "An order above the policy's ticket ceiling (six ten-lesson packages, R$ 2.340,00, against R$ 2.000,00): denied at draft with per_tx_cap_exceeded, in both modes, before anybody is asked. The readable refusal of section 15.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "transcript": "./cap-exceeded.transcript.jsonl",
+  "turns": [
+    {
+      "input": "oi, sou o Rafael, quero seis pacotes de dez aulas, fecha pra mim",
+      "decision": "approve"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [
+        "denied"
+      ],
+      "reasons": [
+        "per_tx_cap_exceeded"
+      ],
+      "trails": [
+        [
+          "denied"
+        ]
+      ],
+      "receipts": 0,
+      "charges_issued": 0
+    }
+  }
+}

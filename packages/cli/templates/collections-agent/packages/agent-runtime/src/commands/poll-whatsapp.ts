@@ -32,14 +32,14 @@ import { relative } from "node:path";
 import { ProofBundle, type ChargeInstrument, type Execution } from "@codespar/agent-core";
 import type { Agent } from "../agent.js";
 import { runsDir, type Setup } from "../setup.js";
-import { waitForPayer } from "../terminal.js";
+import { followUp, waitForPayer } from "../terminal.js";
 import { resolveConversation } from "../channels/index.js";
-import { buildWhatsApp, simulatedCost, type WhatsAppBackendName } from "../channels/whatsapp/open.js";
+import { buildWhatsApp, simulatedCost, statusGraceMs, undeliveredCursor, type WhatsAppBackendName } from "../channels/whatsapp/open.js";
 import { EmulatorUnreachableError } from "../channels/whatsapp/emulator.js";
 import { sessionStateFromChannelLog, type SessionState } from "../channels/whatsapp/session.js";
 import { instrumentBodies } from "../channels/whatsapp/present.js";
 import type { WhatsAppChannel } from "../channels/whatsapp/index.js";
-import type { SentMessage } from "../channels/types.js";
+import type { ChannelLogLine, OutboundBody, SentMessage } from "../channels/types.js";
 
 export interface PollWhatsAppOptions {
   agent: Agent;
@@ -57,8 +57,8 @@ export interface PollWhatsAppOptions {
 
 /** How the outcome reached the person, or why it did not. */
 type Delivery =
-  | { told: true; carrier: "text" | "template"; template?: string }
-  | { told: false; reason: "already_told" | "still_open" | "no_template_for_outcome" | "refused"; detail?: string };
+  | { told: true; carrier: "text" | "template"; template?: string; fallback?: true }
+  | { told: false; reason: "already_told" | "still_open" | "no_template_for_outcome" | "refused" | "delivery_failed"; detail?: string };
 
 interface Polled {
   id: string;
@@ -112,7 +112,7 @@ export async function pollWhatsApp(options: PollWhatsAppOptions): Promise<number
   // window is counted from the person's last message on the PROVIDER's clock,
   // which only that record holds, and the confirmation is appended THERE, so
   // one conversation stays one record instead of ending in a second folder.
-  const { bundle, session } = conversationRecord(agent, mine);
+  const { bundle, session, lines: priorLines } = conversationRecord(agent, mine);
   if (!bundle) {
     say(`nenhum bundle encontrado para ${mine.map((e) => e.run_id).join(", ")}: a conversa nao pode ser retomada sem o registro dela`);
     return 1;
@@ -129,6 +129,7 @@ export async function pollWhatsApp(options: PollWhatsAppOptions): Promise<number
     // Nobody writes in a poll: the person already said what they had to say,
     // and this run is here because the PAYER acted, not because the person did.
     session,
+    priorLines,
   });
   if ("refusal" in built) {
     for (const line of built.refusal) say(line);
@@ -176,6 +177,7 @@ export async function pollWhatsApp(options: PollWhatsAppOptions): Promise<number
       const closed = result.execution;
       if (closed.state !== "executing") await s.engine.collectReceipts(closed.id);
       const delivery = await tellOutcome(channel, s, closed);
+      await followUp(closed, s, say);
       results.push({
         id: closed.id,
         state: closed.state,
@@ -188,7 +190,7 @@ export async function pollWhatsApp(options: PollWhatsAppOptions): Promise<number
       });
       say(
         `${closed.id}: ${closed.state}${closed.reason ? ` (${closed.reason})` : ""} apos ${result.rounds} consulta(s), ${result.seconds}s — ${
-          delivery.told ? `avisado por ${delivery.carrier === "template" ? `template ${delivery.template}` : "mensagem livre"}` : `nao avisado (${delivery.reason}${delivery.detail ? `: ${delivery.detail}` : ""})`
+          delivery.told ? `avisado por ${delivery.carrier === "template" ? `template ${delivery.template}${delivery.fallback ? " (reserva: o kit nao tem copia para este desfecho)" : ""}` : "mensagem livre"}` : `nao avisado (${delivery.reason}${delivery.detail ? `: ${delivery.detail}` : ""})`
         }`,
       );
     }
@@ -219,6 +221,7 @@ export async function pollWhatsApp(options: PollWhatsAppOptions): Promise<number
   // not know it. The other two are not failures — `already_told` is this
   // command running twice, which is the thing it is built to be safe under,
   // and `still_open` is a wait that ran out, which the 3 above already said.
+  // `delivery_failed` is the provider saying the person never got it, and is the same failure as a refusal.
   return results.some((r) => !r.delivery.told && r.delivery.reason !== "already_told" && r.delivery.reason !== "still_open") ? 1 : 0;
 }
 
@@ -229,11 +232,12 @@ export async function pollWhatsApp(options: PollWhatsAppOptions): Promise<number
  * itself is read across all of them, because the person's last message is the
  * person's last message whichever run recorded it.
  */
-function conversationRecord(agent: Agent, executions: readonly Execution[]): { bundle: ProofBundle | undefined; session: SessionState } {
+function conversationRecord(agent: Agent, executions: readonly Execution[]): { bundle: ProofBundle | undefined; session: SessionState; lines: ChannelLogLine[] } {
   const runs = runsDir(agent);
   const seen = new Set<string>();
   let bundle: ProofBundle | undefined;
   let lastInboundAt: number | undefined;
+  const all: ChannelLogLine[] = [];
   // `list()` orders by creation, so the last execution that carries a log is the most recent record of the conversation.
   for (const execution of executions) {
     if (seen.has(execution.run_id)) continue;
@@ -242,11 +246,12 @@ function conversationRecord(agent: Agent, executions: readonly Execution[]): { b
     if (!opened) continue;
     const lines = opened.readChannel();
     if (!lines.length) continue;
+    all.push(...(lines as unknown as ChannelLogLine[]));
     bundle = opened;
     const state = sessionStateFromChannelLog(lines);
     if (state.lastInboundAt !== undefined && (lastInboundAt === undefined || state.lastInboundAt > lastInboundAt)) lastInboundAt = state.lastInboundAt;
   }
-  return { bundle, session: { lastInboundAt } };
+  return { bundle, session: { lastInboundAt }, lines: all };
 }
 
 /**
@@ -287,31 +292,76 @@ async function tellOutcome(channel: WhatsAppChannel, s: Setup, execution: Execut
     // last-one-wins, so a kit that says two sentences does not lose one.
     const lines: string[] = [];
     const told = s.kit.announceOutcome?.(execution, s, (line) => void lines.push(line)) ?? false;
-    if (!told) return { told: false, reason: "already_told" };
-    const sent = await channel.send({ kind: "text", text: lines.join("\n") });
-    return deliveryOf(sent, "text");
+    if (!told) return toldBefore(s, execution);
+    const sent = await channel.send({ kind: "text", text: lines.join("\n"), about: aboutOf(execution) });
+    // Our clock read the window open and the provider's read it shut (131047).
+    // The provider's is the one the window is counted on, so the message goes
+    // the way it would have gone had we known: as the template. The cursor is
+    // already this call's, taken by `announceOutcome` above.
+    if (sent.refused?.rule !== "session_window_closed") return confirmed(channel, sent, deliveryOf(sent, "text"));
+    return tellByTemplate(channel, s, execution, { cursorHeld: true });
   }
+  return tellByTemplate(channel, s, execution, { cursorHeld: false });
+}
 
-  const chosen = s.kit.outcomeTemplate?.(execution);
+function aboutOf(execution: Execution): NonNullable<Extract<OutboundBody, { kind: "text" }>["about"]> {
+  return { execution_id: execution.id, state: execution.state };
+}
+
+/** The cursor was taken by an earlier run. Told, unless the provider said since that the message never arrived. */
+function toldBefore(s: Setup, execution: Execution): Delivery {
+  const failed = s.store.getCursor(undeliveredCursor(execution.id, execution.state));
+  return failed ? { told: false, reason: "delivery_failed", detail: `an earlier message came back failed: ${failed}` } : { told: false, reason: "already_told" };
+}
+
+/**
+ * A send that answered is not yet a message that arrived. The provider may
+ * report a failure a moment later; the channel records it (and the bundle,
+ * and the operator hear of it), and this gives it the bounded wait before
+ * saying the person was told.
+ */
+async function confirmed(channel: WhatsAppChannel, sent: SentMessage, delivery: Delivery): Promise<Delivery> {
+  if (!delivery.told || !sent.id) return delivery;
+  await channel.settle(statusGraceMs());
+  if (channel.deliveryOf(sent.id) !== "failed") return delivery;
+  const line = channel.log().find((l: ChannelLogLine) => l.direction === "status" && l.message_id === sent.id && l.state === "failed");
+  return { told: false, reason: "delivery_failed", detail: `the provider reported ${sent.id} failed${line?.errors?.length ? ` (${line.errors.map((e) => e.code).join(", ")})` : ""}` };
+}
+
+/**
+ * The outcome as a template. The kit's own copy when it has one; the
+ * registry's FALLBACK when it has none — a template that says there is news
+ * and asks the person to answer, and states nothing about the outcome, so it
+ * cannot be the wrong news (`npm run check` requires exactly one, taking no
+ * variables). A kit that names a template the registry does not declare is a
+ * defect, reported as one and not papered over by the fallback.
+ */
+async function tellByTemplate(channel: WhatsAppChannel, s: Setup, execution: Execution, options: { cursorHeld: boolean }): Promise<Delivery> {
+  const chosen: { template: string; variables: string[]; fallback?: true } | undefined = s.kit.outcomeTemplate?.(execution) ?? fallbackOf(channel);
   if (!chosen) {
     return {
       told: false,
       reason: "no_template_for_outcome",
-      detail: `a janela de 24h esta fechada e o agente nao declara template para ${execution.state}${execution.reason ? ` (${execution.reason})` : ""}`,
+      detail: `a janela de 24h esta fechada e o agente nao declara template para ${execution.state}${execution.reason ? ` (${execution.reason})` : ""}, nem um template de reserva`,
     };
   }
   const declared = channel.declaredTemplate(chosen.template);
   if (!declared) {
     return { told: false, reason: "no_template_for_outcome", detail: `o kit pediu o template ${chosen.template}, que channels/whatsapp/templates.json nao declara` };
   }
-  if (!s.engine.markTold(execution.id, execution.state)) return { told: false, reason: "already_told" };
-  const sent = await channel.send({ kind: "template", template: declared.name, language: declared.language, variables: chosen.variables });
-  s.engine.note("message.debtor", execution.id, { state: execution.state, reason: execution.reason ?? null, template: declared.name, variables: chosen.variables });
-  return deliveryOf(sent, "template", declared.name);
+  if (!options.cursorHeld && !s.engine.markTold(execution.id, execution.state)) return toldBefore(s, execution);
+  const sent = await channel.send({ kind: "template", template: declared.name, language: declared.language, variables: chosen.variables, about: aboutOf(execution) });
+  s.engine.note("message.debtor", execution.id, { state: execution.state, reason: execution.reason ?? null, template: declared.name, variables: chosen.variables, ...(chosen.fallback ? { fallback: true } : {}) });
+  return confirmed(channel, sent, deliveryOf(sent, "template", declared.name, chosen.fallback));
 }
 
-function deliveryOf(sent: SentMessage, carrier: "text" | "template", template?: string): Delivery {
+function fallbackOf(channel: WhatsAppChannel): { template: string; variables: string[]; fallback: true } | undefined {
+  const name = channel.fallbackTemplate();
+  return name ? { template: name, variables: [], fallback: true } : undefined;
+}
+
+function deliveryOf(sent: SentMessage, carrier: "text" | "template", template?: string, fallback?: boolean): Delivery {
   if (sent.refused) return { told: false, reason: "refused", detail: `${sent.refused.rule}: ${sent.refused.detail}` };
   if (sent.state === "failed") return { told: false, reason: "refused", detail: "o provedor nao aceitou a mensagem" };
-  return { told: true, carrier, ...(template ? { template } : {}) };
+  return { told: true, carrier, ...(template ? { template } : {}), ...(fallback ? { fallback: true as const } : {}) };
 }

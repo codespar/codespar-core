@@ -1,0 +1,23 @@
+{
+  "name": "item-unavailable",
+  "description": "A line of the catalog that is not for sale: validation_issues names it (item_unavailable), the agent offers an alternative, nothing is ordered or issued.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "transcript": "./item-unavailable.transcript.jsonl",
+  "turns": [
+    {
+      "input": "oi, sou a Marina, quero a masterclass de producao",
+      "decision": "none"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [],
+      "receipts": 0,
+      "charges_issued": 0,
+      "debtor_messages": 0
+    }
+  }
+}

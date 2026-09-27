@@ -1,0 +1,14 @@
+{
+  "name": "nfse-failed",
+  "description": "Checkout §4: two orders are paid and their service invoices fail after the sale, in the two ways that matter. Rafael's registration has no address and the issuer refuses the NFS-e (failed, invoice_refused, with the issuer's code); Beatriz's issuance times out after the request left (failed, invoice_uncertain) and is NOT sent again. Both sales stay settled, each customer is told once that the order is confirmed and never about the invoice, and the attendant is told about both.",
+  "modes": ["human", "mandate"],
+  "rails": ["stub"],
+  "transcript": "./nfse-failed.transcript.jsonl",
+  "turns": [
+    { "input": "oi, sou o Rafael, quero uma aula avulsa, fecha e gera o pagamento", "decision": "approve", "payer": "pays" },
+    { "input": "[outra conversa] oi, sou a Beatriz, quero uma consultoria de carreira, fecha e gera o pagamento", "decision": "approve", "payer": "pays" }
+  ],
+  "expect": {
+    "both": { "states": ["settled", "settled"], "reasons": [null, null], "receipts": 2, "settled_total": 30000, "charges_issued": 2, "debtor_messages": 2 }
+  }
+}

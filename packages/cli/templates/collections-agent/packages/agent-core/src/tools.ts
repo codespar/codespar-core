@@ -3,10 +3,12 @@
  * authority comes before mandate-level authority: a tool that is not in
  * this file is refused before anything else looks at the call.
  *
- * Two kinds. `meta_tools` are CodeSpar meta-tool names, with the input the
- * kit accepts for them (a snapshot of the MCP shape, pinned by `mcp` in the
- * manifest; see OPEN_QUESTIONS on why the list is not fetched live).
- * `local_tools` are the agent's own read-only helpers.
+ * Two kinds. `meta_tools` borrow a CodeSpar meta-tool's name for the job
+ * they do, but the input shape is the kit's own and the kit's handler runs it:
+ * a payment or charge becomes a `drafted` execution, and the core sends the
+ * real call over REST. It is not a copy of the MCP's schema and does not match
+ * it (OPEN_QUESTIONS section 8 has the comparison). `local_tools` are the
+ * agent's own helpers: reads, and state the agent keeps for itself.
  */
 import { readFileSync } from "node:fs";
 import { z } from "zod";
@@ -17,8 +19,15 @@ const ToolDefinitionSchema = z
     name: z.string().regex(/^[a-z][a-z0-9_]*$/),
     description: z.string().min(1),
     input_schema: z.record(z.string(), z.unknown()),
-    /** `payment` and `charge` tools create a `drafted` execution and nothing else; `read` tools never touch money. `charge` is the receivable side: the counterparty pays us. */
-    effect: z.enum(["payment", "charge", "read"]),
+    /**
+     * `payment` and `charge` tools create a `drafted` execution and nothing
+     * else; `read` tools never touch money and change nothing. `charge` is the
+     * receivable side: the counterparty pays us. `state` changes durable local
+     * state (a cart in `state.db`) and moves no money — not a read, because
+     * calling it twice is not calling it once, and not a payment, because no
+     * execution comes out of it.
+     */
+    effect: z.enum(["payment", "charge", "read", "state"]),
   })
   .strict();
 
@@ -36,6 +45,8 @@ export const ToolsFileSchema = z
     }
     for (const [i, tool] of t.meta_tools.entries()) {
       if (!tool.name.startsWith("codespar_")) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["meta_tools", i, "name"], message: "meta-tools are named codespar_*" });
+      // A meta-tool borrows a CodeSpar name for a job CodeSpar does; the state the agent keeps for itself is not one.
+      if (tool.effect === "state") ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["meta_tools", i, "effect"], message: "a state tool is local: meta-tools move money or read" });
     }
   });
 

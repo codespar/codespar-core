@@ -2,12 +2,16 @@
  * Section 4.7 against the real client: `ApiMandateStatusSource` reads
  * `GET /v1/mandates/{id}` on a mocked HTTP server, and the engine is driven
  * through it. Every answer but `active` must keep `rail.pay` from ever
- * being called, and a read that does not answer must refuse too.
+ * being called, and a read that does not answer must refuse too. The
+ * organization kill switch (ent#1648) rides on the same read as `org_paused`,
+ * and the spend route refuses 403 `org_paused` on its own when the switch is
+ * pressed after the read.
  */
 import { createServer, type Server } from "node:http";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createCodeSparClient } from "../src/api/client.js";
 import { ApiMandateStatusSource } from "../src/api/mandate-status.js";
+import { CodeSparRail } from "../src/api/rail.js";
 import type { MandateStatusSource } from "../src/revocation.js";
 import { harness, type Harness } from "./helpers.js";
 
@@ -15,7 +19,7 @@ const MANDATE_ID = "mdt_test_0001";
 const NOW = new Date("2026-09-23T18:00:00Z");
 const approver = { id: "usr_demo_titular", channel: "terminal" };
 
-/** The 14-field projection `GET /v1/mandates/{id}` answers (measured on staging, 2026-09-23). */
+/** The 14-field projection `GET /v1/mandates/{id}` answers (measured on staging, 2026-09-23), plus the two kill-switch fields of ent#1648. */
 function mandateBody(over: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     id: MANDATE_ID,
@@ -32,6 +36,8 @@ function mandateBody(over: Record<string, unknown> = {}): Record<string, unknown
     status: "active",
     expires_at: "2027-09-23T00:00:00.000Z",
     created_at: "2026-09-23T00:00:00.000Z",
+    org_paused: false,
+    org_paused_at: null,
     ...over,
   };
 }
@@ -41,14 +47,17 @@ type Answer = { status: number; body?: unknown; hang?: boolean };
 let server: Server;
 let baseUrl: string;
 let next: Answer = { status: 200, body: mandateBody() };
+/** What a POST (the spend) answers, when a test sends one; the mandate read keeps answering `next`. */
+let spendNext: Answer | undefined;
 const requests: Array<{ method: string; url: string; bearerIsTestKey: boolean }> = [];
 
 beforeAll(async () => {
   server = createServer((req, res) => {
     requests.push({ method: req.method ?? "", url: req.url ?? "", bearerIsTestKey: (req.headers.authorization ?? "").startsWith("Bearer csk_test_") });
-    if (next.hang) return; // never answers: the client's timeout is the only way out
-    res.writeHead(next.status, { "content-type": "application/json" });
-    res.end(typeof next.body === "string" ? next.body : JSON.stringify(next.body));
+    const answer = req.method === "POST" && spendNext ? spendNext : next;
+    if (answer.hang) return; // never answers: the client's timeout is the only way out
+    res.writeHead(answer.status, { "content-type": "application/json" });
+    res.end(typeof answer.body === "string" ? answer.body : JSON.stringify(answer.body));
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   baseUrl = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
@@ -61,12 +70,17 @@ afterAll(async () => {
 
 beforeEach(() => {
   next = { status: 200, body: mandateBody() };
+  spendNext = undefined;
   requests.length = 0;
 });
 
-function apiSource(timeoutMs = 5_000): ApiMandateStatusSource {
+function apiClient(timeoutMs = 5_000) {
   // The placeholder passes the `csk_test_` guard and is the one test-key-shaped string the secret scan allows.
-  return new ApiMandateStatusSource(createCodeSparClient({ apiKey: "csk_test_your_key_here", baseUrl, timeoutMs }), () => NOW);
+  return createCodeSparClient({ apiKey: "csk_test_your_key_here", baseUrl, timeoutMs });
+}
+
+function apiSource(timeoutMs = 5_000): ApiMandateStatusSource {
+  return new ApiMandateStatusSource(apiClient(timeoutMs), () => NOW);
 }
 
 function apiHarness(status: MandateStatusSource = apiSource()): Harness {
@@ -147,7 +161,69 @@ describe("section 4.7 through the engine, on the API source: executing only on a
     expect(h.rail.payCount).toBe(0);
   });
 
-  it("the API source never reports org_paused: the API has no kill-switch read, and the source does not invent one", async () => {
-    expect((await apiSource().check(MANDATE_ID)).org_paused).toBe(false);
+});
+
+describe("the organization kill switch (ent#1648): org_paused on the read, 403 org_paused on the spend", () => {
+  const PAUSED = { org_paused: true, org_paused_at: "2026-09-23T17:30:00.000Z" };
+
+  it("the source reports org_paused as the API says it, and keeps the mandate's own status next to it", async () => {
+    next = { status: 200, body: mandateBody(PAUSED) };
+    expect(await apiSource().check(MANDATE_ID)).toMatchObject({ status: "active", org_paused: true, source: "api" });
   });
+
+  it("org_paused missing, or not a boolean, is unknown: never read as a running organization", async () => {
+    const { org_paused: _dropped, ...withoutFlag } = mandateBody();
+    next = { status: 200, body: withoutFlag };
+    expect(await apiSource().check(MANDATE_ID)).toMatchObject({ status: "unknown", org_paused: false, detail: expect.stringContaining("org_paused") });
+    next = { status: 200, body: mandateBody({ org_paused: "false" }) };
+    expect(await apiSource().check(MANDATE_ID)).toMatchObject({ status: "unknown", detail: expect.stringContaining("org_paused") });
+    next = { status: 200, body: mandateBody({ org_paused: null }) };
+    expect((await apiSource().check(MANDATE_ID)).status).toBe("unknown");
+  });
+
+  it("paused before execute: the gate denies (org_paused) whatever status says, no outbox row, rail.pay never called", async () => {
+    const h = apiHarness();
+    const id = await approvedThen(h, { status: 200, body: mandateBody(PAUSED) });
+    const out = await h.engine.execute(id);
+    expect(out).toMatchObject({ state: "denied", reason: "org_paused" });
+    expect(h.store.listOutbox()).toHaveLength(0);
+    expect(h.rail.payCount).toBe(0);
+    expect(await h.engine.draft({ items: [{ payee: "escola", amount: 1000 }] })).toMatchObject({ ok: false, refused_before_draft: true, reason: "org_paused" });
+  });
+
+  it("a read without org_paused after approval: denied (mandate_status_unavailable), rail.pay never called", async () => {
+    const h = apiHarness();
+    const { org_paused: _dropped, ...withoutFlag } = mandateBody();
+    const id = await approvedThen(h, { status: 200, body: withoutFlag });
+    const out = await h.engine.execute(id);
+    expect(out).toMatchObject({ state: "denied", reason: "mandate_status_unavailable" });
+    expect(out.detail).toContain("org_paused");
+    expect(h.rail.payCount).toBe(0);
+  });
+
+  // Paused between the gate and the spend: the read said running, the API refuses the spend itself before any hold.
+  // The execution is already `executing`, and section 4.7 closes that state as `settled` or `failed` only: no new edge.
+  const spendRefusals: Array<[string, unknown]> = [
+    ["the documented envelope", { error: { code: "org_paused", message: "the organization paused all agent spend (kill switch)" }, request_id: null }],
+    ["the flat body the guardrail sends", { error: "org_paused", message: "the organization paused all agent spend (kill switch)" }],
+  ];
+  for (const [shape, body] of spendRefusals) {
+    it(`paused between the gate and the spend, 403 org_paused (${shape}): failed (org_paused), and nothing but the read and the one spend reached the API`, async () => {
+      const h = harness({ mode: "mandate", now: NOW, manifest: { escalate_above: {} }, guardrails: { escalate_above: {} }, status: apiSource(), wrapRail: () => new CodeSparRail(apiClient()) });
+      const d = await h.engine.draft({ items: [{ payee: "escola", amount: 1000 }] });
+      if (!d.ok) throw new Error(`refused before draft: ${d.reason}`);
+      spendNext = { status: 403, body };
+      const out = await h.engine.execute(d.execution.id);
+      expect(out.state).toBe("failed");
+      expect(out.reason).toBe("org_paused");
+      expect(out.history.at(-1)).toMatchObject({ from: "executing", to: "failed", reason: "org_paused" });
+      expect(out.outcomes).toEqual([expect.objectContaining({ status: "failed", code: "org_paused" })]);
+      expect(out.outcomes.some((o) => "receipt_id" in o || "transaction_id" in o)).toBe(false);
+      expect(h.store.listOutbox({ execution_id: out.id })).toEqual([expect.objectContaining({ status: "failed" })]);
+      // No receipt read, no ledger or fund call, no second spend: the mandate read(s) and exactly one POST.
+      const spend = `/v1/consumers/mandates/${out.mandate.id}/spend`;
+      expect(requests.filter((r) => r.method === "POST").map((r) => r.url)).toEqual([spend]);
+      expect(requests.filter((r) => !(r.method === "GET" && r.url === `/v1/mandates/${out.mandate.id}`) && r.url !== spend)).toEqual([]);
+    });
+  }
 });

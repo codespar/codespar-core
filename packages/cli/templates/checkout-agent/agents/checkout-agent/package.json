@@ -1,0 +1,33 @@
+{
+  "name": "@codespar/checkout-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The merchant's agent that sells in the conversation: the customer builds a cart the code prices, the attendant (or the sales policy) confirms the order, one bolepix is issued with an idempotency key, the QR and the copy-and-paste go to the customer, and the order closes on commerce.charge.paid.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "codespar-agent start",
+    "check": "codespar-agent check",
+    "inspect": "codespar-agent inspect",
+    "eval": "codespar-agent eval",
+    "resume": "codespar-agent resume",
+    "rerun": "codespar-agent rerun",
+    "reconcile": "codespar-agent reconcile",
+    "poll": "codespar-agent poll",
+    "webhook": "codespar-agent webhook",
+    "approve": "codespar-agent approve",
+    "deny": "codespar-agent deny",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --pool=forks --maxWorkers=1 --root ../.. agents/checkout-agent"
+  },
+  "dependencies": {
+    "@codespar/agent-core": "0.1.0",
+    "@codespar/agent-runtime": "0.1.0",
+    "@codespar/sdk": "0.16.10",
+    "qrcode-terminal": "0.12.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/qrcode-terminal": "0.12.2"
+  }
+}

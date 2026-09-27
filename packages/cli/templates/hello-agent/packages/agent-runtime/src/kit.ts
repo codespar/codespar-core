@@ -157,8 +157,19 @@ export interface AgentKit {
   usage(manifest: LoadedManifest): string;
   buildRail(ctx: RailContext): RailBuild;
   handlers(setup: Setup): Record<string, ToolHandler>;
-  /** The deterministic policy the core runs as its `policyExtension`. */
-  policyExtension?(ctx: { agentDir: string; manifest: LoadedManifest; guardrails: Guardrails }): PolicyExtension | undefined;
+  /**
+   * Whether the channel dispatches an execution the moment it is approved.
+   * Default true. False when approving and issuing are two moments of the
+   * agent's own flow — a sale: the attendant (or the policy) confirms the
+   * order, and the charge goes out when the customer asks for it. The
+   * approved execution then waits, and the agent's own tool hands it to
+   * `engine.execute`, which runs the last gate like any other caller: a cart
+   * changed in between is caught there. An approved execution nobody issues
+   * expires on the approval TTL.
+   */
+  executeOnApproval?: boolean;
+  /** The deterministic policy the core runs as its `policyExtension`. `store` is the run's state.db, for a policy that judges durable state of the agent's own (a cart). */
+  policyExtension?(ctx: { agentDir: string; manifest: LoadedManifest; guardrails: Guardrails; store: StateStore }): PolicyExtension | undefined;
   /** The console lines that describe one execution. */
   describeExecution(execution: Execution, setup: Setup): string[];
   /** The `--json` body of a one-shot. */
@@ -184,6 +195,18 @@ export interface AgentKit {
    * who was not told was not told.
    */
   outcomeTemplate?(execution: Execution): { template: string; variables: string[] } | undefined;
+  /**
+   * Work that FOLLOWS an outcome and is not part of it: a sale's service
+   * invoice once the order is `settled`. Runs after `announceOutcome`,
+   * wherever an outcome is announced (the terminal, the scenario runner,
+   * `poll`, `webhook`, the WhatsApp poll), and is awaited there. It can never
+   * move the execution it follows: a throw is reported on the operator's
+   * console and the outcome stands, because a paid order stays paid whatever
+   * happens after it.
+   */
+  followUp?(execution: Execution, setup: Setup, say: (line: string) => void): Promise<void>;
+  /** `resume` only: the follow-ups a crash left half-done. The same rule as the core's outbox: what provably never left may go; what may have left is reported, never sent again. */
+  resumeFollowUps?(setup: Setup, say: (line: string) => void): Promise<void>;
   /** Runs before a one-shot or an interactive session, when the mandate may have to be born first. Returns false to stop the run. */
   ensureMandate?(ctx: EnsureMandateContext): Promise<boolean>;
   /** `codespar-agent consent`. Absent means the agent has no consent step. */

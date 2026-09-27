@@ -11,13 +11,39 @@
       "name": "acordo_cobranca_vencida",
       "language": "pt_BR",
       "description": "The receivable reached its due date unpaid. The same message the terminal sends free-form, and it has to be its own template: a debtor whose charge expired must not be told the agreement is settled. {{1}} is the agreement alias.",
-      "body": "Oi! A cobranca do {{1}} venceu sem pagamento. Se quiser, emito uma nova dentro das mesmas condicoes."
+      "body": "Oi! A cobranca do {{1}} venceu sem pagamento. Se quiser, emito uma nova dentro das mesmas condicoes.",
+      "buttons": [
+        {
+          "id": "emitir_nova",
+          "title": "Emitir nova",
+          "intent": "quero que voce emita uma nova cobranca para o meu acordo"
+        },
+        {
+          "id": "agora_nao",
+          "title": "Agora nao",
+          "intent": "agora nao quero uma nova cobranca para o meu acordo"
+        }
+      ]
     },
     {
       "name": "acordo_cobranca_cancelada",
       "language": "pt_BR",
       "description": "The receivable was cancelled, so nothing was paid and nothing is owed on it. {{1}} is the agreement alias.",
       "body": "Oi! A cobranca do {{1}} foi cancelada e nada foi pago. Qualquer coisa, e so falar por aqui."
+    },
+    {
+      "name": "atendimento_atualizacao",
+      "language": "pt_BR",
+      "description": "The FALLBACK: sent by a poll, outside the 24-hour window, when an outcome closed that the agent has no template of its own for (a charge the rail failed to issue, a proposal denied or expired days later). It states NOTHING about the outcome, so it can never be the wrong news; it asks the person to answer, and an answer reopens the window, inside which the agent says what happened in free text. Takes no variables.",
+      "body": "Oi! Temos uma atualizacao sobre o seu atendimento. Responda esta mensagem para continuarmos por aqui.",
+      "fallback": true,
+      "buttons": [
+        {
+          "id": "falar_agora",
+          "title": "Falar agora",
+          "intent": "quero saber qual e a atualizacao do meu atendimento"
+        }
+      ]
     }
   ]
 }

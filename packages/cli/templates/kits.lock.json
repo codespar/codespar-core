@@ -1,8 +1,8 @@
 {
   "format": 1,
   "kits_repo": "https://github.com/codespar/agent-starter-kits",
-  "kits_ref": "8f130b7cdc30510c929e6f7ebb07184f763e6ce4",
-  "commit": "8f130b7cdc30510c929e6f7ebb07184f763e6ce4",
+  "kits_ref": "3eddd460451d7485c4bb53a74a8c7b143251438f",
+  "commit": "3eddd460451d7485c4bb53a74a8c7b143251438f",
   "vendored_packages": [
     {
       "name": "@codespar/agent-core",
@@ -32,7 +32,27 @@
         "npm run consent -- --yes",
         "npm start"
       ],
-      "hash": "sha256:e75c5293ae7d576fa5263b9f7bc8accbd4b83d781a5220f4bbc4368f8746abc3"
+      "hash": "sha256:e9dbc06dab66f72c84d1e138e0116ae47c54164707f378daddbc32ecd6a8e614"
+    },
+    "checkout-agent": {
+      "source": "agents/checkout-agent",
+      "description": "The merchant's agent that sells in the conversation: the customer builds a cart the code prices, the attendant (or the sales policy) confirms the order, one bolepix is issued with an idempotency key, the QR and the copy-and-paste go to the customer, and the order closes on commerce.charge.paid.",
+      "version": "0.1.0",
+      "cli": "@codespar/cli@0.14.0",
+      "mcp": "@codespar/mcp@0.5.8",
+      "vendored": {
+        "@codespar/agent-core": "0.1.0",
+        "@codespar/agent-runtime": "0.1.0"
+      },
+      "root_scripts": {
+        "whatsapp:emulator": "node scripts/whatsapp-emulator.mjs"
+      },
+      "next_steps": [
+        "cp agents/checkout-agent/.env.example agents/checkout-agent/.env   # then fill in your keys",
+        "npm install",
+        "npm start"
+      ],
+      "hash": "sha256:ec2d6abd26f262705ac96f375497a92f1dcd71376998dd5d5958ef5c78db047a"
     },
     "collections-agent": {
       "source": "agents/collections-agent",
@@ -44,12 +64,15 @@
         "@codespar/agent-core": "0.1.0",
         "@codespar/agent-runtime": "0.1.0"
       },
+      "root_scripts": {
+        "whatsapp:emulator": "node scripts/whatsapp-emulator.mjs"
+      },
       "next_steps": [
         "cp agents/collections-agent/.env.example agents/collections-agent/.env   # then fill in your keys",
         "npm install",
         "npm start"
       ],
-      "hash": "sha256:0588aa52d737058375f5a617844071998a5db3147bddd73447577f756cd11c10"
+      "hash": "sha256:fc920c0368d8542a6a612b63fa147f1e2d1e0e1fa10cf336d66cae9d941dde6a"
     },
     "hello-agent": {
       "source": "agents/hello-agent",
@@ -66,7 +89,7 @@
         "npm install",
         "npm start"
       ],
-      "hash": "sha256:f75d8ddb2d1808e337e7c785a3801bbce127a6822de9b761f5c57c28ce1848b9"
+      "hash": "sha256:e9884b9cf5f9115c50d1cf5a2be1b025cea7ac9cbc54949de80878426737f2bd"
     },
     "supplier-payments-agent": {
       "source": "agents/supplier-payments-agent",
@@ -83,7 +106,7 @@
         "npm install",
         "npm start"
       ],
-      "hash": "sha256:a89cb114242eb0f5e3114801341dbf90ea54e7665f73d24bb68a9fdf452b2753"
+      "hash": "sha256:77de91be085a87c70e2cec04b9965ddc6404aa5895d52656bff668ec7c31ff3e"
     }
   }
 }
