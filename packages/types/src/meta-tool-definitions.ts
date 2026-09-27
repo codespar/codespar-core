@@ -271,6 +271,7 @@ const PAY_INPUT: MetaToolInputSchema = {
     mandateId: { type: "string", description: "Pre-authorized mandate ID" },
     payment_id: { type: "string", description: "The payment/charge/boleto id to read (action=status); status returns the provider status, e.g. OVERDUE for an expired/unpaid boleto" },
     linha_digitavel: { type: "string", description: "The 47/48-digit linha digitavel (or barcode) of an existing boleto to pay (action=pay, method=boleto)" },
+    idempotency_key: { type: "string", description: "Your idempotency key for this payment, reused verbatim on every retry of the SAME payment. REQUIRED when method=boleto (a boleto pay without it is refused with reason boleto_idempotency_key_required and nothing is sent); recommended for every money-moving call. Reusing the key returns the first result instead of paying twice; a new key is a new payment." },
   },
   // `action` is the only field required across both actions: a pay call needs
   // amount/currency/description, a status call needs payment_id, so those are
@@ -279,7 +280,11 @@ const PAY_INPUT: MetaToolInputSchema = {
   // discriminator and keeps the destructive `pay` from being the implicit
   // fallback of an under-specified call. The flat schema cannot express
   // "amount required only when action=pay"; that per-action guard is enforced
-  // by the runtime + governance rails below the tool, not here.
+  // by the runtime + governance rails below the tool, not here. The same holds
+  // for `idempotency_key`: optional in the schema, REQUIRED by the runtime
+  // when method=boleto (codespar-enterprise#1752, ent#789). It is shared, not
+  // a managed-only extra, because `codespar pay --arg` validates names against
+  // THIS definition, and a key the caller must send has to be one it can name.
   //
   // The method vocabulary is the ent#932 decision: pix, card, boleto, wire —
   // no sepa/usdc/ted. sepa and usdc have no route under this tool (usdc's

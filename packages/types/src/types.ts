@@ -302,6 +302,12 @@ export interface PayArgs {
   method?: "pix" | "card" | "boleto" | "wire";
   /** Pre-authorized mandate id the spend runs under. */
   mandateId?: string;
+  /** The caller's idempotency key, reused verbatim on every retry of the
+   *  SAME payment: a repeat returns the first result instead of paying
+   *  twice, and a new key is a new payment. REQUIRED when
+   *  `method: "boleto"` (the runtime refuses a boleto pay without it);
+   *  recommended for every money-moving call. */
+  idempotency_key?: string;
   /** Free-form metadata forwarded to the rail. */
   metadata?: Record<string, unknown>;
 }

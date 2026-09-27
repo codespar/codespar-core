@@ -106,7 +106,36 @@ describe("shared meta-tool definitions", () => {
       "mandateId",
       "payment_id",
       "linha_digitavel",
+      "idempotency_key",
     ]);
+  });
+
+  it("codespar_pay publishes idempotency_key as an OPTIONAL string (codespar-enterprise#1752)", () => {
+    // The managed runtime refuses a boleto pay without the key
+    // (boleto_idempotency_key_required). `codespar pay --arg` only accepts
+    // names this definition publishes, so a key the runtime requires but the
+    // shared contract hides is a key the CLI caller cannot send. Optional in
+    // the schema: the flat schema cannot say "required when method=boleto",
+    // and every other rail and action must keep working without it.
+    const pay = SHARED_META_TOOL_DEFINITIONS.codespar_pay;
+    const key = pay.input_schema.properties.idempotency_key;
+    expect(key?.type).toBe("string");
+    expect(key?.enum).toBeUndefined();
+    expect(key?.description).toMatch(/REQUIRED when method=boleto/);
+    expect(key?.description).toContain("boleto_idempotency_key_required");
+    expect(pay.contract.properties).toContain("idempotency_key");
+    expect(pay.contract.required).not.toContain("idempotency_key");
+
+    // And the TypeScript side carries it, so an SDK caller can pass it typed.
+    const args: PayArgs = {
+      amount: 12500,
+      currency: "BRL",
+      description: "Conta de luz",
+      method: "boleto",
+      linha_digitavel: "34191790010104351004791020150008291070026000",
+      idempotency_key: "boleto-2026-09-26-001",
+    };
+    expect(args.idempotency_key).toBe("boleto-2026-09-26-001");
   });
 
   it("codespar_pay publishes the recipient-as-object capability STRUCTURALLY (ent#933 drift 1, core#128)", () => {

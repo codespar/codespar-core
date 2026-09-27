@@ -88,6 +88,47 @@ describe("--arg", () => {
   });
 });
 
+describe("codespar pay --arg idempotency_key (codespar-enterprise#1752)", () => {
+  // The API refuses a boleto pay without an idempotency key
+  // (boleto_idempotency_key_required). `--arg` accepts only the names the
+  // published codespar_pay definition declares, so until @codespar/types
+  // published the key, `codespar pay --arg method=boleto ...` had no way to
+  // carry it except by switching to --input.
+  const boleto = [
+    "method=boleto",
+    "amount=12500",
+    "currency=BRL",
+    "description=Conta de luz",
+    "linha_digitavel=34191790010104351004791020150008291070026000",
+  ];
+
+  it("sends the key with a boleto pay built from --arg alone", () => {
+    const args = buildArgs(pay, undefined, [...boleto, "idempotency_key=boleto-2026-09-26-001"], "pay");
+    expect(args).toMatchObject({
+      action: "pay",
+      method: "boleto",
+      amount: 12500,
+      idempotency_key: "boleto-2026-09-26-001",
+    });
+  });
+
+  it("keeps a key that looks like a number as the string it is", () => {
+    // A key built from a timestamp or an invoice number is all digits; the
+    // published type is string, and the dedupe anchor must match verbatim on
+    // the retry, so it must not become a number (or lose leading zeros).
+    expect(coerceArg(pay, "idempotency_key", "0012345678901234567890")).toBe("0012345678901234567890");
+  });
+
+  it("still refuses a property codespar_pay does not publish (control)", () => {
+    // Same flag, same tool, a name one character off: the check that let the
+    // key through is still the published-name check, not a hole in it.
+    expect(() => buildArgs(pay, undefined, [...boleto, "idempotency_keys=k"], "pay")).toThrow(
+      /codespar_pay has no property "idempotency_keys"/,
+    );
+    expect(() => coerceArg(pay, "not_a_property", "x")).toThrow(/idempotency_key/);
+  });
+});
+
 describe("required input", () => {
   it("refuses to send when a required property is missing, and says how to pass it", () => {
     expect(() => buildArgs(pay, undefined, [], undefined)).toThrow(/Nothing was sent/);
