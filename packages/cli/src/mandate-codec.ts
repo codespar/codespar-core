@@ -1,15 +1,17 @@
 /**
- * Offline V3 mandate verification — a dependency-free port of the canonical
+ * Offline V3/V4 mandate verification — a dependency-free port of the canonical
  * signing-string format from `codespar-enterprise/packages/mandate/canonical.ts`.
  *
  * This is the third-party verifier path: given only a presentation token and a
  * raw 32-byte Ed25519 public key (from a did:web document), a counterparty can
- * reconstruct the exact 14-field signing string and verify the agent + issuer
- * signatures with `node:crypto` alone — no CodeSpar API call, no CodeSpar code.
+ * reconstruct the exact signing string (14 fields on V3, 15 on V4) and verify
+ * the agent + issuer signatures with `node:crypto` alone — no CodeSpar API
+ * call, no CodeSpar code.
  *
  * PORT, not import: the codec lives in the private enterprise repo. The byte
- * format is frozen by `tests/fixtures/canonical.v3.fixture.json` (copied into
- * this package's tests), so any drift here fails the fixture byte-lock.
+ * format is frozen by `tests/fixtures/canonical.v3.fixture.json` and
+ * `canonical.v4.fixture.json` (copied into this package's tests), so any drift
+ * here fails the fixture byte-lock.
  *
  * Zero runtime deps — `node:crypto` and the standard library only, matching the
  * SDK's zero-dependency constraint.
@@ -17,8 +19,9 @@
 import { createPublicKey, verify as nodeVerify, type KeyObject } from "node:crypto";
 
 /**
- * The signed mandate fields. Mirrors the enterprise `MandateFields`. The two
- * V3-only fields (`principal_kyc_ref`, `agent_kid`) are absent on V2 mandates.
+ * The signed mandate fields. Mirrors the enterprise `MandateFields`.
+ * `principal_kyc_ref` and `agent_kid` are absent on V2 and required from V3 on;
+ * `issued_at` is required on V4 and absent before.
  */
 export interface MandateFields {
   format_version: number;
@@ -36,10 +39,12 @@ export interface MandateFields {
   parent_id?: string | null;
   denomination?: string | null;
   secret_version: number;
-  /** V3-only. Reference to the proofed CPF/CNPJ (Celcoin KYC) the agent acts for. */
+  /** V3+. Reference to the proofed CPF/CNPJ (Celcoin KYC) the agent acts for. */
   principal_kyc_ref?: string | null;
-  /** V3-only. The agent key id (`<agent_did>#<n>`) that signed this mandate. */
+  /** V3+. The agent key id (`<agent_did>#<n>`) that signed this mandate. */
   agent_kid?: string | null;
+  /** V4-only. Issuance time, UNIX seconds. Signed, so it cannot be moved. */
+  issued_at?: number;
 }
 
 /** A decoded presentation token: the signed fields plus the signature envelope. */
@@ -81,7 +86,10 @@ export function decodeToken(token: string): DecodeResult {
 
   const r = raw as Record<string, unknown>;
   const version = r["format_version"];
-  if (typeof version !== "number" || !Number.isInteger(version) || version < 2) {
+  // Only the formats whose signing string this port knows. A later format
+  // reconstructed with an older tail would fail as "tampered", which is the
+  // wrong answer: it is unreadable here, not forged.
+  if (typeof version !== "number" || !SUPPORTED_FORMATS.includes(version)) {
     return { ok: false, error: "mandate_format_unsupported" };
   }
   if (!isValidMandateFields(r)) {
@@ -106,6 +114,8 @@ export function decodeToken(token: string): DecodeResult {
   return { ok: true, token: decoded };
 }
 
+const SUPPORTED_FORMATS: readonly number[] = [2, 3, 4];
+
 function isValidMandateFields(r: Record<string, unknown>): boolean {
   if (typeof r["format_version"] !== "number") return false;
   if (typeof r["id"] !== "string") return false;
@@ -118,9 +128,12 @@ function isValidMandateFields(r: Record<string, unknown>): boolean {
   if (typeof r["secret_version"] !== "number") return false;
   // V3 binds the KYC'd principal and the signing key into the signed string,
   // so both are mandatory for a well-formed V3 payload.
-  if (r["format_version"] === 3) {
+  if (r["format_version"] === 3 || r["format_version"] === 4) {
     if (typeof r["principal_kyc_ref"] !== "string") return false;
     if (typeof r["agent_kid"] !== "string") return false;
+  }
+  if (r["format_version"] === 4) {
+    if (typeof r["issued_at"] !== "number" || !Number.isInteger(r["issued_at"])) return false;
   }
   return true;
 }
@@ -128,16 +141,14 @@ function isValidMandateFields(r: Record<string, unknown>): boolean {
 /**
  * Reconstruct the canonical signing string the Ed25519 signatures cover.
  *
- * Field order (V3 = 14 fields, 13 `:` separators): V2's 12 fields, then the two
- * V3-only fields appended (principal_kyc_ref, agent_kid). Absent optionals
- * render as the empty string so the separator count is invariant. `purposes` is
- * comma-joined after a lexicographic sort with escaping (`\` → `\\` first, then
- * `,` → `\,`). Colons inside `agent_kid` (from the `did:web` prefix) are emitted
- * verbatim — the signing string is a one-way serialization, never re-split.
- *
- * A V2 mandate reconstructs to 12 fields because its two V3 fields are absent
- * (rendered empty would change the byte count), so this reads the fields it
- * needs and appends the V3 tail only when `format_version >= 3`.
+ * Field order: V2 = 12 fields; V3 = V2 + principal_kyc_ref + agent_kid (14,
+ * 13 `:` separators); V4 = V3 with issued_at inserted before agent_kid (15), so
+ * agent_kid stays the last field and keeps absorbing the did:web colons. Absent
+ * optionals render as the empty string so the separator count is invariant.
+ * `purposes` is comma-joined after a lexicographic sort with escaping (`\` →
+ * `\\` first, then `,` → `\,`). Colons inside `agent_kid` (from the `did:web`
+ * prefix) are emitted verbatim — the signing string is a one-way
+ * serialization, never re-split.
  */
 export function reconstructSigningString(f: Record<string, unknown>): string {
   const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/,/g, "\\,");
@@ -161,9 +172,9 @@ export function reconstructSigningString(f: Record<string, unknown>): string {
     f["denomination"] ?? "",
     String(f["secret_version"]),
   ];
-  if (version >= 3) {
-    parts.push(f["principal_kyc_ref"] ?? "", f["agent_kid"] ?? "");
-  }
+  if (version >= 3) parts.push(f["principal_kyc_ref"] ?? "");
+  if (version >= 4) parts.push(f["issued_at"] == null ? "" : String(f["issued_at"]));
+  if (version >= 3) parts.push(f["agent_kid"] ?? "");
   return parts.join(":");
 }
 

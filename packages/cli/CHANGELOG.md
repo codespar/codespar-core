@@ -1,5 +1,36 @@
 # @codespar/cli — changelog
 
+## 0.17.0 — 2026-09-27
+
+### Changed
+
+- **`codespar mandate verify` is strict** (codespar-core#123, p2-identity#6).
+  It printed "mandate token verified" and exited 0 for tokens it had not fully
+  checked. Now "verified" (exit 0) needs all of:
+  - both signatures carried and verifying: a token with the agent signature
+    stripped is NOT verified, even though the platform signature checks; in
+    offline mode, a signature with no `--agent-pubkey` / `--issuer-pubkey` is
+    not a pass either (supply both);
+  - the agent signature verifying under the key the token names: the signed
+    `agent_kid`, looked up by id in the agent's did:web document. The command
+    used to try every key in the document, and the document lists retired keys
+    on purpose, so a retired key verified tokens naming the active one. An
+    envelope `kid` that differs from the signed `agent_kid` is refused;
+  - the clock not past `expires_at` (the `[expired]` marker used to be
+    cosmetic).
+
+  `--json` gains `failures` (the same codes as `@codespar/sdk/mandate`, plus
+  `agent_key_unresolved` / `issuer_key_unresolved` for a network-mode key no
+  source supplied) and `mandate.issued_at`; the human output ends with the
+  reasons. The issuer signature is still tried against every key of the issuer
+  document, because the token does not name the issuer's key.
+
+### Added
+
+- **V4 tokens** (`format_version: 4`, signed `issued_at`) verify, byte-locked
+  against the enterprise `canonical.v4.fixture.json`; V3 verifies as before.
+  An unknown later format is "unsupported", not "tampered".
+
 ## 0.16.0 — 2026-09-25
 
 ### Added

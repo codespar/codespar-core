@@ -443,7 +443,9 @@ mandate
 
 mandate
   .command("verify <token>")
-  .description("Verify a V3 mandate presentation token offline (agent + issuer Ed25519 signatures)")
+  .description(
+    "Verify a V3/V4 mandate presentation token offline: both Ed25519 signatures (agent, under the key the token names, and issuer) and expiry",
+  )
   .option(
     "--agent-pubkey <hex>",
     "Raw 32-byte Ed25519 agent public key (hex). Forces pure-offline verification (no network).",

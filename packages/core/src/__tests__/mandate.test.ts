@@ -26,6 +26,9 @@ interface V3Fixture {
 }
 
 const fx = JSON.parse(readFileSync(FIXTURE_PATH, "utf8")) as V3Fixture;
+// The fixture expires 2025-01-01T00:00:00Z; verdicts that expect a pass read
+// the clock inside its window (expiry itself: mandate-strict.test.ts).
+const NOW = fx.input.expires_at - 3600;
 
 /** Reproduce the enterprise `computeToken` envelope so we have a real token. */
 function makeToken(
@@ -116,6 +119,7 @@ describe("@codespar/sdk/mandate — verifyMandateToken (high-level)", () => {
     const res = verifyMandateToken(TOKEN, {
       agentPublicKey: fx.agent_pubkey_hex,
       issuerPublicKey: fx.issuer_pubkey_hex,
+      now: NOW,
     });
     expect(res.verified).toBe(true);
     expect(res.agent.status).toBe("verified");
@@ -131,15 +135,17 @@ describe("@codespar/sdk/mandate — verifyMandateToken (high-level)", () => {
     const res = verifyMandateToken(TOKEN, {
       agentPublicKey: Buffer.from(fx.agent_pubkey_hex, "hex"),
       issuerPublicKey: Buffer.from(fx.issuer_pubkey_hex, "hex"),
+      now: NOW,
     });
     expect(res.verified).toBe(true);
   });
 
-  it("skips a signature when its key is not supplied (still verified overall)", () => {
-    const res = verifyMandateToken(TOKEN, { agentPublicKey: fx.agent_pubkey_hex });
+  it("skips a signature when its key is not supplied, and is then NOT verified", () => {
+    const res = verifyMandateToken(TOKEN, { agentPublicKey: fx.agent_pubkey_hex, now: NOW });
     expect(res.agent.status).toBe("verified");
     expect(res.issuer.status).toBe("skipped");
-    expect(res.verified).toBe(true);
+    expect(res.verified).toBe(false);
+    expect(res.failures).toEqual(["issuer_sig_unchecked"]);
   });
 
   it("reports NOT verified when a supplied key fails", () => {
