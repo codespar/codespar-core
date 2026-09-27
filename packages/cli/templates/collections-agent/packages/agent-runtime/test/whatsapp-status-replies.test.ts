@@ -4,13 +4,13 @@
  * outcome NOT told), a tapped quick reply becomes a turn only as the intent a
  * declared template gave it, and the registry carries a fallback for an
  * outcome the kit has no copy for. The same behaviour against the emulator is
- * in `whatsapp-emulator.integration.test.ts`.
+ * in the repository's `test/whatsapp-emulator.integration.test.ts`, and the
+ * `check` rule that requires the fallback, asked of the shipped agents, in
+ * `test/whatsapp-fallback-check.test.ts`: both read this repository's other
+ * agents and scripts, which a template made from one agent does not carry.
  */
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { checkAgent, type WhatsAppTemplate } from "@codespar/agent-core";
+import type { WhatsAppTemplate } from "@codespar/agent-core";
 import { WhatsAppChannel } from "../src/channels/whatsapp/index.js";
 import { buildSendRequest, parseInbound, type CloudApiConfig } from "../src/channels/whatsapp/cloud-api.js";
 import type { ChannelBackend, ChannelLogLine, InboundMessage, OutboundBody, SentMessage, StatusUpdate } from "../src/channels/types.js";
@@ -178,55 +178,5 @@ describe("2. a tapped quick reply is a turn, as the intent a declared template g
       { type: "button", sub_type: "quick_reply", index: "0", parameters: [{ type: "payload", payload: "emitir_nova" }] },
       { type: "button", sub_type: "quick_reply", index: "1", parameters: [{ type: "payload", payload: "agora_nao" }] },
     ]);
-  });
-});
-
-describe("3. an outcome with no template of its own: the registry declares a fallback, and check requires one", () => {
-  const COLLECTIONS = resolve(import.meta.dirname, "../../../agents/collections-agent");
-  const copy = () => {
-    const dir = mkdtempSync(join(tmpdir(), "wa-fallback-check-"));
-    cpSync(COLLECTIONS, dir, { recursive: true, filter: (src) => !/node_modules|\/runs|\.codespar/.test(src) });
-    return dir;
-  };
-  const codes = (dir: string) => checkAgent(dir).findings.filter((f) => f.level === "error").map((f) => f.code);
-  const registry = (dir: string) => join(dir, "channels/whatsapp/templates.json");
-  const edit = (dir: string, fn: (templates: Array<Record<string, unknown>>) => void) => {
-    const doc = JSON.parse(readFileSync(registry(dir), "utf8")) as { templates: Array<Record<string, unknown>> };
-    fn(doc.templates);
-    writeFileSync(registry(dir), JSON.stringify(doc));
-  };
-
-  it("the shipped agents pass", () => {
-    expect(codes(COLLECTIONS)).toEqual([]);
-    expect(codes(resolve(COLLECTIONS, "../checkout-agent"))).toEqual([]);
-  });
-
-  it("refuses a WhatsApp agent with no fallback, with two, and with one that takes variables", () => {
-    const none = copy();
-    edit(none, (t) => t.forEach((x) => delete x["fallback"]));
-    expect(codes(none)).toContain("channels_templates_fallback");
-    const two = copy();
-    edit(two, (t) => t.forEach((x) => (x["fallback"] = true)));
-    expect(codes(two)).toContain("channels_templates_fallback");
-    const variables = copy();
-    edit(variables, (t) => {
-      const fallback = t.find((x) => x["fallback"])!;
-      fallback["body"] = "Oi {{1}}, temos novidade.";
-    });
-    expect(codes(variables)).toContain("channels_templates_fallback");
-  });
-
-  it("refuses a conversation that taps a reply no template offers, and two templates offering the same id", () => {
-    const script = copy();
-    const path = join(script, "channels/whatsapp/acordo-1042.json");
-    const doc = JSON.parse(readFileSync(path, "utf8")) as { turns: unknown[] };
-    doc.turns.push({ reply: { id: "pagar_tudo" } });
-    writeFileSync(path, JSON.stringify(doc));
-    expect(codes(script)).toContain("channels_script_invalid");
-    const dup = copy();
-    edit(dup, (t) => {
-      t[0]!["buttons"] = [{ id: "emitir_nova", title: "Outra", intent: "outra coisa" }];
-    });
-    expect(codes(dup)).toContain("channels_templates_invalid");
   });
 });

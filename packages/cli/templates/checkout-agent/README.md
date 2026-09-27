@@ -1,7 +1,7 @@
 # {{name}}
 
 Scaffolded by `codespar init --template checkout-agent` from the `checkout-agent` starter kit
-(https://github.com/codespar/agent-starter-kits at `3eddd460451d7485c4bb53a74a8c7b143251438f`, agent 0.1.0).
+(https://github.com/codespar/agent-starter-kits at `b766575306a71c9135c0d70e23d591e6523dc2f8`, agent 0.1.0).
 
 The merchant's agent that sells in the conversation: the customer builds a cart the code prices, the attendant (or the sales policy) confirms the order, one bolepix is issued with an idempotency key, the QR and the copy-and-paste go to the customer, and the order closes on commerce.charge.paid.
 

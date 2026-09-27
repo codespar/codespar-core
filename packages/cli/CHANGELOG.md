@@ -16,8 +16,8 @@
 
 ### Changed
 
-- **Kit templates bumped to `codespar/agent-starter-kits@3eddd46`**, 80
-  commits on from the locked `8f130b7` (kits #30–#48). The 0.16.0 and 0.17.0
+- **Kit templates bumped to `codespar/agent-starter-kits@b766575`**, 82
+  commits on from the locked `8f130b7` (kits #30–#49). The 0.16.0 and 0.17.0
   templates still said CodeSpar "does not publish" the audit-chain link shapes
   and pinned `@codespar/sdk` 0.16.6. What a scaffolded kit gains:
   - **Every spend carries the approval it was made under.** The artifact's
@@ -67,20 +67,20 @@
   root scripts names a file the template carries. `whatsapp:gate` is left out on
   purpose: it runs two agents out of the kits tree, which one template cannot.
 
+- **A scaffold's `npm test` is green**, in all five templates, with the
+  emulator running and without it (the emulator cases skip when none answers
+  at `WHATSAPP_SIM_URL`). It was red in 0.16.0 and 0.17.0: the vendored
+  `agent-runtime` carried tests that read the kits repository around it — the
+  sibling agents and the root `scripts/` — which a single-agent template does
+  not have. Kits #49 moved those tests to the kits root `test/`, which no
+  template vendors. The opt-in e2e now runs `npm test` in every scaffold.
+
 ### Known gaps
 
-- **A scaffold's `npm test` is not green**, and was not in 0.16.0 either
-  (7 failures there, all in the emulator integration tests). Vendored
-  `agent-runtime` tests read kits-repository paths a single-agent template does
-  not carry. `whatsapp-status-replies.test.ts` §3 reads the sibling
-  `agents/collections-agent` and `agents/checkout-agent` and fails in all five
-  templates; `whatsapp-emulator.integration.test.ts` reads
-  `scripts/whatsapp-emulator.mjs` and fails in the three templates without the
-  WhatsApp channel (it passes in the two that now carry the file). The fix
-  belongs in the kits. `npm install`, `npm run typecheck` and `npm run check`
-  pass in all five templates.
-- **`npm run whatsapp:gate`**, which the same two READMEs cite as what the kits
-  CI runs, still answers "Missing script" in a scaffold, for the reason above.
+- **`npm run whatsapp:gate`**, which the `collections-agent` and
+  `checkout-agent` READMEs cite as what the kits CI runs, still answers
+  "Missing script" in a scaffold: it runs both agents out of the kits tree, so
+  a single-agent template cannot carry it.
 
 ## 0.17.0 — 2026-09-27
 
