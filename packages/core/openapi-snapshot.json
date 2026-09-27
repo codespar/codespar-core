@@ -1,8 +1,8 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-09-26T13:48:25.860Z",
-    "sha256": "89d3d64c1b8583b7aa553e10e7940b375cf8bf49c069bbce73d38b8c1a8c334c",
+    "fetched_at": "2026-09-27T02:26:12.150Z",
+    "sha256": "9a61f456742610a156130c5f98dd09805811a40f3874980b6185e72b0cf9ffa7",
     "etag": null,
     "last_modified": null,
     "info": {
@@ -1568,8 +1568,8 @@
             },
             "at": {
               "type": "string",
-              "minLength": 1,
-              "maxLength": 40
+              "format": "date-time",
+              "description": "When the offer was presented, RFC 3339 with an offset, in UTC years 0001-9999. Sealed into the receipt's chain as that instant in UTC with milliseconds. Anything else is refused with `invalid_receipt_timestamp` before anything is read, held or sent."
             }
           },
           "required": [
@@ -1639,6 +1639,26 @@
             }
           ],
           "description": "WHO triggered this spend, recorded on the receipt and read back from it. Optional, and absence is a real answer: a spend that sends no actor records `null`, and nothing is ever inferred from `agent_id` — that field names the agent the mandate was SIGNED for, which is an authority, not an event. A person acting through WhatsApp under an agent's mandate and the agent acting unattended are the same row without this field."
+        },
+        "SpendApproval": {
+          "type": "object",
+          "properties": {
+            "items_hash": {
+              "type": "string",
+              "pattern": "^(sha256:)?[0-9a-f]{64}$",
+              "description": "A SHA-256 digest in lowercase hex, optionally prefixed `sha256:`. Sealed exactly as sent."
+            },
+            "batch_hash": {
+              "type": "string",
+              "pattern": "^(sha256:)?[0-9a-f]{64}$",
+              "description": "A SHA-256 digest in lowercase hex, optionally prefixed `sha256:`. Sealed exactly as sent."
+            }
+          },
+          "required": [
+            "items_hash"
+          ],
+          "additionalProperties": false,
+          "description": "The hash of what the caller says a person approved: `items_hash` for this spend's lines, and for a batch `batch_hash` over the whole presented list. When present it is SEALED into the receipt's signed chain as its own link (chain version 4), so it cannot be stripped or altered afterwards without breaking both `receipt_sig` and `receipt_sig_ed25519`, and the receipt reads return it.\n\nIt is a SEALED CLAIM by the caller, NOT a server-side approval check. The server only validates the shape; it never interprets the value, never compares it with anything and never refuses a spend because of it. It proves that this payment was sealed together with this hash, so whoever holds the approval artifact can recompute the hash and hold it against the receipt. It does not prove that anybody approved anything, or who. A malformed value, or a key other than these two, is refused with `invalid_approval_hash` before anything is read, held or sent. Part of what makes two requests with one `attempt_id` the same payment: a repeat with a different `approval` is `attempt_id_conflict`."
         }
       },
       "parameters": {}
@@ -5886,7 +5906,7 @@
       "/v1/approvals": {
         "get": {
           "summary": "List approvals held for review",
-          "description": "The organization's holds, newest first.\n\n**Without `status`, you get only the `pending` ones**, not all of them. It is the useful default for an operator queue, and the trap for anyone expecting a history: ask for `status=approved,denied` to see what has already been decided.\n\nThe response is an ARRAY, with no envelope and no cursor.",
+          "description": "The holds, newest first.\n\n**What a key sees.** A project API key or an OAuth token reads only the holds raised under ITS OWN project, and only their status: `tool_input`, the held request itself, is not in the response. A hold raised outside any project is not a key's either. The dashboard (service auth) reads the whole organization's queue with `tool_input`, because the approver works there.\n\n**Without `status`, you get only the `pending` ones**, not all of them. It is the useful default for an operator queue, and the trap for anyone expecting a history: ask for `status=approved,denied` to see what has already been decided.\n\nThe response is an ARRAY, with no envelope and no cursor.",
           "parameters": [
             {
               "schema": {
@@ -5957,7 +5977,7 @@
                         "tool_input": {
                           "type": "object",
                           "additionalProperties": {},
-                          "description": "The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path."
+                          "description": "The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. ABSENT unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it."
                         },
                         "status": {
                           "type": "string",
@@ -6023,7 +6043,6 @@
                         "matched_rule_id",
                         "matched_rule_name",
                         "tool_name",
-                        "tool_input",
                         "status",
                         "created_at",
                         "expires_at",
@@ -6102,7 +6121,7 @@
       "/v1/approvals/{id}/decide": {
         "post": {
           "summary": "Approve or deny a held call",
-          "description": "Approves or denies a hold, and it is THE step that releases (or kills) the call the policy held.\n\n**`reason` is required for both decisions.** Up to 8000 characters, and whitespace alone does not count: the audit trail of a human decision with no written reason is worth nothing later.\n\n**Deciding takes a PERSON, not a key.** A bearer credential alone is refused with `bearer_token_cannot_decide`: the user token has to come with it, be verifiable, and its identity has to match the one the header asserts. That is what separates `the organization decided` from `someone with the key decided`.\n\n**A decision already taken is 409, and an expired one is 410.** In both cases the full approval comes in the body, so the caller can see who decided what without a second read.",
+          "description": "Approves or denies a hold, and it is THE step that releases (or kills) the call the policy held.\n\n**`reason` is required for both decisions.** Up to 8000 characters, and whitespace alone does not count: the audit trail of a human decision with no written reason is worth nothing later.\n\n**Deciding takes a PERSON, through the dashboard.** Only service auth (the dashboard) may call this. A project API key or an OAuth token is refused with `bearer_token_cannot_decide` before the body is read, even when it carries a user token: a key or token proves which integration is calling, never that a person looked at the hold. On the dashboard's call the approver's user token has to come with it, be verifiable, and its identity has to match the one the header asserts. That is what separates `the organization decided` from `someone with the key decided`.\n\n**A decision already taken is 409, and an expired one is 410.** In both cases the full approval comes in the body, so the caller can see who decided what without a second read.",
           "parameters": [
             {
               "schema": {
@@ -6186,7 +6205,7 @@
                       "tool_input": {
                         "type": "object",
                         "additionalProperties": {},
-                        "description": "The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path."
+                        "description": "The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. ABSENT unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it."
                       },
                       "status": {
                         "type": "string",
@@ -6252,7 +6271,6 @@
                       "matched_rule_id",
                       "matched_rule_name",
                       "tool_name",
-                      "tool_input",
                       "status",
                       "created_at",
                       "expires_at",
@@ -6304,7 +6322,7 @@
               }
             },
             "403": {
-              "description": "The caller cannot decide. `bearer_token_cannot_decide` when only a bearer credential arrived; `user_token_required`, `user_token_invalid` and `user_token_identity_mismatch` when the user token is missing, does not verify, or does not match the identity asserted in the header; `insufficient_role` when the person is below admin. Raw body.",
+              "description": "The caller cannot decide. `bearer_token_cannot_decide` when the request is not the dashboard's (service auth): a project API key or an OAuth token, with or without a user token; `user_token_required`, `user_token_invalid` and `user_token_identity_mismatch` when the user token is missing, does not verify, or does not match the identity asserted in the header; `insufficient_role` when the person is below admin. Raw body.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -6408,7 +6426,7 @@
                           "tool_input": {
                             "type": "object",
                             "additionalProperties": {},
-                            "description": "The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path."
+                            "description": "The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. ABSENT unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it."
                           },
                           "status": {
                             "type": "string",
@@ -6474,7 +6492,6 @@
                           "matched_rule_id",
                           "matched_rule_name",
                           "tool_name",
-                          "tool_input",
                           "status",
                           "created_at",
                           "expires_at",
@@ -6547,7 +6564,7 @@
                           "tool_input": {
                             "type": "object",
                             "additionalProperties": {},
-                            "description": "The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path."
+                            "description": "The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. ABSENT unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it."
                           },
                           "status": {
                             "type": "string",
@@ -6613,7 +6630,6 @@
                           "matched_rule_id",
                           "matched_rule_name",
                           "tool_name",
-                          "tool_input",
                           "status",
                           "created_at",
                           "expires_at",
@@ -6693,7 +6709,7 @@
       "/v1/approvals/health": {
         "get": {
           "summary": "Approval queue health",
-          "description": "How deep this organization's approval queue is, how long the oldest hold has been waiting, and whether the sweeps are running.\n\n`pending_count` and `oldest_pending_age_seconds` are computed over the caller's own organization, and the second is null exactly when the first is 0: both come from the same `status = 'pending'` filter over the same rows.\n\n`last_sweep_at` IS NOT SCOPED TO THE CALLER, and cannot be. It is the newest run of the expiry and orphan sweeps for the whole deployment: the table it reads holds one row per sweep type and carries no organization column, so the value moves for reasons that have nothing to do with this organization. Read it as 'the sweeps are alive here', never as 'my queue was swept'. Null means neither sweep has ever recorded a run.\n\n`status` is the verdict on that timestamp and nothing else: `degraded` with `status_reason: sweep_never_ran` when it is null, `degraded` with `sweep_stale` when the newest run is older than 30 minutes (six ticks of the 5-minute orphan schedule), `ok` otherwise with `status_reason: null`. Queue depth never degrades it; alert on `oldest_pending_age_seconds` for that.\n\nThe age is in whole seconds, rounded.",
+          "description": "How deep this organization's approval queue is, how long the oldest hold has been waiting, and whether the sweeps are running.\n\n`pending_count` and `oldest_pending_age_seconds` are computed over the caller's own organization for the dashboard (service auth), and over the caller's own PROJECT for an API key or an OAuth token, the same rows the list shows it. The second is null exactly when the first is 0: both come from the same `status = 'pending'` filter over the same rows.\n\n`last_sweep_at` IS NOT SCOPED TO THE CALLER, and cannot be. It is the newest run of the expiry and orphan sweeps for the whole deployment: the table it reads holds one row per sweep type and carries no organization column, so the value moves for reasons that have nothing to do with this organization. Read it as 'the sweeps are alive here', never as 'my queue was swept'. Null means neither sweep has ever recorded a run.\n\n`status` is the verdict on that timestamp and nothing else: `degraded` with `status_reason: sweep_never_ran` when it is null, `degraded` with `sweep_stale` when the newest run is older than 30 minutes (six ticks of the 5-minute orphan schedule), `ok` otherwise with `status_reason: null`. Queue depth never degrades it; alert on `oldest_pending_age_seconds` for that.\n\nThe age is in whole seconds, rounded.",
           "responses": {
             "200": {
               "description": "OK",
@@ -6764,7 +6780,7 @@
       "/v1/approvals/{id}": {
         "get": {
           "summary": "Read one approval",
-          "description": "One held call, with the arguments recorded when it was held.\n\nSCOPE. The lookup matches the id AND the caller's organization, so an id from another organization answers 404 rather than 403: a 403 would confirm the id exists, which is what a caller sweeping ids is asking. Inside the organization this read is NOT project-scoped, and the agent-facing poll at `GET /v1/approvals/{id}/status` is: a key bound to one project reads holds raised under a sibling project here, and does not there.\n\n`tool_input` IS NOT THE CALL. It is what the lane that raised the hold recorded, and two things happen to it on the way in. A hold raised on the session execute path carries `{}`, because that path hands the policy engine no tool input at all and the engine stores an empty object when it gets none. A hold raised on the proxy path carries `{ server, method, endpoint, body, params, headers }`, with the `authorization` and `cookie` request headers removed before the row is written. So an empty object here means 'this lane records nothing', not 'the agent sent nothing'.\n\n`tool_name` HAS NO SINGLE FORMAT, because four lanes write it. The proxy path writes `<server>:<method>:<endpoint>` with the leading slash dropped and the remaining slashes turned into colons (`asaas`, `POST`, `/payments/create` becomes `asaas:post:payments:create`). The session execute path writes the caller's own `tool` string verbatim, which is any non-empty string that caller chose. The over-cap settlement lane writes `codespar_pay`. The operator account-status lane writes `admin:account_status_set` and the operator withdrawal-resolution lane `admin:withdrawal_resolve`. Match on it only knowing which lane you are reading.\n\n`expires_at` is the end of the hold, not a display hint: once it passes, the row stops being decidable and the expiry sweep moves it to `expired`.\n\n`execution_result` stays null until an approved call has actually been replayed, which is the state of every `pending` row and of every `denied` one. The row's `decision_history` and `metadata` columns are deliberately not in this response.",
+          "description": "One held call. The dashboard gets it with the arguments recorded when it was held; an API key or an OAuth token gets its status only.\n\nSCOPE. The lookup matches the id AND the caller's organization, so an id from another organization answers 404 rather than 403: a 403 would confirm the id exists, which is what a caller sweeping ids is asking. For an API key or an OAuth token it also matches the credential's project, the way the agent-facing poll at `GET /v1/approvals/{id}/status` does: a hold raised under a sibling project, or outside any project, is the same 404. The dashboard (service auth) reads any hold in the organization.\n\n`tool_input` is ABSENT for an API key or an OAuth token: it is the held request itself, which can carry a Pix key, a CPF/CNPJ or account data, and the approver who needs it reads it on the dashboard.\n\n`tool_input` IS NOT THE CALL. It is what the lane that raised the hold recorded, and two things happen to it on the way in. A hold raised on the session execute path carries `{}`, because that path hands the policy engine no tool input at all and the engine stores an empty object when it gets none. A hold raised on the proxy path carries `{ server, method, endpoint, body, params, headers }`, with the `authorization` and `cookie` request headers removed before the row is written. So an empty object here means 'this lane records nothing', not 'the agent sent nothing'.\n\n`tool_name` HAS NO SINGLE FORMAT, because four lanes write it. The proxy path writes `<server>:<method>:<endpoint>` with the leading slash dropped and the remaining slashes turned into colons (`asaas`, `POST`, `/payments/create` becomes `asaas:post:payments:create`). The session execute path writes the caller's own `tool` string verbatim, which is any non-empty string that caller chose. The over-cap settlement lane writes `codespar_pay`. The operator account-status lane writes `admin:account_status_set` and the operator withdrawal-resolution lane `admin:withdrawal_resolve`. Match on it only knowing which lane you are reading.\n\n`expires_at` is the end of the hold, not a display hint: once it passes, the row stops being decidable and the expiry sweep moves it to `expired`.\n\n`execution_result` stays null until an approved call has actually been replayed, which is the state of every `pending` row and of every `denied` one. The row's `decision_history` and `metadata` columns are deliberately not in this response.",
           "parameters": [
             {
               "schema": {
@@ -6820,7 +6836,7 @@
                       "tool_input": {
                         "type": "object",
                         "additionalProperties": {},
-                        "description": "The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path."
+                        "description": "The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. ABSENT unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it."
                       },
                       "status": {
                         "type": "string",
@@ -6886,7 +6902,6 @@
                       "matched_rule_id",
                       "matched_rule_name",
                       "tool_name",
-                      "tool_input",
                       "status",
                       "created_at",
                       "expires_at",
@@ -10493,6 +10508,51 @@
                 }
               }
             },
+            "422": {
+              "description": "`ofb_not_live`: this is a LIVE project and the deployment has no real Open Finance adapter, only the stub, which serves test projects. TERMINAL for this project: use a test project. Nothing was written and no bank was contacted.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "ofb_not_live"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
             "500": {
               "description": "`consent_disappeared`: the row was written and could not be read back. Do not retry blind; both the row and the bank-side consent may exist.",
               "content": {
@@ -10584,7 +10644,7 @@
               }
             },
             "503": {
-              "description": "`consent_lock_timeout`: another request is issuing a consent for this consumer at this bank and the wait ended without an answer, so NOTHING WAS DECIDED. We do not know whether a sibling holds the grant, and saying so is why this is not the 409. `details.retriable` is true. No consent row was created; a bank-side consent was, and is orphaned.",
+              "description": "`consent_lock_timeout`: another request is issuing a consent for this consumer at this bank and the wait ended without an answer, so NOTHING WAS DECIDED. We do not know whether a sibling holds the grant, and saying so is why this is not the 409. `details.retriable` is true. No consent row was created; a bank-side consent was, and is orphaned.\n\n`ofb_adapter_unavailable`: the Open Finance adapter this deployment selects cannot serve (`details.reason`: `missing_credentials`, `not_implemented` or `unknown_mode`). Ours to fix, not yours; nothing was written and no bank was contacted.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -10596,7 +10656,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "consent_lock_timeout"
+                              "consent_lock_timeout",
+                              "ofb_adapter_unavailable"
                             ]
                           },
                           "message": {
@@ -15605,7 +15666,7 @@
                     "buyer": {
                       "type": "object",
                       "additionalProperties": {},
-                      "description": "The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. Passed through as an object: the handler does not validate it field by field here, and whatever the provider refuses comes back in the provider's own refusal."
+                      "description": "The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. Passed through as an object: the handler does not validate it field by field here, and whatever the provider refuses comes back in the provider's own refusal. Two exceptions are checked before anything is sent: the document's check digits, and, for a natural person (CPF) in a live project, `financialDetails` = `{ declaredIncome, occupation, netWorth }` in the provider's codes. That is the titular's own declaration, and CodeSpar never fills it in for them."
                     },
                     "consumer_id": {
                       "type": "string",
@@ -15718,7 +15779,7 @@
               }
             },
             "400": {
-              "description": "The body did not match the schema, or the document did not pass the check. BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`.",
+              "description": "The body did not match the schema, the document did not pass the check, or a natural person's onboarding in a live project came without `buyer.financialDetails` (one issue per missing code, its `path` naming it). BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -18429,7 +18490,8 @@
                           "provider_unreachable",
                           "redirect_not_followed",
                           "endpoint_missing",
-                          "test_venue_unavailable"
+                          "test_venue_unavailable",
+                          "shared_sandbox_live_project_refused"
                         ]
                       },
                       "detail": {
@@ -18521,7 +18583,8 @@
                               "provider_unreachable",
                               "redirect_not_followed",
                               "endpoint_missing",
-                              "test_venue_unavailable"
+                              "test_venue_unavailable",
+                              "shared_sandbox_live_project_refused"
                             ]
                           },
                           "detail": {
@@ -18594,7 +18657,8 @@
                           "provider_unreachable",
                           "redirect_not_followed",
                           "endpoint_missing",
-                          "test_venue_unavailable"
+                          "test_venue_unavailable",
+                          "shared_sandbox_live_project_refused"
                         ]
                       },
                       "detail": {
@@ -18639,7 +18703,7 @@
               }
             },
             "424": {
-              "description": "`not_connected`. There is no usable credential to test: no active connection for this project and provider, or the vault returned nothing for the reference it holds. This body carries the extra `hint` / `alternative` steer. Or `connection_expired`: the project has an authorization-code OAuth connection whose access token passed its expiry, and nothing refreshes it, so the fix is to reconnect. That body carries `expires_at` and no sandbox steer.",
+              "description": "`not_connected`. There is no usable credential to test: no active connection for this project and provider, or the vault returned nothing for the reference it holds. This body carries the extra `hint` / `alternative` steer. Or `connection_expired`: the project has an authorization-code OAuth connection whose access token passed its expiry, and nothing refreshes it, so the fix is to reconnect. That body carries `expires_at` and no sandbox steer. Or `shared_sandbox_live_project_refused`: the project's connection for this provider is the platform's shared SANDBOX credential, which serves test projects only, and this is a live project (or a live-mode call). Nothing was sent to the provider; the fix is to connect the project's own credential.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -18665,7 +18729,8 @@
                           "provider_unreachable",
                           "redirect_not_followed",
                           "endpoint_missing",
-                          "test_venue_unavailable"
+                          "test_venue_unavailable",
+                          "shared_sandbox_live_project_refused"
                         ]
                       },
                       "detail": {
@@ -18736,7 +18801,8 @@
                           "provider_unreachable",
                           "redirect_not_followed",
                           "endpoint_missing",
-                          "test_venue_unavailable"
+                          "test_venue_unavailable",
+                          "shared_sandbox_live_project_refused"
                         ]
                       },
                       "detail": {
@@ -18807,7 +18873,8 @@
                           "provider_unreachable",
                           "redirect_not_followed",
                           "endpoint_missing",
-                          "test_venue_unavailable"
+                          "test_venue_unavailable",
+                          "shared_sandbox_live_project_refused"
                         ]
                       },
                       "detail": {
@@ -18878,7 +18945,8 @@
                           "provider_unreachable",
                           "redirect_not_followed",
                           "endpoint_missing",
-                          "test_venue_unavailable"
+                          "test_venue_unavailable",
+                          "shared_sandbox_live_project_refused"
                         ]
                       },
                       "detail": {
@@ -29170,7 +29238,7 @@
       "/v1/consumers/mandates/{id}/spend": {
         "post": {
           "summary": "Spend under a mandate already projected here",
-          "description": "Moves money out under a mandate already projected into this organization, addressed by id. This is the path the `codespar_pay` meta-tool takes internally, so the behaviour here is the behaviour an agent gets; the route exists so a caller who does not use the SDK reaches the same place. One difference: this route runs the organization's policy rules under `consumer_payment:execute`, for the mandate's agent, before the payment starts, exactly like `/v1/consumer-payments/execute`.\n\nWith `ted` present the provider leg is a real bank transfer, debited from the consumer's own sub-account. Without `ted`, `payee` is a Pix key or a copy-and-paste string.\n\n**TED carries three requirements the other payment methods do not, and all three bind BEFORE any money step:**\n\n1. `attempt_id` is MANDATORY. A TED has no copy-and-paste string and no nonce to derive correlation from, and two TEDs under the same mandate must never collide on a derived id.\n2. `payee` must EQUAL the destination's canonical string, `ted:<ispb>:<branch>:<account>`, alphanumerics only and upper-cased. The comparison normalizes whitespace and nothing else, so an entry carrying a dot or a hyphen does NOT match. The rule is what makes the signed-allowlist pin and the wire name the SAME destination: without it, an approved payee fronts for a different bank account.\n3. The destination must be NAMED in a signed list of the mandate, and a merchant-list wildcard `\"*\"` NEVER authorizes money out. Which list is accepted is mid-rollout, so read this one carefully: the target rule is `withdrawal_allowlist` alone, and while the rollout flag is off a destination named explicitly in the signed `merchant_allowlist` is ALSO accepted, with the stricter rule's refusal recorded rather than applied. Tolerance never widens what passes: a wildcard is refused on both paths, and a destination in neither list is refused with its own code. Build against `withdrawal_allowlist`: it is the list that keeps working when the flag turns on.\n\nThe cumulative cap is checked and CONSUMED under an advisory lock, and the wallet hold is taken inside that same lock. The lock is released before the provider call, so a slow provider does not serialize everyone else.\n\n**There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.\n\n**A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail and quote, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.",
+          "description": "Moves money out under a mandate already projected into this organization, addressed by id. This is the path the `codespar_pay` meta-tool takes internally, so the behaviour here is the behaviour an agent gets; the route exists so a caller who does not use the SDK reaches the same place. One difference: this route runs the organization's policy rules under `consumer_payment:execute`, for the mandate's agent, before the payment starts, exactly like `/v1/consumer-payments/execute`.\n\nWith `ted` present the provider leg is a real bank transfer, debited from the consumer's own sub-account. Without `ted`, `payee` is a Pix key or a copy-and-paste string.\n\n**TED carries three requirements the other payment methods do not, and all three bind BEFORE any money step:**\n\n1. `attempt_id` is MANDATORY. A TED has no copy-and-paste string and no nonce to derive correlation from, and two TEDs under the same mandate must never collide on a derived id.\n2. `payee` must EQUAL the destination's canonical string, `ted:<ispb>:<branch>:<account>`, alphanumerics only and upper-cased. The comparison normalizes whitespace and nothing else, so an entry carrying a dot or a hyphen does NOT match. The rule is what makes the signed-allowlist pin and the wire name the SAME destination: without it, an approved payee fronts for a different bank account.\n3. The destination must be NAMED in a signed list of the mandate, and a merchant-list wildcard `\"*\"` NEVER authorizes money out. Which list is accepted is mid-rollout, so read this one carefully: the target rule is `withdrawal_allowlist` alone, and while the rollout flag is off a destination named explicitly in the signed `merchant_allowlist` is ALSO accepted, with the stricter rule's refusal recorded rather than applied. Tolerance never widens what passes: a wildcard is refused on both paths, and a destination in neither list is refused with its own code. Build against `withdrawal_allowlist`: it is the list that keeps working when the flag turns on.\n\nThe cumulative cap is checked and CONSUMED under an advisory lock, and the wallet hold is taken inside that same lock. The lock is released before the provider call, so a slow provider does not serialize everyone else.\n\n**There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.\n\n**A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail, quote and approval, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.",
           "parameters": [
             {
               "schema": {
@@ -29218,6 +29286,9 @@
                     },
                     "actor": {
                       "$ref": "#/components/schemas/PaymentActor"
+                    },
+                    "approval": {
+                      "$ref": "#/components/schemas/SpendApproval"
                     }
                   },
                   "required": [
@@ -29240,7 +29311,7 @@
               }
             },
             "400": {
-              "description": "The body did not match the schema (`invalid_body`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in either case.",
+              "description": "The body did not match the schema (`invalid_body`), `approval` is malformed (`invalid_approval_hash`), `quote.at` is not an RFC 3339 timestamp with an offset in UTC years 0001-9999 (`invalid_receipt_timestamp`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in any of these cases. `attempt_id_required`: the body names no `attempt_id` and the deployment enforces one (`ATTEMPT_ID_REQUIRED_ENFORCE`); add a stable id and reuse it on every retry of that payment. It is checked AFTER the body is valid, so a request that is both malformed and id-less is answered `invalid_approval_hash`, `invalid_receipt_timestamp` or `invalid_body` first.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -29253,7 +29324,10 @@
                             "type": "string",
                             "enum": [
                               "invalid_body",
-                              "actor_consumer_mismatch"
+                              "invalid_approval_hash",
+                              "invalid_receipt_timestamp",
+                              "actor_consumer_mismatch",
+                              "attempt_id_required"
                             ]
                           },
                           "message": {
@@ -29625,7 +29699,7 @@
       "/v1/consumer-payments/execute": {
         "post": {
           "summary": "Spend by presenting the signed mandate",
-          "description": "The same lifecycle as the by-id route, for a caller who carries the signed envelope instead of a mandate already projected here. Use this one when the mandate arrives from the consumer at call time; use `/consumers/mandates/{id}/spend` when it is already registered here.\n\n`signature` is the 64-character hexadecimal HMAC over the canonical mandate. The body's `agent_id` is checked against the SIGNED one: attribution of the spend belongs to the mandate, not to the caller.\n\n**TED carries three requirements the other payment methods do not, and all three bind BEFORE any money step:**\n\n1. `attempt_id` is MANDATORY. A TED has no copy-and-paste string and no nonce to derive correlation from, and two TEDs under the same mandate must never collide on a derived id.\n2. `payee` must EQUAL the destination's canonical string, `ted:<ispb>:<branch>:<account>`, alphanumerics only and upper-cased. The comparison normalizes whitespace and nothing else, so an entry carrying a dot or a hyphen does NOT match. The rule is what makes the signed-allowlist pin and the wire name the SAME destination: without it, an approved payee fronts for a different bank account.\n3. The destination must be NAMED in a signed list of the mandate, and a merchant-list wildcard `\"*\"` NEVER authorizes money out. Which list is accepted is mid-rollout, so read this one carefully: the target rule is `withdrawal_allowlist` alone, and while the rollout flag is off a destination named explicitly in the signed `merchant_allowlist` is ALSO accepted, with the stricter rule's refusal recorded rather than applied. Tolerance never widens what passes: a wildcard is refused on both paths, and a destination in neither list is refused with its own code. Build against `withdrawal_allowlist`: it is the list that keeps working when the flag turns on.\n\n**There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.\n\n**A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail and quote, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.",
+          "description": "The same lifecycle as the by-id route, for a caller who carries the signed envelope instead of a mandate already projected here. Use this one when the mandate arrives from the consumer at call time; use `/consumers/mandates/{id}/spend` when it is already registered here.\n\n`signature` is the 64-character hexadecimal HMAC over the canonical mandate. The body's `agent_id` is checked against the SIGNED one: attribution of the spend belongs to the mandate, not to the caller.\n\n**TED carries three requirements the other payment methods do not, and all three bind BEFORE any money step:**\n\n1. `attempt_id` is MANDATORY. A TED has no copy-and-paste string and no nonce to derive correlation from, and two TEDs under the same mandate must never collide on a derived id.\n2. `payee` must EQUAL the destination's canonical string, `ted:<ispb>:<branch>:<account>`, alphanumerics only and upper-cased. The comparison normalizes whitespace and nothing else, so an entry carrying a dot or a hyphen does NOT match. The rule is what makes the signed-allowlist pin and the wire name the SAME destination: without it, an approved payee fronts for a different bank account.\n3. The destination must be NAMED in a signed list of the mandate, and a merchant-list wildcard `\"*\"` NEVER authorizes money out. Which list is accepted is mid-rollout, so read this one carefully: the target rule is `withdrawal_allowlist` alone, and while the rollout flag is off a destination named explicitly in the signed `merchant_allowlist` is ALSO accepted, with the stricter rule's refusal recorded rather than applied. Tolerance never widens what passes: a wildcard is refused on both paths, and a destination in neither list is refused with its own code. Build against `withdrawal_allowlist`: it is the list that keeps working when the flag turns on.\n\n**There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.\n\n**A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail, quote and approval, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.",
           "requestBody": {
             "content": {
               "application/json": {
@@ -29672,6 +29746,9 @@
                     },
                     "actor": {
                       "$ref": "#/components/schemas/PaymentActor"
+                    },
+                    "approval": {
+                      "$ref": "#/components/schemas/SpendApproval"
                     }
                   },
                   "required": [
@@ -29697,7 +29774,7 @@
               }
             },
             "400": {
-              "description": "The body did not match the schema (`invalid_body`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in either case.",
+              "description": "The body did not match the schema (`invalid_body`), `approval` is malformed (`invalid_approval_hash`), `quote.at` is not an RFC 3339 timestamp with an offset in UTC years 0001-9999 (`invalid_receipt_timestamp`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in any of these cases. `attempt_id_required`: the body names no `attempt_id` and the deployment enforces one (`ATTEMPT_ID_REQUIRED_ENFORCE`); add a stable id and reuse it on every retry of that payment. It is checked AFTER the body is valid, so a request that is both malformed and id-less is answered `invalid_approval_hash`, `invalid_receipt_timestamp` or `invalid_body` first.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -29710,7 +29787,10 @@
                             "type": "string",
                             "enum": [
                               "invalid_body",
-                              "actor_consumer_mismatch"
+                              "invalid_approval_hash",
+                              "invalid_receipt_timestamp",
+                              "actor_consumer_mismatch",
+                              "attempt_id_required"
                             ]
                           },
                           "message": {
@@ -29991,7 +30071,7 @@
       "/v1/consumer-payments/execute-stream": {
         "post": {
           "summary": "Spend by presenting the mandate, with the steps streamed",
-          "description": "Same body and same gates as `/v1/consumer-payments/execute`. Only the response transport differs: the lifecycle steps (mandate verification, funding-source routing, hold, provider debit, receipt seal) arrive as `text/event-stream` events as they happen, instead of one JSON at the end.\n\nThe outcome is the same object the sibling route returns, carried on the last event. A client that does not need to follow progress should use `/execute`: streaming does not make settlement faster, it makes it observable while it runs.\n\n**There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.\n\n**A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail and quote, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.",
+          "description": "Same body and same gates as `/v1/consumer-payments/execute`. Only the response transport differs: the lifecycle steps (mandate verification, funding-source routing, hold, provider debit, receipt seal) arrive as `text/event-stream` events as they happen, instead of one JSON at the end.\n\nThe outcome is the same object the sibling route returns, carried on the last event. A client that does not need to follow progress should use `/execute`: streaming does not make settlement faster, it makes it observable while it runs.\n\n**There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.\n\n**A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail, quote and approval, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.",
           "requestBody": {
             "content": {
               "application/json": {
@@ -30035,6 +30115,9 @@
                     },
                     "actor": {
                       "$ref": "#/components/schemas/PaymentActor"
+                    },
+                    "approval": {
+                      "$ref": "#/components/schemas/SpendApproval"
                     }
                   },
                   "required": [
@@ -30060,7 +30143,7 @@
               }
             },
             "400": {
-              "description": "The body did not match the schema (`invalid_body`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in either case.",
+              "description": "The body did not match the schema (`invalid_body`), `approval` is malformed (`invalid_approval_hash`), `quote.at` is not an RFC 3339 timestamp with an offset in UTC years 0001-9999 (`invalid_receipt_timestamp`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in any of these cases. `attempt_id_required`: the body names no `attempt_id` and the deployment enforces one (`ATTEMPT_ID_REQUIRED_ENFORCE`); add a stable id and reuse it on every retry of that payment. It is checked AFTER the body is valid, so a request that is both malformed and id-less is answered `invalid_approval_hash`, `invalid_receipt_timestamp` or `invalid_body` first.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -30073,7 +30156,10 @@
                             "type": "string",
                             "enum": [
                               "invalid_body",
-                              "actor_consumer_mismatch"
+                              "invalid_approval_hash",
+                              "invalid_receipt_timestamp",
+                              "actor_consumer_mismatch",
+                              "attempt_id_required"
                             ]
                           },
                           "message": {
@@ -35623,7 +35709,12 @@
                                   "type": "string"
                                 },
                                 "sig": {
-                                  "type": "string"
+                                  "type": "string",
+                                  "description": "The mandate's HMAC signature. It must not be shared with a third party. Chains of version 1-3 seal it, which is why only the tenant can recompute those; a version 4 chain seals `sig_sha256` instead."
+                                },
+                                "sig_sha256": {
+                                  "type": "string",
+                                  "description": "SHA-256 over the UTF-8 bytes of `sig`, lowercase hex. What a version 4 chain seals in the mandate link, so a third party recomputes it without ever seeing `sig`."
                                 }
                               },
                               "required": [
@@ -35631,7 +35722,8 @@
                                 "nonce",
                                 "scope",
                                 "currency",
-                                "sig"
+                                "sig",
+                                "sig_sha256"
                               ]
                             },
                             "quote": {
@@ -35693,6 +35785,25 @@
                                 "at"
                               ],
                               "description": "Null when the receipt carries neither a seller nor a resource."
+                            },
+                            "approval": {
+                              "type": "object",
+                              "properties": {
+                                "items_hash": {
+                                  "type": "string"
+                                },
+                                "batch_hash": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "items_hash",
+                                "batch_hash"
+                              ],
+                              "description": "Present ONLY when the spend carried an `approval`; absent otherwise, and absent on every receipt sealed before the field existed. The value is sealed into `chain` as its own link (chain version 4), so it is covered by `receipt_sig` and `receipt_sig_ed25519`.\n\nIt is a SEALED CLAIM by the caller, NOT a server-side approval check: the server validated its shape and nothing else. It proves this payment was sealed together with this hash, not that anybody approved anything, and not who did — the approver's identity stays in the caller's own approval artifact."
                             },
                             "payment": {
                               "type": "object",
@@ -35828,7 +35939,12 @@
                               "description": "Null until a delivery proof has been sealed onto the receipt."
                             },
                             "chain": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "SHA-256 (64 lowercase hex) over the UTF-8 bytes of the RFC 8785 (JCS) canonical JSON of `{ \"v\": chain_version, \"links\": [...] }`. Every value a link needs is in this read, so the chain can be recomputed from it and bound to `receipt_sig_ed25519`. The links, in order, each left out when it does not apply:\n\n1. mandate — always: `id`, `nonce`, `scope`, `currency`, then `sig` (v1-v3) or `sig_sha256` (v4), from `mandate`.\n2. quote — when `quote` is not null: `seller`, `resource`, `price_minor`, `payee`, `session_id`, `sig`, `at`, nulls included.\n3. approval — v4 only: `items_hash`, `batch_hash` (null when absent).\n4. payment — always: `rail`, `provider`, `tx_id`, `amount_minor`, `attempt_id`, `money_moved`, `at`, plus each of `amount_atomic`, `amount_authorized`, `amount_charged`, `amount_refunded`, `metering`, `sandbox` only when present and not null.\n5. delivery — when `delivery` is not null: `result`, `proof`, `kind`, `nfe_chave`, `at`.\n\nValues are copied as read; timestamps are RFC 3339 UTC with milliseconds. The same recipe is served as data in `chain_recipe` on the unauthenticated `/.well-known/codespar-receipt-keys.json`. Recomputing needs `quote.payee` unmasked, and a v1-v3 chain needs `mandate.sig`, so only the tenant can recompute those. The Ed25519 signing string does not change with the version: it covers this digest."
+                            },
+                            "chain_version": {
+                              "type": "integer",
+                              "description": "The chain format `chain` was computed with: 4 when `approval` is present; else 3 when `payment.amount_authorized` is present; else 2 when `payment.amount_atomic` is not null; else 1. A receipt keeps the version it was sealed under."
                             },
                             "receipt_sig": {
                               "type": "string"
@@ -35879,6 +35995,7 @@
                             "payment",
                             "delivery",
                             "chain",
+                            "chain_version",
                             "receipt_sig",
                             "receipt_sig_ed25519",
                             "receipt_sig_kid",
@@ -36008,7 +36125,12 @@
                             "type": "string"
                           },
                           "sig": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "The mandate's HMAC signature. It must not be shared with a third party. Chains of version 1-3 seal it, which is why only the tenant can recompute those; a version 4 chain seals `sig_sha256` instead."
+                          },
+                          "sig_sha256": {
+                            "type": "string",
+                            "description": "SHA-256 over the UTF-8 bytes of `sig`, lowercase hex. What a version 4 chain seals in the mandate link, so a third party recomputes it without ever seeing `sig`."
                           }
                         },
                         "required": [
@@ -36016,7 +36138,8 @@
                           "nonce",
                           "scope",
                           "currency",
-                          "sig"
+                          "sig",
+                          "sig_sha256"
                         ]
                       },
                       "quote": {
@@ -36078,6 +36201,25 @@
                           "at"
                         ],
                         "description": "Null when the receipt carries neither a seller nor a resource."
+                      },
+                      "approval": {
+                        "type": "object",
+                        "properties": {
+                          "items_hash": {
+                            "type": "string"
+                          },
+                          "batch_hash": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "items_hash",
+                          "batch_hash"
+                        ],
+                        "description": "Present ONLY when the spend carried an `approval`; absent otherwise, and absent on every receipt sealed before the field existed. The value is sealed into `chain` as its own link (chain version 4), so it is covered by `receipt_sig` and `receipt_sig_ed25519`.\n\nIt is a SEALED CLAIM by the caller, NOT a server-side approval check: the server validated its shape and nothing else. It proves this payment was sealed together with this hash, not that anybody approved anything, and not who did — the approver's identity stays in the caller's own approval artifact."
                       },
                       "payment": {
                         "type": "object",
@@ -36213,7 +36355,12 @@
                         "description": "Null until a delivery proof has been sealed onto the receipt."
                       },
                       "chain": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "SHA-256 (64 lowercase hex) over the UTF-8 bytes of the RFC 8785 (JCS) canonical JSON of `{ \"v\": chain_version, \"links\": [...] }`. Every value a link needs is in this read, so the chain can be recomputed from it and bound to `receipt_sig_ed25519`. The links, in order, each left out when it does not apply:\n\n1. mandate — always: `id`, `nonce`, `scope`, `currency`, then `sig` (v1-v3) or `sig_sha256` (v4), from `mandate`.\n2. quote — when `quote` is not null: `seller`, `resource`, `price_minor`, `payee`, `session_id`, `sig`, `at`, nulls included.\n3. approval — v4 only: `items_hash`, `batch_hash` (null when absent).\n4. payment — always: `rail`, `provider`, `tx_id`, `amount_minor`, `attempt_id`, `money_moved`, `at`, plus each of `amount_atomic`, `amount_authorized`, `amount_charged`, `amount_refunded`, `metering`, `sandbox` only when present and not null.\n5. delivery — when `delivery` is not null: `result`, `proof`, `kind`, `nfe_chave`, `at`.\n\nValues are copied as read; timestamps are RFC 3339 UTC with milliseconds. The same recipe is served as data in `chain_recipe` on the unauthenticated `/.well-known/codespar-receipt-keys.json`. Recomputing needs `quote.payee` unmasked, and a v1-v3 chain needs `mandate.sig`, so only the tenant can recompute those. The Ed25519 signing string does not change with the version: it covers this digest."
+                      },
+                      "chain_version": {
+                        "type": "integer",
+                        "description": "The chain format `chain` was computed with: 4 when `approval` is present; else 3 when `payment.amount_authorized` is present; else 2 when `payment.amount_atomic` is not null; else 1. A receipt keeps the version it was sealed under."
                       },
                       "receipt_sig": {
                         "type": "string"
@@ -36264,6 +36411,7 @@
                       "payment",
                       "delivery",
                       "chain",
+                      "chain_version",
                       "receipt_sig",
                       "receipt_sig_ed25519",
                       "receipt_sig_kid",
@@ -39931,8 +40079,8 @@
                     },
                     "at": {
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 40
+                      "format": "date-time",
+                      "description": "When the delivery happened, RFC 3339 with an offset, in UTC years 0001-9999. Sealed into the chain as that instant in UTC with milliseconds. Anything else is refused with `invalid_receipt_timestamp`."
                     }
                   },
                   "required": [
@@ -40031,7 +40179,12 @@
                             "type": "string"
                           },
                           "sig": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "The mandate's HMAC signature. It must not be shared with a third party. Chains of version 1-3 seal it, which is why only the tenant can recompute those; a version 4 chain seals `sig_sha256` instead."
+                          },
+                          "sig_sha256": {
+                            "type": "string",
+                            "description": "SHA-256 over the UTF-8 bytes of `sig`, lowercase hex. What a version 4 chain seals in the mandate link, so a third party recomputes it without ever seeing `sig`."
                           }
                         },
                         "required": [
@@ -40039,7 +40192,8 @@
                           "nonce",
                           "scope",
                           "currency",
-                          "sig"
+                          "sig",
+                          "sig_sha256"
                         ]
                       },
                       "quote": {
@@ -40101,6 +40255,25 @@
                           "at"
                         ],
                         "description": "Null when the receipt carries neither a seller nor a resource."
+                      },
+                      "approval": {
+                        "type": "object",
+                        "properties": {
+                          "items_hash": {
+                            "type": "string"
+                          },
+                          "batch_hash": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "items_hash",
+                          "batch_hash"
+                        ],
+                        "description": "Present ONLY when the spend carried an `approval`; absent otherwise, and absent on every receipt sealed before the field existed. The value is sealed into `chain` as its own link (chain version 4), so it is covered by `receipt_sig` and `receipt_sig_ed25519`.\n\nIt is a SEALED CLAIM by the caller, NOT a server-side approval check: the server validated its shape and nothing else. It proves this payment was sealed together with this hash, not that anybody approved anything, and not who did — the approver's identity stays in the caller's own approval artifact."
                       },
                       "payment": {
                         "type": "object",
@@ -40236,7 +40409,12 @@
                         "description": "Null until a delivery proof has been sealed onto the receipt."
                       },
                       "chain": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "SHA-256 (64 lowercase hex) over the UTF-8 bytes of the RFC 8785 (JCS) canonical JSON of `{ \"v\": chain_version, \"links\": [...] }`. Every value a link needs is in this read, so the chain can be recomputed from it and bound to `receipt_sig_ed25519`. The links, in order, each left out when it does not apply:\n\n1. mandate — always: `id`, `nonce`, `scope`, `currency`, then `sig` (v1-v3) or `sig_sha256` (v4), from `mandate`.\n2. quote — when `quote` is not null: `seller`, `resource`, `price_minor`, `payee`, `session_id`, `sig`, `at`, nulls included.\n3. approval — v4 only: `items_hash`, `batch_hash` (null when absent).\n4. payment — always: `rail`, `provider`, `tx_id`, `amount_minor`, `attempt_id`, `money_moved`, `at`, plus each of `amount_atomic`, `amount_authorized`, `amount_charged`, `amount_refunded`, `metering`, `sandbox` only when present and not null.\n5. delivery — when `delivery` is not null: `result`, `proof`, `kind`, `nfe_chave`, `at`.\n\nValues are copied as read; timestamps are RFC 3339 UTC with milliseconds. The same recipe is served as data in `chain_recipe` on the unauthenticated `/.well-known/codespar-receipt-keys.json`. Recomputing needs `quote.payee` unmasked, and a v1-v3 chain needs `mandate.sig`, so only the tenant can recompute those. The Ed25519 signing string does not change with the version: it covers this digest."
+                      },
+                      "chain_version": {
+                        "type": "integer",
+                        "description": "The chain format `chain` was computed with: 4 when `approval` is present; else 3 when `payment.amount_authorized` is present; else 2 when `payment.amount_atomic` is not null; else 1. A receipt keeps the version it was sealed under."
                       },
                       "receipt_sig": {
                         "type": "string"
@@ -40287,6 +40465,7 @@
                       "payment",
                       "delivery",
                       "chain",
+                      "chain_version",
                       "receipt_sig",
                       "receipt_sig_ed25519",
                       "receipt_sig_kid",
@@ -40298,7 +40477,7 @@
               }
             },
             "400": {
-              "description": "The body did not match the schema. Most often a `kind` outside the seven accepted values, or a `proof` longer than 500 characters. Zod's issues are in `details.issues`.",
+              "description": "The body did not match the schema (`invalid_body`): most often a `kind` outside the seven accepted values, or a `proof` longer than 500 characters, with Zod's issues in `details.issues`. Or `at` is not an RFC 3339 timestamp with an offset in UTC years 0001-9999 (`invalid_receipt_timestamp`). Nothing was re-sealed in either case.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -40310,7 +40489,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "invalid_body"
+                              "invalid_body",
+                              "invalid_receipt_timestamp"
                             ]
                           },
                           "message": {
@@ -41822,6 +42002,51 @@
                 }
               }
             },
+            "422": {
+              "description": "`ofb_not_live`: this is a LIVE project and the deployment has no real Open Finance adapter, only the stub, which serves test projects. TERMINAL for this project: use a test project. Nothing was written and no bank was contacted.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "ofb_not_live"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
             "500": {
               "description": "`missing_bank_consent_id`: the stored consent carries no bank-side id, so there is nothing to finalise. Ours to fix, not yours; quote the request id.",
               "content": {
@@ -41881,6 +42106,51 @@
                             "type": "string",
                             "enum": [
                               "adapter_error"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "503": {
+              "description": "`ofb_adapter_unavailable`: the Open Finance adapter this deployment selects cannot serve (`details.reason`: `missing_credentials`, `not_implemented` or `unknown_mode`). Ours to fix, not yours; nothing was written and no bank was contacted.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "ofb_adapter_unavailable"
                             ]
                           },
                           "message": {
@@ -42133,6 +42403,51 @@
                 }
               }
             },
+            "422": {
+              "description": "`ofb_not_live`: this is a LIVE project and the deployment has no real Open Finance adapter, only the stub, which serves test projects. TERMINAL for this project: use a test project. Nothing was written and no bank was contacted.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "ofb_not_live"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
             "500": {
               "description": "`consent_missing_tokens`: the consent says `authorised` but is missing something the fetch needs. TWO conditions raise it and the code does not distinguish them: no stored access-token pointer, OR no bank-side consent id. The second is not a token, so read the code as `this authorised consent is not usable` rather than as a statement about credentials. Ours to fix, not yours; quote the request id.",
               "content": {
@@ -42192,6 +42507,51 @@
                             "type": "string",
                             "enum": [
                               "adapter_error"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "503": {
+              "description": "`ofb_adapter_unavailable`: the Open Finance adapter this deployment selects cannot serve (`details.reason`: `missing_credentials`, `not_implemented` or `unknown_mode`). Ours to fix, not yours; nothing was written and no bank was contacted.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "ofb_adapter_unavailable"
                             ]
                           },
                           "message": {
@@ -43684,6 +44044,51 @@
                 }
               }
             },
+            "422": {
+              "description": "`ofb_not_live`: this is a LIVE project and the deployment has no real Open Finance adapter, only the stub, which serves test projects. TERMINAL for this project: use a test project. Nothing was written and no bank was contacted.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "ofb_not_live"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
             "500": {
               "description": "`consent_disappeared`: the row was written and could not be read back. Do not retry blind; both the row and the bank-side consent may exist.",
               "content": {
@@ -43775,7 +44180,7 @@
               }
             },
             "503": {
-              "description": "`consent_lock_timeout`: another request is issuing a consent for this consumer at this bank and the wait ended without an answer, so NOTHING WAS DECIDED. We do not know whether a sibling holds the grant, and saying so is why this is not the 409. `details.retriable` is true. No consent row was created; a bank-side consent was, and is orphaned.",
+              "description": "`consent_lock_timeout`: another request is issuing a consent for this consumer at this bank and the wait ended without an answer, so NOTHING WAS DECIDED. We do not know whether a sibling holds the grant, and saying so is why this is not the 409. `details.retriable` is true. No consent row was created; a bank-side consent was, and is orphaned.\n\n`ofb_adapter_unavailable`: the Open Finance adapter this deployment selects cannot serve (`details.reason`: `missing_credentials`, `not_implemented` or `unknown_mode`). Ours to fix, not yours; nothing was written and no bank was contacted.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -43787,7 +44192,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "consent_lock_timeout"
+                              "consent_lock_timeout",
+                              "ofb_adapter_unavailable"
                             ]
                           },
                           "message": {
@@ -44127,6 +44533,51 @@
                 }
               }
             },
+            "422": {
+              "description": "`ofb_not_live`: this is a LIVE project and the deployment has no real Open Finance adapter, only the stub, which serves test projects. TERMINAL for this project: use a test project. Nothing was written and no bank was contacted.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "ofb_not_live"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
             "500": {
               "description": "`missing_bank_consent_id`: the stored consent carries no bank-side id, so there is nothing to finalise. Ours to fix, not yours; quote the request id.",
               "content": {
@@ -44186,6 +44637,51 @@
                             "type": "string",
                             "enum": [
                               "adapter_error"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "503": {
+              "description": "`ofb_adapter_unavailable`: the Open Finance adapter this deployment selects cannot serve (`details.reason`: `missing_credentials`, `not_implemented` or `unknown_mode`). Ours to fix, not yours; nothing was written and no bank was contacted.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "ofb_adapter_unavailable"
                             ]
                           },
                           "message": {
@@ -44443,6 +44939,51 @@
                 }
               }
             },
+            "422": {
+              "description": "`ofb_not_live`: this is a LIVE project and the deployment has no real Open Finance adapter, only the stub, which serves test projects. TERMINAL for this project: use a test project. Nothing was written and no bank was contacted.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "ofb_not_live"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
             "500": {
               "description": "`consent_missing_tokens`: the consent says `authorised` but is missing something the fetch needs. TWO conditions raise it and the code does not distinguish them: no stored access-token pointer, OR no bank-side consent id. The second is not a token, so read the code as `this authorised consent is not usable` rather than as a statement about credentials. Ours to fix, not yours; quote the request id.",
               "content": {
@@ -44502,6 +45043,51 @@
                             "type": "string",
                             "enum": [
                               "adapter_error"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "503": {
+              "description": "`ofb_adapter_unavailable`: the Open Finance adapter this deployment selects cannot serve (`details.reason`: `missing_credentials`, `not_implemented` or `unknown_mode`). Ours to fix, not yours; nothing was written and no bank was contacted.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "ofb_adapter_unavailable"
                             ]
                           },
                           "message": {
@@ -46887,7 +47473,7 @@
         "get": {
           "deprecated": true,
           "summary": "List approvals held for review (deprecated path)",
-          "description": "DEPRECATED alias of `GET /v1/approvals` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.\n\n**Without `status` you get only the `pending` ones**, not all of them. Ask for `status=approved,denied` to see what has already been decided. The response is an array, with no envelope and no cursor. An `{orgId}` that is not the credential's own is 404 before any read.",
+          "description": "DEPRECATED alias of `GET /v1/approvals` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.\n\n**Without `status` you get only the `pending` ones**, not all of them. Ask for `status=approved,denied` to see what has already been decided. The response is an array, with no envelope and no cursor. An `{orgId}` that is not the credential's own is 404 before any read.\n\nAn API key or an OAuth token lists only its own project's holds, without `tool_input`; the dashboard (service auth) lists the whole organization's, with it.",
           "parameters": [
             {
               "schema": {
@@ -46962,7 +47548,7 @@
                         "tool_input": {
                           "type": "object",
                           "additionalProperties": {},
-                          "description": "The tool arguments the rule held for review, verbatim."
+                          "description": "The tool arguments the rule held for review, verbatim. Absent unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it."
                         },
                         "status": {
                           "type": "string",
@@ -47026,7 +47612,6 @@
                         "matched_rule_id",
                         "matched_rule_name",
                         "tool_name",
-                        "tool_input",
                         "status",
                         "created_at",
                         "expires_at",
@@ -47106,7 +47691,7 @@
         "post": {
           "deprecated": true,
           "summary": "Approve or deny a held call (deprecated path)",
-          "description": "DEPRECATED alias of `POST /v1/approvals/{id}/decide` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.\n\n`reason` is required in both directions, up to 8000 characters, and whitespace alone is refused. Deciding requires a PERSON: a bearer credential on its own gets `bearer_token_cannot_decide`. Already decided is 409 and expired is 410, both with the full approval in the body.",
+          "description": "DEPRECATED alias of `POST /v1/approvals/{id}/decide` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.\n\n`reason` is required in both directions, up to 8000 characters, and whitespace alone is refused. Deciding requires a PERSON, through the dashboard: only service auth may call it, and a project API key or an OAuth token gets `bearer_token_cannot_decide` before the body is read, with or without a user token. Already decided is 409 and expired is 410, both with the full approval in the body.",
           "parameters": [
             {
               "schema": {
@@ -47193,7 +47778,7 @@
                       "tool_input": {
                         "type": "object",
                         "additionalProperties": {},
-                        "description": "The tool arguments the rule held for review, verbatim."
+                        "description": "The tool arguments the rule held for review, verbatim. Absent unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it."
                       },
                       "status": {
                         "type": "string",
@@ -47257,7 +47842,6 @@
                       "matched_rule_id",
                       "matched_rule_name",
                       "tool_name",
-                      "tool_input",
                       "status",
                       "created_at",
                       "expires_at",
@@ -47309,7 +47893,7 @@
               }
             },
             "403": {
-              "description": "The caller cannot decide: a bearer credential alone, a user token that is missing/invalid/mismatched, or a person below admin. Bare body.",
+              "description": "The caller cannot decide: not the dashboard (a project API key or an OAuth token, with or without a user token), a user token that is missing/invalid/mismatched, or a person below admin. Bare body.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -47409,7 +47993,7 @@
                           "tool_input": {
                             "type": "object",
                             "additionalProperties": {},
-                            "description": "The tool arguments the rule held for review, verbatim."
+                            "description": "The tool arguments the rule held for review, verbatim. Absent unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it."
                           },
                           "status": {
                             "type": "string",
@@ -47473,7 +48057,6 @@
                           "matched_rule_id",
                           "matched_rule_name",
                           "tool_name",
-                          "tool_input",
                           "status",
                           "created_at",
                           "expires_at",
@@ -47542,7 +48125,7 @@
                           "tool_input": {
                             "type": "object",
                             "additionalProperties": {},
-                            "description": "The tool arguments the rule held for review, verbatim."
+                            "description": "The tool arguments the rule held for review, verbatim. Absent unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it."
                           },
                           "status": {
                             "type": "string",
@@ -47606,7 +48189,6 @@
                           "matched_rule_id",
                           "matched_rule_name",
                           "tool_name",
-                          "tool_input",
                           "status",
                           "created_at",
                           "expires_at",
@@ -47687,7 +48269,7 @@
         "get": {
           "deprecated": true,
           "summary": "Read one approval, including the tool arguments held for review",
-          "description": "DEPRECATED alias of `GET /v1/approvals/{id}` (ent#979), kept for two releases. Same handler, same `approvals:read` scope; switch the path and nothing else changes.\n\nThe whole row a rule parked for a human, `tool_input` included, which is what makes the decision reviewable rather than a yes or no on an id. Two selected columns are deliberately off the wire: `decision_history`, and `metadata`, where the decision path records whether the approver's identity was verified or merely asserted.\n\nAn approval belonging to another org is indistinguishable from one that does not exist: both are 404, and an `{orgId}` that is not the credential's own org is 404 before any read.",
+          "description": "DEPRECATED alias of `GET /v1/approvals/{id}` (ent#979), kept for two releases. Same handler, same `approvals:read` scope; switch the path and nothing else changes.\n\nThe whole row a rule parked for a human, `tool_input` included, which is what makes the decision reviewable rather than a yes or no on an id. That is the dashboard's view (service auth). An API key or an OAuth token reads only holds raised under its own project, and without `tool_input`; any other hold is the same 404 as one that does not exist. Two selected columns are deliberately off the wire: `decision_history`, and `metadata`, where the decision path records whether the approver's identity was verified or merely asserted.\n\nAn approval belonging to another org is indistinguishable from one that does not exist: both are 404, and an `{orgId}` that is not the credential's own org is 404 before any read.",
           "parameters": [
             {
               "schema": {
@@ -47747,7 +48329,7 @@
                       "tool_input": {
                         "type": "object",
                         "additionalProperties": {},
-                        "description": "The tool arguments the rule held for review, verbatim."
+                        "description": "The tool arguments the rule held for review, verbatim. Absent unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it."
                       },
                       "status": {
                         "type": "string",
@@ -47811,7 +48393,6 @@
                       "matched_rule_id",
                       "matched_rule_name",
                       "tool_name",
-                      "tool_input",
                       "status",
                       "created_at",
                       "expires_at",
@@ -47861,7 +48442,7 @@
         "get": {
           "deprecated": true,
           "summary": "Queue depth and the age of the oldest pending approval",
-          "description": "DEPRECATED alias of `GET /v1/approvals/health` (ent#979), kept for two releases. Same handler, same `approvals:read` scope.\n\nThe operator snapshot behind a queue alarm: how many approvals are pending for this org and how long the oldest has been waiting. `status` is a verdict on the sweeps only (`degraded` when `last_sweep_at` is null or older than 30 minutes, `status_reason` says which), never on queue depth, so alert on `oldest_pending_age_seconds` for that. Both counters are null or zero on an empty queue.\n\n`last_sweep_at` is PLATFORM-WIDE, not per org: it is the last run of the expiry and orphan sweeps across the deployment. A stale value there means approvals may be sitting past their `expires_at` without being marked expired anywhere, which is a different fault from a deep queue.\n\nAn `{orgId}` that is not the credential's own org is 404.",
+          "description": "DEPRECATED alias of `GET /v1/approvals/health` (ent#979), kept for two releases. Same handler, same `approvals:read` scope.\n\nThe operator snapshot behind a queue alarm: how many approvals are pending for this org (for an API key or an OAuth token, for its own project) and how long the oldest has been waiting. `status` is a verdict on the sweeps only (`degraded` when `last_sweep_at` is null or older than 30 minutes, `status_reason` says which), never on queue depth, so alert on `oldest_pending_age_seconds` for that. Both counters are null or zero on an empty queue.\n\n`last_sweep_at` is PLATFORM-WIDE, not per org: it is the last run of the expiry and orphan sweeps across the deployment. A stale value there means approvals may be sitting past their `expires_at` without being marked expired anywhere, which is a different fault from a deep queue.\n\nAn `{orgId}` that is not the credential's own org is 404.",
           "parameters": [
             {
               "schema": {
@@ -51504,7 +52085,7 @@
               }
             },
             "403": {
-              "description": "The dashboard path named no admin, or a token that did not verify. Bare `{ error, remediation }` body.",
+              "description": "The dashboard path named no admin, or a token that did not verify; or the credential is an OAuth token, which cannot pause (`bearer_token_cannot_decide`: only a bearer key, as itself, or the dashboard, as a person, presses the switch). Bare `{ error, remediation }` body.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -65947,7 +66528,7 @@
       "/v1/payables/{payableId}/review": {
         "post": {
           "summary": "Complete the review of a payable",
-          "description": "A person records what they decided about a payable that is `NEEDS_REVIEW`, and the payable comes out `READY` or `REJECTED`. There is no third outcome and no partial review: a call that leaves anything blocking is refused and writes nothing, so resolve every item of `review` in one call.\n\n**Who may review.** A verified human. Forward the reviewer's Clerk session token in `x-codespar-user-token` on a service-auth request; that user must be an `admin` of the organization. A project API key is refused (`bearer_token_cannot_decide`): a key proves which service is calling, never which person confirmed, and the audit event names the person.\n\n**The ordinary review is an empty one.** `resolutions: []` releases a payable that no check failed and that only a review trigger holds — typically `new_supplier`, a supplier this project has never paid. The person is still recorded as the author.\n\n**One resolution per failed check.** Each names a `code` that is currently `needs_review` and one of the resolutions that code admits: the two rejecting codes (`carrier_check_digits`, `duplicate_document`) admit none, the three payee codes (`beneficiary_document_matches_supplier`, `pix_key_owner_matches_supplier`, `bank_details_changed`) admit `reject` or `confirm_rail_beneficiary`, and every other code admits `human_correction` or `reject`. A refused resolution lists what its code admits in `details.allowed`. A check that produced no answer (`indisponivel`) has no finding to resolve and is refused (`payable_check_did_not_run`) — a check that never ran is not a check that passed.\n\n- `human_correction` carries `corrections`, each naming a field and its corrected value. The value is stored with provenance `pessoa`; evidence and confidence of the previous value are dropped. The correction is then RE-CHECKED: the payable is validated again, the rail is consulted again, and the resolution holds only if the check now passes. It is refused otherwise (`payable_correction_did_not_resolve`).\n- `confirm_rail_beneficiary` is the only resolution for a payee that differs from the rail's, because editing the extracted field would turn a forged beneficiary into corrected data. It carries `confirmed_beneficiary_document`: the rail's beneficiary, masked. If it is absent or is not who the rail names now, the call is refused with `payable_rail_beneficiary_unconfirmed` and `details.rail_beneficiary_document_masked` tells you who that is — send it back verbatim to confirm.\n- `reject` ends the payable, and is sent alone. It is a decision about the payable, not the resolution of a check, so it is accepted whatever state the checks are in — a check that produced no answer included; the code it names only has to be one that admits `reject`.\n\n**What a correction may touch.** `issue_date`, `due_date`, `recipient.document`, `recipient.name` and the `totals.*` fields, and only when the payable already carries them. Everything that is a duplicity axis (`document_hash`, the carriers, `supplier.document`, `invoice_number`, `serie`) is outside, because it is a canonical column the duplicate check runs on, and `supplier.*` is outside for the payee reason above. A misread carrier or supplier document is re-entered as a new payable, not patched.\n\nScope: `payables:write`.",
+          "description": "A person records what they decided about a payable that is `NEEDS_REVIEW`, and the payable comes out `READY` or `REJECTED`. There is no third outcome and no partial review: a call that leaves anything blocking is refused and writes nothing, so resolve every item of `review` in one call.\n\n**Who may review.** A verified human. Forward the reviewer's Clerk session token in `x-codespar-user-token` on a service-auth request; that user must be an `admin` of the organization. Any other credential, a project API key or an OAuth token, is refused (`bearer_token_cannot_decide`) even with a user token: a key or token proves which service is calling, never which person confirmed, and the audit event names the person.\n\n**The ordinary review is an empty one.** `resolutions: []` releases a payable that no check failed and that only a review trigger holds — typically `new_supplier`, a supplier this project has never paid. The person is still recorded as the author.\n\n**One resolution per failed check.** Each names a `code` that is currently `needs_review` and one of the resolutions that code admits: the two rejecting codes (`carrier_check_digits`, `duplicate_document`) admit none, the three payee codes (`beneficiary_document_matches_supplier`, `pix_key_owner_matches_supplier`, `bank_details_changed`) admit `reject` or `confirm_rail_beneficiary`, and every other code admits `human_correction` or `reject`. A refused resolution lists what its code admits in `details.allowed`. A check that produced no answer (`indisponivel`) has no finding to resolve and is refused (`payable_check_did_not_run`) — a check that never ran is not a check that passed.\n\n- `human_correction` carries `corrections`, each naming a field and its corrected value. The value is stored with provenance `pessoa`; evidence and confidence of the previous value are dropped. The correction is then RE-CHECKED: the payable is validated again, the rail is consulted again, and the resolution holds only if the check now passes. It is refused otherwise (`payable_correction_did_not_resolve`).\n- `confirm_rail_beneficiary` is the only resolution for a payee that differs from the rail's, because editing the extracted field would turn a forged beneficiary into corrected data. It carries `confirmed_beneficiary_document`: the rail's beneficiary, masked. If it is absent or is not who the rail names now, the call is refused with `payable_rail_beneficiary_unconfirmed` and `details.rail_beneficiary_document_masked` tells you who that is — send it back verbatim to confirm.\n- `reject` ends the payable, and is sent alone. It is a decision about the payable, not the resolution of a check, so it is accepted whatever state the checks are in — a check that produced no answer included; the code it names only has to be one that admits `reject`.\n\n**What a correction may touch.** `issue_date`, `due_date`, `recipient.document`, `recipient.name` and the `totals.*` fields, and only when the payable already carries them. Everything that is a duplicity axis (`document_hash`, the carriers, `supplier.document`, `invoice_number`, `serie`) is outside, because it is a canonical column the duplicate check runs on, and `supplier.*` is outside for the payee reason above. A misread carrier or supplier document is re-entered as a new payable, not patched.\n\nScope: `payables:write`.",
           "parameters": [
             {
               "schema": {
@@ -68240,7 +68821,7 @@
               }
             },
             "403": {
-              "description": "The reviewer was not established. `bearer_token_cannot_decide`: a project API key cannot review. `user_token_required`: no token was forwarded. `user_token_invalid`: the token did not verify — mint a fresh one. `user_token_identity_mismatch`: `x-codespar-user` names somebody else. `insufficient_role`: that user is not an admin of the organization.",
+              "description": "The reviewer was not established. `bearer_token_cannot_decide`: the credential is not service auth (a project API key or an OAuth token), which cannot review. `user_token_required`: no token was forwarded. `user_token_invalid`: the token did not verify — mint a fresh one. `user_token_identity_mismatch`: `x-codespar-user` names somebody else. `insufficient_role`: that user is not an admin of the organization.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -76142,38 +76723,68 @@
               }
             },
             "424": {
-              "description": "Failed Dependency — no usable credential for this server. `reason` is the resolver's own outcome.",
+              "description": "Failed Dependency — no usable credential for this server. `reason` is the resolver's own outcome. Or `shared_sandbox_live_project_refused`: the project's connection for this server is the platform's shared SANDBOX credential, which serves test projects only, and this is a live project or a live-mode call; `reason` is that environment. Answered whether or not `PROXY_REQUIRE_CONNECTION` is set, nothing is sent upstream, and the fix is to connect the project's own credential (p2-proxy#5).",
               "content": {
                 "application/json": {
                   "schema": {
-                    "type": "object",
-                    "properties": {
-                      "error": {
-                        "type": "string",
-                        "enum": [
-                          "credentials_unavailable"
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "error": {
+                            "type": "string",
+                            "enum": [
+                              "credentials_unavailable"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "enum": [
+                              "server_unknown",
+                              "not_connected",
+                              "endpoint_missing"
+                            ]
+                          },
+                          "server": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "error",
+                          "reason",
+                          "server",
+                          "message"
                         ]
                       },
-                      "reason": {
-                        "type": "string",
-                        "enum": [
-                          "server_unknown",
-                          "not_connected",
-                          "endpoint_missing"
+                      {
+                        "type": "object",
+                        "properties": {
+                          "error": {
+                            "type": "string",
+                            "enum": [
+                              "shared_sandbox_live_project_refused"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "server": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "error",
+                          "reason",
+                          "server",
+                          "message"
                         ]
-                      },
-                      "server": {
-                        "type": "string"
-                      },
-                      "message": {
-                        "type": "string"
                       }
-                    },
-                    "required": [
-                      "error",
-                      "reason",
-                      "server",
-                      "message"
                     ]
                   }
                 }

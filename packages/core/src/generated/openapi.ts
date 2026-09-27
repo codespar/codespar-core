@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 89d3d64c1b8583b7aa553e10e7940b375cf8bf49c069bbce73d38b8c1a8c334c, fetched 2026-09-26T13:48:25.860Z
+// Source: openapi-snapshot.json (sha256 9a61f456742610a156130c5f98dd09805811a40f3874980b6185e72b0cf9ffa7, fetched 2026-09-27T02:26:12.150Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -2877,7 +2877,9 @@ export interface paths {
         };
         /**
          * List approvals held for review
-         * @description The organization's holds, newest first.
+         * @description The holds, newest first.
+         *
+         *     **What a key sees.** A project API key or an OAuth token reads only the holds raised under ITS OWN project, and only their status: `tool_input`, the held request itself, is not in the response. A hold raised outside any project is not a key's either. The dashboard (service auth) reads the whole organization's queue with `tool_input`, because the approver works there.
          *
          *     **Without `status`, you get only the `pending` ones**, not all of them. It is the useful default for an operator queue, and the trap for anyone expecting a history: ask for `status=approved,denied` to see what has already been decided.
          *
@@ -2915,8 +2917,8 @@ export interface paths {
                             matched_rule_name: string;
                             /** @description The held call, in whatever form the lane that raised the hold writes. There is no single format: see the operation description before matching on it. */
                             tool_name: string;
-                            /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. */
-                            tool_input: {
+                            /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. ABSENT unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it. */
+                            tool_input?: {
                                 [key: string]: unknown;
                             };
                             /** @enum {string} */
@@ -2994,7 +2996,7 @@ export interface paths {
          *
          *     **`reason` is required for both decisions.** Up to 8000 characters, and whitespace alone does not count: the audit trail of a human decision with no written reason is worth nothing later.
          *
-         *     **Deciding takes a PERSON, not a key.** A bearer credential alone is refused with `bearer_token_cannot_decide`: the user token has to come with it, be verifiable, and its identity has to match the one the header asserts. That is what separates `the organization decided` from `someone with the key decided`.
+         *     **Deciding takes a PERSON, through the dashboard.** Only service auth (the dashboard) may call this. A project API key or an OAuth token is refused with `bearer_token_cannot_decide` before the body is read, even when it carries a user token: a key or token proves which integration is calling, never that a person looked at the hold. On the dashboard's call the approver's user token has to come with it, be verifiable, and its identity has to match the one the header asserts. That is what separates `the organization decided` from `someone with the key decided`.
          *
          *     **A decision already taken is 409, and an expired one is 410.** In both cases the full approval comes in the body, so the caller can see who decided what without a second read.
          */
@@ -3037,8 +3039,8 @@ export interface paths {
                             matched_rule_name: string;
                             /** @description The held call, in whatever form the lane that raised the hold writes. There is no single format: see the operation description before matching on it. */
                             tool_name: string;
-                            /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. */
-                            tool_input: {
+                            /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. ABSENT unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it. */
+                            tool_input?: {
                                 [key: string]: unknown;
                             };
                             /** @enum {string} */
@@ -3081,7 +3083,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The caller cannot decide. `bearer_token_cannot_decide` when only a bearer credential arrived; `user_token_required`, `user_token_invalid` and `user_token_identity_mismatch` when the user token is missing, does not verify, or does not match the identity asserted in the header; `insufficient_role` when the person is below admin. Raw body. */
+                /** @description The caller cannot decide. `bearer_token_cannot_decide` when the request is not the dashboard's (service auth): a project API key or an OAuth token, with or without a user token; `user_token_required`, `user_token_invalid` and `user_token_identity_mismatch` when the user token is missing, does not verify, or does not match the identity asserted in the header; `insufficient_role` when the person is below admin. Raw body. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -3129,8 +3131,8 @@ export interface paths {
                                 matched_rule_name: string;
                                 /** @description The held call, in whatever form the lane that raised the hold writes. There is no single format: see the operation description before matching on it. */
                                 tool_name: string;
-                                /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. */
-                                tool_input: {
+                                /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. ABSENT unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it. */
+                                tool_input?: {
                                     [key: string]: unknown;
                                 };
                                 /** @enum {string} */
@@ -3179,8 +3181,8 @@ export interface paths {
                                 matched_rule_name: string;
                                 /** @description The held call, in whatever form the lane that raised the hold writes. There is no single format: see the operation description before matching on it. */
                                 tool_name: string;
-                                /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. */
-                                tool_input: {
+                                /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. ABSENT unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it. */
+                                tool_input?: {
                                     [key: string]: unknown;
                                 };
                                 /** @enum {string} */
@@ -3251,7 +3253,7 @@ export interface paths {
          * Approval queue health
          * @description How deep this organization's approval queue is, how long the oldest hold has been waiting, and whether the sweeps are running.
          *
-         *     `pending_count` and `oldest_pending_age_seconds` are computed over the caller's own organization, and the second is null exactly when the first is 0: both come from the same `status = 'pending'` filter over the same rows.
+         *     `pending_count` and `oldest_pending_age_seconds` are computed over the caller's own organization for the dashboard (service auth), and over the caller's own PROJECT for an API key or an OAuth token, the same rows the list shows it. The second is null exactly when the first is 0: both come from the same `status = 'pending'` filter over the same rows.
          *
          *     `last_sweep_at` IS NOT SCOPED TO THE CALLER, and cannot be. It is the newest run of the expiry and orphan sweeps for the whole deployment: the table it reads holds one row per sweep type and carries no organization column, so the value moves for reasons that have nothing to do with this organization. Read it as 'the sweeps are alive here', never as 'my queue was swept'. Null means neither sweep has ever recorded a run.
          *
@@ -3312,9 +3314,11 @@ export interface paths {
         };
         /**
          * Read one approval
-         * @description One held call, with the arguments recorded when it was held.
+         * @description One held call. The dashboard gets it with the arguments recorded when it was held; an API key or an OAuth token gets its status only.
          *
-         *     SCOPE. The lookup matches the id AND the caller's organization, so an id from another organization answers 404 rather than 403: a 403 would confirm the id exists, which is what a caller sweeping ids is asking. Inside the organization this read is NOT project-scoped, and the agent-facing poll at `GET /v1/approvals/{id}/status` is: a key bound to one project reads holds raised under a sibling project here, and does not there.
+         *     SCOPE. The lookup matches the id AND the caller's organization, so an id from another organization answers 404 rather than 403: a 403 would confirm the id exists, which is what a caller sweeping ids is asking. For an API key or an OAuth token it also matches the credential's project, the way the agent-facing poll at `GET /v1/approvals/{id}/status` does: a hold raised under a sibling project, or outside any project, is the same 404. The dashboard (service auth) reads any hold in the organization.
+         *
+         *     `tool_input` is ABSENT for an API key or an OAuth token: it is the held request itself, which can carry a Pix key, a CPF/CNPJ or account data, and the approver who needs it reads it on the dashboard.
          *
          *     `tool_input` IS NOT THE CALL. It is what the lane that raised the hold recorded, and two things happen to it on the way in. A hold raised on the session execute path carries `{}`, because that path hands the policy engine no tool input at all and the engine stores an empty object when it gets none. A hold raised on the proxy path carries `{ server, method, endpoint, body, params, headers }`, with the `authorization` and `cookie` request headers removed before the row is written. So an empty object here means 'this lane records nothing', not 'the agent sent nothing'.
          *
@@ -3354,8 +3358,8 @@ export interface paths {
                             matched_rule_name: string;
                             /** @description The held call, in whatever form the lane that raised the hold writes. There is no single format: see the operation description before matching on it. */
                             tool_name: string;
-                            /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. */
-                            tool_input: {
+                            /** @description The arguments as RECORDED, which is not always the arguments as sent. Empty for a hold raised on the session execute path, and header-stripped on the proxy path. ABSENT unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it. */
+                            tool_input?: {
                                 [key: string]: unknown;
                             };
                             /** @enum {string} */
@@ -5163,6 +5167,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description `ofb_not_live`: this is a LIVE project and the deployment has no real Open Finance adapter, only the stub, which serves test projects. TERMINAL for this project: use a test project. Nothing was written and no bank was contacted. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
                 /** @description `consent_disappeared`: the row was written and could not be read back. Do not retry blind; both the row and the bank-side consent may exist. */
                 500: {
                     headers: {
@@ -5203,7 +5227,11 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `consent_lock_timeout`: another request is issuing a consent for this consumer at this bank and the wait ended without an answer, so NOTHING WAS DECIDED. We do not know whether a sibling holds the grant, and saying so is why this is not the 409. `details.retriable` is true. No consent row was created; a bank-side consent was, and is orphaned. */
+                /**
+                 * @description `consent_lock_timeout`: another request is issuing a consent for this consumer at this bank and the wait ended without an answer, so NOTHING WAS DECIDED. We do not know whether a sibling holds the grant, and saying so is why this is not the 409. `details.retriable` is true. No consent row was created; a bank-side consent was, and is orphaned.
+                 *
+                 *     `ofb_adapter_unavailable`: the Open Finance adapter this deployment selects cannot serve (`details.reason`: `missing_credentials`, `not_implemented` or `unknown_mode`). Ours to fix, not yours; nothing was written and no bank was contacted.
+                 */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -5212,7 +5240,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "consent_lock_timeout";
+                                code: "consent_lock_timeout" | "ofb_adapter_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -7951,7 +7979,7 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. Passed through as an object: the handler does not validate it field by field here, and whatever the provider refuses comes back in the provider's own refusal. */
+                        /** @description The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. Passed through as an object: the handler does not validate it field by field here, and whatever the provider refuses comes back in the provider's own refusal. Two exceptions are checked before anything is sent: the document's check digits, and, for a natural person (CPF) in a live project, `financialDetails` = `{ declaredIncome, occupation, netWorth }` in the provider's codes. That is the titular's own declaration, and CodeSpar never fills it in for them. */
                         buyer: {
                             [key: string]: unknown;
                         };
@@ -7999,7 +8027,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The body did not match the schema, or the document did not pass the check. BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`. */
+                /** @description The body did not match the schema, the document did not pass the check, or a natural person's onboarding in a live project came without `buyer.financialDetails` (one issue per missing code, its `path` naming it). BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -9337,7 +9365,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable" | "shared_sandbox_live_project_refused";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9372,7 +9400,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable" | "shared_sandbox_live_project_refused";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9402,7 +9430,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable" | "shared_sandbox_live_project_refused";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9421,7 +9449,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `not_connected`. There is no usable credential to test: no active connection for this project and provider, or the vault returned nothing for the reference it holds. This body carries the extra `hint` / `alternative` steer. Or `connection_expired`: the project has an authorization-code OAuth connection whose access token passed its expiry, and nothing refreshes it, so the fix is to reconnect. That body carries `expires_at` and no sandbox steer. */
+                /** @description `not_connected`. There is no usable credential to test: no active connection for this project and provider, or the vault returned nothing for the reference it holds. This body carries the extra `hint` / `alternative` steer. Or `connection_expired`: the project has an authorization-code OAuth connection whose access token passed its expiry, and nothing refreshes it, so the fix is to reconnect. That body carries `expires_at` and no sandbox steer. Or `shared_sandbox_live_project_refused`: the project's connection for this provider is the platform's shared SANDBOX credential, which serves test projects only, and this is a live project (or a live-mode call). Nothing was sent to the provider; the fix is to connect the project's own credential. */
                 424: {
                     headers: {
                         [name: string]: unknown;
@@ -9432,7 +9460,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable" | "shared_sandbox_live_project_refused";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9462,7 +9490,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable" | "shared_sandbox_live_project_refused";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9492,7 +9520,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable" | "shared_sandbox_live_project_refused";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -9522,7 +9550,7 @@ export interface paths {
                             ok: false;
                             provider: string;
                             /** @enum {string} */
-                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable";
+                            error: "server_unknown" | "verify_unsupported" | "not_connected" | "connection_expired" | "provider_rejected" | "provider_unreachable" | "redirect_not_followed" | "endpoint_missing" | "test_venue_unavailable" | "shared_sandbox_live_project_refused";
                             /** @description Whose sentence this is depends on the code, and the difference matters. On `provider_rejected` and `provider_unreachable` it is up to 256 characters of the PROVIDER's own response body, or the transport error. On the others it is text we wrote, naming what is missing on our side. It is absent on `redirect_not_followed`, and on the `server_unknown` and `endpoint_missing` refusals that carry nothing but the code. On `test_venue_unavailable` it names the catalog file and the field to declare, and it is the one refusal here that is about the project's ENVIRONMENT rather than its connection: the identical request from a `live` project reaches the provider. */
                             detail?: string;
                             /** @description The provider's HTTP status, present only when a round trip completed: on `provider_rejected`, `redirect_not_followed`, and the `provider_unreachable` that came from a response rather than from a transport failure. Its ABSENCE on a 502 is the signal that nothing was reached at all. */
@@ -14870,7 +14898,7 @@ export interface paths {
          *
          *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.
          *
-         *     **A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail and quote, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.
+         *     **A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail, quote and approval, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.
          */
         post: {
             parameters: {
@@ -14895,6 +14923,7 @@ export interface paths {
                         ted?: components["schemas"]["TedDestination"];
                         quote?: components["schemas"]["SpendQuote"];
                         actor?: components["schemas"]["PaymentActor"];
+                        approval?: components["schemas"]["SpendApproval"];
                     };
                 };
             };
@@ -14908,7 +14937,7 @@ export interface paths {
                         "application/json": components["schemas"]["SpendOutcome"];
                     };
                 };
-                /** @description The body did not match the schema (`invalid_body`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in either case. */
+                /** @description The body did not match the schema (`invalid_body`), `approval` is malformed (`invalid_approval_hash`), `quote.at` is not an RFC 3339 timestamp with an offset in UTC years 0001-9999 (`invalid_receipt_timestamp`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in any of these cases. `attempt_id_required`: the body names no `attempt_id` and the deployment enforces one (`ATTEMPT_ID_REQUIRED_ENFORCE`); add a stable id and reuse it on every retry of that payment. It is checked AFTER the body is valid, so a request that is both malformed and id-less is answered `invalid_approval_hash`, `invalid_receipt_timestamp` or `invalid_body` first. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -14917,7 +14946,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "invalid_body" | "actor_consumer_mismatch";
+                                code: "invalid_body" | "invalid_approval_hash" | "invalid_receipt_timestamp" | "actor_consumer_mismatch" | "attempt_id_required";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15099,7 +15128,7 @@ export interface paths {
          *
          *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.
          *
-         *     **A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail and quote, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.
+         *     **A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail, quote and approval, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.
          */
         post: {
             parameters: {
@@ -15123,6 +15152,7 @@ export interface paths {
                         ted?: components["schemas"]["TedDestination"];
                         quote?: components["schemas"]["SpendQuote"];
                         actor?: components["schemas"]["PaymentActor"];
+                        approval?: components["schemas"]["SpendApproval"];
                     };
                 };
             };
@@ -15136,7 +15166,7 @@ export interface paths {
                         "application/json": components["schemas"]["SpendOutcome"];
                     };
                 };
-                /** @description The body did not match the schema (`invalid_body`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in either case. */
+                /** @description The body did not match the schema (`invalid_body`), `approval` is malformed (`invalid_approval_hash`), `quote.at` is not an RFC 3339 timestamp with an offset in UTC years 0001-9999 (`invalid_receipt_timestamp`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in any of these cases. `attempt_id_required`: the body names no `attempt_id` and the deployment enforces one (`ATTEMPT_ID_REQUIRED_ENFORCE`); add a stable id and reuse it on every retry of that payment. It is checked AFTER the body is valid, so a request that is both malformed and id-less is answered `invalid_approval_hash`, `invalid_receipt_timestamp` or `invalid_body` first. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -15145,7 +15175,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "invalid_body" | "actor_consumer_mismatch";
+                                code: "invalid_body" | "invalid_approval_hash" | "invalid_receipt_timestamp" | "actor_consumer_mismatch" | "attempt_id_required";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15281,7 +15311,7 @@ export interface paths {
          *
          *     **There is no read route for the outcome.** An `attempt_id` that answered `psp_dispatch_uncertain` has no endpoint to ask about afterwards. Keep the `attempt_id` and present it again: the lifecycle is idempotent on it and answers the state that attempt stopped in, instead of firing a second one. Do NOT restart the same intent under a fresh `attempt_id`. That is how a payment gets made twice. A retry of an attempt that already holds money is not evaluated against the organization's policy rules again, so a budget or a rate limit cannot refuse the retry that finds out what happened.
          *
-         *     **A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail and quote, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.
+         *     **A settled attempt answers its recorded response.** Presenting the `attempt_id` of an attempt that already settled, with the same amount, payee, mandate, rail, quote and approval, returns the ORIGINAL 200 body verbatim (same `transactionId`, same receipt) with `idempotent_replay: true`, and nothing is dispatched, held, sealed or published. This holds on every rail and in test mode alike, and while the organization is paused, since the answer moves no money. Presenting it with any of those parameters changed is `attempt_id_conflict`. Idempotency is opt-in: a request without an `attempt_id` is its own payment and is never replayed, so two spends under one mandate are two payments. Send an `attempt_id` to make a retry safe.
          */
         post: {
             parameters: {
@@ -15303,6 +15333,7 @@ export interface paths {
                         ted?: components["schemas"]["TedDestination"];
                         quote?: components["schemas"]["SpendQuote"];
                         actor?: components["schemas"]["PaymentActor"];
+                        approval?: components["schemas"]["SpendApproval"];
                     };
                 };
             };
@@ -15316,7 +15347,7 @@ export interface paths {
                         "text/event-stream": string;
                     };
                 };
-                /** @description The body did not match the schema (`invalid_body`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in either case. */
+                /** @description The body did not match the schema (`invalid_body`), `approval` is malformed (`invalid_approval_hash`), `quote.at` is not an RFC 3339 timestamp with an offset in UTC years 0001-9999 (`invalid_receipt_timestamp`), or `actor.on_behalf_of` names a consumer other than the one this mandate belongs to (`actor_consumer_mismatch`). Nothing was read, held or sent in any of these cases. `attempt_id_required`: the body names no `attempt_id` and the deployment enforces one (`ATTEMPT_ID_REQUIRED_ENFORCE`); add a stable id and reuse it on every retry of that payment. It is checked AFTER the body is valid, so a request that is both malformed and id-less is answered `invalid_approval_hash`, `invalid_receipt_timestamp` or `invalid_body` first. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -15325,7 +15356,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "invalid_body" | "actor_consumer_mismatch";
+                                code: "invalid_body" | "invalid_approval_hash" | "invalid_receipt_timestamp" | "actor_consumer_mismatch" | "attempt_id_required";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -18119,7 +18150,10 @@ export interface paths {
                                     nonce: string;
                                     scope: string;
                                     currency: string;
+                                    /** @description The mandate's HMAC signature. It must not be shared with a third party. Chains of version 1-3 seal it, which is why only the tenant can recompute those; a version 4 chain seals `sig_sha256` instead. */
                                     sig: string;
+                                    /** @description SHA-256 over the UTF-8 bytes of `sig`, lowercase hex. What a version 4 chain seals in the mandate link, so a third party recomputes it without ever seeing `sig`. */
+                                    sig_sha256: string;
                                 };
                                 /** @description Null when the receipt carries neither a seller nor a resource. */
                                 quote: {
@@ -18131,6 +18165,15 @@ export interface paths {
                                     sig: string | null;
                                     at: string | null;
                                 } | null;
+                                /**
+                                 * @description Present ONLY when the spend carried an `approval`; absent otherwise, and absent on every receipt sealed before the field existed. The value is sealed into `chain` as its own link (chain version 4), so it is covered by `receipt_sig` and `receipt_sig_ed25519`.
+                                 *
+                                 *     It is a SEALED CLAIM by the caller, NOT a server-side approval check: the server validated its shape and nothing else. It proves this payment was sealed together with this hash, not that anybody approved anything, and not who did — the approver's identity stays in the caller's own approval artifact.
+                                 */
+                                approval?: {
+                                    items_hash: string;
+                                    batch_hash: string | null;
+                                };
                                 payment: {
                                     rail: string;
                                     provider: string | null;
@@ -18165,7 +18208,20 @@ export interface paths {
                                     nfe_chave: string | null;
                                     at: string | null;
                                 } | null;
+                                /**
+                                 * @description SHA-256 (64 lowercase hex) over the UTF-8 bytes of the RFC 8785 (JCS) canonical JSON of `{ "v": chain_version, "links": [...] }`. Every value a link needs is in this read, so the chain can be recomputed from it and bound to `receipt_sig_ed25519`. The links, in order, each left out when it does not apply:
+                                 *
+                                 *     1. mandate — always: `id`, `nonce`, `scope`, `currency`, then `sig` (v1-v3) or `sig_sha256` (v4), from `mandate`.
+                                 *     2. quote — when `quote` is not null: `seller`, `resource`, `price_minor`, `payee`, `session_id`, `sig`, `at`, nulls included.
+                                 *     3. approval — v4 only: `items_hash`, `batch_hash` (null when absent).
+                                 *     4. payment — always: `rail`, `provider`, `tx_id`, `amount_minor`, `attempt_id`, `money_moved`, `at`, plus each of `amount_atomic`, `amount_authorized`, `amount_charged`, `amount_refunded`, `metering`, `sandbox` only when present and not null.
+                                 *     5. delivery — when `delivery` is not null: `result`, `proof`, `kind`, `nfe_chave`, `at`.
+                                 *
+                                 *     Values are copied as read; timestamps are RFC 3339 UTC with milliseconds. The same recipe is served as data in `chain_recipe` on the unauthenticated `/.well-known/codespar-receipt-keys.json`. Recomputing needs `quote.payee` unmasked, and a v1-v3 chain needs `mandate.sig`, so only the tenant can recompute those. The Ed25519 signing string does not change with the version: it covers this digest.
+                                 */
                                 chain: string;
+                                /** @description The chain format `chain` was computed with: 4 when `approval` is present; else 3 when `payment.amount_authorized` is present; else 2 when `payment.amount_atomic` is not null; else 1. A receipt keeps the version it was sealed under. */
+                                chain_version: number;
                                 receipt_sig: string;
                                 /** @description base64url Ed25519 signature over `codespar-receipt:v1:<receipt_id>:<chain>`, made with the platform issuer key. Verifiable by anyone: fetch `/.well-known/codespar-receipt-keys.json` (no credential), take the key whose `kid` is the one below, and check the signature over that string. Null on a receipt sealed before this existed, and on one sealed while the key could not be resolved — `receipt_sig` is the HMAC seal either way and is unaffected. */
                                 receipt_sig_ed25519: string | null;
@@ -18242,7 +18298,10 @@ export interface paths {
                                 nonce: string;
                                 scope: string;
                                 currency: string;
+                                /** @description The mandate's HMAC signature. It must not be shared with a third party. Chains of version 1-3 seal it, which is why only the tenant can recompute those; a version 4 chain seals `sig_sha256` instead. */
                                 sig: string;
+                                /** @description SHA-256 over the UTF-8 bytes of `sig`, lowercase hex. What a version 4 chain seals in the mandate link, so a third party recomputes it without ever seeing `sig`. */
+                                sig_sha256: string;
                             };
                             /** @description Null when the receipt carries neither a seller nor a resource. */
                             quote: {
@@ -18254,6 +18313,15 @@ export interface paths {
                                 sig: string | null;
                                 at: string | null;
                             } | null;
+                            /**
+                             * @description Present ONLY when the spend carried an `approval`; absent otherwise, and absent on every receipt sealed before the field existed. The value is sealed into `chain` as its own link (chain version 4), so it is covered by `receipt_sig` and `receipt_sig_ed25519`.
+                             *
+                             *     It is a SEALED CLAIM by the caller, NOT a server-side approval check: the server validated its shape and nothing else. It proves this payment was sealed together with this hash, not that anybody approved anything, and not who did — the approver's identity stays in the caller's own approval artifact.
+                             */
+                            approval?: {
+                                items_hash: string;
+                                batch_hash: string | null;
+                            };
                             payment: {
                                 rail: string;
                                 provider: string | null;
@@ -18288,7 +18356,20 @@ export interface paths {
                                 nfe_chave: string | null;
                                 at: string | null;
                             } | null;
+                            /**
+                             * @description SHA-256 (64 lowercase hex) over the UTF-8 bytes of the RFC 8785 (JCS) canonical JSON of `{ "v": chain_version, "links": [...] }`. Every value a link needs is in this read, so the chain can be recomputed from it and bound to `receipt_sig_ed25519`. The links, in order, each left out when it does not apply:
+                             *
+                             *     1. mandate — always: `id`, `nonce`, `scope`, `currency`, then `sig` (v1-v3) or `sig_sha256` (v4), from `mandate`.
+                             *     2. quote — when `quote` is not null: `seller`, `resource`, `price_minor`, `payee`, `session_id`, `sig`, `at`, nulls included.
+                             *     3. approval — v4 only: `items_hash`, `batch_hash` (null when absent).
+                             *     4. payment — always: `rail`, `provider`, `tx_id`, `amount_minor`, `attempt_id`, `money_moved`, `at`, plus each of `amount_atomic`, `amount_authorized`, `amount_charged`, `amount_refunded`, `metering`, `sandbox` only when present and not null.
+                             *     5. delivery — when `delivery` is not null: `result`, `proof`, `kind`, `nfe_chave`, `at`.
+                             *
+                             *     Values are copied as read; timestamps are RFC 3339 UTC with milliseconds. The same recipe is served as data in `chain_recipe` on the unauthenticated `/.well-known/codespar-receipt-keys.json`. Recomputing needs `quote.payee` unmasked, and a v1-v3 chain needs `mandate.sig`, so only the tenant can recompute those. The Ed25519 signing string does not change with the version: it covers this digest.
+                             */
                             chain: string;
+                            /** @description The chain format `chain` was computed with: 4 when `approval` is present; else 3 when `payment.amount_authorized` is present; else 2 when `payment.amount_atomic` is not null; else 1. A receipt keeps the version it was sealed under. */
+                            chain_version: number;
                             receipt_sig: string;
                             /** @description base64url Ed25519 signature over `codespar-receipt:v1:<receipt_id>:<chain>`, made with the platform issuer key. Verifiable by anyone: fetch `/.well-known/codespar-receipt-keys.json` (no credential), take the key whose `kid` is the one below, and check the signature over that string. Null on a receipt sealed before this existed, and on one sealed while the key could not be resolved — `receipt_sig` is the HMAC seal either way and is unaffected. */
                             receipt_sig_ed25519: string | null;
@@ -20188,6 +20269,10 @@ export interface paths {
                         /** @enum {string} */
                         kind: "order_confirmation" | "nfe" | "nfse" | "tracking" | "resource" | "merchant_ref" | "pix_e2e";
                         nfe_chave?: string;
+                        /**
+                         * Format: date-time
+                         * @description When the delivery happened, RFC 3339 with an offset, in UTC years 0001-9999. Sealed into the chain as that instant in UTC with milliseconds. Anything else is refused with `invalid_receipt_timestamp`.
+                         */
                         at?: string;
                     };
                 };
@@ -20220,7 +20305,10 @@ export interface paths {
                                 nonce: string;
                                 scope: string;
                                 currency: string;
+                                /** @description The mandate's HMAC signature. It must not be shared with a third party. Chains of version 1-3 seal it, which is why only the tenant can recompute those; a version 4 chain seals `sig_sha256` instead. */
                                 sig: string;
+                                /** @description SHA-256 over the UTF-8 bytes of `sig`, lowercase hex. What a version 4 chain seals in the mandate link, so a third party recomputes it without ever seeing `sig`. */
+                                sig_sha256: string;
                             };
                             /** @description Null when the receipt carries neither a seller nor a resource. */
                             quote: {
@@ -20232,6 +20320,15 @@ export interface paths {
                                 sig: string | null;
                                 at: string | null;
                             } | null;
+                            /**
+                             * @description Present ONLY when the spend carried an `approval`; absent otherwise, and absent on every receipt sealed before the field existed. The value is sealed into `chain` as its own link (chain version 4), so it is covered by `receipt_sig` and `receipt_sig_ed25519`.
+                             *
+                             *     It is a SEALED CLAIM by the caller, NOT a server-side approval check: the server validated its shape and nothing else. It proves this payment was sealed together with this hash, not that anybody approved anything, and not who did — the approver's identity stays in the caller's own approval artifact.
+                             */
+                            approval?: {
+                                items_hash: string;
+                                batch_hash: string | null;
+                            };
                             payment: {
                                 rail: string;
                                 provider: string | null;
@@ -20266,7 +20363,20 @@ export interface paths {
                                 nfe_chave: string | null;
                                 at: string | null;
                             } | null;
+                            /**
+                             * @description SHA-256 (64 lowercase hex) over the UTF-8 bytes of the RFC 8785 (JCS) canonical JSON of `{ "v": chain_version, "links": [...] }`. Every value a link needs is in this read, so the chain can be recomputed from it and bound to `receipt_sig_ed25519`. The links, in order, each left out when it does not apply:
+                             *
+                             *     1. mandate — always: `id`, `nonce`, `scope`, `currency`, then `sig` (v1-v3) or `sig_sha256` (v4), from `mandate`.
+                             *     2. quote — when `quote` is not null: `seller`, `resource`, `price_minor`, `payee`, `session_id`, `sig`, `at`, nulls included.
+                             *     3. approval — v4 only: `items_hash`, `batch_hash` (null when absent).
+                             *     4. payment — always: `rail`, `provider`, `tx_id`, `amount_minor`, `attempt_id`, `money_moved`, `at`, plus each of `amount_atomic`, `amount_authorized`, `amount_charged`, `amount_refunded`, `metering`, `sandbox` only when present and not null.
+                             *     5. delivery — when `delivery` is not null: `result`, `proof`, `kind`, `nfe_chave`, `at`.
+                             *
+                             *     Values are copied as read; timestamps are RFC 3339 UTC with milliseconds. The same recipe is served as data in `chain_recipe` on the unauthenticated `/.well-known/codespar-receipt-keys.json`. Recomputing needs `quote.payee` unmasked, and a v1-v3 chain needs `mandate.sig`, so only the tenant can recompute those. The Ed25519 signing string does not change with the version: it covers this digest.
+                             */
                             chain: string;
+                            /** @description The chain format `chain` was computed with: 4 when `approval` is present; else 3 when `payment.amount_authorized` is present; else 2 when `payment.amount_atomic` is not null; else 1. A receipt keeps the version it was sealed under. */
+                            chain_version: number;
                             receipt_sig: string;
                             /** @description base64url Ed25519 signature over `codespar-receipt:v1:<receipt_id>:<chain>`, made with the platform issuer key. Verifiable by anyone: fetch `/.well-known/codespar-receipt-keys.json` (no credential), take the key whose `kid` is the one below, and check the signature over that string. Null on a receipt sealed before this existed, and on one sealed while the key could not be resolved — `receipt_sig` is the HMAC seal either way and is unaffected. */
                             receipt_sig_ed25519: string | null;
@@ -20280,7 +20390,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The body did not match the schema. Most often a `kind` outside the seven accepted values, or a `proof` longer than 500 characters. Zod's issues are in `details.issues`. */
+                /** @description The body did not match the schema (`invalid_body`): most often a `kind` outside the seven accepted values, or a `proof` longer than 500 characters, with Zod's issues in `details.issues`. Or `at` is not an RFC 3339 timestamp with an offset in UTC years 0001-9999 (`invalid_receipt_timestamp`). Nothing was re-sealed in either case. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -20289,7 +20399,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "invalid_body";
+                                code: "invalid_body" | "invalid_receipt_timestamp";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -21076,6 +21186,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description `ofb_not_live`: this is a LIVE project and the deployment has no real Open Finance adapter, only the stub, which serves test projects. TERMINAL for this project: use a test project. Nothing was written and no bank was contacted. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
                 /** @description `missing_bank_consent_id`: the stored consent carries no bank-side id, so there is nothing to finalise. Ours to fix, not yours; quote the request id. */
                 500: {
                     headers: {
@@ -21106,6 +21236,26 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "adapter_error";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `ofb_adapter_unavailable`: the Open Finance adapter this deployment selects cannot serve (`details.reason`: `missing_credentials`, `not_implemented` or `unknown_mode`). Ours to fix, not yours; nothing was written and no bank was contacted. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_adapter_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -21248,6 +21398,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description `ofb_not_live`: this is a LIVE project and the deployment has no real Open Finance adapter, only the stub, which serves test projects. TERMINAL for this project: use a test project. Nothing was written and no bank was contacted. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
                 /** @description `consent_missing_tokens`: the consent says `authorised` but is missing something the fetch needs. TWO conditions raise it and the code does not distinguish them: no stored access-token pointer, OR no bank-side consent id. The second is not a token, so read the code as `this authorised consent is not usable` rather than as a statement about credentials. Ours to fix, not yours; quote the request id. */
                 500: {
                     headers: {
@@ -21278,6 +21448,26 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "adapter_error";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `ofb_adapter_unavailable`: the Open Finance adapter this deployment selects cannot serve (`details.reason`: `missing_credentials`, `not_implemented` or `unknown_mode`). Ours to fix, not yours; nothing was written and no bank was contacted. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_adapter_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -22020,6 +22210,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description `ofb_not_live`: this is a LIVE project and the deployment has no real Open Finance adapter, only the stub, which serves test projects. TERMINAL for this project: use a test project. Nothing was written and no bank was contacted. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
                 /** @description `consent_disappeared`: the row was written and could not be read back. Do not retry blind; both the row and the bank-side consent may exist. */
                 500: {
                     headers: {
@@ -22060,7 +22270,11 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `consent_lock_timeout`: another request is issuing a consent for this consumer at this bank and the wait ended without an answer, so NOTHING WAS DECIDED. We do not know whether a sibling holds the grant, and saying so is why this is not the 409. `details.retriable` is true. No consent row was created; a bank-side consent was, and is orphaned. */
+                /**
+                 * @description `consent_lock_timeout`: another request is issuing a consent for this consumer at this bank and the wait ended without an answer, so NOTHING WAS DECIDED. We do not know whether a sibling holds the grant, and saying so is why this is not the 409. `details.retriable` is true. No consent row was created; a bank-side consent was, and is orphaned.
+                 *
+                 *     `ofb_adapter_unavailable`: the Open Finance adapter this deployment selects cannot serve (`details.reason`: `missing_credentials`, `not_implemented` or `unknown_mode`). Ours to fix, not yours; nothing was written and no bank was contacted.
+                 */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -22069,7 +22283,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "consent_lock_timeout";
+                                code: "consent_lock_timeout" | "ofb_adapter_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -22228,6 +22442,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description `ofb_not_live`: this is a LIVE project and the deployment has no real Open Finance adapter, only the stub, which serves test projects. TERMINAL for this project: use a test project. Nothing was written and no bank was contacted. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
                 /** @description `missing_bank_consent_id`: the stored consent carries no bank-side id, so there is nothing to finalise. Ours to fix, not yours; quote the request id. */
                 500: {
                     headers: {
@@ -22258,6 +22492,26 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "adapter_error";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `ofb_adapter_unavailable`: the Open Finance adapter this deployment selects cannot serve (`details.reason`: `missing_credentials`, `not_implemented` or `unknown_mode`). Ours to fix, not yours; nothing was written and no bank was contacted. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_adapter_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -22395,6 +22649,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description `ofb_not_live`: this is a LIVE project and the deployment has no real Open Finance adapter, only the stub, which serves test projects. TERMINAL for this project: use a test project. Nothing was written and no bank was contacted. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
                 /** @description `consent_missing_tokens`: the consent says `authorised` but is missing something the fetch needs. TWO conditions raise it and the code does not distinguish them: no stored access-token pointer, OR no bank-side consent id. The second is not a token, so read the code as `this authorised consent is not usable` rather than as a statement about credentials. Ours to fix, not yours; quote the request id. */
                 500: {
                     headers: {
@@ -22425,6 +22699,26 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "adapter_error";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `ofb_adapter_unavailable`: the Open Finance adapter this deployment selects cannot serve (`details.reason`: `missing_credentials`, `not_implemented` or `unknown_mode`). Ours to fix, not yours; nothing was written and no bank was contacted. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_adapter_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -23661,6 +23955,8 @@ export interface paths {
          * @description DEPRECATED alias of `GET /v1/approvals` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.
          *
          *     **Without `status` you get only the `pending` ones**, not all of them. Ask for `status=approved,denied` to see what has already been decided. The response is an array, with no envelope and no cursor. An `{orgId}` that is not the credential's own is 404 before any read.
+         *
+         *     An API key or an OAuth token lists only its own project's holds, without `tool_input`; the dashboard (service auth) lists the whole organization's, with it.
          */
         get: {
             parameters: {
@@ -23692,8 +23988,8 @@ export interface paths {
                             matched_rule_id: string;
                             matched_rule_name: string;
                             tool_name: string;
-                            /** @description The tool arguments the rule held for review, verbatim. */
-                            tool_input: {
+                            /** @description The tool arguments the rule held for review, verbatim. Absent unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it. */
+                            tool_input?: {
                                 [key: string]: unknown;
                             };
                             /**
@@ -23768,7 +24064,7 @@ export interface paths {
          * @deprecated
          * @description DEPRECATED alias of `POST /v1/approvals/{id}/decide` (ent#979), kept for two releases. Same handler, same scope; switch the path and nothing else changes.
          *
-         *     `reason` is required in both directions, up to 8000 characters, and whitespace alone is refused. Deciding requires a PERSON: a bearer credential on its own gets `bearer_token_cannot_decide`. Already decided is 409 and expired is 410, both with the full approval in the body.
+         *     `reason` is required in both directions, up to 8000 characters, and whitespace alone is refused. Deciding requires a PERSON, through the dashboard: only service auth may call it, and a project API key or an OAuth token gets `bearer_token_cannot_decide` before the body is read, with or without a user token. Already decided is 409 and expired is 410, both with the full approval in the body.
          */
         post: {
             parameters: {
@@ -23805,8 +24101,8 @@ export interface paths {
                             matched_rule_id: string;
                             matched_rule_name: string;
                             tool_name: string;
-                            /** @description The tool arguments the rule held for review, verbatim. */
-                            tool_input: {
+                            /** @description The tool arguments the rule held for review, verbatim. Absent unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it. */
+                            tool_input?: {
                                 [key: string]: unknown;
                             };
                             /**
@@ -23847,7 +24143,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The caller cannot decide: a bearer credential alone, a user token that is missing/invalid/mismatched, or a person below admin. Bare body. */
+                /** @description The caller cannot decide: not the dashboard (a project API key or an OAuth token, with or without a user token), a user token that is missing/invalid/mismatched, or a person below admin. Bare body. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -23891,8 +24187,8 @@ export interface paths {
                                 matched_rule_id: string;
                                 matched_rule_name: string;
                                 tool_name: string;
-                                /** @description The tool arguments the rule held for review, verbatim. */
-                                tool_input: {
+                                /** @description The tool arguments the rule held for review, verbatim. Absent unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it. */
+                                tool_input?: {
                                     [key: string]: unknown;
                                 };
                                 /**
@@ -23935,8 +24231,8 @@ export interface paths {
                                 matched_rule_id: string;
                                 matched_rule_name: string;
                                 tool_name: string;
-                                /** @description The tool arguments the rule held for review, verbatim. */
-                                tool_input: {
+                                /** @description The tool arguments the rule held for review, verbatim. Absent unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it. */
+                                tool_input?: {
                                     [key: string]: unknown;
                                 };
                                 /**
@@ -24006,7 +24302,7 @@ export interface paths {
          * @deprecated
          * @description DEPRECATED alias of `GET /v1/approvals/{id}` (ent#979), kept for two releases. Same handler, same `approvals:read` scope; switch the path and nothing else changes.
          *
-         *     The whole row a rule parked for a human, `tool_input` included, which is what makes the decision reviewable rather than a yes or no on an id. Two selected columns are deliberately off the wire: `decision_history`, and `metadata`, where the decision path records whether the approver's identity was verified or merely asserted.
+         *     The whole row a rule parked for a human, `tool_input` included, which is what makes the decision reviewable rather than a yes or no on an id. That is the dashboard's view (service auth). An API key or an OAuth token reads only holds raised under its own project, and without `tool_input`; any other hold is the same 404 as one that does not exist. Two selected columns are deliberately off the wire: `decision_history`, and `metadata`, where the decision path records whether the approver's identity was verified or merely asserted.
          *
          *     An approval belonging to another org is indistinguishable from one that does not exist: both are 404, and an `{orgId}` that is not the credential's own org is 404 before any read.
          */
@@ -24037,8 +24333,8 @@ export interface paths {
                             matched_rule_id: string;
                             matched_rule_name: string;
                             tool_name: string;
-                            /** @description The tool arguments the rule held for review, verbatim. */
-                            tool_input: {
+                            /** @description The tool arguments the rule held for review, verbatim. Absent unless the caller is the dashboard (service auth): an API key or an OAuth token never receives it. */
+                            tool_input?: {
                                 [key: string]: unknown;
                             };
                             /**
@@ -24096,7 +24392,7 @@ export interface paths {
          * @deprecated
          * @description DEPRECATED alias of `GET /v1/approvals/health` (ent#979), kept for two releases. Same handler, same `approvals:read` scope.
          *
-         *     The operator snapshot behind a queue alarm: how many approvals are pending for this org and how long the oldest has been waiting. `status` is a verdict on the sweeps only (`degraded` when `last_sweep_at` is null or older than 30 minutes, `status_reason` says which), never on queue depth, so alert on `oldest_pending_age_seconds` for that. Both counters are null or zero on an empty queue.
+         *     The operator snapshot behind a queue alarm: how many approvals are pending for this org (for an API key or an OAuth token, for its own project) and how long the oldest has been waiting. `status` is a verdict on the sweeps only (`degraded` when `last_sweep_at` is null or older than 30 minutes, `status_reason` says which), never on queue depth, so alert on `oldest_pending_age_seconds` for that. Both counters are null or zero on an empty queue.
          *
          *     `last_sweep_at` is PLATFORM-WIDE, not per org: it is the last run of the expiry and orphan sweeps across the deployment. A stale value there means approvals may be sitting past their `expires_at` without being marked expired anywhere, which is a different fault from a deep queue.
          *
@@ -25865,7 +26161,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The dashboard path named no admin, or a token that did not verify. Bare `{ error, remediation }` body. */
+                /** @description The dashboard path named no admin, or a token that did not verify; or the credential is an OAuth token, which cannot pause (`bearer_token_cannot_decide`: only a bearer key, as itself, or the dashboard, as a person, presses the switch). Bare `{ error, remediation }` body. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -29924,7 +30220,7 @@ export interface paths {
          * Complete the review of a payable
          * @description A person records what they decided about a payable that is `NEEDS_REVIEW`, and the payable comes out `READY` or `REJECTED`. There is no third outcome and no partial review: a call that leaves anything blocking is refused and writes nothing, so resolve every item of `review` in one call.
          *
-         *     **Who may review.** A verified human. Forward the reviewer's Clerk session token in `x-codespar-user-token` on a service-auth request; that user must be an `admin` of the organization. A project API key is refused (`bearer_token_cannot_decide`): a key proves which service is calling, never which person confirmed, and the audit event names the person.
+         *     **Who may review.** A verified human. Forward the reviewer's Clerk session token in `x-codespar-user-token` on a service-auth request; that user must be an `admin` of the organization. Any other credential, a project API key or an OAuth token, is refused (`bearer_token_cannot_decide`) even with a user token: a key or token proves which service is calling, never which person confirmed, and the audit event names the person.
          *
          *     **The ordinary review is an empty one.** `resolutions: []` releases a payable that no check failed and that only a review trigger holds — typically `new_supplier`, a supplier this project has never paid. The person is still recorded as the author.
          *
@@ -30496,7 +30792,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The reviewer was not established. `bearer_token_cannot_decide`: a project API key cannot review. `user_token_required`: no token was forwarded. `user_token_invalid`: the token did not verify — mint a fresh one. `user_token_identity_mismatch`: `x-codespar-user` names somebody else. `insufficient_role`: that user is not an admin of the organization. */
+                /** @description The reviewer was not established. `bearer_token_cannot_decide`: the credential is not service auth (a project API key or an OAuth token), which cannot review. `user_token_required`: no token was forwarded. `user_token_invalid`: the token did not verify — mint a fresh one. `user_token_identity_mismatch`: `x-codespar-user` names somebody else. `insufficient_role`: that user is not an admin of the organization. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -33934,7 +34230,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Failed Dependency — no usable credential for this server. `reason` is the resolver's own outcome. */
+                /** @description Failed Dependency — no usable credential for this server. `reason` is the resolver's own outcome. Or `shared_sandbox_live_project_refused`: the project's connection for this server is the platform's shared SANDBOX credential, which serves test projects only, and this is a live project or a live-mode call; `reason` is that environment. Answered whether or not `PROXY_REQUIRE_CONNECTION` is set, nothing is sent upstream, and the fix is to connect the project's own credential (p2-proxy#5). */
                 424: {
                     headers: {
                         [name: string]: unknown;
@@ -33945,6 +34241,12 @@ export interface paths {
                             error: "credentials_unavailable";
                             /** @enum {string} */
                             reason: "server_unknown" | "not_connected" | "endpoint_missing";
+                            server: string;
+                            message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "shared_sandbox_live_project_refused";
+                            reason: string;
                             server: string;
                             message: string;
                         };
@@ -36679,6 +36981,10 @@ export interface components {
             price_minor: number;
             payee: string;
             session_id?: string;
+            /**
+             * Format: date-time
+             * @description When the offer was presented, RFC 3339 with an offset, in UTC years 0001-9999. Sealed into the receipt's chain as that instant in UTC with milliseconds. Anything else is refused with `invalid_receipt_timestamp` before anything is read, held or sent.
+             */
             at?: string;
         };
         /** @description WHO triggered this spend, recorded on the receipt and read back from it. Optional, and absence is a real answer: a spend that sends no actor records `null`, and nothing is ever inferred from `agent_id` — that field names the agent the mandate was SIGNED for, which is an authority, not an event. A person acting through WhatsApp under an agent's mandate and the agent acting unattended are the same row without this field. */
@@ -36696,6 +37002,17 @@ export interface components {
             id: string;
             /** @description Where the person acted from: `whatsapp`, `dashboard`, `cli`. */
             channel?: string;
+        };
+        /**
+         * @description The hash of what the caller says a person approved: `items_hash` for this spend's lines, and for a batch `batch_hash` over the whole presented list. When present it is SEALED into the receipt's signed chain as its own link (chain version 4), so it cannot be stripped or altered afterwards without breaking both `receipt_sig` and `receipt_sig_ed25519`, and the receipt reads return it.
+         *
+         *     It is a SEALED CLAIM by the caller, NOT a server-side approval check. The server only validates the shape; it never interprets the value, never compares it with anything and never refuses a spend because of it. It proves that this payment was sealed together with this hash, so whoever holds the approval artifact can recompute the hash and hold it against the receipt. It does not prove that anybody approved anything, or who. A malformed value, or a key other than these two, is refused with `invalid_approval_hash` before anything is read, held or sent. Part of what makes two requests with one `attempt_id` the same payment: a repeat with a different `approval` is `attempt_id_conflict`.
+         */
+        SpendApproval: {
+            /** @description A SHA-256 digest in lowercase hex, optionally prefixed `sha256:`. Sealed exactly as sent. */
+            items_hash: string;
+            /** @description A SHA-256 digest in lowercase hex, optionally prefixed `sha256:`. Sealed exactly as sent. */
+            batch_hash?: string;
         };
     };
     responses: never;

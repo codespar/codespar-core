@@ -1,5 +1,69 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.10 — 2026-09-27
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: 289 operacoes seguem 289,
+  nenhuma rota nova e nenhuma removida. Vinte e cinco operacoes mudaram de
+  forma ou de texto; `components.schemas` ganha `SpendApproval` e
+  `SpendQuote.at` passa a ser `format: date-time`.
+
+  Hash de aprovacao selado no recibo (ent#1670, enterprise #1698): o corpo de
+
+      POST /v1/consumers/mandates/{id}/spend
+      POST /v1/consumer-payments/execute
+      POST /v1/consumer-payments/execute-stream
+
+  ganha `approval` opcional (`SpendApproval`: `items_hash` obrigatorio,
+  `batch_hash` opcional, SHA-256 em hex minusculo com prefixo `sha256:`
+  opcional). E uma AFIRMACAO SELADA de quem chama, nao uma checagem de
+  aprovacao: o servidor so valida a forma e sela o valor como elo proprio da
+  cadeia (versao 4). O 400 dessas rotas ganha `invalid_approval_hash` e
+  `invalid_receipt_timestamp` (`quote.at` fora de RFC 3339 com offset). Um
+  `approval` diferente sob o mesmo `attempt_id` e `attempt_id_conflict`.
+
+  As leituras de recibo
+
+      GET  /v1/consumers/{consumerId}/receipts
+      GET  /v1/consumers/receipts/{id}
+      POST /v1/consumers/receipts/{id}/delivery
+
+  ganham `chain_version` (obrigatorio: 1 a 4), `approval` (so quando o gasto
+  levou um) e `mandate.sig_sha256` (obrigatorio: o que a cadeia v4 sela no
+  lugar de `mandate.sig`, para um terceiro recalcular sem ver a assinatura).
+  `chain` ganha a receita completa dos elos. O `at` do corpo de `delivery`
+  passa a exigir RFC 3339 com offset (`invalid_receipt_timestamp`).
+
+  `attempt_id` obrigatorio sob flag (ent#1671, enterprise #1743): o 400 das
+  tres rotas de gasto ganha `attempt_id_required`, respondido quando a
+  implantacao liga `ATTEMPT_ID_REQUIRED_ENFORCE` e o corpo nao nomeia
+  `attempt_id`. O schema nao muda: `attempt_id` segue opcional no tipo.
+
+  Aprovacoes por projeto (enterprise #1751, #1754), em `/v1/approvals` e nos
+  aliases `/v1/orgs/{orgId}/approvals`: uma chave de API ou um token OAuth le
+  so as retencoes do PROPRIO projeto e nunca recebe `tool_input`, que deixa de
+  ser obrigatorio nas quatro leituras e no 200/409/410 de `decide`. Decidir
+  passa a ser so do dashboard (service auth): chave ou token OAuth recebe
+  `bearer_token_cannot_decide` mesmo com user token. So texto em
+  `POST /v1/orgs/{orgId}/pause` e `POST /v1/payables/{payableId}/review`.
+
+  Open Finance em projeto live (enterprise #1717), em `/v1/bank-consents` e
+  no alias `/v1/ofb/consents`: criar, `callback` e `refresh-statement` ganham
+  422 `ofb_not_live` e 503 `ofb_adapter_unavailable`.
+
+  Credencial de sandbox compartilhada fora de projeto de teste (enterprise
+  #1739): `POST /v1/providers/{slug}/verify-connection` ganha
+  `shared_sandbox_live_project_refused` em toda resposta de erro, e o 424 de
+  `POST /v1/sessions/{id}/proxy_execute` vira uniao com esse codigo.
+
+  `POST /v1/account-applications` (enterprise #1714): so texto. Onboarding de
+  pessoa fisica em projeto live sem `buyer.financialDetails` e recusado com
+  400.
+
+- A CLI nao deriva comando novo (nenhuma operacao nova). Nao muda de conteudo:
+  depende de `@codespar/sdk` por faixa.
+
 ## 0.16.9 — 2026-09-26
 
 ### Changed
