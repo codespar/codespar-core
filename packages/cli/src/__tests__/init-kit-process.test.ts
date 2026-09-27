@@ -175,5 +175,16 @@ describe.skipIf(!E2E)("the scaffold works standalone (CODESPAR_CLI_KIT_E2E=1)", 
     const check = npm(["run", "check"], r.dir);
     expect(check.status, `${check.stdout}\n${check.stderr}`).toBe(0);
     expect(check.stderr).toContain(`check ok: ${slug}`);
+
+    // A WhatsApp kit's README starts with `npm run whatsapp:emulator` at the
+    // root, which answered "Missing script" in every scaffold before 0.18.0.
+    // `--prepare` fetches the pinned emulator and exits instead of serving, so
+    // this proves the script and its file resolve without holding a port.
+    const scripts = (JSON.parse(readFileSync(join(r.dir, "package.json"), "utf8")) as { scripts: Record<string, string> }).scripts;
+    if ("whatsapp:emulator" in scripts) {
+      const emulator = npm(["run", "whatsapp:emulator", "--", "--prepare"], r.dir);
+      expect(emulator.status, `${emulator.stdout}\n${emulator.stderr}`).toBe(0);
+      expect(emulator.stderr).toContain("whatsapp emulator ready");
+    }
   }, 600_000);
 });

@@ -15,6 +15,7 @@
     "check": "npm run check --workspaces --if-present --",
     "test": "vitest run --pool=forks --maxWorkers=1",
     "typecheck": "tsc --noEmit -p packages/agent-core/tsconfig.json && tsc --noEmit -p packages/agent-runtime/tsconfig.json && tsc --noEmit -p agents/checkout-agent/tsconfig.json",
+    "whatsapp:emulator": "node scripts/whatsapp-emulator.mjs",
     "approve": "npm run approve --workspace=agents/checkout-agent --",
     "deny": "npm run deny --workspace=agents/checkout-agent --",
     "eval": "npm run eval --workspace=agents/checkout-agent --",

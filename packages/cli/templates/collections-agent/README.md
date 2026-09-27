@@ -18,6 +18,11 @@ against are vendored here and linked as npm workspaces; the agent's own
   npm start
 ```
 
+The kits root scripts this agent's channels use are carried too, verbatim, and
+run at this root as they do in the kits repo:
+
+  - `npm run whatsapp:emulator` — `scripts/whatsapp-emulator.mjs`
+
 The agent's guide is [`agents/collections-agent/README.md`](agents/collections-agent/README.md); its commands run at this root
 (`npm run check`, `npm run eval`, `npm test`) or inside `agents/collections-agent/`. The manifest pins
 `cli: "@codespar/cli@0.14.0"`, the CLI version whose `agent run`/`eval` this agent was written for.

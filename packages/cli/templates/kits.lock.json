@@ -44,12 +44,15 @@
         "@codespar/agent-core": "0.1.0",
         "@codespar/agent-runtime": "0.1.0"
       },
+      "root_scripts": {
+        "whatsapp:emulator": "node scripts/whatsapp-emulator.mjs"
+      },
       "next_steps": [
         "cp agents/checkout-agent/.env.example agents/checkout-agent/.env   # then fill in your keys",
         "npm install",
         "npm start"
       ],
-      "hash": "sha256:144d68301d978d4df695ba5a4bb17f207cf8c1f65037520b8497ddda9f1e65f1"
+      "hash": "sha256:ec2d6abd26f262705ac96f375497a92f1dcd71376998dd5d5958ef5c78db047a"
     },
     "collections-agent": {
       "source": "agents/collections-agent",
@@ -61,12 +64,15 @@
         "@codespar/agent-core": "0.1.0",
         "@codespar/agent-runtime": "0.1.0"
       },
+      "root_scripts": {
+        "whatsapp:emulator": "node scripts/whatsapp-emulator.mjs"
+      },
       "next_steps": [
         "cp agents/collections-agent/.env.example agents/collections-agent/.env   # then fill in your keys",
         "npm install",
         "npm start"
       ],
-      "hash": "sha256:59275c026d77e345d4ad2c62a3d3d5052dc58d2f5713b1833ed8d8baec145b57"
+      "hash": "sha256:fc920c0368d8542a6a612b63fa147f1e2d1e0e1fa10cf336d66cae9d941dde6a"
     },
     "hello-agent": {
       "source": "agents/hello-agent",

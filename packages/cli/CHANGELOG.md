@@ -50,18 +50,37 @@
     gets a conversation of its own on the emulator, pinned at `dyvit-wa-sim`
     0.3.0.
 
+### Fixed
+
+- **`npm run whatsapp:emulator` works in a WhatsApp scaffold.** The
+  `collections-agent` and `checkout-agent` READMEs start the channel with it
+  ("terminal 1, at the repo root"), but it is a kits ROOT script and a template
+  carried none, so a scaffold answered "Missing script" — since 0.16.0 for
+  `collections-agent`. The sync now reads the agent's `channels:` and, for
+  `whatsapp`, carries the kits root's own `whatsapp:emulator` command and the
+  one file it runs, `scripts/whatsapp-emulator.mjs`, verbatim. The lock records
+  it as `root_scripts` on those two templates only.
+
+  Only a `node <kits file>` command is carried; anything else is refused at
+  build time, as is a WhatsApp agent whose kits root has no such script. A
+  second guard asks the BUILT tree whether every `node <file>` in the generated
+  root scripts names a file the template carries. `whatsapp:gate` is left out on
+  purpose: it runs two agents out of the kits tree, which one template cannot.
+
 ### Known gaps
 
 - **A scaffold's `npm test` is not green**, and was not in 0.16.0 either
-  (7 failures there, all in the emulator integration tests). Two vendored
-  `agent-runtime` test files now fail because they read kits-repository paths a
-  single-agent template does not carry: `scripts/whatsapp-emulator.mjs` and the
-  sibling `agents/collections-agent` / `agents/checkout-agent`. `npm install`,
-  `npm run typecheck` and `npm run check` pass in all five templates.
-- **`npm run whatsapp:emulator`**, which the `collections-agent` and
-  `checkout-agent` READMEs name, is a kits root script that a template's
-  generated root `package.json` does not carry, so a scaffold answers "Missing
-  script". Present since 0.16.0 for `collections-agent`.
+  (7 failures there, all in the emulator integration tests). Vendored
+  `agent-runtime` tests read kits-repository paths a single-agent template does
+  not carry. `whatsapp-status-replies.test.ts` §3 reads the sibling
+  `agents/collections-agent` and `agents/checkout-agent` and fails in all five
+  templates; `whatsapp-emulator.integration.test.ts` reads
+  `scripts/whatsapp-emulator.mjs` and fails in the three templates without the
+  WhatsApp channel (it passes in the two that now carry the file). The fix
+  belongs in the kits. `npm install`, `npm run typecheck` and `npm run check`
+  pass in all five templates.
+- **`npm run whatsapp:gate`**, which the same two READMEs cite as what the kits
+  CI runs, still answers "Missing script" in a scaffold, for the reason above.
 
 ## 0.17.0 — 2026-09-27
 
