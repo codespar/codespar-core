@@ -1,5 +1,48 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.12 — 2026-09-27
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: 289 operacoes seguem 289,
+  nenhuma rota nova e nenhuma removida. Dez operacoes mudaram de forma ou de
+  texto; `components.schemas` nao muda.
+
+  Registro OAuth limitado (enterprise #1778): `POST /oauth/register` ganha 429
+  `rate_limit_exceeded` (10 registros por hora por endereco, com
+  `Retry-After`) e 503 `client_registration_cap_reached` (teto global de
+  clientes registrados). O `client_name` aparece na pagina de consentimento
+  marcado como nao verificado. Em `POST /oauth/token`, uma cadeia de refresh
+  vive no maximo 90 dias desde o consentimento: depois disso o refresh responde
+  400 `invalid_grant` e o usuario autoriza de novo (so texto; o codigo ja
+  existia).
+
+  Auditoria so pelo dashboard (enterprise #1760): reconhecer um incidente e
+  alterar a configuracao de auditoria
+
+      POST  /v1/audit-events/incidents/{id}/acknowledge
+      PATCH /v1/audit-events/config
+      POST  /v1/orgs/{orgId}/audit/incidents/{id}/acknowledge
+      PATCH /v1/orgs/{orgId}/audit/config
+
+  passam a ser so service auth: uma chave de API ou um token OAuth recebe 403
+  `human_session_required` antes de o corpo ser lido, qualquer que seja o
+  `x-codespar-user`. So texto; o 403 ja existia.
+
+  Onboarding sob a politica da org (enterprise #1773): `POST /v1/kyc/onboard` e
+  `POST /v1/account-applications` ganham 403 (`approval_required` com
+  `approval_id` e `expires_at`, ou `policy_denied` com `rule_id`) e 503 (o
+  motor de politica nao respondeu; recusa fail-closed, nada foi despachado,
+  repetir).
+
+  Projeto live exige aprovacao (enterprise #1772): `POST /v1/projects` com
+  `environment: "live"` numa org que a CodeSpar nao aprovou para live responde
+  403 `org_not_approved_for_live` (`details.org_id`) e nada e criado. A
+  aprovacao e da CodeSpar, nunca por esta API. Projeto de teste nao precisa.
+
+- A CLI nao deriva comando novo (nenhuma operacao nova). Nao muda de conteudo:
+  depende de `@codespar/sdk` por faixa.
+
 ## 0.16.11 — 2026-09-27
 
 ### Changed (verdict of `verifyMandateToken`, codespar-core#123, p2-identity#6)

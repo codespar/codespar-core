@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 9a61f456742610a156130c5f98dd09805811a40f3874980b6185e72b0cf9ffa7, fetched 2026-09-27T02:26:12.150Z
+// Source: openapi-snapshot.json (sha256 21f8418c275b879b3364ead10f5420a1ccd4345bad40861c8aac41b0fdd5bed5, fetched 2026-09-27T15:49:16.141Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -177,7 +177,9 @@ export interface paths {
          * Register a client (RFC 7591 dynamic client registration)
          * @description Open registration, on purpose: it is what lets an MCP client obtain a `client_id` with no pre-existing CodeSpar credential. `redirect_uris` must be absolute `https`, except loopback (`127.0.0.1`, `[::1]`, `localhost`), where `http` is allowed for a native client catching the redirect on a random port (OAuth 2.1 / RFC 8252 §7.3).
          *
-         *     A `client_id` is an identifier, not a credential. It carries no token, no tenant and no reach; every path from it to a token runs through the consent page, where a live API key has to be pasted, and the resulting token is bounded by that key's own scopes. Registration is not rate limited and not capped.
+         *     A `client_id` is an identifier, not a credential. It carries no token, no tenant and no reach; every path from it to a token runs through the consent page, where a live API key has to be pasted, and the resulting token is bounded by that key's own scopes.
+         *
+         *     Bounded two ways: per client address, a budget of 10 registrations an hour (429 `rate_limit_exceeded` with `Retry-After` past it), and a global cap on registered clients (503 `client_registration_cap_reached` past it). `client_name` is the application's own claim; the consent page shows it marked unverified.
          */
         post: {
             parameters: {
@@ -191,7 +193,7 @@ export interface paths {
                     "application/json": {
                         /** @description Absolute https URIs; http only for loopback hosts. */
                         redirect_uris: string[];
-                        /** @description Truncated to 256 characters. Rendered on the consent page. */
+                        /** @description Truncated to 256 characters. Rendered on the consent page, escaped and marked unverified. */
                         client_name?: string;
                         token_endpoint_auth_method?: string;
                         grant_types?: string[];
@@ -219,6 +221,30 @@ export interface paths {
                 };
                 /** @description `invalid_redirect_uri` when a URI is missing, relative, or http on a non-loopback host. */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            error_description?: string;
+                        };
+                    };
+                };
+                /** @description `rate_limit_exceeded`: this address spent its registration budget. `Retry-After` and `retry_after_seconds` say when the next one is accepted. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            error_description?: string;
+                        };
+                    };
+                };
+                /** @description `client_registration_cap_reached`: the server holds as many registered clients as it accepts. Nothing was registered; retry later. */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -358,7 +384,7 @@ export interface paths {
          * Token endpoint — authorization_code and refresh_token grants
          * @description `application/x-www-form-urlencoded`, unauthenticated (public client, `token_endpoint_auth_method: none`); the authorization code IS the authority. `grant_type=authorization_code` requires `code`, `code_verifier`, `redirect_uri` and `client_id`; `grant_type=refresh_token` requires `refresh_token`. Anything else is 400 `unsupported_grant_type`.
          *
-         *     Redemption is atomic and single-use even under a concurrent retry: a second redemption of the same code sees no row and gets 400 `invalid_grant`. The refresh grant ROTATES — the presented refresh token is revoked and a new one returned, so a client must persist the new value. `expires_in` is the access token's lifetime in seconds Responses carry `Cache-Control: no-store` (RFC 6749 §5.1).
+         *     Redemption is atomic and single-use even under a concurrent retry: a second redemption of the same code sees no row and gets 400 `invalid_grant`. The refresh grant ROTATES — the presented refresh token is revoked and a new one returned, so a client must persist the new value. A refresh chain lives at most 90 days from the consent that began it: past that the refresh grant answers 400 `invalid_grant` and the user has to authorize again. `expires_in` is the access token's lifetime in seconds Responses carry `Cache-Control: no-store` (RFC 6749 §5.1).
          */
         post: {
             parameters: {
@@ -397,7 +423,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `invalid_grant` (code invalid, expired, already used, bound to a different client or redirect_uri, PKCE verification failed, or carrying no recorded scope grant), `invalid_request`, or `unsupported_grant_type`. */
+                /** @description `invalid_grant` (code invalid, expired, already used, bound to a different client or redirect_uri, PKCE verification failed, carrying no recorded scope grant, or a refresh chain older than 90 days), `invalid_request`, or `unsupported_grant_type`. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -4576,7 +4602,7 @@ export interface paths {
          *
          *     A chain break has no chain-level repair. Acknowledging is a statement about your process, not a fix: the verifier stays pinned below the break and `GET /v1/audit-events/health` keeps reporting the stretch above it as uncertified afterwards.
          *
-         *     This is a person's act, not a key's: an API key is refused with 403 `human_session_required`, and the `x-codespar-user` header must name an admin or owner. That value is stored as the incident's `acknowledged_by` and carried into the chain entry, which is what makes the acknowledgement attributable. `id` is the incident UUID the list returns; an incident belonging to another org is 404, the same body as one that does not exist.
+         *     This is a person's act, not a key's: only service auth (the dashboard) may call it. An API key or an OAuth access token is refused with 403 `human_session_required` before the body is read, whatever `x-codespar-user` says, and on the service call that header must name an admin or owner. That value is stored as the incident's `acknowledged_by` and carried into the chain entry, which is what makes the acknowledgement attributable. `id` is the incident UUID the list returns; an incident belonging to another org is 404, the same body as one that does not exist.
          *
          *     Not idempotent, and does not pretend to be. A second acknowledgement of the same incident is 409 with the incident as it stands, which is also what a concurrent acknowledgement that lost the race receives: the update only moves `open` to `acknowledged`, and the losing transaction rolls its chain entry back rather than writing a second one.
          */
@@ -4687,7 +4713,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden. `human_session_required` when the credential is an API key: this operation is attributed to a person, so a machine key cannot perform it. `insufficient_role` when the `x-codespar-user` member is not an admin or owner of the org. The API-key check runs FIRST, so a key with no `x-codespar-user` header gets this 403 rather than the 401 below. */
+                /** @description Forbidden. `human_session_required` when the credential is anything but service auth (an API key or an OAuth access token): this operation is attributed to a person, and only the dashboard's service credential carries one, so a machine credential cannot perform it whatever `x-codespar-user` says. `insufficient_role` when the `x-codespar-user` member is not an admin or owner of the org. The credential check runs FIRST, before the body is read, so a key or token with no `x-codespar-user` header gets this 403 rather than the 401 below, and one with an invalid body gets it rather than a 400. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -4834,7 +4860,7 @@ export interface paths {
          *
          *     Two invariants are enforced. `hot_max_staleness_seconds` may not exceed 259200 seconds, 72 hours, which is a regulatory floor on how long a chain may go unchecked and not a tunable. And the windows must be ordered `hot_window_days` <= `warm_window_days` <= `verification_window_days`. Neither `warm_max_staleness_seconds` nor `cold_max_staleness_seconds` has a ceiling of its own.
          *
-         *     Admin or owner only, and an API key is refused with 403 `human_session_required`: these thresholds decide how loudly a tampered chain reports itself. The `x-codespar-user` header is what the change is authorized against, but unlike an acknowledgement it is not stored on the row and not written to the chain, so the config row does not say who last changed it.
+         *     Admin or owner only, and only on service auth (the dashboard): an API key or an OAuth access token is refused with 403 `human_session_required` before the body is read, whatever `x-codespar-user` says. These thresholds decide how loudly a tampered chain reports itself. The `x-codespar-user` header is what the change is authorized against, but unlike an acknowledgement it is not stored on the row and not written to the chain, so the config row does not say who last changed it.
          */
         patch: {
             parameters: {
@@ -4919,7 +4945,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden. `human_session_required` when the credential is an API key: this operation is attributed to a person, so a machine key cannot perform it. `insufficient_role` when the `x-codespar-user` member is not an admin or owner of the org. The API-key check runs FIRST, so a key with no `x-codespar-user` header gets this 403 rather than the 401 below. */
+                /** @description Forbidden. `human_session_required` when the credential is anything but service auth (an API key or an OAuth access token): this operation is attributed to a person, and only the dashboard's service credential carries one, so a machine credential cannot perform it whatever `x-codespar-user` says. `insufficient_role` when the `x-codespar-user` member is not an admin or owner of the org. The credential check runs FIRST, before the body is read, so a key or token with no `x-codespar-user` header gets this 403 rather than the 401 below, and one with an invalid body gets it rather than a 400. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -8043,6 +8069,31 @@ export interface paths {
                         };
                     };
                 };
+                /** @description The organization's policy decided, and nothing was dispatched. `approval_required`: a rule holds the call for a person; `approval_id` is the row in the approvals queue and `expires_at` when it lapses. Approving it runs the call then, through the approvals lane, not this request. `policy_denied`: a deny rule (or the non-overridable deny-list) refused it; `rule_id` names the rule. Bare body. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "approval_required";
+                            /** @enum {string} */
+                            code: "approval_required";
+                            approval_id: string;
+                            expires_at: string;
+                            /** @description The name the organization gave the rule. */
+                            message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "policy_denied";
+                            /** @enum {string} */
+                            code: "policy_denied";
+                            rule_id: string;
+                            message: string;
+                        };
+                    };
+                };
                 /** @description ONBOARDING COLLISION, and it is caller state and not a provider failure, which is why 409 and not 502. `provider_code` carries the provider's code (OBE064 proposal already open, CBE022 account already exists, OBE062 clientCode already linked) so the audit trail records the ground for the refusal. Bare body. */
                 409: {
                     headers: {
@@ -8065,6 +8116,22 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: string;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description The policy engine could not answer, so the call was refused fail-closed and nothing was dispatched. Infrastructure, not a rule: retry. Bare body. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "policy_denied";
+                            /** @enum {string} */
+                            code: "policy_denied";
+                            rule_id: string;
                             message: string;
                         };
                     };
@@ -9057,6 +9124,31 @@ export interface paths {
                         };
                     };
                 };
+                /** @description The organization's policy decided, and nothing was dispatched. `approval_required`: a rule holds the call for a person; `approval_id` is the row in the approvals queue and `expires_at` when it lapses. Approving it runs the call then, through the approvals lane, not this request. `policy_denied`: a deny rule (or the non-overridable deny-list) refused it; `rule_id` names the rule. Bare body. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "approval_required";
+                            /** @enum {string} */
+                            code: "approval_required";
+                            approval_id: string;
+                            expires_at: string;
+                            /** @description The name the organization gave the rule. */
+                            message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "policy_denied";
+                            /** @enum {string} */
+                            code: "policy_denied";
+                            rule_id: string;
+                            message: string;
+                        };
+                    };
+                };
                 /** @description Onboarding collision: caller state, not a provider failure. `provider_code` carries OBE064, CBE022 or OBE062. Raw body. */
                 409: {
                     headers: {
@@ -9079,6 +9171,22 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: string;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description The policy engine could not answer, so the call was refused fail-closed and nothing was dispatched. Infrastructure, not a rule: retry. Bare body. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "policy_denied";
+                            /** @enum {string} */
+                            code: "policy_denied";
+                            rule_id: string;
                             message: string;
                         };
                     };
@@ -24688,7 +24796,7 @@ export interface paths {
          *
          *     Not a status flip: the acknowledgement is itself appended to the audit chain, and the incident row records the entry it wrote in `ack_event_entry_hash`. The append and the `open` to `acknowledged` transition share one transaction, so a reader never sees one without the other. `chain_sequence_number` in the response is that entry's sequence.
          *
-         *     AUTHORIZATION IS NOT THE API KEY ALONE. A project API key (bearer) is refused with 403 `human_session_required`; the call has to arrive on a service credential carrying `x-codespar-user`, and that user must hold admin or owner in the org. A missing header is 401 `unauthenticated`.
+         *     AUTHORIZATION IS SERVICE AUTH ONLY. A project API key (bearer) or an OAuth access token is refused with 403 `human_session_required` before the body is read, whatever `x-codespar-user` says; the call has to arrive on a service credential carrying `x-codespar-user`, and that user must hold admin or owner in the org. A missing header is 401 `unauthenticated`.
          *
          *     A second acknowledgement, including one that loses a concurrent race, is 409 `already_acknowledged` with the current row attached rather than an opaque conflict. 503 `lock_timeout` means the chain lock was not available and nothing was written; that one is safe to retry.
          *
@@ -24792,7 +24900,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A project API key cannot acknowledge, or the named user is below admin. */
+                /** @description A project API key or an OAuth access token cannot acknowledge (`human_session_required`), or the named user is below admin. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -24953,7 +25061,7 @@ export interface paths {
          *
          *     Two invariants are checked on the MERGED result, not on the patch, so a one-field change can be refused because of a field you did not send: `hot_max_staleness_seconds` may not exceed 259200 seconds (72 hours), the regulatory floor on how stale verification may get, and the windows must stay ordered hot within warm within the verification window.
          *
-         *     AUTHORIZATION IS NOT THE API KEY ALONE, exactly as on the acknowledge route: bearer is 403 `human_session_required`, a missing `x-codespar-user` is 401, and the named user must hold admin or owner.
+         *     AUTHORIZATION IS SERVICE AUTH ONLY, exactly as on the acknowledge route: a bearer key or an OAuth access token is 403 `human_session_required` before the body is read, a missing `x-codespar-user` is 401, and the named user must hold admin or owner.
          *
          *     An `{orgId}` that is not the credential's own org is 403 `insufficient_role`.
          */
@@ -25038,7 +25146,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The `{orgId}` is not the authenticated org, a project API key was used, or the named user is below admin. */
+                /** @description The `{orgId}` is not the authenticated org, a project API key or an OAuth access token was used, or the named user is below admin. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -31676,7 +31784,7 @@ export interface paths {
          *
          *     `slug` is unique per organization, lowercase alphanumerics plus `_` and `-`, at most 64 characters, and `default` is reserved because the auto-seeded first project already holds it. A slug already taken in the organization is refused with 400 and code `slug_conflict`, not 409, and `details.slug` echoes the value that collided.
          *
-         *     `environment` is `test` when omitted and is fixed once the row exists: the update operation has no field for it. A new project is never the organization's default — the insert writes `false` — so promote it afterwards with `PATCH /v1/projects/{id}` if that is what you want.
+         *     `environment` is `test` when omitted and is fixed once the row exists: the update operation has no field for it. `live` needs the organization to be approved for live by CodeSpar; until it is, a live create is refused with 403 and code `org_not_approved_for_live` before anything is written, whatever the credential and whatever its role or scopes. Approval is granted by CodeSpar, never through this API. Test projects need no approval. A new project is never the organization's default — the insert writes `false` — so promote it afterwards with `PATCH /v1/projects/{id}` if that is what you want.
          *
          *     `settings` seeds the settings sub-resource. Every key is checked against the settings registry, for the environment the project is about to be born with, BEFORE anything is inserted, so an unknown key, a wrong-typed value, or a key that does not apply to that environment refuses the whole call and leaves no project behind. The refusal is 400 `invalid_body` with `details.key` naming the offending setting. Settings are not part of the response body; read them back with `GET /v1/projects/{id}/settings`.
          */
@@ -31736,6 +31844,26 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "invalid_body" | "slug_conflict";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `org_not_approved_for_live` when `environment` is `live` and CodeSpar has not approved the organization for live. `details.org_id` names the organization. No project is created. The role and scope refusals the auth layer can also answer with 403 are not this body; see the ROLE and SCOPE notes. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "org_not_approved_for_live";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
