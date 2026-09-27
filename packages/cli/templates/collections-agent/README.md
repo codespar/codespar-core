@@ -1,7 +1,7 @@
 # {{name}}
 
 Scaffolded by `codespar init --template collections-agent` from the `collections-agent` starter kit
-(https://github.com/codespar/agent-starter-kits at `8f130b7cdc30510c929e6f7ebb07184f763e6ce4`, agent 0.1.0).
+(https://github.com/codespar/agent-starter-kits at `3eddd460451d7485c4bb53a74a8c7b143251438f`, agent 0.1.0).
 
 The merchant's agent that collects: agrees terms with the payer inside a negotiation envelope, issues one bolepix per instalment with an idempotency key, presents the QR and the copy-and-paste in the conversation, and closes the cycle on commerce.charge.paid or commerce.charge.expired.
 

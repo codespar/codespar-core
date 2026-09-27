@@ -1,0 +1,11 @@
+{
+  "name": "pedido-marina",
+  "description": "The runbook over WhatsApp: Marina asks for the ten-lesson package and an initial assessment, the code prices the cart (R$ 479,90), she accepts, the order is confirmed and the bolepix issued, the QR goes into the conversation with the copy-and-paste as its own message underneath, the sandbox payer pays, and the agent writes 'recebemos, pedido confirmado'. The customer's turns are here; what the agent answers is the model's, never this file.",
+  "channel": "whatsapp",
+  "contact": "+5511976543210",
+  "subject": "marina",
+  "turns": [
+    { "text": "oi, sou a Marina. quero o pacote de dez aulas e uma avaliacao inicial" },
+    { "text": "fechado, pode gerar o pagamento", "after_seconds": 20 }
+  ]
+}

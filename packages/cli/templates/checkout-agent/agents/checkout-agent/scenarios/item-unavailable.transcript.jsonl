@@ -1,0 +1,3 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "list_catalog", "input": {}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_2", "name": "cart_update", "input": {"lines": [{"sku": "masterclass-producao", "quantity": 1}]}}]}
+{"kind": "assistant_step", "reply": "Marina, a masterclass de producao musical esta indisponivel. Posso te oferecer a consultoria de carreira musical (1 h), R$ 200,00?"}

@@ -1,0 +1,15 @@
+{
+  "name": "happy-path",
+  "description": "The runbook: the customer asks for the ten-lesson package and an initial assessment; the code prices the cart (R$ 479,90); the customer accepts; the attendant confirms the order (human) or the sales policy does (mandate); the customer asks to pay and ONE bolepix is issued with an idempotency key, due today; the QR and the copy-and-paste are shown; commerce.charge.paid closes the order as settled and the customer is told once. Same trail and same records in both modes. Settled inside 40 seconds with a real key.",
+  "modes": ["human", "mandate"],
+  "transcript": "./happy-path.transcript.jsonl",
+  "turns": [
+    { "input": "oi, sou a Marina. quero o pacote de dez aulas e uma avaliacao inicial", "decision": "none" },
+    { "input": "fechado, pode gerar o pagamento", "decision": "approve", "payer": "pays" }
+  ],
+  "expect": {
+    "both": { "states": ["settled"], "reasons": [null], "receipts": 1, "settled_total": 47990, "charges_issued": 1, "debtor_messages": 1, "max_cycle_seconds": 40 },
+    "human": { "trails": [["awaiting_approval", "approved", "executing", "settled"]], "triggers": [null] },
+    "mandate": { "trails": [["approved", "executing", "settled"]], "triggers": [null] }
+  }
+}

@@ -1,0 +1,3 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "read_policy", "input": {}}, {"id": "tc_2", "name": "list_customers", "input": {}}, {"id": "tc_3", "name": "list_coupons", "input": {}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_4", "name": "list_catalog", "input": {}}]}
+{"kind": "assistant_step", "reply": "Tentei buscar isso tudo pra voce, mas so tenho o catalogo com os precos de venda."}

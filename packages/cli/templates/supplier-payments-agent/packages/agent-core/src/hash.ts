@@ -1,5 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import type { ExecutionItem } from "./types.js";
+import type { CompositionLine, ExecutionBatch, ExecutionItem } from "./types.js";
 
 /** JSON with keys sorted at every level, so the same value always hashes the same. */
 export function canonicalJson(value: unknown): string {
@@ -50,6 +50,62 @@ export function itemsHash(items: readonly ExecutionItem[]): string {
  */
 export function batchHash(lines: readonly ExecutionItem[]): string {
   return itemsHash(lines);
+}
+
+/**
+ * The hash of what an execution's amount is composed of (a cart's resolved
+ * lines, in order). The same canonicalisation as `itemsHash` — sorted-key
+ * JSON, SHA-256, the `sha256:` prefix — over the fields that decide a
+ * composition, and deliberately not `itemsHash` itself: its fields are the
+ * ones that decide where money goes (payee, amount, currency, due date), and
+ * none of them sees a quantity or a unit price. Ten units at a 10% discount
+ * and nine at list price are the same line amount; they are not the same
+ * sale. Order is part of it, like a batch.
+ */
+export function compositionHash(lines: readonly CompositionLine[]): string {
+  const canonical = lines.map((line) => ({
+    ref: line.ref,
+    quantity: line.quantity,
+    unit_amount: line.unit_amount,
+    amount: line.amount,
+    currency: line.currency,
+  }));
+  return `sha256:${sha256Hex(canonicalJson(canonical))}`;
+}
+
+/**
+ * The `attempt_id` of an item of a batch line, derived from WHAT is being
+ * paid rather than from the execution that happens to pay it:
+ *
+ *   ska_ + hex(sha256(mandate_id | batch_hash | line index | item index))
+ *
+ * An execution's own attempt ids come from its `idempotency_key`, which comes
+ * from a random execution id, so a second run of the same batch on a machine
+ * that has lost `.codespar/state.db` (or never had it) would present fresh ids
+ * and the API would take each line as a new payment (OPEN_QUESTIONS §39c).
+ * Derived this way, the same line of the same list under the same mandate is
+ * the same attempt on any machine, and the API answers a repeat of it from its
+ * record of that attempt (ent#1671): the original body when it settled, a 409
+ * while it is in flight or pinned, never a second dispatch.
+ *
+ * Every input decides the payment: the mandate is whose money, the hash is the
+ * exact ordered list (payee, amount, currency of every line), the index is
+ * which line of it. A list that changes in any line is a different hash and so
+ * different ids. `ska_` names the namespace (starter-kit attempt) and 68
+ * characters sit inside the API's 128.
+ *
+ * `generation` exists because the API never runs an attempt id twice: once an
+ * attempt FAILED and moved no money, a repeat of it answers
+ * `psp_attempt_conflict` for good. A line whose payment the provider refused
+ * must still be payable by a later run of the same list, so it moves to the
+ * next generation, and only on that answer: the server saying the id is
+ * spent is the one fact every machine reads the same way, so every machine
+ * walks the same sequence and none of them finds a "free" id past one that
+ * paid. Generation 0 hashes exactly as above.
+ */
+export function batchAttemptId(mandateId: string, batch: Pick<ExecutionBatch, "batch_hash" | "index">, item: number, generation = 0): string {
+  const base = `${mandateId}|${batch.batch_hash}|${batch.index}|${item}`;
+  return `ska_${sha256Hex(generation === 0 ? base : `${base}|${generation}`)}`;
 }
 
 export function hmacSha256Hex(key: Buffer, payload: string): string {

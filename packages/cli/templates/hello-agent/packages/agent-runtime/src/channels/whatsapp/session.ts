@@ -33,6 +33,8 @@ export type TemplateRefusal = { rule: string; detail: string } | undefined;
 export class SessionWindow {
   private readonly templates: Map<string, WhatsAppTemplate>;
   private lastInboundAt: number | undefined;
+  /** The provider said the window is shut (131047) after ours read it open. Holds until the person writes again. */
+  private shutByProvider = false;
 
   constructor(templates: readonly WhatsAppTemplate[], initial?: SessionState) {
     this.templates = new Map(templates.map((t) => [t.name, t]));
@@ -40,12 +42,24 @@ export class SessionWindow {
   }
 
   observeInbound(timestamp: number): void {
-    if (this.lastInboundAt === undefined || timestamp > this.lastInboundAt) this.lastInboundAt = timestamp;
+    if (this.lastInboundAt === undefined || timestamp > this.lastInboundAt) {
+      this.lastInboundAt = timestamp;
+      this.shutByProvider = false;
+    }
+  }
+
+  /**
+   * The provider refused a free-form message because its window is shut. Its
+   * clock is the one the 24 hours are counted on, so from here the window
+   * reads shut whatever ours says, and the next message is a template.
+   */
+  observeProviderShut(): void {
+    this.shutByProvider = true;
   }
 
   /** Seconds left before free-form messages stop being allowed; 0 when the window is shut or was never opened. */
   remainingSeconds(now: Date): number {
-    if (this.lastInboundAt === undefined) return 0;
+    if (this.lastInboundAt === undefined || this.shutByProvider) return 0;
     return Math.max(0, this.lastInboundAt + SESSION_WINDOW_SECONDS - Math.floor(now.getTime() / 1000));
   }
 

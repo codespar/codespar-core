@@ -1,12 +1,15 @@
 /**
  * `codespar-agent resume [--json]`: after a crash or a restart. Executions
- * left in `executing` are reconciled against the rail (idempotent on
- * attempt_id), never repeated; stale open ones expire.
+ * left in `executing` are reconciled against the rail, never repeated: a
+ * lookup presents the same explicit attempt_id, which the API answers from
+ * its record of that attempt without paying again (ent#1671). Stale open
+ * ones expire.
  */
 import { stderr, stdout } from "node:process";
 import type { Execution } from "@codespar/agent-core";
 import type { Agent } from "../agent.js";
 import { setup } from "../setup.js";
+import { followUp } from "../terminal.js";
 
 export async function resume(agent: Agent, argv: string[]): Promise<number> {
   const json = argv.includes("--json");
@@ -21,6 +24,9 @@ export async function resume(agent: Agent, argv: string[]): Promise<number> {
       closed.push(e);
       say(e.state === "executing" ? s.kit.labels.stillExecuting(e) : `${e.id}: executing -> ${e.state}`);
     }
+    for (const e of closed) if (e.state !== "executing") await followUp(e, s, say);
+    // What a crash left half-done after an outcome (a service invoice opened and never sent, or sent and never answered).
+    await s.kit.resumeFollowUps?.(s, say);
     const expired = s.engine.expireStale().map((e) => ({ id: e.id, state: e.state }));
     for (const e of expired) say(`${e.id}: -> expired`);
     const open = s.engine.list({ state: ["awaiting_approval", "approved"] }).map((e) => ({ id: e.id, state: e.state }));

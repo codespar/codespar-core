@@ -9,14 +9,14 @@
  */
 import { stderr, stdout } from "node:process";
 import { relative, resolve } from "node:path";
-import { NotATestKeyError, isTestKey, loadManifest, resolveFixedClock, type ApprovalMode, type ChannelName } from "@codespar/agent-core";
+import { NotATestKeyError, declaredReplies, isTestKey, loadManifest, resolveFixedClock, type ApprovalMode, type ChannelName } from "@codespar/agent-core";
 import { join } from "node:path";
 import type { Agent } from "../agent.js";
 import type { RailKind } from "../kit.js";
 import { resolveProvider, resolveRailKind, setup, type ProviderKind } from "../setup.js";
 import { checkScenario, listScenarios, loadScenario, runScenario, scenariosDir } from "../scenarios.js";
 import { closeTerminal, defaultAsk, handleExecution, interactive } from "../terminal.js";
-import { resolveConversation } from "../channels/index.js";
+import { loadTemplates, resolveConversation } from "../channels/index.js";
 import { startWhatsApp, type WhatsAppBackendName } from "./start-whatsapp.js";
 
 interface Args {
@@ -159,7 +159,9 @@ export async function start(agent: Agent, argv: string[]): Promise<number> {
     say(err instanceof Error ? err.message : String(err));
     return 2;
   }
-  const firstInput = args.input ?? (args.scripted ? conversationScript?.turns[0].text : undefined);
+  // A first turn that is a TAP is looked up by the intent the tap stands for, which is what the model is handed.
+  const firstTurn = args.scripted ? conversationScript?.turns[0] : undefined;
+  const firstInput = args.input ?? firstTurn?.text ?? (firstTurn?.reply ? declaredReplies(loadTemplates(agent)).get(firstTurn.reply.id)?.intent : undefined);
 
   // No model: replay the recorded scenario whose first turn is what the person said first.
   let transcript = args.transcript;
@@ -179,6 +181,7 @@ export async function start(agent: Agent, argv: string[]): Promise<number> {
   const startedAt = Date.now();
   try {
     if (args.channel === "whatsapp") {
+      s.conversation = conversationScript;
       return await startWhatsApp({
         agent,
         setup: s,

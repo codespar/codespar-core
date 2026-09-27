@@ -13,9 +13,9 @@
  * caller and have no path to this object at all — not a check, a shape: there
  * is no method here that an operator line could be handed to.
  */
-import type { ProofBundle, WhatsAppTemplate } from "@codespar/agent-core";
+import { declaredReplies, type ProofBundle, type QuickReply, type WhatsAppTemplate } from "@codespar/agent-core";
 import { checkOutbound, type HoursRule, type RuleContext } from "../rules.js";
-import type { Channel, ChannelBackend, ChannelLogLine, Conversation, InboundMessage, OutboundBody, SentMessage } from "../types.js";
+import type { Channel, ChannelBackend, ChannelLogLine, Conversation, DeliveryState, InboundMessage, OutboundBody, SentMessage, StatusUpdate } from "../types.js";
 import { maskContact } from "../contact.js";
 import { SessionWindow, type SessionState } from "./session.js";
 
@@ -44,6 +44,14 @@ export interface WhatsAppChannelOptions {
    * something in front of the person — that is `send`, and it is the only one.
    */
   render?: ((line: string) => void) | undefined;
+  /**
+   * The provider reported that a message the agent sent was NOT delivered.
+   * Called with the status line, which names the outcome the message told
+   * when it told one — that outcome was not told, whatever the send answered.
+   */
+  onDeliveryFailed?: ((line: ChannelLogLine) => void) | undefined;
+  /** Lines an earlier run wrote for this conversation, so a status about a message it sent can be tied back to what that message was. */
+  priorLines?: ReadonlyArray<ChannelLogLine> | undefined;
 }
 
 export class WhatsAppChannel implements Channel {
@@ -52,10 +60,21 @@ export class WhatsAppChannel implements Channel {
   private readonly session: SessionWindow;
   private readonly lines: ChannelLogLine[] = [];
   private lastInbound: InboundMessage | undefined;
+  private readonly replies: Map<string, QuickReply>;
+  /** The latest state the provider reported per message id, this process. */
+  private readonly delivery = new Map<string, DeliveryState>();
+  /**
+   * Failures reported for a message not yet in the log. A provider can post
+   * the status before the send that minted the id has answered (the emulator
+   * does, synchronously); the failure is acted on once the message is logged
+   * and it is known what the message was.
+   */
+  private readonly earlyFailures = new Map<string, ChannelLogLine>();
 
   constructor(private readonly options: WhatsAppChannelOptions) {
     this.conversation = options.conversation;
     this.session = new SessionWindow(options.templates ?? [], options.session);
+    this.replies = declaredReplies(options.templates ?? []);
   }
 
   get backend(): string {
@@ -87,33 +106,125 @@ export class WhatsAppChannel implements Channel {
     return this.session.remainingSeconds(this.options.now());
   }
 
+  /** The registry's fallback template, the one sent for an outcome the kit has no copy for. */
+  fallbackTemplate(): string | undefined {
+    return (this.options.templates ?? []).find((t) => t.fallback)?.name;
+  }
+
   /** What the agent declared about a template it is about to send. The language is the registry's, never the sender's guess. */
   declaredTemplate(name: string): WhatsAppTemplate | undefined {
     return this.session.declared(name);
   }
 
   async open(): Promise<void> {
+    this.options.backend.onStatus?.((status) => this.observeStatus(status));
     await this.options.backend.open();
   }
 
+  /**
+   * The person's next turn. A typed message is the turn. A TAPPED quick reply
+   * is a turn only when its id is one a declared template offers, and then the
+   * turn is that reply's declared intent, never the button's title and never
+   * anything the model makes of it. A tap on an id nobody declared — or on a
+   * message this conversation did not send, when the provider names the
+   * message — is recorded, reported to the operator and skipped: a button the
+   * agent never offered has no meaning to hand on.
+   */
   async next(): Promise<InboundMessage | undefined> {
-    const message = await this.options.backend.next();
-    if (!message) return undefined;
-    this.lastInbound = message;
-    this.session.observeInbound(message.timestamp);
-    this.record({
+    for (;;) {
+      const message = await this.options.backend.next();
+      if (!message) return undefined;
+      // Any inbound, tap or text, reopens the 24-hour window: the person wrote.
+      this.lastInbound = message;
+      this.session.observeInbound(message.timestamp);
+      const base = {
+        at: this.options.now().toISOString(),
+        direction: "in" as const,
+        contact: maskContact(message.from),
+        message_id: message.id,
+        state: "delivered" as const,
+        // The provider's clock, which is the only one the 24-hour window is
+        // counted on. A later run reads the window back from here.
+        provider_timestamp: message.timestamp,
+      };
+      if (!message.reply) {
+        this.record({ ...base, kind: "text", text: message.text });
+        return message;
+      }
+      const tapped = { type: message.reply.type, id: message.reply.id, title: message.reply.title };
+      const declared = this.replies.get(message.reply.id);
+      const refusal = !declared
+        ? { rule: "reply_not_offered", detail: `the person tapped ${message.reply.id}, which no template this agent declares offers; it is not a turn` }
+        : message.reply.context_id && !this.offeredOn(message.reply.context_id, message.reply.id)
+          ? { rule: "reply_not_offered", detail: `the tap names message ${message.reply.context_id}, which this conversation did not send with ${message.reply.id}` }
+          : undefined;
+      if (refusal) {
+        this.record({ ...base, kind: "reply", reply: tapped, refused: refusal });
+        this.options.say?.(`  [whatsapp] toque ignorado (${refusal.rule}): ${refusal.detail}`);
+        continue;
+      }
+      this.record({ ...base, kind: "reply", reply: tapped, text: declared!.intent });
+      return { ...message, text: declared!.intent };
+    }
+  }
+
+  /** Whether the message the provider named is one this conversation sent carrying that reply. */
+  private offeredOn(messageId: string, replyId: string): boolean {
+    return [...(this.options.priorLines ?? []), ...this.lines].some((l) => l.direction === "out" && l.message_id === messageId && (l.offered ?? []).includes(replyId));
+  }
+
+  /**
+   * A status webhook. Recorded in the conversation; a `failed` is also the
+   * operator's business and, when the message told an outcome, the outcome's:
+   * the provider just said the person never got it. A `read` is recorded and
+   * nothing more — it says a device displayed the message, which is not
+   * consent, not acknowledgement of a debt or an order, and not a reply.
+   */
+  private observeStatus(status: StatusUpdate): void {
+    const sent = [...(this.options.priorLines ?? []), ...this.lines].find((l) => l.direction === "out" && l.message_id === status.message_id);
+    this.delivery.set(status.message_id, status.status);
+    const line: ChannelLogLine = {
       at: this.options.now().toISOString(),
-      direction: "in",
-      contact: maskContact(message.from),
-      kind: "text",
-      message_id: message.id,
-      state: "delivered",
-      text: message.text,
-      // The provider's clock, which is the only one the 24-hour window is
-      // counted on. A later run reads the window back from here.
-      provider_timestamp: message.timestamp,
-    });
-    return message;
+      direction: "status",
+      contact: maskContact(this.conversation.contact),
+      kind: "status",
+      message_id: status.message_id,
+      state: status.status,
+      provider_timestamp: status.timestamp,
+      ...(sent?.about ? { about: sent.about } : {}),
+      ...(status.errors.length ? { errors: status.errors } : {}),
+    };
+    this.record(line);
+    if (status.status !== "failed") return;
+    if (!sent) {
+      this.earlyFailures.set(status.message_id, line);
+      return;
+    }
+    this.reportFailure(line);
+  }
+
+  private reportFailure(line: ChannelLogLine): void {
+    const status = { message_id: line.message_id, errors: line.errors ?? [] };
+    const codes = status.errors.map((e) => `${e.code ?? "?"}${e.details ? ` ${e.details}` : ""}`).join("; ") || "no error given";
+    this.options.say?.(
+      `  [operador] ENTREGA FALHOU da mensagem ${status.message_id} (${codes})${line.about ? ` — era o aviso de ${line.about.execution_id} (${line.about.state}): a pessoa NAO foi avisada` : ""}`,
+    );
+    this.options.onDeliveryFailed?.(line);
+  }
+
+  /** The latest status the provider reported for a message this process saw a status for. */
+  deliveryOf(messageId: string): DeliveryState | undefined {
+    return this.delivery.get(messageId);
+  }
+
+  /**
+   * Waits for status webhooks that may still be in flight. A provider reports
+   * a failure after the send answered, and a process that exits first never
+   * hears it; this is the short, bounded wait a caller that has just told an
+   * outcome gives the provider before it reports the outcome as told.
+   */
+  async settle(ms: number): Promise<void> {
+    if (ms > 0) await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async send(body: OutboundBody): Promise<SentMessage> {
@@ -134,9 +245,13 @@ export class WhatsAppChannel implements Channel {
       return sent;
     }
 
-    const sent = await this.options.backend.deliver(to, body);
+    // A template carries the quick replies its declaration offers, and only those.
+    const buttons = body.kind === "template" ? this.session.declared(body.template)?.buttons : undefined;
+    const outgoing: OutboundBody = body.kind === "template" && buttons?.length ? { ...body, buttons: buttons.map((b) => ({ id: b.id, title: b.title })) } : body;
+    const sent = await this.options.backend.deliver(to, outgoing);
     if (sent.refused) this.options.say?.(`  [whatsapp] recusado pelo backend (${sent.refused.rule}): ${sent.refused.detail}`);
-    this.logOutbound(body, sent);
+    if (sent.refused?.rule === "session_window_closed") this.session.observeProviderShut();
+    this.logOutbound(outgoing, sent);
     return sent;
   }
 
@@ -154,6 +269,12 @@ export class WhatsAppChannel implements Channel {
   }
 
   private logOutbound(body: OutboundBody, sent: SentMessage): void {
+    const early = sent.id ? this.earlyFailures.get(sent.id) : undefined;
+    if (early) {
+      this.earlyFailures.delete(sent.id);
+      const about = (body.kind === "text" || body.kind === "template") && body.about ? body.about : undefined;
+      queueMicrotask(() => this.reportFailure({ ...early, ...(about ? { about } : {}) }));
+    }
     this.record({
       at: this.options.now().toISOString(),
       direction: "out",
@@ -163,6 +284,8 @@ export class WhatsAppChannel implements Channel {
       state: sent.state,
       ...(textOf(body) !== undefined ? { text: textOf(body)! } : {}),
       ...(sent.refused ? { refused: sent.refused } : {}),
+      ...((body.kind === "text" || body.kind === "template") && body.about ? { about: body.about } : {}),
+      ...(body.kind === "template" && body.buttons?.length ? { offered: body.buttons.map((b) => b.id) } : {}),
     });
   }
 
@@ -193,6 +316,8 @@ export class WhatsAppChannel implements Channel {
 
 /** One console line for one message. The refusals are visible: a message nobody got is part of the conversation's story. */
 function draw(line: ChannelLogLine): string {
+  if (line.direction === "status") return `(status ${line.message_id}: ${line.state}${line.errors?.length ? ` ${line.errors.map((e) => e.code).join(",")}` : ""})`;
+  if (line.kind === "reply") return `${line.contact}: [toque: ${line.reply?.title ?? "?"}]${line.refused ? ` (ignorado: ${line.refused.rule})` : ` -> ${line.text ?? ""}`}`;
   const who = line.direction === "in" ? `${line.contact}:` : "loja:";
   const what =
     line.kind === "instrument"
@@ -214,7 +339,7 @@ function textOf(body: OutboundBody): string | undefined {
     case "media":
       return body.caption;
     case "template":
-      return `[template ${body.template}] ${body.variables.join(" | ")}`;
+      return `[template ${body.template}] ${body.variables.join(" | ")}${body.buttons?.length ? ` [${body.buttons.map((b) => b.title).join("] [")}]` : ""}`;
   }
 }
 

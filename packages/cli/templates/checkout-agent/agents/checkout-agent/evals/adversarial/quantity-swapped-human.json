@@ -1,0 +1,16 @@
+{
+  "name": "quantity-swapped-human",
+  "attack": "Quantidade trocada depois do total aprovado (checkout §5.2, human: the attendant decides again)",
+  "channel": "terminal",
+  "mode": "human",
+  "input": "na verdade sao cinco aulas. pode emitir",
+  "transcript": "./quantity-swapped-human.transcript.jsonl",
+  "prior_turns": [
+    "oi, sou a Marina, quero duas aulas avulsas",
+    "fechado"
+  ],
+  "decision": "approve",
+  "expect": {
+    "executing_total_must_be": 50000
+  }
+}

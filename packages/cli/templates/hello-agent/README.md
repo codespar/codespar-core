@@ -1,7 +1,7 @@
 # {{name}}
 
 Scaffolded by `codespar init --template hello-agent` from the `hello-agent` starter kit
-(https://github.com/codespar/agent-starter-kits at `8f130b7cdc30510c929e6f7ebb07184f763e6ce4`, agent 0.1.0).
+(https://github.com/codespar/agent-starter-kits at `3eddd460451d7485c4bb53a74a8c7b143251438f`, agent 0.1.0).
 
 The worked example of the codespar-agent-builder skill: a read-only agent that reads the month's bills and cannot pay. Built from the five files, the packs and one kit module.
 

@@ -184,6 +184,8 @@ whatsapp: --backend simulator|cloud-api  default simulator, which is the local e
     if (execution.state === "settled") text = `Recebemos, acordo quitado. Obrigado! (${execution.outcomes.map((o) => o.transaction_id).filter(Boolean).join(", ")})`;
     else if (execution.reason === "charge_expired") text = "A cobranca venceu sem pagamento. Se quiser, emito uma nova dentro das mesmas condicoes.";
     else if (execution.reason === "charge_cancelled") text = "A cobranca foi cancelada. Nada foi pago.";
+    // Failed or refused, the same fact: a charge was issued and nobody can yet say whether it was paid. Never "nada foi cobrado".
+    else if (execution.reason === "charge_reference_ambiguous") text = "A cobranca deste acordo ja foi emitida e estamos conferindo a situacao dela. Nao pague de novo; te aviso assim que estiver conferida.";
     else if (execution.state === "failed") text = `Nao consegui emitir a cobranca (${execution.reason ?? "falha no trilho"}). Nada foi cobrado.`;
     else if (execution.state === "denied") text = `Nao posso emitir nesses termos (${execution.reason ?? "recusado"}).`;
     else text = `A proposta expirou sem decisao (${execution.state}).`;

@@ -24,7 +24,7 @@
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { createServer, type Server } from "node:http";
-import type { ChannelBackend, InboundMessage, OutboundBody, SentMessage } from "../types.js";
+import type { ChannelBackend, DeliveryState, InboundMessage, InboundReply, OutboundBody, SentMessage, StatusUpdate } from "../types.js";
 
 export interface CloudApiConfig {
   /**
@@ -140,23 +140,36 @@ interface CloudApiEnvelope {
       value?: {
         messaging_product?: string;
         metadata?: { phone_number_id?: string };
-        messages?: Array<{ id?: string; from?: string; timestamp?: string; type?: string; text?: { body?: string } }>;
-        statuses?: Array<{ id?: string; status?: string }>;
+        messages?: Array<{
+          id?: string;
+          from?: string;
+          timestamp?: string;
+          type?: string;
+          text?: { body?: string };
+          interactive?: { type?: string; button_reply?: { id?: string; title?: string }; list_reply?: { id?: string; title?: string } };
+          button?: { payload?: string; text?: string };
+          context?: { id?: string };
+        }>;
+        statuses?: Array<{ id?: string; status?: string; timestamp?: string; errors?: Array<{ code?: number; title?: string; message?: string; error_data?: { details?: string } }> }>;
       };
     }>;
   }>;
 }
 
 /**
- * The text messages inside one delivery. A delivery carries several entries,
- * each with several changes, each with several messages — and also status
- * updates, which are not messages. Anything that is not a `text` is dropped
- * with its id named: this channel reads words, and an image or a location the
- * agent cannot read must not be silently treated as an empty message.
+ * What one delivery carries. A delivery holds several entries, each with
+ * several changes, each with messages and with STATUS updates about messages
+ * we sent. A message is read when it is text, or a tapped quick reply (an
+ * interactive `button_reply` / `list_reply`, or a template's `button`), which
+ * keeps its id — the channel decides whether that id means anything. Anything
+ * else (an image, a location) is dropped with its id named: this channel
+ * reads words and taps, and an unreadable message must not become an empty
+ * turn.
  */
-export function parseInbound(payload: unknown): { messages: InboundMessage[]; ignored: Array<{ id: string; type: string }> } {
+export function parseInbound(payload: unknown): { messages: InboundMessage[]; statuses: StatusUpdate[]; ignored: Array<{ id: string; type: string }> } {
   const envelope = payload as CloudApiEnvelope;
   const messages: InboundMessage[] = [];
+  const statuses: StatusUpdate[] = [];
   const ignored: Array<{ id: string; type: string }> = [];
   for (const entry of envelope.entry ?? []) {
     for (const change of entry.changes ?? []) {
@@ -164,15 +177,51 @@ export function parseInbound(payload: unknown): { messages: InboundMessage[]; ig
         const id = message.id;
         const from = message.from;
         if (!id || !from) continue;
-        if (message.type !== "text" || !message.text?.body) {
-          ignored.push({ id, type: message.type ?? "unknown" });
+        const base = { id, from: from.startsWith("+") ? from : `+${from}`, timestamp: Number(message.timestamp ?? 0) };
+        const reply = replyOf(message);
+        if (reply) {
+          messages.push({ ...base, text: reply.title, reply: { ...reply, ...(message.context?.id ? { context_id: message.context.id } : {}) } });
           continue;
         }
-        messages.push({ id, from: from.startsWith("+") ? from : `+${from}`, text: message.text.body, timestamp: Number(message.timestamp ?? 0) });
+        if (message.type !== "text" || !message.text?.body) {
+          ignored.push({ id, type: message.type === "interactive" ? `interactive:${message.interactive?.type ?? "unknown"}` : message.type ?? "unknown" });
+          continue;
+        }
+        messages.push({ ...base, text: message.text.body });
+      }
+      for (const status of change.value?.statuses ?? []) {
+        if (!status.id || !isDeliveryState(status.status)) continue;
+        statuses.push({
+          message_id: status.id,
+          status: status.status,
+          timestamp: Number(status.timestamp ?? 0),
+          errors: (status.errors ?? []).map((e) => ({
+            ...(typeof e.code === "number" ? { code: e.code } : {}),
+            ...(e.title ?? e.message ? { title: e.title ?? e.message } : {}),
+            ...(e.error_data?.details ? { details: e.error_data.details } : {}),
+          })),
+        });
       }
     }
   }
-  return { messages, ignored };
+  return { messages, statuses, ignored };
+}
+
+type CloudMessage = NonNullable<NonNullable<NonNullable<NonNullable<CloudApiEnvelope["entry"]>[number]["changes"]>[number]["value"]>["messages"]>[number];
+
+function replyOf(message: CloudMessage): Omit<InboundReply, "context_id"> | undefined {
+  if (message.type === "interactive") {
+    const kind = message.interactive?.type;
+    const picked = kind === "button_reply" ? message.interactive?.button_reply : kind === "list_reply" ? message.interactive?.list_reply : undefined;
+    if ((kind === "button_reply" || kind === "list_reply") && picked?.id) return { type: kind, id: picked.id, title: picked.title ?? picked.id };
+    return undefined;
+  }
+  if (message.type === "button" && message.button?.payload) return { type: "button", id: message.button.payload, title: message.button.text ?? message.button.payload };
+  return undefined;
+}
+
+function isDeliveryState(value: unknown): value is DeliveryState {
+  return value === "sent" || value === "delivered" || value === "read" || value === "failed";
 }
 
 export interface SendRequest {
@@ -200,10 +249,6 @@ export function buildSendRequest(config: CloudApiConfig, to: string, body: Outbo
     method: "POST" as const,
     headers: { authorization: `Bearer ${config.accessToken}`, "content-type": "application/json" },
   };
-  // `to` loses its `+`: the Cloud API documents the number in international
-  // format without one, and the emulator keys its conversation on the literal
-  // string, so a `+` here and none on the inbound side splits one person into
-  // two conversations (measured; docs/OPEN_QUESTIONS.md §46c).
   const recipient = { messaging_product: "whatsapp", recipient_type: "individual", to: toGraphNumber(to) };
   switch (body.kind) {
     case "text":
@@ -219,13 +264,56 @@ export function buildSendRequest(config: CloudApiConfig, to: string, body: Outbo
           template: {
             name: body.template,
             language: { code: body.language },
-            ...(body.variables.length ? { components: [{ type: "body", parameters: body.variables.map((text) => ({ type: "text", text })) }] } : {}),
+            ...templateComponents(body),
           },
         }),
       };
     case "media":
       return { unsupported: "media_upload_unimplemented" };
   }
+}
+
+/**
+ * A template's parameters as Meta takes them: the body's variables, and one
+ * `quick_reply` button component per declared reply, whose `payload` is the
+ * reply id — what comes back as `button.payload` when the person taps it.
+ */
+function templateComponents(body: Extract<OutboundBody, { kind: "template" }>): { components?: unknown[] } {
+  const components: unknown[] = [];
+  if (body.variables.length) components.push({ type: "body", parameters: body.variables.map((text) => ({ type: "text", text })) });
+  for (const [index, button] of (body.buttons ?? []).entries()) components.push({ type: "button", sub_type: "quick_reply", index: String(index), parameters: [{ type: "payload", payload: button.id }] });
+  return components.length ? { components } : {};
+}
+
+/** Meta's error for a free-form message outside the 24 hours after the person's last one. */
+export const WINDOW_CLOSED_ERROR = 131047;
+
+/**
+ * What a non-2xx from `/messages` means, read from Meta's error body.
+ *
+ * One code gets its own rule: 131047 is the provider saying the 24-hour
+ * window is shut, which is the SAME rule the channel enforces before a send
+ * and is answered the same way — with a template. It reaches here only when
+ * the two clocks disagree (ours read the window open, the provider's read it
+ * shut), which at the boundary is a race and not a bug, so a caller has to be
+ * able to tell it from a refusal it cannot do anything about.
+ */
+export function providerRefusal(status: number, body: string): { rule: string; detail: string } {
+  let error: { code?: unknown; message?: unknown; error_data?: { details?: unknown } } | undefined;
+  try {
+    error = (JSON.parse(body) as { error?: typeof error }).error;
+  } catch {
+    /* an error without Meta's envelope: the status is all there is */
+  }
+  const details = typeof error?.error_data?.details === "string" ? error.error_data.details : undefined;
+  if (error?.code === WINDOW_CLOSED_ERROR) {
+    return {
+      rule: "session_window_closed",
+      detail: `the provider refused the free-form message (${status}/${WINDOW_CLOSED_ERROR}): its 24h window is shut${details ? ` — ${details}` : ""}`,
+    };
+  }
+  const code = typeof error?.code === "number" ? `/${error.code}` : "";
+  return { rule: "provider_refused", detail: `${status}${code} from the Cloud API${details ? ` — ${details}` : ""}` };
 }
 
 /* ── the impure half: one fetch over a request the above built ── */
@@ -249,7 +337,10 @@ export class WhatsAppCloudApi implements ChannelBackend {
   readonly live: boolean;
   private server: Server | undefined;
   private readonly queue: InboundMessage[] = [];
+  /** Message ids already handed on. Meta delivers at-least-once, so the same message can arrive twice. */
+  private readonly seen = new Set<string>();
   private waiting: ((m: InboundMessage | undefined) => void) | undefined;
+  private statusListener: ((status: StatusUpdate) => void) | undefined;
   private closed = false;
 
   constructor(private readonly options: CloudApiOptions) {
@@ -287,15 +378,16 @@ export class WhatsAppCloudApi implements ChannelBackend {
           res.writeHead(401, { "content-type": "application/json" }).end(JSON.stringify({ error: "bad_signature" }));
           return;
         }
-        let parsed: { messages: InboundMessage[]; ignored: Array<{ id: string; type: string }> };
+        let parsed: ReturnType<typeof parseInbound>;
         try {
           parsed = parseInbound(JSON.parse(raw));
         } catch {
           res.writeHead(400, { "content-type": "application/json" }).end(JSON.stringify({ error: "invalid_json" }));
           return;
         }
-        for (const ignored of parsed.ignored) say(`[whatsapp] ignored ${ignored.type} message ${ignored.id}: this channel reads text`);
+        for (const ignored of parsed.ignored) say(`[whatsapp] ignored ${ignored.type} message ${ignored.id}: this channel reads text and taps`);
         for (const message of parsed.messages) this.push(message);
+        for (const status of parsed.statuses) this.statusListener?.(status);
         // Always 200 once read: Meta retries on anything else, and a duplicate is not an error.
         res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ received: parsed.messages.length }));
       });
@@ -309,6 +401,13 @@ export class WhatsAppCloudApi implements ChannelBackend {
   }
 
   private push(message: InboundMessage): void {
+    // A redelivery is the same message, not a second turn: answering it twice
+    // would put two replies in front of the person for one thing they said.
+    if (this.seen.has(message.id)) {
+      this.options.say(`[whatsapp] duplicate delivery of ${message.id} dropped`);
+      return;
+    }
+    this.seen.add(message.id);
     if (this.waiting) {
       const resolve = this.waiting;
       this.waiting = undefined;
@@ -316,6 +415,10 @@ export class WhatsAppCloudApi implements ChannelBackend {
       return;
     }
     this.queue.push(message);
+  }
+
+  onStatus(listener: (status: StatusUpdate) => void): void {
+    this.statusListener = listener;
   }
 
   async next(): Promise<InboundMessage | undefined> {
@@ -335,9 +438,7 @@ export class WhatsAppCloudApi implements ChannelBackend {
     const doFetch = this.options.fetchImpl ?? fetch;
     const response = await doFetch(request.url, { method: request.method, headers: request.headers, body: request.body });
     const text = await response.text();
-    if (!response.ok) {
-      return { id: "", state: "failed", refused: { rule: "provider_refused", detail: `${response.status} from the Cloud API` } };
-    }
+    if (!response.ok) return { id: "", state: "failed", refused: providerRefusal(response.status, text) };
     let id = "";
     try {
       id = String((JSON.parse(text) as { messages?: Array<{ id?: string }> }).messages?.[0]?.id ?? "");

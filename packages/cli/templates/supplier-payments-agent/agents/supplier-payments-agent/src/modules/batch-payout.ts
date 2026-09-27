@@ -28,24 +28,33 @@
  *   one refusal does not stop the others  -> the loop `continue`s, never
  *                                            breaks, and never throws past
  *                                            the line it is on
- *   one attempt_id per call               -> the core derives it from each
- *                                            execution's own idempotency key
- *   repeating pays nobody twice           -> the per-line claim below
+ *   one attempt_id per call               -> the core derives it from the
+ *                                            line itself: mandate, batch_hash,
+ *                                            position (`batchAttemptId`)
+ *   repeating pays nobody twice           -> the per-line claim below, and
+ *                                            behind it the API's record of
+ *                                            that attempt id
  *   the approved list is bound as a set   -> `batch_hash`, and the set claim
  *                                            that refuses a run whose list
  *                                            changed after it was approved
  *
- * The claim is what survives a re-run. Execution ids are random, so a second
- * run of the same batch would mint fresh ids, fresh idempotency keys and
- * fresh attempt ids, and the rail's own idempotence — which is keyed on
- * `attempt_id` — would not recognise them. The claim pairs (mandate, batch,
- * line) with the execution that covers it, durably, and the rules for
- * reading one back are the same posture the enterprise money paths take: a
- * line whose execution SETTLED is done, a line whose execution is still open
- * is in progress and is never re-opened, and only a line whose execution
- * ended without moving money is retried.
+ * The claim is the first line of defence on a re-run, and it is local. The
+ * claim pairs (mandate, batch, line) with the execution that covers it,
+ * durably, and the rules for reading one back are the same posture the
+ * enterprise money paths take: a line whose execution SETTLED is done, a line
+ * whose execution is still open is in progress and is never re-opened, and
+ * only a line whose execution ended without moving money is retried.
+ *
+ * The second line is the API, and it holds wherever the batch runs. A batch
+ * line's attempt id and quote come from the line and not from the execution,
+ * so a run on a machine with no claim at all presents the attempt the API
+ * already holds, and the API answers it from its record (ent#1671): settled
+ * lines replay with their original receipt, a line still in flight stays open
+ * here, and only a line the provider refused is paid again, under the next
+ * generation of its id. OPEN_QUESTIONS §39c says what that does and does not
+ * cover.
  */
-import { batchHash, isTerminal, type Execution, type ExecutionItem, type ProposedItem, type ToolContext } from "@codespar/agent-core";
+import { batchHash, isTerminal, type BatchGesture, type Execution, type ExecutionItem, type ProposedItem, type ToolContext } from "@codespar/agent-core";
 import { batchTotal, formatBRL, type Batch, type PayableLine } from "../payables.js";
 
 /** What happened to one line of the batch. `dispatch` is the part an operator reads first. */
@@ -59,8 +68,15 @@ export interface BatchLineReport {
   execution_id: string | null;
   state: string;
   reason: string | null;
-  /** Whether this line's money moved, could not move, or was deliberately not attempted again. */
-  dispatch: "settled" | "refused" | "awaiting_decision" | "uncertain" | "already_settled" | "in_progress";
+  /**
+   * Whether this line's money moved, could not move, or was deliberately not
+   * attempted again. `attempt_id_conflict`: the API holds this line's attempt
+   * id for a DIFFERENT payment (another amount, payee, mandate, rail or
+   * quote). Nothing was held or sent, the id is not spent, and presenting it
+   * again answers the same, so the line is never re-drafted under it and never
+   * moved to another id: a person decides what that other payment is.
+   */
+  dispatch: "settled" | "refused" | "awaiting_decision" | "uncertain" | "already_settled" | "in_progress" | "attempt_id_conflict";
 }
 
 /**
@@ -91,6 +107,10 @@ export interface BatchReport {
   failed: string[];
   /** Lines a previous run of this batch already covers. */
   skipped: string[];
+  /** Lines a person denied, by alias: a decision, reported, and a subset of `failed`. */
+  denied: string[];
+  /** Present when the channel took ONE gesture for the whole list: what it approved and vetoed, by position. */
+  gesture?: BatchGesture;
   total_minor: number;
   total: string;
   /** Present when the SET was refused: nothing was drafted, nothing was sent, no line moved. */
@@ -143,7 +163,7 @@ function presentedItems(batch: Batch, ctx: ToolContext): ExecutionItem[] {
  * What a claim already held means for this line: skip it, or drop it and
  * pay. `undefined` means nothing is held and the line is paid normally.
  */
-function priorVerdict(prior: Execution | undefined): "already_settled" | "in_progress" | undefined {
+function priorVerdict(prior: Execution | undefined): "already_settled" | "in_progress" | "attempt_id_conflict" | undefined {
   // A claim naming an execution the store does not have is a claim taken by a
   // run that died before it drafted. Nothing moved, so the line is open.
   if (!prior) return undefined;
@@ -152,13 +172,20 @@ function priorVerdict(prior: Execution | undefined): "already_settled" | "in_pro
   // for the same line is how a payee gets paid twice; the operator closes the
   // first one with `npm run approve`, `npm run resume` or `npm run reconcile`.
   if (!isTerminal(prior.state)) return "in_progress";
+  // Held for another payment: a retry presents the same derived id and gets the same refusal, so it is not retried.
+  if (heldForAnotherPayment(prior)) return "attempt_id_conflict";
   // `denied`, `expired`, `failed`: the core refused it or the rail declined
   // it, and in every one of those the money provably did not move. Retry.
   return undefined;
 }
 
+function heldForAnotherPayment(execution: Execution): boolean {
+  return execution.state === "failed" && execution.outcomes.some((o) => o.held === "conflict");
+}
+
 function dispatchOf(execution: Execution): BatchLineReport["dispatch"] {
   if (execution.state === "settled") return "settled";
+  if (heldForAnotherPayment(execution)) return "attempt_id_conflict";
   if (execution.state === "awaiting_approval") return "awaiting_decision";
   // Still `executing` after the channel ran it: the rail did not say. Never
   // re-sent here; `npm run reconcile` is what closes it.
@@ -199,6 +226,24 @@ export async function runBatch(batch: Batch, ctx: ToolContext): Promise<BatchRep
       refusal,
     );
   }
+
+  // One gesture for the list, when the channel can take one (section 3, v5.3:
+  // "o humano aprova a lista, com veto por linha"). Asked after the set
+  // refusal, so a person is never asked about a list that is not going to run,
+  // and before any draft, so what they see is the list the hash covers. It
+  // decides nothing here: every line below is still drafted and still reaches
+  // `onExecution`, which is where the channel applies it line by line.
+  const gesture = ctx.onBatch
+    ? await ctx.onBatch({
+        ref: batch.ref,
+        label: batch.label,
+        batch_hash: presented,
+        count: batch.lines.length,
+        total_minor: batchTotal(batch),
+        total: formatBRL(batchTotal(batch)),
+        lines: batch.lines.map((line, index) => ({ index, beneficiary: line.name, amount_minor: line.amount_minor, amount: formatBRL(line.amount_minor), status: lineStatus(batch, line, ctx) })),
+      })
+    : undefined;
 
   for (const [index, line] of batch.lines.entries()) {
     const key = claimKey(mandateId, batch.ref, line.alias);
@@ -272,7 +317,7 @@ export async function runBatch(batch: Batch, ctx: ToolContext): Promise<BatchRep
     }
   }
 
-  return summarise(batch, presented, lines);
+  return summarise(batch, presented, lines, undefined, gesture);
 }
 
 /**
@@ -310,7 +355,7 @@ function setRefusal(batch: Batch, presented: string, ctx: ToolContext, setKey: s
   };
 }
 
-function summarise(batch: Batch, presented: string, lines: BatchLineReport[], refused?: BatchSetRefusal): BatchReport {
+function summarise(batch: Batch, presented: string, lines: BatchLineReport[], refused?: BatchSetRefusal, gesture?: BatchGesture): BatchReport {
   const settledMinor = lines.filter((l) => l.dispatch === "settled").reduce((sum, l) => sum + l.amount_minor, 0);
   const total = batchTotal(batch);
   return {
@@ -321,11 +366,13 @@ function summarise(batch: Batch, presented: string, lines: BatchLineReport[], re
     lines,
     settled_minor: settledMinor,
     settled: formatBRL(settledMinor),
-    failed: lines.filter((l) => l.dispatch === "refused" || l.dispatch === "uncertain").map((l) => l.alias),
+    failed: lines.filter((l) => l.dispatch === "refused" || l.dispatch === "uncertain" || l.dispatch === "attempt_id_conflict").map((l) => l.alias),
     skipped: lines.filter((l) => l.dispatch === "already_settled" || l.dispatch === "in_progress").map((l) => l.alias),
+    denied: lines.filter((l) => l.state === "denied" && l.reason === "denied_by_approver").map((l) => l.alias),
     total_minor: total,
     total: formatBRL(total),
     ...(refused ? { refused } : {}),
+    ...(gesture ? { gesture } : {}),
   };
 }
 
@@ -338,7 +385,7 @@ function describe(line: PayableLine, index: number): Pick<BatchLineReport, "inde
  * same claim the loop reads, so what the model is told and what the loop
  * would do cannot drift.
  */
-export function lineStatus(batch: Batch, line: PayableLine, ctx: ToolContext): "open" | "already_settled" | "in_progress" {
+export function lineStatus(batch: Batch, line: PayableLine, ctx: ToolContext): "open" | "already_settled" | "in_progress" | "attempt_id_conflict" {
   const held = ctx.engine.claimed(claimKey(ctx.engine.mandate.id, batch.ref, line.alias));
   if (!held) return "open";
   return priorVerdict(ctx.engine.get(held)) ?? "open";

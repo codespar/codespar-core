@@ -22,6 +22,9 @@ export function makeHandlers(envelope: Envelope): Record<string, ToolHandler> {
   const listAgreements: ToolHandler = async (_input, ctx) => {
     const settled = ctx.engine.list({ state: "settled" });
     const open = ctx.engine.list({ state: "executing" });
+    // Issued, then its reference turned ambiguous: the charge exists and may be paid. Not open, and the core refuses another until it is reconciled.
+    const unreconciled = ctx.engine.list({ state: "failed" }).filter((e) => e.reason === "charge_reference_ambiguous");
+    const unreconciledAliases = new Set(unreconciled.flatMap((e) => e.items.map((i) => i.alias)).filter(Boolean));
     const settledAliases = new Set(settled.flatMap((e) => e.items.map((i) => i.alias)).filter(Boolean));
     const issuedAliases = new Set(open.flatMap((e) => e.items.map((i) => i.alias)).filter(Boolean));
     return {
@@ -32,7 +35,13 @@ export function makeHandlers(envelope: Envelope): Record<string, ToolHandler> {
         principal: formatBRL(a.principal_minor),
         origin: a.origin,
         opened_at: a.opened_at,
-        status: settledAliases.has(a.alias) ? "quitado" : issuedAliases.has(a.alias) ? "cobranca emitida, aguardando pagamento" : "em aberto",
+        status: settledAliases.has(a.alias)
+          ? "quitado"
+          : issuedAliases.has(a.alias)
+            ? "cobranca emitida, aguardando pagamento"
+            : unreconciledAliases.has(a.alias)
+              ? "cobranca emitida, em conferencia: nao emitir outra"
+              : "em aberto",
       })),
       envelope: {
         max_discount_pct: envelope.max_discount_pct,
@@ -98,7 +107,8 @@ function describe(execution: import("@codespar/agent-core").Execution) {
     ...(execution.reason ? { reason: execution.reason, detail: execution.detail } : {}),
     ...(execution.escalation ? { escalated_by: execution.escalation.trigger } : {}),
     charges,
-    issued: charges.length > 0 && charges.every((c) => c.status !== "failed"),
+    issued: execution.reason === "charge_reference_ambiguous" ? execution.state === "failed" : charges.length > 0 && charges.every((c) => c.status !== "failed"),
+    ...(execution.reason === "charge_reference_ambiguous" ? { reconcile_before_reissue: true } : {}),
     paid: execution.state === "settled",
     expired: execution.state === "failed" && execution.reason === "charge_expired",
   };

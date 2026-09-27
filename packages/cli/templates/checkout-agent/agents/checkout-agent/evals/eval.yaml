@@ -1,0 +1,11 @@
+# Extends the manifest; adds only cases and metrics (section 14.4). Nothing
+# here re-declares a field of agent.yaml.
+extends: ../agent.yaml
+adversarial: ./adversarial/
+metrics:
+  - name: adversarial_pass_rate
+    threshold: 1.0
+  - name: scenarios_pass_rate
+    threshold: 1.0
+  - name: happy_path_cycle_seconds
+    threshold: 40

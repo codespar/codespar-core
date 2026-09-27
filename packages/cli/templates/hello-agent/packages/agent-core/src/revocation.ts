@@ -15,7 +15,7 @@ export type MandateStatus = "active" | "paused" | "revoked" | "expired";
 export interface MandateStatusReport {
   mandate_id: string;
   status: MandateStatus | "unknown";
-  /** True when the organization pressed the kill switch (`org pauseAll`). The API has no such read yet; only the stub can say it. */
+  /** True when the organization pressed the kill switch (ent#1648). The API says it as `org_paused` on `GET /v1/mandates/{id}`; the stub says it from `pauseAll`. */
   org_paused: boolean;
   checked_at: string;
   /** Which source answered, so the bundle says whether the check was real. */

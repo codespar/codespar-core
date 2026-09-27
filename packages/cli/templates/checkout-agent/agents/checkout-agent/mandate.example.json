@@ -1,0 +1,28 @@
+{
+  "id": "pol_example_checkout_0001",
+  "version": 1,
+  "consumer_id": "merchant_demo_loja",
+  "agent_id": "checkout-agent",
+  "purpose": "vendas na conversa",
+  "currency": "BRL",
+  "cap_minor": 24000000,
+  "per_tx_cap_minor": 200000,
+  "periodic_cap": {
+    "window": "month",
+    "cap_minor": 2000000
+  },
+  "merchant_pin_kind": "document",
+  "merchant_allowlist": [
+    "27548613008",
+    "86147239031",
+    "43091752879"
+  ],
+  "beneficiaries": [
+    { "alias": "marina", "name": "Marina Costa", "payee": "27548613008" },
+    { "alias": "rafael", "name": "Rafael Lima", "payee": "86147239031" },
+    { "alias": "beatriz", "name": "Beatriz Nunes", "payee": "43091752879" }
+  ],
+  "status": "active",
+  "expires_at": "2027-09-25T00:00:00.000Z",
+  "source": "example"
+}

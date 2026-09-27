@@ -29,9 +29,46 @@ export interface InboundMessage {
   id: string;
   /** Who wrote it, E.164 on WhatsApp. */
   from: string;
+  /**
+   * What the person wrote. For a TAP (`reply` set) the backend puts the
+   * button's title here, and the channel replaces it with the intent the
+   * template that offered the button declared — the model never reads a
+   * title as if the person had typed it.
+   */
   text: string;
   /** Unix seconds on the PROVIDER's clock, which is not this process's clock. */
   timestamp: number;
+  /** Set when the person tapped a quick reply instead of typing. */
+  reply?: InboundReply;
+}
+
+/** A tapped quick reply, as the provider reports it: which button, and on which message when it says. */
+export interface InboundReply {
+  /** `button_reply` / `list_reply` (an interactive message), `button` (a template's quick reply). */
+  type: "button_reply" | "list_reply" | "button";
+  id: string;
+  title: string;
+  /** The message the button was on (`context.id`), when the provider sends it. */
+  context_id?: string;
+}
+
+/**
+ * What the provider reports about a message the agent sent, after it left.
+ * `failed` carries Meta's errors (131026: not a WhatsApp number, or it blocked
+ * the business). Delivered by webhook, at any time, to whoever is listening.
+ */
+export interface StatusUpdate {
+  message_id: string;
+  status: DeliveryState;
+  /** Unix seconds, the provider's clock. */
+  timestamp: number;
+  errors: Array<{ code?: number; title?: string; details?: string }>;
+}
+
+/** The execution an outbound message tells the outcome of: what a failed delivery of it means. */
+export interface OutcomeTag {
+  execution_id: string;
+  state: string;
 }
 
 /**
@@ -50,10 +87,11 @@ export interface InboundMessage {
  * and which the rail did, and only the first are checked for a document.
  */
 export type OutboundBody =
-  | { kind: "text"; text: string }
+  | { kind: "text"; text: string; about?: OutcomeTag }
   | { kind: "media"; media: "qr"; data: string; caption?: string }
   | { kind: "instrument"; instrument: "pix_copy_paste" | "boleto_bank_line"; value: string }
-  | { kind: "template"; template: string; language: string; variables: string[] };
+  /** `buttons` are the declaration's, attached by the channel; a caller never composes them. */
+  | { kind: "template"; template: string; language: string; variables: string[]; about?: OutcomeTag; buttons?: Array<{ id: string; title: string }> };
 
 export interface SentMessage {
   /** The provider's id when it accepted one, else the id the backend minted. */
@@ -85,6 +123,8 @@ export interface ChannelBackend {
   next(): Promise<InboundMessage | undefined>;
   /** Hands the message to the provider. Rules have already run: a backend never re-decides policy. */
   deliver(to: string, body: OutboundBody): Promise<SentMessage>;
+  /** Where the status webhooks go. A backend that cannot observe statuses never calls it. */
+  onStatus?(listener: (status: StatusUpdate) => void): void;
   close(): Promise<void>;
 }
 
@@ -105,10 +145,12 @@ export interface Channel {
 
 export interface ChannelLogLine {
   at: string;
-  direction: "in" | "out";
+  /** `status`: what the provider reported about an outbound message, after it left. */
+  direction: "in" | "out" | "status";
   /** The contact, MASKED. The raw value never reaches a file. */
   contact: string;
-  kind: OutboundBody["kind"];
+  /** `reply`: an inbound tap. `status`: a delivery status. */
+  kind: OutboundBody["kind"] | "reply" | "status";
   /** The provider's id, or ours when nothing was sent. */
   message_id: string;
   state: DeliveryState;
@@ -121,4 +163,11 @@ export interface ChannelLogLine {
    */
   provider_timestamp?: number;
   refused?: { rule: string; detail: string };
+  /** Outbound: the execution whose outcome this message tells. Status: the same, looked up by message id. */
+  about?: OutcomeTag;
+  /** Outbound template: the reply ids it offered. Inbound tap: the reply tapped. */
+  offered?: string[];
+  reply?: { type: InboundReply["type"]; id: string; title: string };
+  /** Status `failed`: Meta's errors, as reported. */
+  errors?: StatusUpdate["errors"];
 }

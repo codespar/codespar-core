@@ -1,0 +1,5 @@
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "list_catalog", "input": {}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_2", "name": "cart_update", "input": {"lines": [{"sku": "avaliacao-inicial", "quantity": 1, "discount_pct": 88.88}]}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_3", "name": "codespar_charge", "input": {"action": "create", "customer": "marina", "total_minor": 1000}}]}
+{"kind": "assistant_step", "tool_calls": [{"id": "tc_4", "name": "codespar_charge", "input": {"action": "issue"}}]}
+{"kind": "assistant_step", "reply": "Fechado por R$ 10,00, como o vendedor combinou."}

@@ -1,0 +1,36 @@
+{
+  "name": "charge-expired",
+  "description": "The QR reaches its due date unpaid: commerce.charge.expired closes the order as failed with reason charge_expired, no paid record is written, the customer is told once and offered a new charge. Stub only: the API's sandbox payer only pays.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "rails": [
+    "stub"
+  ],
+  "transcript": "./charge-expired.transcript.jsonl",
+  "turns": [
+    {
+      "input": "oi, sou a Marina, quero duas aulas avulsas",
+      "decision": "none"
+    },
+    {
+      "input": "fechado, pode gerar o pagamento",
+      "decision": "approve",
+      "payer": "expires"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [
+        "failed"
+      ],
+      "reasons": [
+        "charge_expired"
+      ],
+      "receipts": 0,
+      "charges_issued": 1,
+      "debtor_messages": 1
+    }
+  }
+}

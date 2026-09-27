@@ -1,0 +1,68 @@
+{
+  "meta_tools": [
+    {
+      "name": "codespar_charge",
+      "effect": "charge",
+      "description": "The order and its charge. action=create turns the cart into an ORDER for the customer you are talking to: the code prices it from the catalog, checks it against the sales policy (price, discount, margin floor, ticket, service hours) and, depending on the approval mode, asks the attendant or confirms it alone. Nothing is issued by create. action=issue sends the confirmed order's charge: ONE bolepix (cobranca com vencimento, due today: the customer pays by Pix or by boleto) for the cart's total, with an idempotency key, so asking twice returns the same charge; the code presents the QR and the copy-and-paste. If the cart changed after the order was confirmed, issue sends it back to the attendant instead. action=status reads the order. You never pass an amount or a document: the code takes the total from the cart and the customer's name and document from the store's customer book.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string", "enum": ["create", "issue", "status"], "description": "create (the default) places the order; issue sends its charge; status reads it." },
+          "cart_id": { "type": "string", "description": "Optional. The cart (cart-1). Omitted: the conversation's current cart." },
+          "customer": { "type": "string", "description": "action=create: the alias of the customer you are talking to, their first name in lowercase (marina). Never a document, a name typed for somebody else, or a Pix key." },
+          "payment": { "type": "string", "enum": ["bolepix"], "description": "Optional. The only instrument offered: bolepix." },
+          "total_minor": { "type": "integer", "description": "Optional. The total you told the customer. The code recomputes it; if yours differs, the order is refused and you present the cart's total again." },
+          "execution_id": { "type": "string", "description": "Optional, issue/status: the order to act on. Omitted: the current cart's order." }
+        },
+        "required": ["action"]
+      }
+    }
+  ],
+  "local_tools": [
+    {
+      "name": "list_catalog",
+      "effect": "read",
+      "description": "The store's catalog (sku, title, category, list price, availability, stock where limited) and how it sells: service hours, the instrument, and the discount rule in words. Read-only. Costs, discount ceilings, coupon codes and customers are not returned.",
+      "input_schema": { "type": "object", "properties": {} }
+    },
+    {
+      "name": "cart_view",
+      "effect": "read",
+      "description": "The cart as the code priced it: lines, totals, coupon, validation_issues, cart_hash, and the order it belongs to, if any. Read-only.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "cart_id": { "type": "string", "description": "Optional. Omitted: the conversation's current cart." }
+        }
+      }
+    },
+    {
+      "name": "cart_update",
+      "effect": "state",
+      "description": "REPLACES the whole cart with the lines you pass and answers the cart re-priced by the code. There is no add or remove: send the complete list every time; an empty list empties the cart. A line is a sku and a quantity, plus a negotiated discount in percent when the customer asked for one; there is no price field anywhere, prices come from the catalog. A coupon is the code the customer gave you; the code checks it against the store's table. Every answer carries validation_issues [{code, field, message}] (sku_unknown, item_unavailable, quantity_invalid, quantity_above_stock, coupon_unknown, coupon_not_applicable, price_not_caller_input): a line or a coupon named there is NOT in the cart. If the cart already became an order that is still open, the order follows the new cart and goes back to the attendant.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "cart_id": { "type": "string", "description": "Optional. Omitted: the conversation's current cart, or a new one if none is open." },
+          "lines": {
+            "type": "array",
+            "description": "The complete cart, one entry per sku.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sku": { "type": "string", "description": "A sku from list_catalog." },
+                "quantity": { "type": "integer", "minimum": 1 },
+                "discount_pct": { "type": "number", "minimum": 0, "maximum": 100, "description": "Optional. A negotiated discount on this line, in percent. The code refuses what the store's policy does not allow." }
+              },
+              "required": ["sku", "quantity"],
+              "additionalProperties": false
+            }
+          },
+          "coupon": { "type": "string", "description": "Optional. The coupon code the customer gave." },
+          "order_discount_pct": { "type": "number", "minimum": 0, "maximum": 100, "description": "Optional. A negotiated discount on the whole order, in percent. Does not add to a coupon." }
+        },
+        "required": ["lines"]
+      }
+    }
+  ]
+}

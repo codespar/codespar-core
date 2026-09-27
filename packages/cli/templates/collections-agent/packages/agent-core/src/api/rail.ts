@@ -2,8 +2,10 @@
  * The CodeSpar sandbox rail. With the signed envelope the consent returned
  * (`mandate.canonical` + `mandate.signature`) it spends through
  * `POST /v1/consumer-payments/execute`; without it, by mandate id through
- * `POST /v1/consumers/mandates/{id}/spend`. Both are idempotent on
- * `attempt_id`. The by-id route answered `bad_signature` on staging for a
+ * `POST /v1/consumers/mandates/{id}/spend`. Idempotence on both is OPT-IN
+ * and keyed on an explicit `attempt_id`, which every payment here carries: a
+ * spend without one is a fresh payment on every request (ent#1671, #1683).
+ * What a repeat of an attempt answers is in `lookup` below. The by-id route answered `bad_signature` on staging for a
  * mandate carrying `periodic_cap` (OPEN_QUESTIONS §14), which is why the
  * envelope is preferred when it exists. Receipts come back from
  * `GET /v1/consumers/receipts/{id}`.
@@ -14,19 +16,19 @@
  */
 import type { ApiClient } from "@codespar/sdk";
 import type { Mandate } from "../mandate.js";
-import type { PaymentRail, RailLookup, RailOutcome, RailPayment, RailReceipt } from "../rail.js";
+import { checkQuote } from "../quote.js";
+import { checkSpendApproval, type PaymentRail, type RailLookup, type RailOutcome, type RailPayment, type RailReceipt } from "../rail.js";
 import type { Actor } from "../types.js";
-import { describeApiError, isUncertain } from "./client.js";
+import { describeApiError, isUncertain, type SpendErrorCode } from "./client.js";
 
-/** The asymmetric seal as the API serves it, or nulls when this deployment
- *  does not serve one. Never throws on a shape it does not recognise: a
- *  receipt is evidence of a payment that already happened, and refusing to
- *  record it over an unexpected field would trade the record for the proof. */
-function readEd25519Seal(body: unknown): { receipt_sig_ed25519: string | null; receipt_sig_kid: string | null } {
-  const r = body as { receipt_sig_ed25519?: unknown; receipt_sig_kid?: unknown };
-  const str = (v: unknown): string | null => (typeof v === "string" && v.length > 0 ? v : null);
-  return { receipt_sig_ed25519: str(r.receipt_sig_ed25519), receipt_sig_kid: str(r.receipt_sig_kid) };
-}
+/** Another presentation of this attempt is claimed and has no recorded outcome yet: it may be moving money right now. */
+const ATTEMPT_IN_FLIGHT: SpendErrorCode = "psp_attempt_in_flight";
+/** This attempt failed, moved no money and was compensated; the API will never run this id again. */
+const ATTEMPT_SPENT: SpendErrorCode = "psp_attempt_conflict";
+/** This attempt id was already used for a DIFFERENT payment (checked before its state); nothing was held or sent. */
+const ATTEMPT_ID_CONFLICT: SpendErrorCode = "attempt_id_conflict";
+/** Another project of this organization holds this attempt id; opaque by design, nothing was held or sent. */
+const ATTEMPT_ID_UNAVAILABLE: SpendErrorCode = "attempt_id_unavailable";
 
 export class CodeSparRail implements PaymentRail {
   readonly name = "codespar" as const;
@@ -37,6 +39,12 @@ export class CodeSparRail implements PaymentRail {
   ) {}
 
   async pay(payment: RailPayment): Promise<RailOutcome> {
+    // Without the quote the sealed receipt names no payee (OPEN_QUESTIONS §18), and the API pays a quote that disagrees. Neither goes out.
+    const quoted = checkQuote(payment);
+    if (!quoted.ok) return { status: "failed", code: quoted.code, message: `${quoted.detail}; nothing was sent` };
+    // Without it the receipt seals no link to what was approved (OPEN_QUESTIONS §3), and the API refuses a malformed one with 400 anyway.
+    const approval = checkSpendApproval(payment);
+    if (!approval.ok) return { status: "failed", code: approval.code, message: `${approval.detail}; nothing was sent` };
     try {
       const outcome =
         this.envelope?.canonical && this.envelope.signature
@@ -49,11 +57,13 @@ export class CodeSparRail implements PaymentRail {
                 agent_id: payment.agent_id,
                 payee: payment.payee,
                 attempt_id: payment.attempt_id,
+                quote: quoted.quote,
+                approval: approval.approval,
               },
             })
           : await this.api.post("/v1/consumers/mandates/{id}/spend", {
               path: { id: payment.mandate_id },
-              body: { amount_minor: payment.amount_minor, payee: payment.payee, agent_id: payment.agent_id, attempt_id: payment.attempt_id },
+              body: { amount_minor: payment.amount_minor, payee: payment.payee, agent_id: payment.agent_id, attempt_id: payment.attempt_id, quote: quoted.quote, approval: approval.approval },
             });
       return {
         status: "settled",
@@ -61,24 +71,50 @@ export class CodeSparRail implements PaymentRail {
         receipt_id: outcome.receipt?.id ?? null,
         money_moved: outcome.payment.moneyMoved,
         sandbox: !outcome.payment.moneyMoved,
+        ...(outcome.idempotent_replay ? { replayed: true as const } : {}),
         raw: outcome,
       };
     } catch (err) {
       const failure = describeApiError(err);
+      // Not a refusal: the other presentation may already have reached the provider, so "nothing moved" would be a claim nobody can make.
+      if (failure.code === ATTEMPT_IN_FLIGHT) return { status: "uncertain", code: failure.code, message: failure.message };
       if (isUncertain(failure)) return { status: "uncertain", code: failure.code, message: failure.message };
+      if (failure.code === ATTEMPT_SPENT) return { status: "failed", code: failure.code, message: failure.message, spent: true };
+      // Held, never spent: the id belongs to another payment or another project, so no generation may be derived past it.
+      if (failure.code === ATTEMPT_ID_CONFLICT) return { status: "failed", code: failure.code, message: failure.message, held: "conflict" };
+      if (failure.code === ATTEMPT_ID_UNAVAILABLE) return { status: "failed", code: failure.code, message: failure.message, held: "unavailable" };
       return { status: "failed", code: failure.code, message: failure.message };
     }
   }
 
   /**
-   * There is no read route for an attempt. The documented way is to present
-   * the same `attempt_id` again: the lifecycle is idempotent on it and
-   * answers the state it reached. `psp_attempt_in_flight` means the first
-   * presentation is still running.
+   * There is no read route for an attempt: the way to learn what became of
+   * one is to present the same `attempt_id`, with the same payment, again.
+   * Against the deployed API (ent#1671, #1683) that call never moves money
+   * for an attempt it already holds, and each answer maps to one reading:
+   *
+   * - settled: `200` with the ORIGINAL body verbatim (same `transactionId`,
+   *   same stored `receipt.id`, which the receipt route resolves) plus
+   *   `idempotent_replay: true`. Read as `settled`, exactly as the first
+   *   answer, and marked `replayed`.
+   * - `psp_attempt_in_flight` (409): claimed, no outcome yet, on every rail.
+   *   Read as `in_flight`; the next reconcile asks again with the SAME id.
+   * - `psp_attempt_uncertain` (409): pinned, dispatch outcome unknown. Read as
+   *   `uncertain`, which leaves the execution open for a person.
+   * - `psp_attempt_conflict` (409): failed, compensated, no money. Read as
+   *   `failed` and `spent`.
+   * - `attempt_id_conflict` / `attempt_id_unavailable` (409): the id is held for
+   *   a different payment, or by another project. Read as `failed` and `held`,
+   *   never `spent`: nothing was held or sent by this call. Neither can come from re-presenting the
+   *   payment this execution sent, whose tuple is the one the id was claimed
+   *   with, so seeing one here is a defect worth its readable failure.
+   * - an attempt the API never took: there is no record to answer from, so
+   *   this call IS the payment. Reconcile runs only after the outbox row
+   *   flipped to `sent`, so an attempt it looks up was presented once already.
    */
   async lookup(_attemptId: string, payment: RailPayment): Promise<RailLookup> {
     const outcome = await this.pay(payment);
-    if (outcome.status === "failed" && outcome.code === "psp_attempt_in_flight") return { status: "in_flight" };
+    if (outcome.status === "uncertain" && outcome.code === ATTEMPT_IN_FLIGHT) return { status: "in_flight" };
     return outcome;
   }
 
@@ -88,7 +124,9 @@ export class CodeSparRail implements PaymentRail {
       return {
         receipt_id: r.receipt_id,
         state: r.state,
-        mandate: { id: r.mandate.id },
+        mandate: { id: r.mandate.id, sig_sha256: r.mandate.sig_sha256 },
+        chain_version: r.chain_version,
+        approval: r.approval ?? null,
         payment: {
           amount_minor: r.payment.amount_minor,
           payee: r.quote?.payee ?? null,
@@ -99,12 +137,10 @@ export class CodeSparRail implements PaymentRail {
         },
         chain: r.chain,
         receipt_sig: r.receipt_sig,
-        // ent#1633 landed after `@codespar/sdk@0.16.6` was generated, so the
-        // typed response does not carry these two yet. Read off the body
-        // defensively rather than pinning a new SDK for two nullable strings:
-        // a deployment that predates the change answers null, which is the
-        // same answer the columns hold and reads as `unsigned`.
-        ...readEd25519Seal(r),
+        // `||`, not `??`: a deployment older than ent#1633 omits both fields,
+        // and an empty string is no signature either. Both read as `unsigned`.
+        receipt_sig_ed25519: r.receipt_sig_ed25519 || null,
+        receipt_sig_kid: r.receipt_sig_kid || null,
         actor,
         raw: r,
       };

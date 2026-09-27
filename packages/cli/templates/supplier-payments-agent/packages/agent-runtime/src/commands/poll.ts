@@ -18,7 +18,7 @@ import { join } from "node:path";
 import { loadManifest, resolveFixedClock, type ChannelName } from "@codespar/agent-core";
 import type { Agent } from "../agent.js";
 import { setup } from "../setup.js";
-import { announceOutcome, waitForPayer } from "../terminal.js";
+import { announceOutcome, followUp, waitForPayer } from "../terminal.js";
 import { pollWhatsApp } from "./poll-whatsapp.js";
 import type { WhatsAppBackendName } from "../channels/whatsapp/open.js";
 
@@ -132,6 +132,7 @@ export async function poll(agent: Agent, argv: string[]): Promise<number> {
       const r = await waitForPayer(open.id, { setup: s, approver: { id: s.kit.labels.defaultUser, channel: "terminal" }, say, tell, waitSeconds: args.wait, simulatePayer: args.simulatePayer });
       announceOutcome(r.execution, s, tell);
       if (r.execution.state !== "executing") await s.engine.collectReceipts(r.execution.id);
+      await followUp(r.execution, s, say);
       results.push({ id: r.execution.id, state: r.execution.state, reason: r.execution.reason ?? null, rounds: r.rounds, seconds: r.seconds, timed_out: r.timed_out });
       say(`${r.execution.id}: ${r.execution.state}${r.execution.reason ? ` (${r.execution.reason})` : ""} after ${r.rounds} look(s), ${r.seconds}s`);
     }

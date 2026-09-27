@@ -43,6 +43,9 @@ interface Payload {
   channel: { backend: string; conversation: string; turns: number; messages_in: number; messages_out: number; refused: Array<{ rule: string }>; log: string };
 }
 
+/** The emulator keys a conversation on `phone_number_id:contact`; a fresh id is a fresh conversation for the same contact. */
+const freshPhoneNumberId = () => `9${String(Math.floor(Math.random() * 1e11)).padStart(11, "0")}`;
+
 function run(args: string[], extra: Record<string, string> = {}) {
   const stateDir = mkdtempSync(join(tmpdir(), "collections-wa-"));
   const result = spawnSync(NODE, [BIN, "start", ...args], {
@@ -58,6 +61,8 @@ function run(args: string[], extra: Record<string, string> = {}) {
       WHATSAPP_APP_SECRET: "",
       COLLECTIONS_STATE_DIR: stateDir,
       COLLECTIONS_RUNS_DIR: join(stateDir, "runs"),
+      // A conversation of its own on the emulator (#42): no case inherits another's inbound messages, or the window they anchor.
+      WHATSAPP_SIM_PHONE_NUMBER_ID: freshPhoneNumberId(),
       ...extra,
     },
     encoding: "utf8",

@@ -8,7 +8,7 @@
 import { createInterface } from "node:readline/promises";
 import { stdin, stderr, stdout } from "node:process";
 import { relative } from "node:path";
-import type { AgentRuntime, ChargeInstrument, Execution } from "@codespar/agent-core";
+import type { AgentRuntime, BatchGesture, BatchPresentation, ChargeInstrument, Execution } from "@codespar/agent-core";
 import { pollUntilClosed, type PollResult } from "./poll.js";
 import type { Setup } from "./setup.js";
 
@@ -23,8 +23,12 @@ export interface TerminalOptions {
   simulatePayer?: boolean | undefined;
   say?: ((line: string) => void) | undefined;
   ask?: ((question: string) => Promise<string>) | undefined;
-  /** Where the lines for the counterparty go (the conversation); `say` is the operator's console. */
-  tell?: ((line: string) => void) | undefined;
+  /**
+   * Where the lines for the counterparty go (the conversation); `say` is the
+   * operator's console. `about` is the execution whose OUTCOME the line tells,
+   * so a channel can tie a failed delivery of it back to that outcome.
+   */
+  tell?: ((line: string, about?: Execution) => void) | undefined;
   /**
    * How a payable receivable is put in front of the counterparty. Defaults to
    * the kit's own, which writes lines to a console. A channel overrides it,
@@ -32,7 +36,17 @@ export interface TerminalOptions {
    * message, and neither of those is a line of text.
    */
   presentInstrument?: ((execution: Execution, instalment: number, chargeId: string, instrument: ChargeInstrument, tell: (line: string) => void) => void | Promise<void>) | undefined;
+  /**
+   * The gestures taken on whole batches in this session, by batch ref. When a
+   * line of a batch arrives and its ref is here, the line is decided by the
+   * gesture instead of by a question; see `presentBatch`.
+   */
+  gestures?: BatchGestures | undefined;
 }
+
+/** One gesture per batch ref: the list it was taken on, and the positions vetoed. */
+export type BatchGestures = Map<string, BatchGestureRecord>;
+type BatchGestureRecord = { batch_hash: string; count: number; vetoed: Set<number> };
 
 export function describeExecution(execution: Execution, setup: Setup): string[] {
   return setup.kit.describeExecution(execution, setup);
@@ -41,6 +55,16 @@ export function describeExecution(execution: Execution, setup: Setup): string[] 
 /** The one message per outcome, recorded so a duplicate event never sends it twice. */
 export function announceOutcome(execution: Execution, setup: Setup, tell: (line: string) => void): boolean {
   return setup.kit.announceOutcome?.(execution, setup, tell) ?? false;
+}
+
+/** The kit's follow-up to an outcome. Never throws: what follows a paid order cannot un-pay it. */
+export async function followUp(execution: Execution, setup: Setup, say: (line: string) => void): Promise<void> {
+  if (!setup.kit.followUp) return;
+  try {
+    await setup.kit.followUp(execution, setup, say);
+  } catch (err) {
+    say(`  follow-up of ${execution.id} failed and changed nothing about it: ${err instanceof Error ? err.message : String(err)}`);
+  }
 }
 
 function receiptLines(execution: Execution, setup: Setup, say: (line: string) => void): void {
@@ -61,23 +85,29 @@ export async function handleExecution(execution: Execution, options: TerminalOpt
 
   let current = execution;
   if (current.state === "awaiting_approval") {
-    let decision = options.decision;
-    if (!decision) {
-      if (current.blocking_reasons.length > 0) say("  (o unico desfecho possivel e negar; aperte Enter)");
-      const ask = options.ask ?? defaultAsk;
-      const answer = (await ask(labels.approveQuestion)).trim().toLowerCase();
-      decision = answer === "s" || answer === "sim" || answer === "y" || answer === "yes" ? "approve" : "deny";
-    }
-    if (decision === "approve") current = engine.approve(current.id, approver);
-    else if (decision === "deny") current = engine.deny(current.id, approver);
-    else {
-      say("  deixado em awaiting_approval (rode de novo com --approve ou --deny)");
-      return current;
+    const gesture = options.decision === undefined && current.batch ? options.gestures?.get(current.batch.ref) : undefined;
+    if (gesture) {
+      current = decideByGesture(current, gesture, setup, approver);
+    } else {
+      let decision = options.decision;
+      if (!decision) {
+        if (current.blocking_reasons.length > 0) say("  (o unico desfecho possivel e negar; aperte Enter)");
+        const ask = options.ask ?? defaultAsk;
+        const answer = (await ask(labels.approveQuestion)).trim().toLowerCase();
+        decision = answer === "s" || answer === "sim" || answer === "y" || answer === "yes" ? "approve" : "deny";
+      }
+      if (decision === "approve") current = engine.approve(current.id, approver);
+      else if (decision === "deny") current = engine.deny(current.id, approver);
+      else {
+        say("  deixado em awaiting_approval (rode de novo com --approve ou --deny)");
+        return current;
+      }
     }
     say(`  -> ${current.state}${current.reason ? ` (${current.reason})` : ""}`);
   }
 
-  if (current.state === "approved") {
+  // An agent that issues on request (`executeOnApproval: false`) leaves the approved execution for its own tool to issue.
+  if (current.state === "approved" && setup.kit.executeOnApproval !== false) {
     current = await engine.execute(current.id);
     say(`  -> ${current.state}${current.reason ? ` (${current.reason})` : ""}`);
     if (setup.settlement === "immediate") {
@@ -95,9 +125,85 @@ export async function handleExecution(execution: Execution, options: TerminalOpt
     } else if (current.state === "executing") {
       say(labels.uncertainDispatch);
     }
-    announceOutcome(current, setup, tell);
+    const told = current;
+    announceOutcome(told, setup, (line) => tell(line, told));
+    await followUp(current, setup, say);
   }
   return current;
+}
+
+/**
+ * A line of a batch the person already decided on as a list. The gesture
+ * approves or vetoes a POSITION in ONE list: a line that names another list
+ * under the same ref is not covered by it, and "todas" must not become a yes
+ * to a list nobody was shown. `approve` still runs the policy and still mints
+ * this line's own artifact, which carries the `batch_hash` the gesture was
+ * taken on — that is what makes the gesture attested rather than asserted.
+ */
+function decideByGesture(execution: Execution, gesture: BatchGestureRecord, setup: Setup, approver: TerminalOptions["approver"]): Execution {
+  const engine = setup.engine;
+  const { batch_hash, index, count } = execution.batch!;
+  if (batch_hash !== gesture.batch_hash || count !== gesture.count) {
+    return engine.deny(execution.id, approver, `the list changed after the gesture: it was taken on ${gesture.count} line(s) hashing to ${gesture.batch_hash}, and this line belongs to ${count} hashing to ${batch_hash}`);
+  }
+  if (gesture.vetoed.has(index)) return engine.deny(execution.id, approver, `vetoed in the batch gesture (line ${index + 1} of ${count})`);
+  return engine.approve(execution.id, approver);
+}
+
+/**
+ * What the person answered to a whole list, or `undefined` when the answer
+ * cannot be read as one. Lines are numbered from 1, as they were shown.
+ * "todas" / "all", "todas exceto 3,7" / "all except 3,7", and "nenhuma" /
+ * "none" (also an empty answer: the default is no, as it is per line). A
+ * number outside the list is unreadable rather than ignored, because a typo
+ * that silently vetoed nothing would pay the line the person meant to stop.
+ */
+export function parseBatchGesture(answer: string, count: number): { vetoed: number[] } | undefined {
+  const text = answer.trim().toLowerCase();
+  const all = Array.from({ length: count }, (_, i) => i);
+  if (text === "" || text === "nenhuma" || text === "none" || text === "n" || text === "nao") return { vetoed: all };
+  if (text === "todas" || text === "all") return { vetoed: [] };
+  const except = /^(?:todas|all)\s+(?:exceto|except)\s+([\d\s,]+)$/.exec(text);
+  if (!except) return undefined;
+  const numbers = except[1]!.split(/[\s,]+/).filter(Boolean).map(Number);
+  if (numbers.length === 0 || numbers.some((n) => !Number.isInteger(n) || n < 1 || n > count)) return undefined;
+  return { vetoed: [...new Set(numbers.map((n) => n - 1))].sort((a, b) => a - b) };
+}
+
+/**
+ * Section 3, for a list: the person sees every line, the total and the hash
+ * prefix, and answers once. What they answer is recorded in the bundle as a
+ * `batch.gesture` event and kept for the lines that follow; each line is then
+ * decided by `decideByGesture` when it arrives, and each one it approves mints
+ * its own artifact as before.
+ */
+export async function presentBatch(batch: BatchPresentation, options: TerminalOptions & { gestures: BatchGestures }): Promise<BatchGesture> {
+  const { setup, approver } = options;
+  const say = options.say ?? ((l: string) => stderr.write(l + "\n"));
+  const ask = options.ask ?? defaultAsk;
+  say(`  lote ${batch.ref} — ${batch.label}: ${batch.count} linha(s), total ${batch.total}, batch_hash ${batch.batch_hash.slice(0, 19)}…`);
+  for (const line of batch.lines) {
+    const note =
+      line.status === "already_settled"
+        ? " (ja paga; nao roda de novo)"
+        : line.status === "in_progress"
+          ? " (em andamento; nao roda de novo)"
+          : line.status === "attempt_id_conflict"
+            ? " (tentativa presa a outro pagamento; nao roda de novo)"
+            : "";
+    say(`    ${line.index + 1}. ${line.beneficiary}: ${line.amount}${note}`);
+  }
+  let parsed: { vetoed: number[] } | undefined;
+  while (!parsed) {
+    parsed = parseBatchGesture(await ask("  Aprovar a lista? [todas / todas exceto 3,7 / nenhuma] "), batch.count);
+    if (!parsed) say(`  nao entendi; responda todas, todas exceto <numeros de 1 a ${batch.count}> ou nenhuma`);
+  }
+  const vetoed = new Set(parsed.vetoed);
+  const gesture: BatchGesture = { batch_hash: batch.batch_hash, approved: batch.lines.map((l) => l.index).filter((i) => !vetoed.has(i)), vetoed: parsed.vetoed };
+  options.gestures.set(batch.ref, { batch_hash: batch.batch_hash, count: batch.count, vetoed });
+  setup.engine.note("batch.gesture", null, { batch_ref: batch.ref, batch_hash: batch.batch_hash, count: batch.count, total_minor: batch.total_minor, approved: gesture.approved, vetoed: gesture.vetoed, approver: { type: "human", id: approver.id, channel: approver.channel } });
+  say(`  -> lista ${gesture.vetoed.length === 0 ? "aprovada inteira" : gesture.approved.length === 0 ? "negada inteira" : `aprovada exceto ${gesture.vetoed.map((i) => i + 1).join(", ")}`}`);
+  return gesture;
 }
 
 export async function waitForPayer(executionId: string, options: TerminalOptions): Promise<PollResult> {
@@ -133,7 +239,10 @@ export async function interactive(options: TerminalOptions & { runtime: AgentRun
   const { setup } = options;
   const say = options.say ?? ((l: string) => stderr.write(l + "\n"));
   const labels = setup.kit.labels;
-  const loop = setup.makeLoop(options.runtime, (execution) => handleExecution(execution, options));
+  // Interactive only: a person at the keyboard can decide a list in one go. The one-shot and the scenario runner pass one decision to every line and never reach this.
+  const gestures: BatchGestures = new Map();
+  const withGestures = { ...options, gestures };
+  const loop = setup.makeLoop(options.runtime, (execution) => handleExecution(execution, withGestures), (batch) => presentBatch(batch, withGestures));
   say(`${setup.manifest.manifest.name} ${setup.manifest.manifest.version} — approval: ${setup.mode} — trilho: ${setup.railKind} — ${labels.mandateWord} ${setup.mandate.id}`);
   say(`run ${setup.runId} — bundle em ${relative(process.cwd(), setup.bundle.dir)}`);
   say(labels.intro);

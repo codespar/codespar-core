@@ -1,0 +1,30 @@
+# The manifest of section 4.3 of docs/spec-v5.1.1.md, for the checkout-agent
+# of the checkout spec v0.2 (2026-09-25). `npm run check` reads this file first
+# and fails if SYSTEM_PROMPT.md, tools.json or guardrails.json contradict it.
+schema: 1
+name: checkout-agent
+version: 0.1.0
+approval: [human, mandate]
+default_approval: human
+escalate_above:
+  amount: 50000          # R$ 500,00 in cents: an order above this asks the attendant even in `mandate`
+  # No `new_beneficiary`: a new customer is the normal case of a store, not a risk (checkout §3.2).
+  # No `outside_hours`: service hours are a rule of the envelope, refused in BOTH modes, not an escalation.
+mcp: "@codespar/mcp@0.5.8"
+cli: "@codespar/cli@0.14.0"
+tools: ./tools.json
+guardrails: ./guardrails.json
+mandate_schema: ./mandate.example.json
+# The API's own names, the same four the collections-agent declares. `paid` closes the sale; `expired` and `cancelled` close it
+# as failed; `created` is when the cobranca com vencimento becomes payable (read from the status poll). `payment_notified` and
+# `expiry_notified` are deliberately absent: neither proves a payment (checkout §5.4).
+events: [commerce.charge.created, commerce.charge.paid, commerce.charge.expired, commerce.charge.cancelled]
+channels: [terminal, whatsapp]   # WhatsApp through the adapter the collections-agent uses (checkout decision 6); `npm run check` confirms channels/whatsapp/ ships a conversation
+maturity:
+  storefront-cart: sandbox
+  bolepix-receivables: sandbox
+  nfse-invoice: sandbox           # NFS-e through codespar_invoice (nfe.io), after `settled`, by code; the stub issuer runs in CI. NF-e (product) waits for an A1 + IE
+  receipt-verification: blocked   # the API seals no record for a paid charge: no chain, no signature to verify
+scenarios: ./scenarios/
+evals: ./evals/
+agents_md: ./AGENTS.md

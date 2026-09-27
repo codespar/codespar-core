@@ -5,6 +5,7 @@
  */
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
+import { canonicalJson } from "./hash.js";
 import type { Mandate } from "./mandate.js";
 import type { RailReceipt } from "./rail.js";
 import type { ApprovalArtifact } from "./types.js";
@@ -97,11 +98,18 @@ export class ProofBundle {
     writeFileSync(join(this.dir, "mandate.snapshot.json"), JSON.stringify({ ...safe, beneficiaries: safe.beneficiaries.map((b) => ({ ...b, payee: maskPayee(b.payee) })), merchant_allowlist: safe.merchant_allowlist.map(maskPayee) }, null, 2) + "\n");
   }
 
-  /** Returns the path INSIDE the bundle (`receipts/<id>.json`): a bundle travels, and an absolute path names the machine that wrote it. */
-  receipt(receipt: RailReceipt): string {
+  /**
+   * Returns the path INSIDE the bundle (`receipts/<id>.json`): a bundle travels, and an absolute path names the machine that wrote it.
+   *
+   * `approval_id` names the artifact in `approval.json` whose hashes the spend carried, so `npm run verify` holds the receipt's sealed
+   * approval link against THAT artifact, found by identity and never by looking for one whose hash happens to match. The copy stays
+   * masked: binding its body to the chain needs the unmasked read, which `verify --from-api` takes from the API and writes nowhere.
+   */
+  receipt(receipt: RailReceipt, context: { approval_id?: string | undefined } = {}): string {
     const relative = join("receipts", `${receipt.receipt_id}.json`);
     const { raw: _raw, ...safe } = receipt;
-    writeFileSync(join(this.dir, relative), JSON.stringify({ ...safe, payment: { ...safe.payment, payee: safe.payment.payee ? maskPayee(safe.payment.payee) : null } }, null, 2) + "\n");
+    const copy = { ...safe, payment: { ...safe.payment, payee: safe.payment.payee ? maskPayee(safe.payment.payee) : null }, ...(context.approval_id ? { approval_id: context.approval_id } : {}) };
+    writeFileSync(join(this.dir, relative), JSON.stringify(copy, null, 2) + "\n");
     return relative;
   }
 
@@ -147,6 +155,30 @@ function readdirSorted(dir: string): string[] {
   return readdirSync(dir)
     .filter((f) => f.endsWith(".json"))
     .sort();
+}
+
+/**
+ * Where the bundle's masked copy of a receipt says something the API's read of the same receipt does not. The copy is not what the
+ * signature covers, so a copy edited after the fact still verifies at the signature level; this is what catches it once the read is
+ * in hand. The payee is compared masked, the only form the copy holds. An empty list means the copy is a faithful mask of the read.
+ */
+export function copyDisagreesWithRead(copy: Record<string, unknown>, read: Record<string, unknown>): string[] {
+  const field = (o: unknown, k: string): unknown => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined);
+  const readPayee = field(read["quote"], "payee");
+  const expected: Array<[string, unknown, unknown]> = [
+    ["receipt_id", copy["receipt_id"], read["receipt_id"]],
+    ["chain", copy["chain"], read["chain"]],
+    ["mandate.id", field(copy["mandate"], "id"), field(read["mandate"], "id")],
+    ["payment.amount_minor", field(copy["payment"], "amount_minor"), field(read["payment"], "amount_minor")],
+    ["payment.attempt_id", field(copy["payment"], "attempt_id"), field(read["payment"], "attempt_id")],
+    ["payment.money_moved", field(copy["payment"], "money_moved"), field(read["payment"], "money_moved")],
+    ["payment.at", field(copy["payment"], "at"), field(read["payment"], "at")],
+    ["payment.payee", field(copy["payment"], "payee"), typeof readPayee === "string" ? maskPayee(readPayee) : null],
+  ];
+  // Written onto the copy since the rail reads them through the SDK's types (0.16.10); a copy from before carries neither, and is not faulted for it.
+  if ("chain_version" in copy) expected.push(["chain_version", copy["chain_version"], read["chain_version"]]);
+  if ("approval" in copy) expected.push(["approval", canonicalJson(copy["approval"] ?? null), canonicalJson(read["approval"] ?? null)]);
+  return expected.filter(([, a, b]) => a !== b).map(([name]) => name);
 }
 
 /** `escola@exemplo.com.br` -> `es***@exemplo.com.br`; `+5511999998888` -> `+55***8888`; a UUID keeps its first and last 4. */

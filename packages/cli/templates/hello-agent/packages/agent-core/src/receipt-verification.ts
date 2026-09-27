@@ -17,28 +17,34 @@
  *                          reconciling a payout, or a court — parties that
  *                          have no relationship with CodeSpar at all.
  *
- * This module checks the second. It imports `node:crypto` and nothing else: no
+ * This module checks the second. It imports `node:crypto` and two modules of
+ * this package that import nothing else (`receipt-chain`, `hash`): no
  * CodeSpar SDK, no key material, no token, no network of its own (the key
  * document is passed in, or fetched by a function the caller supplies). A
  * third party can read the forty lines that matter and reimplement them.
  *
- * WHAT A `verified` VERDICT PROVES, exactly: CodeSpar sealed a receipt with
- * THIS id and THIS chain. The chain is a SHA-256 over the four links of the
- * Control Record, so the seller, the amount and the payee are inside it — but
- * recomputing that digest from the receipt body needs the canonical link
- * shapes, which CodeSpar does not publish today. Binding the body to the chain
- * is therefore not something this module can promise, and it does not pretend
- * to: see `docs/OPEN_QUESTIONS.md` §47. It is also why the signature survives
- * the proof bundle's masking — the bundle masks the payee, and the signature
- * covers the id and the digest, not the copy in front of you.
+ * TWO LAYERS, and a verdict says which one it reached. The signature proves
+ * CodeSpar sealed a receipt with THIS id and THIS chain; `verifyReceiptWithKeys`
+ * checks that and nothing else, which is why it survives the proof bundle's
+ * masking — the bundle masks the payee, and the signature covers the id and
+ * the digest, not the copy in front of you. The chain is a SHA-256 over the
+ * links of the Control Record, and since ent#1670 CodeSpar publishes how to
+ * recompute it (`chain_recipe`, beside the keys). `verifyReceiptRead` does:
+ * from the API's receipt READ, under the recipe of the SAME document whose
+ * key verified the signature, it recomputes the chain and holds it against
+ * the signed one — and for a v4 chain, holds the sealed approval link against
+ * the local approval artifact. `verified` from it means all of that held;
+ * `signature_only` means the signature held and the body could not be bound
+ * (a v1–v3 chain, a masked payee, no recipe), which is not a failure and is
+ * not a verification of the body either. See `docs/OPEN_QUESTIONS.md` §47.
  *
- * WHICH KEY SET. `kid` is `<did>#<n>` and the DID is the platform's, so it is
- * the same string on every deployment while the KEY behind it is not: a
- * sandbox receipt checked against the production key set finds a key of that
- * name, fails to verify, and reads `tampered`. The verifier therefore points
- * at ONE deployment's `/.well-known/codespar-receipt-keys.json` — the default
- * is production, and `--url` names another. Nothing in the two documents tells
- * them apart today; `docs/OPEN_QUESTIONS.md` §47 says so and names the ask.
+ * WHICH KEY SET. The verifier points at ONE deployment's
+ * `/.well-known/codespar-receipt-keys.json` — the default is production, and
+ * `--url` names another. Since ent#1641 a deployment names its keys by
+ * namespace (`#production-2`, `#staging-2`), so a receipt checked against the
+ * wrong set finds no key of its name (`unknown_key`); the retired `#1` is
+ * still published by both with different keys, and a receipt sealed under it
+ * checked against the wrong set reads `tampered`. `docs/OPEN_QUESTIONS.md` §47.
  *
  * The signed string is the enterprise's `receiptSigningString`
  * (`packages/api/src/receipt-signature.ts`, ent#1633), reproduced here rather
@@ -46,6 +52,9 @@
  * proves nothing about the signer.
  */
 import { createPublicKey, verify as verifyDetached } from "node:crypto";
+import { itemsHash } from "./hash.js";
+import { readChainRecipe, readSealedApproval, recomputeChain, sameApprovalHash, type SealedApproval } from "./receipt-chain.js";
+import type { ExecutionItem } from "./types.js";
 
 /** The domain tag. A receipt names the version it was sealed under through
  *  this literal, so a future `v2` does not invalidate a `v1` signature. */
@@ -86,8 +95,51 @@ export function receiptSigningString(receiptId: string, chain: string): string {
  *                  arbitrary JSON file would state that it is a receipt from
  *                  before the capability existed, which is a claim about a
  *                  file nobody checked.
+ *
+ * And three that only the body check (`verifyReceiptRead`) reaches, each
+ * after the signature verified:
+ *
+ *   `signature_only`     the body could not be bound to the chain: a v1–v3
+ *                        chain, a masked payee, no read, no recipe. NOT a
+ *                        failure, and NOT `verified`: the signature is
+ *                        CodeSpar's, and nothing here says the body beside it
+ *                        is the body it sealed.
+ *   `chain_mismatch`     the body, recomputed under the published recipe, is
+ *                        NOT the signed chain. The signature is genuine and
+ *                        the body in front of you is not the one it covers.
+ *   `approval_mismatch`  the body is the signed one, and the approval link it
+ *                        seals is NOT the local artifact's: this payment was
+ *                        not sealed against the list that artifact approved.
  */
-export type ReceiptVerdict = "verified" | "tampered" | "unsigned" | "unknown_key" | "unreachable" | "malformed";
+export type ReceiptVerdict = "verified" | "tampered" | "unsigned" | "unknown_key" | "unreachable" | "malformed" | "signature_only" | "chain_mismatch" | "approval_mismatch";
+
+/** What recomputing the chain from the body found. */
+export interface ChainCheck {
+  /** `recomputed`: equal to the signed chain. `mismatch`: not equal. `not_recomputed`: see `reason`. */
+  status: "recomputed" | "mismatch" | "not_recomputed";
+  version: number | null;
+  /** The digest recomputed from the body, when it could be. */
+  recomputed: string | null;
+  reason: string;
+}
+
+/** What the sealed approval link was held against. Present on a v4 chain that recomputed. */
+export interface ApprovalLinkCheck {
+  /** `matched`: the artifact's hashes are the sealed ones. `mismatch`: they are not. `not_compared`: no artifact was given. */
+  status: "matched" | "mismatch" | "not_compared";
+  sealed: SealedApproval;
+  artifact: { approval_id: string; items_hash: string; batch_hash: string | null } | null;
+  reason: string;
+}
+
+/** The part of an approval artifact the approval link is held against: what was approved, never who. */
+export interface ApprovalClaim {
+  approval_id: string;
+  items_hash: string;
+  /** When present, `items_hash` is recomputed from them first: a hash that does not describe its own list proves nothing about the list. */
+  items?: readonly ExecutionItem[];
+  batch?: { batch_hash: string };
+}
 
 export interface ReceiptVerification {
   verdict: ReceiptVerdict;
@@ -106,6 +158,9 @@ export interface ReceiptVerification {
   reason: string;
   /** One sentence for a person. Never a stack trace. */
   message: string;
+  /** The body check, when one was attempted: only `verifyReceiptRead` attempts it, and only on a signature that verified. */
+  chain_check?: ChainCheck;
+  approval_check?: ApprovalLinkCheck;
 }
 
 /** One published key, RFC 8037 shape, as the JWKS serves it. */
@@ -398,4 +453,125 @@ export const VERDICT_EXIT_CODES: Record<ReceiptVerdict, number> = {
   unknown_key: 4,
   unreachable: 5,
   malformed: 6,
+  signature_only: 7,
+  chain_mismatch: 8,
+  approval_mismatch: 9,
 };
+
+/* ── The body: the chain recomputed from the read ────────────── */
+
+/** The first chain version that seals `sha256(mandate.sig)` instead of the signature, and the approval link. */
+export const FIRST_THIRD_PARTY_CHAIN_VERSION = 4;
+
+/** Whether a JSON is the API's receipt read, rather than the proof bundle's masked copy of one: only the read carries the links. */
+export function isReceiptRead(input: unknown): input is Record<string, unknown> {
+  if (!isRecord(input)) return false;
+  const mandate = input["mandate"];
+  const payment = input["payment"];
+  return isRecord(mandate) && "nonce" in mandate && isRecord(payment) && "rail" in payment;
+}
+
+/** A verified signature whose body could not be bound: `signature_only`, with the reason. */
+export function signatureOnly(signature: ReceiptVerification, reason: string, why: string, version: number | null = null): ReceiptVerification {
+  return {
+    ...signature,
+    verdict: "signature_only",
+    reason,
+    message: `receipt ${signature.receipt_id ?? "(no id)"} carries CodeSpar's signature over its id and chain, and its body is NOT bound to that chain: ${why}`,
+    chain_check: { status: "not_recomputed", version, recomputed: null, reason },
+  };
+}
+
+/**
+ * Verify a receipt READ — the JSON of `GET /v1/consumers/receipts/{id}` —
+ * against a key set already in hand: the signature, then the body, then the
+ * approval. Synchronous and offline, like `verifyReceiptWithKeys`.
+ *
+ * The recipe is taken from the SAME document whose key verified the
+ * signature, never from another: each deployment names its keys by
+ * namespace (§47), so a document that verified the signature is the sealing
+ * deployment's, and its recipe is the one that sealed.
+ *
+ * A v1–v3 chain is never recomputed here, even from a tenant's read that
+ * carries `mandate.sig`: that signature is a bearer proof (it authorizes
+ * spends), a verifier has no business handling it, and the API is retiring
+ * it from the read. Those chains also predate the API's timestamp fix
+ * (ent#1670), so some of them no longer recompute from their read at all —
+ * and a mismatch there would accuse a genuine receipt. They answer
+ * `signature_only`, never `verified` and never `chain_mismatch`.
+ */
+export function verifyReceiptRead(read: unknown, keyDocument: unknown, options: { label?: string; approval?: ApprovalClaim } = {}): ReceiptVerification {
+  const signature = verifyReceiptWithKeys(read, keyDocument, options.label ?? "file");
+  if (signature.verdict !== "verified" || !isRecord(read)) return signature;
+  if (!isReceiptRead(read)) return signatureOnly(signature, "read_required", "this is not the API's receipt read (the proof bundle's copy masks the payee and carries none of the links); recompute from `GET /v1/consumers/receipts/{id}`");
+
+  const recipe = readChainRecipe(keyDocument);
+  if (!recipe.ok) return signatureOnly(signature, recipe.reason, recipe.message);
+
+  const versionRaw = read[recipe.recipe.version.field];
+  if (typeof versionRaw === "number" && versionRaw < FIRST_THIRD_PARTY_CHAIN_VERSION) {
+    return signatureOnly(
+      signature,
+      "mandate_sig_required",
+      `the chain is not recomputable without the mandate signature. Chain v${versionRaw} seals the mandate's raw signature, a bearer proof this verifier does not take; and a receipt sealed before ent#1670 may not recompute from its read at all. It carries no approval link either: that starts at v${FIRST_THIRD_PARTY_CHAIN_VERSION}`,
+      versionRaw,
+    );
+  }
+
+  const recomputed = recomputeChain(read, recipe.recipe);
+  if (!recomputed.ok) return signatureOnly(signature, recomputed.reason, recomputed.message, recomputed.version);
+  const sealedChain = read["chain"];
+  if (recomputed.chain !== sealedChain) {
+    return {
+      ...signature,
+      verdict: "chain_mismatch",
+      reason: "body_does_not_recompute",
+      message: `receipt ${signature.receipt_id} carries a genuine CodeSpar signature over chain ${sealedChain}, and the body beside it recomputes to ${recomputed.chain} under the published recipe (v${recomputed.version}): this body is not the one that was sealed. A payee, an amount, a timestamp or the approval was changed after sealing`,
+      chain_check: { status: "mismatch", version: recomputed.version, recomputed: recomputed.chain, reason: "body_does_not_recompute" },
+    };
+  }
+  const chainCheck: ChainCheck = { status: "recomputed", version: recomputed.version, recomputed: recomputed.chain, reason: "body_recomputes" };
+  const bound = `the body recomputes to the signed chain under the published recipe (v${recomputed.version})`;
+
+  const sealed = readSealedApproval(read);
+  if (!sealed) {
+    // Unreachable through the published recipe (v4 seals the link, and a read without it fails the recomputation above), kept so a future version is not misread.
+    return { ...signature, reason: "body_recomputes", message: `receipt ${signature.receipt_id} was sealed by CodeSpar and ${bound}; it seals no approval link`, chain_check: chainCheck };
+  }
+  const approval = options.approval;
+  if (!approval) {
+    return {
+      ...signature,
+      reason: "body_recomputes",
+      message: `receipt ${signature.receipt_id} was sealed by CodeSpar and ${bound}. It seals the approval ${sealed.items_hash}${sealed.batch_hash ? ` (batch ${sealed.batch_hash})` : ""}; no approval artifact was given to hold it against`,
+      chain_check: chainCheck,
+      approval_check: { status: "not_compared", sealed, artifact: null, reason: "no_artifact" },
+    };
+  }
+
+  const artifact = { approval_id: approval.approval_id, items_hash: approval.items_hash, batch_hash: approval.batch?.batch_hash ?? null };
+  const mismatch = (reason: string, why: string): ReceiptVerification => ({
+    ...signature,
+    verdict: "approval_mismatch",
+    reason,
+    message: `receipt ${signature.receipt_id} was sealed by CodeSpar and ${bound}, and ${why}: this payment was not sealed against the list artifact ${approval.approval_id} approved`,
+    chain_check: chainCheck,
+    approval_check: { status: "mismatch", sealed, artifact, reason },
+  });
+  if (approval.items && itemsHash(approval.items) !== approval.items_hash) {
+    return mismatch("artifact_items_hash_inconsistent", `the artifact's items_hash ${approval.items_hash} is not the hash of the items it lists (${itemsHash(approval.items)})`);
+  }
+  if (!sameApprovalHash(sealed.items_hash, artifact.items_hash)) {
+    return mismatch("items_hash_differs", `it seals items_hash ${sealed.items_hash} where the artifact carries ${artifact.items_hash}`);
+  }
+  if (!sameApprovalHash(sealed.batch_hash, artifact.batch_hash)) {
+    return mismatch("batch_hash_differs", `it seals batch_hash ${sealed.batch_hash ?? "none"} where the artifact carries ${artifact.batch_hash ?? "none"}`);
+  }
+  return {
+    ...signature,
+    reason: "approval_matches",
+    message: `receipt ${signature.receipt_id} was sealed by CodeSpar, ${bound}, and it was paid against the list artifact ${approval.approval_id} approved (${sealed.items_hash}${sealed.batch_hash ? `, batch ${sealed.batch_hash}` : ""}). WHO approved it is in the artifact, under a local key, and nowhere in the seal`,
+    chain_check: chainCheck,
+    approval_check: { status: "matched", sealed, artifact, reason: "approval_matches" },
+  };
+}

@@ -8,7 +8,7 @@
 import { stderr, stdout } from "node:process";
 import { envName, type Agent } from "../agent.js";
 import { setup } from "../setup.js";
-import { announceOutcome } from "../terminal.js";
+import { announceOutcome, followUp } from "../terminal.js";
 import { startWebhookServer } from "../webhook.js";
 
 export async function webhook(agent: Agent, argv: string[]): Promise<number> {
@@ -21,8 +21,9 @@ export async function webhook(agent: Agent, argv: string[]): Promise<number> {
     {
       engine: s.engine,
       secret,
-      onClosed: (execution) => {
+      onClosed: async (execution) => {
         announceOutcome(execution, s, (l) => void stdout.write(l + "\n"));
+        await followUp(execution, s, say);
       },
     },
     say,

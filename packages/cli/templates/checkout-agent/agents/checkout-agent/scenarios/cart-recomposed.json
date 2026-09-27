@@ -1,0 +1,61 @@
+{
+  "name": "cart-recomposed",
+  "description": "Checkout §5.2's hard case: two lessons at R$ 100 are ordered and confirmed; the customer swaps them for one consultation at R$ 200 and asks to pay. The order's single item (the customer, R$ 200,00, due today) and its items_hash are IDENTICAL before and after; only the cart_hash (the composition bound to the execution and the artifact, checkout §9.7) differs, and it is what sends the order back to the attendant. One charge, for the consultation.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "transcript": "./cart-recomposed.transcript.jsonl",
+  "turns": [
+    {
+      "input": "oi, sou a Marina, quero duas aulas avulsas",
+      "decision": "none"
+    },
+    {
+      "input": "fechado",
+      "decision": "approve"
+    },
+    {
+      "input": "troca as duas aulas por uma consultoria de carreira, da o mesmo valor. pode emitir",
+      "decision": "approve",
+      "payer": "pays"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [
+        "settled"
+      ],
+      "reasons": [
+        null
+      ],
+      "receipts": 1,
+      "settled_total": 20000,
+      "charges_issued": 1,
+      "debtor_messages": 1
+    },
+    "human": {
+      "trails": [
+        [
+          "awaiting_approval",
+          "approved",
+          "awaiting_approval",
+          "approved",
+          "executing",
+          "settled"
+        ]
+      ]
+    },
+    "mandate": {
+      "trails": [
+        [
+          "approved",
+          "awaiting_approval",
+          "approved",
+          "executing",
+          "settled"
+        ]
+      ]
+    }
+  }
+}

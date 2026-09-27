@@ -8,7 +8,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
-import { ConversationScriptSchema, TemplateRegistrySchema, TEMPLATE_REGISTRY_FILE, templateArity } from "./channels.js";
+import { ConversationScriptSchema, TemplateRegistrySchema, TEMPLATE_REGISTRY_FILE, declaredReplies, templateArity, type TemplateRegistry } from "./channels.js";
 import { GuardrailsSchema } from "./guardrails.js";
 import { loadManifest, ManifestSchema, type LoadedManifest } from "./manifest.js";
 import { MandateSchema } from "./mandate.js";
@@ -121,12 +121,35 @@ export function checkAgent(agentDir: string): CheckReport {
   if (!manifest.channels.includes("whatsapp") && scripts.length > 0) {
     error("channels_undeclared", `channels/whatsapp/ ships ${scripts.length} conversation(s) but agent.yaml does not declare the whatsapp channel`);
   }
+  const registryPath = join(whatsappDir, TEMPLATE_REGISTRY_FILE);
+  let registry: TemplateRegistry | undefined;
+  if (existsSync(registryPath)) {
+    const parsed = TemplateRegistrySchema.safeParse(JSON.parse(readFileSync(registryPath, "utf8")));
+    if (parsed.success) registry = parsed.data;
+  }
+  const replies = declaredReplies(registry?.templates ?? []);
   for (const file of scripts) {
     const parsed = ConversationScriptSchema.safeParse(JSON.parse(readFileSync(join(whatsappDir, file), "utf8")));
     if (!parsed.success) error("channels_script_invalid", `channels/whatsapp/${file}: ${parsed.error.message}`);
     else if (parsed.data.name !== file.replace(/\.json$/, "")) error("channels_script_invalid", `channels/whatsapp/${file} declares name ${parsed.data.name}`);
+    else {
+      // A scripted tap must be one a declared template offers: the channel drops any other, so the script would test nothing.
+      for (const turn of parsed.data.turns) {
+        if (turn.reply && !replies.has(turn.reply.id)) error("channels_script_invalid", `channels/whatsapp/${file} taps ${turn.reply.id}, which no template in ${TEMPLATE_REGISTRY_FILE} offers`);
+      }
+    }
   }
-  const registryPath = join(whatsappDir, TEMPLATE_REGISTRY_FILE);
+  // An agent on WhatsApp closes outcomes days later, outside the window, where
+  // only a template goes. One it has no copy for still has to reach the
+  // person, so the registry declares a fallback that states no outcome.
+  if (manifest.channels.includes("whatsapp")) {
+    if (!existsSync(registryPath)) error("channels_templates_missing", `agent.yaml declares the whatsapp channel and channels/whatsapp/${TEMPLATE_REGISTRY_FILE} does not exist`);
+    else if (registry) {
+      const fallbacks = registry.templates.filter((t) => t.fallback);
+      if (fallbacks.length !== 1) error("channels_templates_fallback", `channels/whatsapp/${TEMPLATE_REGISTRY_FILE} declares ${fallbacks.length} fallback template(s); it must declare exactly one, for an outcome the agent has no template for`);
+      else if (templateArity(fallbacks[0]!.body) !== 0) error("channels_templates_fallback", `the fallback template ${fallbacks[0]!.name} takes variables; it is sent when nothing specific can be said, so it takes none`);
+    }
+  }
   if (existsSync(registryPath)) {
     const parsed = TemplateRegistrySchema.safeParse(JSON.parse(readFileSync(registryPath, "utf8")));
     if (!parsed.success) error("channels_templates_invalid", `channels/whatsapp/${TEMPLATE_REGISTRY_FILE}: ${parsed.error.message}`);

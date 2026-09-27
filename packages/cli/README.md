@@ -156,6 +156,7 @@ one-line description per template.
 | `multi-tenant` | Next.js + OpenAI — one API key, N tenants |
 <!-- kit-templates:start -->
 | `bills-agent` | Starter kit — The consumer delegates the month's bills to an agent that pays under a signed mandate: per-payment cap, monthly cap, named payees, expiry. Every payment returns a receipt. |
+| `checkout-agent` | Starter kit — The merchant's agent that sells in the conversation: the customer builds a cart the code prices, the attendant (or the sales policy) confirms the order, one bolepix is issued with an idempotency key, the QR and the copy-and-paste go to the customer, and the order closes on commerce.charge.paid. |
 | `collections-agent` | Starter kit — The merchant's agent that collects: agrees terms with the payer inside a negotiation envelope, issues one bolepix per instalment with an idempotency key, presents the QR and the copy-and-paste in the conversation, and closes the cycle on commerce.charge.paid or commerce.charge.expired. |
 | `hello-agent` | Starter kit — The worked example of the codespar-agent-builder skill: a read-only agent that reads the month's bills and cannot pay. Built from the five files, the packs and one kit module. |
 | `supplier-payments-agent` | Starter kit — A company delegates its suppliers, commissions and payroll to an agent that pays them in batches under one signed mandate. A batch is a loop of executions: one refusal does not stop the others, and re-running it pays nobody twice. |

@@ -1,0 +1,61 @@
+{
+  "name": "cart-replaced",
+  "description": "Checkout §5.2 as a demo: two lessons are ordered and confirmed; in the next message the customer says 'na verdade sao cinco' and asks to pay. The cart is REPLACED whole, the confirmed order follows it (restate), and the last gate sends it back to the attendant with items_hash_mismatch instead of issuing under the old approval. The second yes mints its own artifact; one charge is issued, for five lessons.",
+  "modes": [
+    "human",
+    "mandate"
+  ],
+  "transcript": "./cart-replaced.transcript.jsonl",
+  "turns": [
+    {
+      "input": "oi, sou a Marina, quero duas aulas avulsas",
+      "decision": "none"
+    },
+    {
+      "input": "fechado",
+      "decision": "approve"
+    },
+    {
+      "input": "na verdade sao cinco aulas. pode emitir",
+      "decision": "approve",
+      "payer": "pays"
+    }
+  ],
+  "expect": {
+    "both": {
+      "states": [
+        "settled"
+      ],
+      "reasons": [
+        null
+      ],
+      "receipts": 1,
+      "settled_total": 50000,
+      "charges_issued": 1,
+      "debtor_messages": 1
+    },
+    "human": {
+      "trails": [
+        [
+          "awaiting_approval",
+          "approved",
+          "awaiting_approval",
+          "approved",
+          "executing",
+          "settled"
+        ]
+      ]
+    },
+    "mandate": {
+      "trails": [
+        [
+          "approved",
+          "awaiting_approval",
+          "approved",
+          "executing",
+          "settled"
+        ]
+      ]
+    }
+  }
+}

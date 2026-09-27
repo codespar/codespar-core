@@ -8,8 +8,9 @@
  * a run with a test key gets instead; this file is never consulted on that
  * path.
  *
- * It also holds the organization kill switch (`pauseAll`), which the API
- * does not expose yet, so `org_paused` can be exercised locally.
+ * It also holds the organization kill switch (`pauseAll`), so `org_paused`
+ * can be exercised locally the way `GET /v1/mandates/{id}` reports it
+ * (ent#1648): a flag next to the mandate's own status, which it leaves alone.
  */
 import type { MandateStatusSource, MandateStatus, MandateStatusReport } from "../revocation.js";
 import type { StateStore } from "../state/store.js";
@@ -46,7 +47,7 @@ export class LocalMandateStatusStub implements MandateStatusSource {
     this.store.stubSetMandateStatus(mandateId, "active", null, this.clock().toISOString());
   }
 
-  /** The organization kill switch, locally: the API has no `org pauseAll` yet. */
+  /** The organization kill switch, locally. Against the API it is pressed with `POST /v1/orgs/{orgId}/pause`, which the kit never calls. */
   pauseAll(): void {
     this.store.stubSetOrgPaused(STUB_ORG_ID, true, this.clock().toISOString());
   }

@@ -1,5 +1,68 @@
 # @codespar/cli — changelog
 
+## 0.18.0 — 2026-09-27
+
+### Added
+
+- **A fifth starter-kit template, `checkout-agent`**, from the kits bump below:
+  the merchant's agent that sells in the conversation. The customer builds a
+  cart the code prices, the attendant (or the sales policy) confirms the order,
+  one bolepix is issued with an idempotency key, the QR and the copy-and-paste
+  go to the customer, and the order closes on `commerce.charge.paid`; the NFS-e
+  of a paid order is an execution of its own. Terminal and WhatsApp channels.
+  It arrived the way 0.16.0 said the next agent would: discovered from the
+  kits repository, with no list edited here. It is not the hand-written
+  `ecommerce-checkout` template, which is unchanged.
+
+### Changed
+
+- **Kit templates bumped to `codespar/agent-starter-kits@3eddd46`**, 80
+  commits on from the locked `8f130b7` (kits #30–#48). The 0.16.0 and 0.17.0
+  templates still said CodeSpar "does not publish" the audit-chain link shapes
+  and pinned `@codespar/sdk` 0.16.6. What a scaffolded kit gains:
+  - **Every spend carries the approval it was made under.** The artifact's
+    `items_hash` (and `batch_hash` for a batch line) goes out on both spend
+    routes, and the rail refuses before the call when it is missing or
+    malformed (kits §3).
+  - **`npm run verify` checks three layers**: the Ed25519 signature, then the
+    chain recomputed from the receipt read with the `chain_recipe` of the key
+    document whose key verified it, then, for a v4 receipt, the sealed approval
+    against the local artifact. New verdicts `signature_only`, `chain_mismatch`
+    and `approval_mismatch`; v1–v3 receipts answer `signature_only`, never
+    `verified` (kits §47).
+  - **Every spend is a quote**: the approved line is presented as one, so the
+    sealed receipt names the payee (kits §18).
+  - **Batches** (`supplier-payments-agent`): one gesture approves the list, with
+    a veto per line (§39e), and a batch line is the same attempt on any machine,
+    branching on the SDK's typed attempt codes (§39c).
+  - **The organization kill switch is read** next to the mandate: `org_paused`
+    stops an approved execution before the spend, and a pause that lands after
+    the read closes it `failed` (`org_paused`) rather than `rail_failed`.
+  - **The REST layer is typed by `@codespar/sdk`**, now pinned at `0.16.10`.
+  - **A cart is signed into the approval.** The composition of an order is
+    part of the approval artifact, so a changed cart asks again even at the
+    same total; `effect: state` marks a local tool that keeps state and moves
+    no money.
+  - **WhatsApp**: status webhooks are read and a `failed` delivery reaches the
+    operator instead of counting as told; a tapped button is a turn, as the
+    intent its template declares; an outcome with no template of its own goes
+    out as the one declared fallback, which `npm run check` requires. Every run
+    gets a conversation of its own on the emulator, pinned at `dyvit-wa-sim`
+    0.3.0.
+
+### Known gaps
+
+- **A scaffold's `npm test` is not green**, and was not in 0.16.0 either
+  (7 failures there, all in the emulator integration tests). Two vendored
+  `agent-runtime` test files now fail because they read kits-repository paths a
+  single-agent template does not carry: `scripts/whatsapp-emulator.mjs` and the
+  sibling `agents/collections-agent` / `agents/checkout-agent`. `npm install`,
+  `npm run typecheck` and `npm run check` pass in all five templates.
+- **`npm run whatsapp:emulator`**, which the `collections-agent` and
+  `checkout-agent` READMEs name, is a kits root script that a template's
+  generated root `package.json` does not carry, so a scaffold answers "Missing
+  script". Present since 0.16.0 for `collections-agent`.
+
 ## 0.17.0 — 2026-09-27
 
 ### Changed

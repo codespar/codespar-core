@@ -109,3 +109,11 @@ credential, nothing leaving the machine. `npm run whatsapp:gate` at the
 repository root runs the whole cycle over it three times from a clean state
 and asserts the final state each time, plus a fourth run that agrees now, moves
 the conversation's clock past 24 hours, pays, and polls.
+
+## Taps, failed deliveries and the fallback (OPEN_QUESTIONS §46)
+
+A template may declare quick replies `{ id, title, intent }`. When the person taps one, the model is handed the `intent`, never the button's title, and a tap on an id no template declares is recorded and skipped. `acordo_cobranca_vencida` offers "Emitir nova" / "Agora nao", and `acordo-1042-retomada.json` is Joana tapping "Emitir nova" the day after.
+
+A delivery the provider reports `failed` (131026: not on WhatsApp, blocked) is recorded, becomes `message.debtor.failed` when it told an outcome, reaches the operator's console, and makes the poll answer `delivery_failed` instead of "told". A `read` is recorded and nothing more.
+
+`atendimento_atualizacao` is the registry's FALLBACK, the one template a poll sends for an outcome the agent has no copy for. It states nothing about the outcome and asks the person to answer. `npm run check` requires exactly one fallback, taking no variables.
