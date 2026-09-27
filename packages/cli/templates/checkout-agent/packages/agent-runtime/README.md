@@ -66,3 +66,15 @@ it gets `defaultKit`: the stub rail, the example mandate, no tools.
 module, which is what makes every path (`scenarios/`, `evals/`, `.codespar/`,
 `runs/`) and every test-only environment variable (`BILLS_STATE_DIR`,
 `COLLECTIONS_RUNS_DIR`) resolve per agent without the agent naming them.
+
+## Its tests travel with it
+
+`codespar init` copies this package, verbatim, into every template, so
+`test/` here reads nothing outside it: no `scripts/`, no other agent. Two
+tests that do need the starter-kits repository — the pinned WhatsApp emulator
+(`test/whatsapp-emulator.integration.test.ts`) and the `check` rule for the
+template fallback asked of the shipped agents
+(`test/whatsapp-fallback-check.test.ts`) — live in that repository's root
+`test/`, which a template does not carry, and
+`test/templates-read-nothing-outside.test.ts` there refuses the next one that
+tries to come back.

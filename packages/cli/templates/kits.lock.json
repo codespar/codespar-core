@@ -1,8 +1,8 @@
 {
   "format": 1,
   "kits_repo": "https://github.com/codespar/agent-starter-kits",
-  "kits_ref": "3eddd460451d7485c4bb53a74a8c7b143251438f",
-  "commit": "3eddd460451d7485c4bb53a74a8c7b143251438f",
+  "kits_ref": "b766575306a71c9135c0d70e23d591e6523dc2f8",
+  "commit": "b766575306a71c9135c0d70e23d591e6523dc2f8",
   "vendored_packages": [
     {
       "name": "@codespar/agent-core",
@@ -32,7 +32,7 @@
         "npm run consent -- --yes",
         "npm start"
       ],
-      "hash": "sha256:e9dbc06dab66f72c84d1e138e0116ae47c54164707f378daddbc32ecd6a8e614"
+      "hash": "sha256:bd44befa0b4626949ec753c8f472994e4fb2819b637cc92d1c7f943386e50ad2"
     },
     "checkout-agent": {
       "source": "agents/checkout-agent",
@@ -52,7 +52,7 @@
         "npm install",
         "npm start"
       ],
-      "hash": "sha256:ec2d6abd26f262705ac96f375497a92f1dcd71376998dd5d5958ef5c78db047a"
+      "hash": "sha256:6f3ce0270015c774e879304b18ee55d8a9592e58815b0921ec51f973879c50d0"
     },
     "collections-agent": {
       "source": "agents/collections-agent",
@@ -72,7 +72,7 @@
         "npm install",
         "npm start"
       ],
-      "hash": "sha256:fc920c0368d8542a6a612b63fa147f1e2d1e0e1fa10cf336d66cae9d941dde6a"
+      "hash": "sha256:2461b06b9d985c430679dd6012ec050e38bb8ad6f5f636ef9af281e65d180fc5"
     },
     "hello-agent": {
       "source": "agents/hello-agent",
@@ -89,7 +89,7 @@
         "npm install",
         "npm start"
       ],
-      "hash": "sha256:e9884b9cf5f9115c50d1cf5a2be1b025cea7ac9cbc54949de80878426737f2bd"
+      "hash": "sha256:aeef951a3f3725cb11ac19b55cf11997d7621633514b32663c7f2f373c7758c2"
     },
     "supplier-payments-agent": {
       "source": "agents/supplier-payments-agent",
@@ -106,7 +106,7 @@
         "npm install",
         "npm start"
       ],
-      "hash": "sha256:77de91be085a87c70e2cec04b9965ddc6404aa5895d52656bff668ec7c31ff3e"
+      "hash": "sha256:58a9b44a7a4aae130124fc45708237207fc91ad9165298c44b0eb48ef6172dc3"
     }
   }
 }

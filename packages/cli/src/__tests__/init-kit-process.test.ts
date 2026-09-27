@@ -6,7 +6,8 @@
  * `_gitignore` renamed. No network.
  *
  * The second block installs the scaffold and runs the kit's own gates
- * (`npm run check`, then one turn on the replay provider with no keys). It
+ * (`npm run check`, `npm test`, and for bills-agent one turn on the replay
+ * provider with no keys). It
  * reaches the npm registry and takes tens of seconds, so it runs only with
  * CODESPAR_CLI_KIT_E2E=1 — set in the CI job that owns it, not in `npm test`.
  */
@@ -129,7 +130,7 @@ describe("codespar init --template <kit>", () => {
 });
 
 describe.skipIf(!E2E)("the scaffold works standalone (CODESPAR_CLI_KIT_E2E=1)", () => {
-  it("bills-agent: npm install, npm run check, one turn on the replay provider", () => {
+  it("bills-agent: npm install, npm run check, npm test, one turn on the replay provider", () => {
     const r = scaffold("bills-agent", "e2e-bills");
     expect(r.status, r.stderr).toBe(0);
 
@@ -140,6 +141,9 @@ describe.skipIf(!E2E)("the scaffold works standalone (CODESPAR_CLI_KIT_E2E=1)", 
     const check = npm(["run", "check"], r.dir);
     expect(check.status, `${check.stdout}\n${check.stderr}`).toBe(0);
     expect(check.stderr).toContain("check ok: bills-agent");
+
+    const test = npm(["test"], r.dir);
+    expect(test.status, `${test.stdout}\n${test.stderr}`).toBe(0);
 
     const turn = npm(["start", "--silent", "--", "--input", "pague a escola de outubro", "--approve", "--json"], join(r.dir, "agents/bills-agent"));
     expect(turn.status, `${turn.stdout}\n${turn.stderr}`).toBe(0);
@@ -157,7 +161,7 @@ describe.skipIf(!E2E)("the scaffold works standalone (CODESPAR_CLI_KIT_E2E=1)", 
     (JSON.parse(readFileSync(join(TEMPLATES, "kits.lock.json"), "utf8")) as { templates: Record<string, unknown> }).templates,
   ).filter((slug) => slug !== "bills-agent");
 
-  it.each(others)("%s: npm install and npm run check", (slug) => {
+  it.each(others)("%s: npm install, npm run check and npm test", (slug) => {
     const r = scaffold(slug, `e2e-${slug}`);
     expect(r.status, r.stderr).toBe(0);
 
@@ -175,6 +179,12 @@ describe.skipIf(!E2E)("the scaffold works standalone (CODESPAR_CLI_KIT_E2E=1)", 
     const check = npm(["run", "check"], r.dir);
     expect(check.status, `${check.stdout}\n${check.stderr}`).toBe(0);
     expect(check.stderr).toContain(`check ok: ${slug}`);
+
+    // The kit's own suite, as a scaffold runs it. Until kits b766575 the
+    // vendored runtime carried tests that read the kits monorepo (sibling
+    // agents, the root `scripts/`), so this was red in every template.
+    const test = npm(["test"], r.dir);
+    expect(test.status, `${test.stdout}\n${test.stderr}`).toBe(0);
 
     // A WhatsApp kit's README starts with `npm run whatsapp:emulator` at the
     // root, which answered "Missing script" in every scaffold before 0.18.0.
