@@ -1,5 +1,20 @@
 # @codespar/types — CHANGELOG
 
+## 0.11.4 — 2026-09-26
+
+### Added
+
+- `codespar_pay` publishes `idempotency_key` (optional string), and
+  `PayArgs` declares it. The managed runtime now refuses a boleto pay
+  without one (`boleto_idempotency_key_required`,
+  [codespar/codespar-enterprise#1752](https://github.com/codespar/codespar-enterprise/pull/1752)),
+  and `codespar pay --arg` only accepts property names this definition
+  publishes: until now a CLI caller could send the key through `--input`
+  and not through `--arg`. Reusing the key returns the first result
+  instead of paying twice; a new key is a new payment. It stays optional
+  in the schema because only `method=boleto` requires it, and the flat
+  schema cannot say that.
+
 ## 0.11.3 — 2026-09-23
 
 ### Changed
