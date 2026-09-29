@@ -188,6 +188,16 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     description:
       "Sandbox money (test keys only): credit a consumer directly, or mint a Pix charge and settle it",
   },
+  {
+    // Chegou ao documento servido no refresh de 293 operações (ent#1763): as
+    // quatro leituras do projeto inteiro que o dashboard usa. Publicada, não
+    // excetuada: quem lê saldo e extrato no terminal é uma pessoa. O prefixo
+    // casa por segmento, então `/v1/account-applications` segue sendo outra
+    // família do censo.
+    name: "account",
+    prefix: "/v1/account",
+    description: "Account: balances per currency, the merged ledger, a money summary, spend per agent",
+  },
 ];
 
 /* ── Derivation ───────────────────────────────────────────────────── */
