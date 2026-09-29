@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-09-27T15:49:16.141Z",
-    "sha256": "21f8418c275b879b3364ead10f5420a1ccd4345bad40861c8aac41b0fdd5bed5",
+    "fetched_at": "2026-09-29T02:41:12.153Z",
+    "sha256": "9d4a34e631cdbb432fa8bf809791df57d7b0b0f19fddaa2fa77746c17f96bada",
     "etag": null,
     "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 240,
-    "operations": 289,
+    "paths": 244,
+    "operations": 293,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -5940,6 +5940,744 @@
             {
               "bearerAuth": [
                 "agents:write"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/account/balances": {
+        "get": {
+          "summary": "Account balances, per currency",
+          "description": "The sum of the balance caches of every non-closed wallet in the caller's project, one row per currency. `held_minor` is `balance_minor − available_minor`, the money open holds reserve. `open_holds` counts HOLD entries that no release or debit settles yet, paired by `metadata.hold_ref`, by `withdrawal_id` for owner withdrawals, or by `attempt_id` — the same pairing the hold sweeper uses.\n\nScoped to the organization AND the project: another project's wallets are in no sum.",
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "project_id": {
+                        "type": "string"
+                      },
+                      "currencies": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "currency": {
+                              "type": "string"
+                            },
+                            "balance_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$",
+                              "description": "Σ wallet_balances.balance_minor over the project's non-closed wallets."
+                            },
+                            "available_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$",
+                              "description": "Σ wallet_balances.available_minor over the same wallets."
+                            },
+                            "held_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$",
+                              "description": "balance − available: money reserved by open holds."
+                            },
+                            "open_holds": {
+                              "type": "integer",
+                              "description": "HOLD entries no release or debit settles yet."
+                            }
+                          },
+                          "required": [
+                            "currency",
+                            "balance_minor",
+                            "available_minor",
+                            "held_minor",
+                            "open_holds"
+                          ]
+                        }
+                      },
+                      "as_of": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "project_id",
+                      "currencies",
+                      "as_of"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/account/ledger": {
+        "get": {
+          "summary": "The project's ledger, every wallet merged",
+          "description": "Every ledger entry of every wallet in the caller's project (closed wallets included: the ledger is history), newest first by entry id. Page with `before` set to the previous page's `next_before`; `next_before` is null on the last page.\n\n`hold_ref` returns that hold and every release, debit and fee that settles it — an id that is not a hold of this project returns no entries.\n\n`agent_id` is resolved through the entry's consumer mandate, else the wallet's agent. `balance_after_minor` is the running BOOKED balance of the project in the entry's currency, over every entry and not only the filtered ones: holds and releases leave it unchanged, as they leave `balance_minor` unchanged. At the newest entry it equals the sum of `balance_minor` over the project's wallets in that currency.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 200,
+                "default": 50
+              },
+              "required": false,
+              "name": "limit",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "pattern": "^\\d{1,18}$"
+              },
+              "required": false,
+              "name": "before",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "fund",
+                  "hold",
+                  "release",
+                  "debit",
+                  "reconcile",
+                  "reverse",
+                  "fee"
+                ]
+              },
+              "required": false,
+              "name": "kind",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "required": false,
+              "name": "agent_id",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "required": false,
+              "name": "mandate_id",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "pattern": "^[A-Za-z]{3,8}$"
+              },
+              "required": false,
+              "name": "currency",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "required": false,
+              "name": "since",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "required": false,
+              "name": "until",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "pattern": "^\\d{1,18}$"
+              },
+              "required": false,
+              "name": "hold_ref",
+              "in": "query"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "entries": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "description": "wallet_ledger.id (bigint as string)."
+                            },
+                            "wallet_id": {
+                              "type": "string"
+                            },
+                            "currency": {
+                              "type": "string"
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "fund",
+                                "hold",
+                                "release",
+                                "debit",
+                                "reconcile",
+                                "reverse",
+                                "fee"
+                              ]
+                            },
+                            "amount_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$",
+                              "description": "Signed, per the wallet_ledger CHECK (fund > 0, hold < 0, release > 0, debit < 0, fee < 0)."
+                            },
+                            "posted_at": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "mandate_id": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "agent_id": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "consumer_mandates.agent_id through mandate_id, else wallets.agent_id."
+                            },
+                            "agent_display_name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "origin_kind": {
+                              "type": "string",
+                              "enum": [
+                                "agent",
+                                "person",
+                                "system"
+                              ]
+                            },
+                            "description": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "metadata.description, else payee, else purpose."
+                            },
+                            "rail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "metadata.rail, else the rail of the hold this entry settles."
+                            },
+                            "external_ref": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "hold_ref": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "On a hold, its own id; on a release/debit/fee, the hold it settles."
+                            },
+                            "receipt_id": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "authorization": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "balance_after_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$",
+                              "description": "Running BOOKED balance of the project in this currency right after this entry: Σ amount_minor of every fund/debit/fee/reverse entry up to and including it, in id order; hold, release and reconcile entries repeat the previous value. Equals Σ balance_minor at the head (= available + held)."
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "wallet_id",
+                            "currency",
+                            "kind",
+                            "amount_minor",
+                            "posted_at",
+                            "mandate_id",
+                            "agent_id",
+                            "agent_display_name",
+                            "origin_kind",
+                            "description",
+                            "rail",
+                            "external_ref",
+                            "hold_ref",
+                            "receipt_id",
+                            "authorization",
+                            "balance_after_minor"
+                          ]
+                        }
+                      },
+                      "next_before": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "entries",
+                      "next_before"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "The query did not match the schema. `details.issues` carries the Zod issues.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_query"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/account/summary": {
+        "get": {
+          "summary": "BRL money in, agent spend, tool calls and sessions over a window",
+          "description": "BRL only. `received_minor` sums funding entries; `spent_by_agents_minor` sums debits attributed to an agent. The window is N whole buckets ending with the current, partial one: 24 hours for `24h`, 7 or 30 São Paulo calendar days for `7d` and `30d`. `series` has exactly those N buckets, oldest first, and sums to the two totals; `previous` covers the N buckets immediately before. `received_by_rail` groups funding by `metadata.rail`, null where the writer recorded none. `tool_calls` and `sessions` are counts over the same window and scope (tool calls by `called_at`, sessions by creation); `sessions.active_now` counts the sessions open at the time of the read, whenever they were created. `window` defaults to `7d`.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "24h",
+                  "7d",
+                  "30d"
+                ],
+                "default": "7d"
+              },
+              "required": false,
+              "name": "window",
+              "in": "query"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "window": {
+                        "type": "string",
+                        "enum": [
+                          "24h",
+                          "7d",
+                          "30d"
+                        ]
+                      },
+                      "currency": {
+                        "type": "string",
+                        "enum": [
+                          "BRL"
+                        ]
+                      },
+                      "received_minor": {
+                        "type": "string",
+                        "pattern": "^-?\\d+$"
+                      },
+                      "spent_by_agents_minor": {
+                        "type": "string",
+                        "pattern": "^-?\\d+$"
+                      },
+                      "previous": {
+                        "type": "object",
+                        "properties": {
+                          "received_minor": {
+                            "type": "string",
+                            "pattern": "^-?\\d+$"
+                          },
+                          "spent_by_agents_minor": {
+                            "type": "string",
+                            "pattern": "^-?\\d+$"
+                          }
+                        },
+                        "required": [
+                          "received_minor",
+                          "spent_by_agents_minor"
+                        ]
+                      },
+                      "series": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "bucket_start": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "received_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$"
+                            },
+                            "spent_by_agents_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$"
+                            }
+                          },
+                          "required": [
+                            "bucket_start",
+                            "received_minor",
+                            "spent_by_agents_minor"
+                          ]
+                        }
+                      },
+                      "received_by_rail": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "rail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "received_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$"
+                            }
+                          },
+                          "required": [
+                            "rail",
+                            "received_minor"
+                          ]
+                        }
+                      },
+                      "tool_calls": {
+                        "type": "object",
+                        "properties": {
+                          "total": {
+                            "type": "integer"
+                          },
+                          "errors": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "total",
+                          "errors"
+                        ],
+                        "description": "session_tool_calls rows with called_at in the window; `errors` = status 'error'. Counts, not money."
+                      },
+                      "sessions": {
+                        "type": "object",
+                        "properties": {
+                          "total": {
+                            "type": "integer"
+                          },
+                          "active_now": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "total",
+                          "active_now"
+                        ],
+                        "description": "Sessions created in the window; `active_now` = status 'active' at the time of the read, whatever the creation time. A session stays 'active' until it is closed; nothing expires it."
+                      }
+                    },
+                    "required": [
+                      "window",
+                      "currency",
+                      "received_minor",
+                      "spent_by_agents_minor",
+                      "previous",
+                      "series",
+                      "received_by_rail",
+                      "tool_calls",
+                      "sessions"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "The query did not match the schema. `details.issues` carries the Zod issues.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_query"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/account/agent-activity": {
+        "get": {
+          "summary": "BRL spent and received per agent, last 30 days",
+          "description": "One row per agent of the organization plus any agent id this project's entries are attributed to, most spent first. `spent_minor` and `received_minor` are BRL over the last 30 São Paulo calendar days; `last_activity_at` is the newest entry attributed to the agent in this project, in any currency and at any time, and null when there is none.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "30d"
+                ],
+                "default": "30d"
+              },
+              "required": false,
+              "name": "window",
+              "in": "query"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "window": {
+                        "type": "string",
+                        "enum": [
+                          "30d"
+                        ]
+                      },
+                      "currency": {
+                        "type": "string",
+                        "enum": [
+                          "BRL"
+                        ]
+                      },
+                      "agents": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "agent_id": {
+                              "type": "string"
+                            },
+                            "spent_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$"
+                            },
+                            "received_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$"
+                            },
+                            "last_activity_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "agent_id",
+                            "spent_minor",
+                            "received_minor",
+                            "last_activity_at"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "window",
+                      "currency",
+                      "agents"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "The query did not match the schema. `details.issues` carries the Zod issues.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_query"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
               ]
             }
           ]
@@ -19857,6 +20595,14 @@
                         "type": "string",
                         "format": "date-time"
                       },
+                      "account_type": {
+                        "type": "string",
+                        "enum": [
+                          "PF",
+                          "PJ"
+                        ],
+                        "description": "`PF` for a person (CPF), `PJ` for a company (CNPJ). The type belongs to the account and is a declaration made at sign-up, not a verification: no document has been checked. The only change it admits is PF to PJ, made from the dashboard by a verified organization admin; a PJ account never becomes PF. Organizations read `PJ` unless they were created as PF: every organization that existed before the field, and every one created since, until the sign-up that asks the question ships."
+                      },
                       "spend_pause": {
                         "type": [
                           "object",
@@ -19888,6 +20634,7 @@
                       "id",
                       "name",
                       "created_at",
+                      "account_type",
                       "spend_pause"
                     ]
                   }
@@ -29622,7 +30369,7 @@
               }
             },
             "403": {
-              "description": "Either a policy rule refused the spend (`policy_denied`, with `reason`, `ruleType` and `ruleId`, plus `approval_id` and `expires_at` when the rule opened an approval), or the destination is not on the mandate's signed withdrawal allowlist (`withdrawal_pin`, carrying the next consent step). Nothing was sent to the provider in either case.",
+              "description": "Either a policy rule refused the spend (`policy_denied`, with `reason`, `ruleType` and `ruleId`, plus `approval_id` and `expires_at` when the rule opened an approval; since ent#1807 an approval also carries `payment_state: awaiting_approval`, `attempt_id` and `hold_ref`, the wallet hold that reserves the amount until the decision, released on deny or expiry; a payment that could not be reserved is answered with the refusal instead, e.g. `insufficient_funds`, and its approval is closed), or the destination is not on the mandate's signed withdrawal allowlist (`withdrawal_pin`, carrying the next consent step), or a Pix is above the mandate's per-transaction cap and waits for a person (`approval_required`, flat body like `policy_denied`: `reason: per_tx_cap_exceeded`, `approval_id`, `expires_at`, `payment_state: awaiting_approval`, `attempt_id`, `amount_minor`, `per_tx_cap_minor`, `hold_ref`). Approving it settles exactly that amount once, debiting the held amount; the cumulative cap still binds. A retry of a waiting `attempt_id` answers the same approval. Nothing was sent to the provider in any case.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -29635,7 +30382,8 @@
                             "type": "string",
                             "enum": [
                               "policy_denied",
-                              "withdrawal_pin"
+                              "withdrawal_pin",
+                              "approval_required"
                             ]
                           },
                           "message": {
@@ -29762,7 +30510,7 @@
               }
             },
             "422": {
-              "description": "The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. `carrier_crc_invalid`, `carrier_malformed`, `carrier_format_unsupported`: the payee is a Pix copia-e-cola that fails its own check (CRC, structure, or no usable Pix template); nothing was held or sent.",
+              "description": "The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. `carrier_crc_invalid`, `carrier_malformed`, `carrier_format_unsupported`: the payee is a Pix copia-e-cola that fails its own check (CRC, structure, or no usable Pix template); nothing was held or sent. `per_tx_cap_exceeded`: the amount is above the mandate's per-transaction cap and cannot wait for a person (not a Pix, or asked by a lane that does not park); `details` carries `amount_minor` and `per_tx_cap_minor` (integer strings in the mandate's own unit: minor for a v1 mandate, currency-native for `unit_version: 2`) and `currency`, beside the message \"<amount> > <cap>\".",
               "content": {
                 "application/json": {
                   "schema": {
@@ -29774,6 +30522,7 @@
                           "code": {
                             "type": "string",
                             "enum": [
+                              "per_tx_cap_exceeded",
                               "mandate_verify",
                               "mandate_projection_mismatch",
                               "no_funding_source",
@@ -30085,7 +30834,7 @@
               }
             },
             "403": {
-              "description": "The destination is not on the signed withdrawal allowlist. Nothing was sent to the provider.",
+              "description": "The destination is not on the signed withdrawal allowlist (`withdrawal_pin`), or a Pix is above the mandate's per-transaction cap and waits for a person (`approval_required`, same body as on the by-id route). Nothing was sent to the provider.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -30097,7 +30846,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "withdrawal_pin"
+                              "withdrawal_pin",
+                              "approval_required"
                             ]
                           },
                           "message": {
@@ -30179,7 +30929,7 @@
               }
             },
             "422": {
-              "description": "The mandate refuses, the consumer has no funding source for this rail, or the payee is a Pix copia-e-cola that fails its own check (the three `carrier_*` codes).",
+              "description": "The mandate refuses, the consumer has no funding source for this rail, or the payee is a Pix copia-e-cola that fails its own check (the three `carrier_*` codes). `per_tx_cap_exceeded` carries `details.amount_minor`, `details.per_tx_cap_minor` and `details.currency`, as on the by-id route.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -30191,6 +30941,7 @@
                           "code": {
                             "type": "string",
                             "enum": [
+                              "per_tx_cap_exceeded",
                               "mandate_verify",
                               "mandate_projection_mismatch",
                               "no_funding_source",
@@ -30454,7 +31205,7 @@
               }
             },
             "403": {
-              "description": "The destination is not on the signed withdrawal allowlist.",
+              "description": "The destination is not on the signed withdrawal allowlist (`withdrawal_pin`), or a Pix is above the per-transaction cap and waits for a person (`approval_required`, sent as the `error` frame with `approval_id` and `payment_state`).",
               "content": {
                 "application/json": {
                   "schema": {
@@ -30466,7 +31217,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "withdrawal_pin"
+                              "withdrawal_pin",
+                              "approval_required"
                             ]
                           },
                           "message": {
@@ -30499,7 +31251,7 @@
               }
             },
             "422": {
-              "description": "The mandate refuses, or there is no funding source for this rail.",
+              "description": "The mandate refuses, or there is no funding source for this rail. `per_tx_cap_exceeded` arrives as the `error` frame with `amount_minor`, `per_tx_cap_minor` and `currency`.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -30511,6 +31263,7 @@
                           "code": {
                             "type": "string",
                             "enum": [
+                              "per_tx_cap_exceeded",
                               "mandate_verify",
                               "mandate_projection_mismatch",
                               "no_funding_source"
@@ -41241,6 +41994,106 @@
                         ],
                         "format": "date-time",
                         "description": "When the organization paused. Null when `org_paused` is false."
+                      },
+                      "periodic_cap": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "window": {
+                            "type": "string",
+                            "enum": [
+                              "day",
+                              "month"
+                            ]
+                          },
+                          "cap_minor": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "window",
+                          "cap_minor"
+                        ],
+                        "description": "The renewing cap (0263): at most `cap_minor` per São Paulo calendar `window`. Null when the consent declared none, which means no period limit, not a zero one."
+                      },
+                      "withdrawal_allowlist": {
+                        "type": [
+                          "array",
+                          "null"
+                        ],
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Destinations money may LEAVE to (0148). Null: this allowance authorizes no withdrawal."
+                      },
+                      "dda_allowlist": {
+                        "type": [
+                          "array",
+                          "null"
+                        ],
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Documents this allowance authorizes to be registered for DDA (0238). Null: none."
+                      },
+                      "slots": {
+                        "type": [
+                          "array",
+                          "null"
+                        ],
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "currency": {
+                              "type": "string"
+                            },
+                            "rail": {
+                              "type": "string"
+                            },
+                            "cap_minor": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "per_tx_cap_minor": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "currency",
+                            "rail",
+                            "cap_minor",
+                            "per_tx_cap_minor"
+                          ]
+                        },
+                        "description": "Per-currency slots of a multi-slot allowance (0092); null for a single-currency one. Each slot's funding source is not returned, as the top-level one is not."
+                      },
+                      "usage": {
+                        "type": "object",
+                        "properties": {
+                          "spent_minor": {
+                            "type": "string",
+                            "description": "Settled debits under this allowance, lifetime, in its currency."
+                          },
+                          "period_spent_minor": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Held plus settled in the current `periodic_cap` window — the figure that cap is checked against. Null without a `periodic_cap`."
+                          }
+                        },
+                        "required": [
+                          "spent_minor",
+                          "period_spent_minor"
+                        ],
+                        "description": "The sums the spend path's cap gates run, in the allowance's own unit (the unit `cap_minor` is in: cents for a legacy v1 allowance even in USDC, the currency's native unit for v2)."
                       }
                     },
                     "required": [
@@ -41259,7 +42112,12 @@
                       "expires_at",
                       "created_at",
                       "org_paused",
-                      "org_paused_at"
+                      "org_paused_at",
+                      "periodic_cap",
+                      "withdrawal_allowlist",
+                      "dda_allowlist",
+                      "slots",
+                      "usage"
                     ]
                   }
                 }
@@ -50289,12 +51147,43 @@
                     "principal_ref": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "runtime": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "sdk",
+                            "mcp",
+                            "hosted"
+                          ]
+                        },
+                        "detail": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 40
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "role": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
                     }
                   },
                   "required": [
                     "agent_id",
                     "principal_ref"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -71738,7 +72627,7 @@
               }
             },
             "422": {
-              "description": "`payable_rail_unsupported`: no boleto carrier to pay by. `insufficient_funds` and the mandate cap codes carry their usual consumer-payment meanings; the payable is `READY` again.",
+              "description": "`payable_rail_unsupported`: no boleto carrier to pay by. `insufficient_funds` and the mandate cap codes carry their usual consumer-payment meanings; the payable is `READY` again. `per_tx_cap_exceeded`: the payable's amount is above the mandate's per-transaction cap; a boleto is refused, never routed to approval. `details` carries `amount_minor` and `per_tx_cap_minor` (integer strings in the mandate's own unit: minor for a v1 mandate, currency-native for `unit_version: 2`) and `currency`, beside `payable_status` and the message \"<amount> > <cap>\".",
               "content": {
                 "application/json": {
                   "schema": {
@@ -71751,7 +72640,8 @@
                             "type": "string",
                             "enum": [
                               "payable_rail_unsupported",
-                              "insufficient_funds"
+                              "insufficient_funds",
+                              "per_tx_cap_exceeded"
                             ]
                           },
                           "message": {
@@ -75809,6 +76699,40 @@
                             "created_at": {
                               "type": "string",
                               "format": "date-time"
+                            },
+                            "runtime": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "sdk",
+                                    "mcp",
+                                    "hosted"
+                                  ]
+                                },
+                                "detail": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "detail"
+                              ],
+                              "description": "Where the agent runs, as declared at registration. Null for an agent registered without it."
+                            },
+                            "role": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "What the agent is for, as declared at registration."
                             }
                           },
                           "required": [
@@ -75817,7 +76741,9 @@
                             "display_name",
                             "status",
                             "has_principal",
-                            "created_at"
+                            "created_at",
+                            "runtime",
+                            "role"
                           ]
                         }
                       }
@@ -75904,12 +76830,43 @@
                     "principal_ref": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "runtime": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "sdk",
+                            "mcp",
+                            "hosted"
+                          ]
+                        },
+                        "detail": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 40
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "role": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
                     }
                   },
                   "required": [
                     "agent_id",
                     "principal_ref"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }

@@ -1,5 +1,40 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.13 — 2026-09-29
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: 289 operacoes viram 293,
+  quatro rotas novas e nenhuma removida. Nove operacoes mudaram de forma ou de
+  texto; `components.schemas` nao muda. Snapshot `9d4a34e631cd`, API 0.3.0.
+
+  Modelo de leitura da conta para o dashboard v8.1 (enterprise #1763), rotas
+  novas, so leitura:
+
+      GET /v1/account/summary
+      GET /v1/account/balances
+      GET /v1/account/ledger
+      GET /v1/account/agent-activity
+
+  No mesmo PR, `POST /v1/agents` e `POST /v1/orgs/{orgId}/agents` aceitam
+  `role` e `runtime` e passam a recusar campo desconhecido
+  (`additionalProperties: false`); `GET /v1/agents` devolve os dois. A leitura
+  de `GET /v1/mandates/{id}` passa a documentar `spent_minor`,
+  `period_spent_minor`, `periodic_cap`, os slots por moeda, e as listas de
+  saque e de DDA.
+
+  Tipo de conta PF/PJ (enterprise #1757): `GET /v1/organizations/{id}` devolve
+  `account_type` (`PF` ou `PJ`), uma declaracao feita no cadastro, nao uma
+  verificacao de documento.
+
+  Pagamentos do consumidor (enterprise #1846, #1814, #1824): em
+  `POST /v1/consumer-payments/execute`, `execute-stream`,
+  `POST /v1/consumers/mandates/{id}/spend` e `POST /v1/payables/{payableId}/pay`,
+  a recusa `per_tx_cap_exceeded` traz `details.amount_minor` e
+  `details.per_tx_cap_minor`, e um Pix acima do teto por transacao espera uma
+  pessoa (`approval_required`), com o dinheiro retido enquanto espera. So texto
+  nas respostas; os codigos ja existiam.
+
 ## 0.16.12 — 2026-09-27
 
 ### Changed
