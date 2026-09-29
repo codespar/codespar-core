@@ -1,5 +1,36 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.14 — 2026-09-29
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: 293 operacoes viram 295,
+  duas rotas novas e nenhuma removida. Seis operacoes mudaram de forma ou de
+  texto; `components.schemas` nao muda. Snapshot `172687089376`, API 0.3.0.
+
+  Lista e contagem de payables de um projeto (enterprise #1793), rotas novas,
+  so leitura, escopo `payables:read`:
+
+      GET /v1/payables          (filtros status, limit, before)
+      GET /v1/payables/counts   (NEEDS_REVIEW, READY e o que vence nesta semana)
+
+  `GET /v1/organizations/{id}` passa a devolver `live_approved` (boolean,
+  obrigatorio na resposta): enquanto for `false`, criar projeto live responde
+  403 (enterprise #1861).
+
+  Vencimento em dia nao util (enterprise #1811): `POST /v1/payables`,
+  `POST /v1/payables/documents` e `GET /v1/payables/{payableId}` documentam
+  que `due_date_state` so chama um payable de `overdue` depois do vencimento
+  EFETIVO (fim de semana, feriado bancario nacional e, para boleto, o ultimo
+  dia util do ano rolam para o proximo dia util). Feriado estadual e municipal
+  nao conta. So texto.
+
+  Pix Automatico (enterprise #1869, desligado por padrao): a lista de eventos
+  que o build emite, no campo `event` de `POST /v1/webhook-endpoints` e de
+  `POST /v1/triggers`, ganha 16 eventos `commerce.recurrence.*` (pedido,
+  autorizacao, negativa, cancelamento, ciclos e retencao de liquidacao). So
+  texto; o campo continua string livre.
+
 ## 0.16.13 — 2026-09-29
 
 ### Changed

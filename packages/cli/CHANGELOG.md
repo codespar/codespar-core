@@ -11,6 +11,11 @@
   `PUBLISHED_GROUPS`. Os comandos saem da tabela de operacoes da SDK
   instalada: com uma SDK anterior a 0.16.13 o grupo aparece vazio. Instalacao
   nova resolve `^0.16.1` para a mais recente e ja traz os quatro.
+- `codespar payables list` e `codespar payables counts`, pelo mesmo caminho,
+  quando `GET /v1/payables` e `GET /v1/payables/counts` entraram no documento
+  servido (enterprise #1793, snapshot de 295 operacoes na `@codespar/sdk`
+  0.16.14). O grupo `payables` ja existia: nenhuma linha nova, so os dois
+  comandos derivados.
 
 ## 0.18.0 — 2026-09-27
 

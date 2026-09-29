@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 9d4a34e631cdbb432fa8bf809791df57d7b0b0f19fddaa2fa77746c17f96bada, fetched 2026-09-29T02:41:12.153Z
+// Source: openapi-snapshot.json (sha256 1726870893764b6550eea4221adf35b190816df36171b16547d6947ab7ef05fe, fetched 2026-09-29T09:38:02.607Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -252,8 +252,10 @@ export const API_OPERATIONS = [
   { method: "delete", path: "/v1/paywalls/{id}", body: null, accept: null, deprecated: false },
   { method: "patch", path: "/v1/paywalls/{id}", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/paywalls/{id}/stats", body: null, accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/payables", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/payables", body: "application/json", accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/payables/documents", body: "multipart/form-data", accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/payables/counts", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/payables/{payableId}", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/payables/{payableId}/review", body: "application/json", accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/payables/{payableId}/pay", body: "application/json", accept: "application/json", deprecated: false },
