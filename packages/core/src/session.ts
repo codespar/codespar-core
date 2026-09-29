@@ -620,7 +620,10 @@ export async function createSession(
       // or failing backend cleanup never throws from a caller's
       // teardown/finally. Parity with the Python client (suppresses
       // ApiError + TimeoutError) and the managed-agents adapter (close
-      // never throws). The backend reaps stale sessions on a timer.
+      // never throws). There is no server-side reaper: a session whose
+      // DELETE did not land stays active on the backend until something
+      // closes it, so a caller that needs the session gone must retry the
+      // close itself (oss-sdk#8).
       try {
         await safeFetch(
           `${baseUrl}/v1/sessions/${data.id}`,
