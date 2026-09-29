@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 9d4a34e631cdbb432fa8bf809791df57d7b0b0f19fddaa2fa77746c17f96bada, fetched 2026-09-29T02:41:12.153Z
+// Source: openapi-snapshot.json (sha256 1726870893764b6550eea4221adf35b190816df36171b16547d6947ab7ef05fe, fetched 2026-09-29T09:38:02.607Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -1484,7 +1484,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
                         event: string;
                         server_id?: string;
                         /** Format: uri */
@@ -1602,7 +1602,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
                         event: string;
                         server_id?: string;
                         /** Format: uri */
@@ -10379,6 +10379,8 @@ export interface paths {
                              * @enum {string}
                              */
                             account_type: "PF" | "PJ";
+                            /** @description Whether CodeSpar has approved this organization for live projects. While it is `false`, `POST /v1/projects` with `environment: "live"` answers 403 `org_not_approved_for_live` and test projects are unaffected. Approval is a manual review by CodeSpar, requested through your CodeSpar contact; no call on this API grants or revokes it, and who approved and when are not exposed. */
+                            live_approved: boolean;
                             /** @description Set while the organization's kill switch is pressed and every agent money door refuses `org_paused` (ent#1648); null otherwise. The full state, and pressing or releasing it, is `/v1/orgs/{orgId}/pause`. */
                             spend_pause: {
                                 /** Format: date-time */
@@ -27438,7 +27440,561 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List payables
+         * @description This project's payables, each in the same shape `GET /v1/payables/{payableId}` returns plus `due_date_effective` (the due date rolled forward to the next bank business day), ordered by PRINTED due date ascending, then by creation, then by id; payables with no due date come last. That order agrees with `due_date_effective` except between a boleto and a Pix charge around the last business day of the year: a boleto due that day is effectively due on the first business day of January, a Pix charge is not extended, so the boleto can be listed first although it is effectively due later. Order by `due_date_effective` where that matters. Filter by `status` (one or several, comma-separated); there is no date filter. Page with `before`: pass the previous page's `next_before` as it was returned, and stop when it is null. The cursor is opaque and carries no tenant, so a cursor from another project pages this project's payables and reveals nothing. Payables of other projects and organizations are never listed. Reading never re-runs a check or changes a status.
+         *
+         *     Scope: `payables:read`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description One status or several, comma-separated (`NEEDS_REVIEW,READY`). Absent: every status. */
+                    status?: string;
+                    /** @description Page size, 1..200. Default 50. */
+                    limit?: number;
+                    /** @description The `next_before` of the previous page, as it was returned. Opaque. */
+                    before?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            payables: {
+                                /** @enum {string} */
+                                schema_version: "payable.v1";
+                                /** @enum {string} */
+                                doc_type: "invoice" | "danfe_nfe" | "boleto" | "unknown";
+                                attribution: {
+                                    /** @enum {string} */
+                                    channel: "upload" | "structured" | "manual";
+                                    credential_id?: string;
+                                    connection_id?: string;
+                                    actor?: string;
+                                };
+                                document_hash?: string;
+                                supplier: {
+                                    document?: {
+                                        value: string;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    name: {
+                                        value: string;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                };
+                                recipient?: {
+                                    document?: {
+                                        value: string;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    name: {
+                                        value: string;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                };
+                                invoice_number?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                serie?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                issue_date?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                due_date?: {
+                                    value: string;
+                                    /** @enum {string} */
+                                    from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                    evidence?: {
+                                        page: number;
+                                        excerpt: string;
+                                        /** @enum {string} */
+                                        verification?: "verified" | "moved" | "unverifiable";
+                                    };
+                                    confidence?: number;
+                                };
+                                items?: {
+                                    description: {
+                                        value: string;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    quantity: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    unit_amount_minor: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    total_amount_minor: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                }[];
+                                totals: {
+                                    subtotal_minor?: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    discount_minor?: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    tax_relief_deducted_minor?: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    freight_minor?: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    insurance_minor?: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    other_charges_minor?: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    taxes_added_minor?: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    taxes_included_minor?: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    grand_total_minor: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                    currency: {
+                                        value: string;
+                                        /** @enum {string} */
+                                        from: "parser_local" | "trilho" | "modelo" | "parceiro" | "pessoa";
+                                        evidence?: {
+                                            page: number;
+                                            excerpt: string;
+                                            /** @enum {string} */
+                                            verification?: "verified" | "moved" | "unverifiable";
+                                        };
+                                        confidence?: number;
+                                    };
+                                };
+                                carriers?: {
+                                    boleto?: string;
+                                    br_code?: string;
+                                    nfe?: string;
+                                };
+                                extraction?: {
+                                    model: string;
+                                    model_version: string;
+                                    input_tokens: number;
+                                    output_tokens: number;
+                                    reasoning_tokens?: number;
+                                };
+                                payable_id: string;
+                                /** @enum {string} */
+                                status: "RECEIVED" | "EXTRACTING" | "EXTRACTED" | "VALIDATING" | "VALIDATED" | "NEEDS_REVIEW" | "READY" | "APPROVED" | "EXECUTED" | "REJECTED" | "FAILED_EXTRACTION" | "EXPIRED";
+                                rail_quote?: {
+                                    beneficiary: {
+                                        value: string;
+                                        /** @enum {string} */
+                                        from: "trilho";
+                                    };
+                                    beneficiary_document_masked: {
+                                        value: string;
+                                        /** @enum {string} */
+                                        from: "trilho";
+                                    };
+                                    final_beneficiary?: {
+                                        value: string;
+                                        /** @enum {string} */
+                                        from: "trilho";
+                                    };
+                                    final_beneficiary_document_masked?: {
+                                        value: string;
+                                        /** @enum {string} */
+                                        from: "trilho";
+                                    };
+                                    amount_minor: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "trilho";
+                                    };
+                                    discount_minor?: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "trilho";
+                                    };
+                                    interest_minor?: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "trilho";
+                                    };
+                                    fine_minor?: {
+                                        value: number;
+                                        /** @enum {string} */
+                                        from: "trilho";
+                                    };
+                                    due_date?: {
+                                        value: string;
+                                        /** @enum {string} */
+                                        from: "trilho";
+                                    };
+                                    /** Format: date-time */
+                                    quoted_at: string;
+                                };
+                                validation: {
+                                    carrier_check_digits?: {
+                                        /** @enum {string} */
+                                        outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                        detail?: string;
+                                    };
+                                    document_check_digits?: {
+                                        /** @enum {string} */
+                                        outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                        detail?: string;
+                                    };
+                                    nfe_key_consistency?: {
+                                        /** @enum {string} */
+                                        outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                        detail?: string;
+                                    };
+                                    arithmetic?: {
+                                        /** @enum {string} */
+                                        outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                        detail?: string;
+                                    };
+                                    duplicate_document?: {
+                                        /** @enum {string} */
+                                        outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                        detail?: string;
+                                    };
+                                    amount_matches_rail?: {
+                                        /** @enum {string} */
+                                        outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                        detail?: string;
+                                    };
+                                    beneficiary_document_matches_supplier?: {
+                                        /** @enum {string} */
+                                        outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                        detail?: string;
+                                    };
+                                    due_date_state?: {
+                                        /** @enum {string} */
+                                        outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                        detail?: string;
+                                    };
+                                    pix_key_owner_matches_supplier?: {
+                                        /** @enum {string} */
+                                        outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                        detail?: string;
+                                    };
+                                    supplier_registry?: {
+                                        /** @enum {string} */
+                                        outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                        detail?: string;
+                                    };
+                                    bank_details_changed?: {
+                                        /** @enum {string} */
+                                        outcome: "ok" | "needs_review" | "nao_aplicavel" | "indisponivel";
+                                        detail?: string;
+                                    };
+                                };
+                                review: {
+                                    /**
+                                     * @description What the checks alone say. `status` adds the §9 triggers to it.
+                                     * @enum {string}
+                                     */
+                                    validation_status: "REJECTED" | "NEEDS_REVIEW" | "VALIDATING" | "VALIDATED";
+                                    /** @description Each check that sends the payable to a person, and why: it failed, it is implemented and did not answer, or it is required and nothing implements it yet. */
+                                    review_by: {
+                                        code: string;
+                                        /** @enum {string} */
+                                        cause: "check_failed" | "retries_exhausted" | "required_not_implemented";
+                                    }[];
+                                    /** @description Checks whose failure rejects the payable. */
+                                    rejected_by: string[];
+                                    /** @description Checks that failed and stopped blocking because a person confirmed the rail's beneficiary (§6). The check still fails; what changed is that somebody took responsibility for it. */
+                                    confirmed_by: string[];
+                                    /** @description Required, implemented checks that did not answer and may be retried. */
+                                    awaiting: string[];
+                                    /** @description Checks that did not run and do not block READY in this release. */
+                                    not_covered: string[];
+                                    /** @description §9 triggers that keep a VALIDATED payable out of READY, such as `new_supplier`. The evidence trigger names the field and the gap: `critical_field_without_evidence:<field>:<missing|unverified|unverifiable|moved>`. */
+                                    review_triggers: string[];
+                                    /** @description Resolutions a person recorded in a completed review (§9). Absent until one is. */
+                                    resolutions?: {
+                                        /** @description The §7 check this resolution answers. */
+                                        code: string;
+                                        /**
+                                         * @description What the person did about it.
+                                         * @enum {string}
+                                         */
+                                        resolution: "human_correction" | "reject" | "confirm_rail_beneficiary";
+                                        /** @description ISO 8601 instant of the review. */
+                                        at: string;
+                                        /** @description The user who reviewed. */
+                                        by: string;
+                                        /**
+                                         * @description How that identity was established.
+                                         * @enum {string}
+                                         */
+                                        by_source: "verified_user_token" | "header_asserted";
+                                        /** @description Field paths a correction changed. Paths only, never values. */
+                                        fields?: string[];
+                                        /** @description The rail's payee, masked, as the person confirmed it. */
+                                        confirmed_beneficiary_document?: string;
+                                    }[];
+                                };
+                                /** @description What paying it did (ent#1587); null until a payment was attempted. */
+                                payment: {
+                                    /** @enum {string} */
+                                    state: "awaiting_approval" | "dispatching" | "executed" | "uncertain" | "released";
+                                    /** @description The pending approval that holds this payment, while a person decides. */
+                                    approval_id?: string;
+                                    /**
+                                     * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                     * @enum {string}
+                                     */
+                                    settled_against?: "document_line" | "sandbox_fixture";
+                                    document_amount_minor?: number;
+                                    mandate_id: string;
+                                    /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
+                                    attempt_id: string;
+                                    /** @description How many claims this payable has taken. Each is its own attempt. */
+                                    tries: number;
+                                    /** @description The rail's TRUE amount at the quote the attempt id was derived from. */
+                                    amount_minor: number;
+                                    /** @description SHA-256 of the quote the attempt was derived from. Never the quote. */
+                                    quote_hash: string;
+                                    claimed_at: string;
+                                    /** @description The credential that asked. The key id, never the key; null on service auth. */
+                                    key_id: string | null;
+                                    via: string;
+                                    executed_at?: string;
+                                    receipt_id?: string | null;
+                                    transaction_id?: string;
+                                    end_to_end_id?: string | null;
+                                    money_moved?: boolean;
+                                    /** @description The lifecycle code the dispatch ended in when its outcome is unknown. */
+                                    uncertain_code?: string;
+                                    hold_entry_id?: string | null;
+                                    /** @description The last refusal that provably moved no money, kept on release back to READY. */
+                                    last_refusal?: {
+                                        code: string;
+                                        attempt_id: string;
+                                        at: string;
+                                    };
+                                } | null;
+                                /** @description ISO 8601 instant the payable was created. */
+                                created_at: string;
+                                /** @description ISO 8601 instant of the last change to the payable. */
+                                updated_at: string;
+                                /** @description `due_date` rolled forward to the next bank business day (weekends, national bank holidays and, for a boleto, the last business day of the year), the day until which it is payable without charges; null when the payable has no due date. Computed on read, never stored. */
+                                due_date_effective: string | null;
+                            }[];
+                            /** @description Pass as `before` for the next page; null on the last page. */
+                            next_before: string | null;
+                        };
+                    };
+                };
+                /** @description A filter, the limit or the cursor is not valid. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
         put?: never;
         /**
          * Create a payable from a partner's record or a person's form
@@ -27446,7 +28002,7 @@ export interface paths {
          *
          *     Every field carries its provenance in `from`. Amounts are integer centavos (`*_minor`). `rail_quote` is refused by name: the amount and the payee of a payment come from the rail, never from a request. `attribution.credential_id` is set to the API key the request authenticated with; a different value is refused.
          *
-         *     **The amount and the payee come from the rail, never from what was sent.** `amount_matches_rail`, `beneficiary_document_matches_supplier` and `due_date_state` run against a consult of the boleto on the payable, and they block `READY` whether or not they answered. A consult that could not be made — no connected payment provider, a provider that did not answer — leaves them `indisponivel` and the payable `NEEDS_REVIEW`, named under `review.review_by`. `pix_key_owner_matches_supplier` is not consulted in this release and blocks a payable carrying a Pix BR Code with cause `required_not_implemented`. `VALIDATING` is never returned: nothing re-runs a validation yet, so a check with no answer goes to a person rather than waiting.
+         *     **The amount and the payee come from the rail, never from what was sent.** `amount_matches_rail`, `beneficiary_document_matches_supplier` and `due_date_state` run against a consult of the boleto on the payable, and they block `READY` whether or not they answered. A consult that could not be made — no connected payment provider, a provider that did not answer — leaves them `indisponivel` and the payable `NEEDS_REVIEW`, named under `review.review_by`. `pix_key_owner_matches_supplier` is not consulted in this release and blocks a payable carrying a Pix BR Code with cause `required_not_implemented`. `VALIDATING` is never returned: nothing re-runs a validation yet, so a check with no answer goes to a person rather than waiting. `due_date_state` calls a payable `overdue` only after its EFFECTIVE due date: a due date on a weekend, a national bank holiday (Carnival Monday and Tuesday and Corpus Christi included) or, for a boleto, the last business day of the year is payable without charges on the next business day. State and municipal holidays are not considered.
          *
          *     **Status.** Two fields answer two questions. `review.validation_status` is what the checks alone say: `REJECTED` (a check that rejects failed), `NEEDS_REVIEW` (a check failed, or a required check has no answer it can have), `VALIDATING` (a required, implemented check did not answer and will be retried) or `VALIDATED` (every required check passed). `status` is what the payable may do: `READY` only from `VALIDATED` with no review trigger open, and `NEEDS_REVIEW` when a trigger is open. The trigger this API evaluates is `new_supplier`: this project has no executed payable for the supplier's document, or the payable names no supplier document. It is evaluated per project, never across projects.
          *
@@ -28913,7 +29469,7 @@ export interface paths {
          *
          *     The reader's citations are checked against the PDF's text layer (§7): each field's `evidence.verification` is `verified`, `moved` (the excerpt is on another page) or `unverifiable` (an image, or a PDF with no text layer — a scan). `moved` and `unverifiable` on a critical field open the `critical_field_without_evidence` review trigger; an excerpt that is in NO page of a critical field refuses the whole document, 422 `payable_evidence_fabricated`, and nothing is stored. A reader that did not find enough for the schema answers 422 `payable_extraction_incomplete` naming the missing paths. A reader that did not answer after a bounded retry answers 502 `payable_extraction_unavailable` (retriable, nothing stored; the original is not kept, so there is no failed row to resume); a reader that declined the document answers 422 `payable_extraction_refused`. Nothing of the document's content reaches a log, an audit event or an error body: the trail carries the hash, the model, the token counts and the verdict counts.
          *
-         *     **The amount and the payee come from the rail, never from what was sent.** `amount_matches_rail`, `beneficiary_document_matches_supplier` and `due_date_state` run against a consult of the boleto on the payable, and they block `READY` whether or not they answered. A consult that could not be made — no connected payment provider, a provider that did not answer — leaves them `indisponivel` and the payable `NEEDS_REVIEW`, named under `review.review_by`. `pix_key_owner_matches_supplier` is not consulted in this release and blocks a payable carrying a Pix BR Code with cause `required_not_implemented`. `VALIDATING` is never returned: nothing re-runs a validation yet, so a check with no answer goes to a person rather than waiting.
+         *     **The amount and the payee come from the rail, never from what was sent.** `amount_matches_rail`, `beneficiary_document_matches_supplier` and `due_date_state` run against a consult of the boleto on the payable, and they block `READY` whether or not they answered. A consult that could not be made — no connected payment provider, a provider that did not answer — leaves them `indisponivel` and the payable `NEEDS_REVIEW`, named under `review.review_by`. `pix_key_owner_matches_supplier` is not consulted in this release and blocks a payable carrying a Pix BR Code with cause `required_not_implemented`. `VALIDATING` is never returned: nothing re-runs a validation yet, so a check with no answer goes to a person rather than waiting. `due_date_state` calls a payable `overdue` only after its EFFECTIVE due date: a due date on a weekend, a national bank holiday (Carnival Monday and Tuesday and Corpus Christi included) or, for a boleto, the last business day of the year is payable without charges on the next business day. State and municipal holidays are not considered.
          *
          *     **Status.** Two fields answer two questions. `review.validation_status` is what the checks alone say: `REJECTED` (a check that rejects failed), `NEEDS_REVIEW` (a check failed, or a required check has no answer it can have), `VALIDATING` (a required, implemented check did not answer and will be retried) or `VALIDATED` (every required check passed). `status` is what the payable may do: `READY` only from `VALIDATED` with no review trigger open, and `NEEDS_REVIEW` when a trigger is open. The trigger this API evaluates is `new_supplier`: this project has no executed payable for the supplier's document, or the payable names no supplier document. It is evaluated per project, never across projects.
          *
@@ -30109,6 +30665,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/payables/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Count the payables waiting for a person
+         * @description How many of this project's payables are `NEEDS_REVIEW` and how many are `READY`, and how many unpaid open ones fall due in the rest of this week. `due_this_week` counts `READY` and `APPROVED` payables (an `APPROVED` payment is claimed or awaiting an approval and has not paid yet) whose EFFECTIVE due date is from today to Sunday of the current São Paulo week, inclusive (the day taken in America/Sao_Paulo; weeks run Monday to Sunday). The effective due date is the printed one rolled forward to the next bank business day, the day until which the bill is payable without charges: a boleto due last Saturday is due this Monday. Due today is in it; an effective due date before today is overdue and is not. `NEEDS_REVIEW` is not in `due_this_week`, and a payable with no due date never is.
+         *
+         *     Scope: `payables:read`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Payables in `NEEDS_REVIEW`. */
+                            needs_review: number;
+                            /** @description Payables in `READY`. */
+                            ready: number;
+                            /** @description Unpaid open payables (`READY` and `APPROVED`) whose EFFECTIVE due date (`due_date_effective`) is from today to Sunday of the current São Paulo week, inclusive. Due today is in it; an effective due date before today is overdue and is not; `NEEDS_REVIEW` is not in it. */
+                            due_this_week: number;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/payables/{payableId}": {
         parameters: {
             query?: never;
@@ -30118,7 +30722,7 @@ export interface paths {
         };
         /**
          * Read a payable
-         * @description The payable, its `status`, the outcome of every check in `validation`, and why it has that status in `review`. Reading never re-runs a check or changes the status. **The amount and the payee come from the rail, never from what was sent.** `amount_matches_rail`, `beneficiary_document_matches_supplier` and `due_date_state` run against a consult of the boleto on the payable, and they block `READY` whether or not they answered. A consult that could not be made — no connected payment provider, a provider that did not answer — leaves them `indisponivel` and the payable `NEEDS_REVIEW`, named under `review.review_by`. `pix_key_owner_matches_supplier` is not consulted in this release and blocks a payable carrying a Pix BR Code with cause `required_not_implemented`. `VALIDATING` is never returned: nothing re-runs a validation yet, so a check with no answer goes to a person rather than waiting.
+         * @description The payable, its `status`, the outcome of every check in `validation`, and why it has that status in `review`. Reading never re-runs a check or changes the status. **The amount and the payee come from the rail, never from what was sent.** `amount_matches_rail`, `beneficiary_document_matches_supplier` and `due_date_state` run against a consult of the boleto on the payable, and they block `READY` whether or not they answered. A consult that could not be made — no connected payment provider, a provider that did not answer — leaves them `indisponivel` and the payable `NEEDS_REVIEW`, named under `review.review_by`. `pix_key_owner_matches_supplier` is not consulted in this release and blocks a payable carrying a Pix BR Code with cause `required_not_implemented`. `VALIDATING` is never returned: nothing re-runs a validation yet, so a check with no answer goes to a person rather than waiting. `due_date_state` calls a payable `overdue` only after its EFFECTIVE due date: a due date on a weekend, a national bank holiday (Carnival Monday and Tuesday and Corpus Christi included) or, for a boleto, the last business day of the year is payable without charges on the next business day. State and municipal holidays are not considered.
          *
          *     **Status.** Two fields answer two questions. `review.validation_status` is what the checks alone say: `REJECTED` (a check that rejects failed), `NEEDS_REVIEW` (a check failed, or a required check has no answer it can have), `VALIDATING` (a required, implemented check did not answer and will be retried) or `VALIDATED` (every required check passed). `status` is what the payable may do: `READY` only from `VALIDATED` with no review trigger open, and `NEEDS_REVIEW` when a trigger is open. The trigger this API evaluates is `new_supplier`: this project has no executed payable for the supplier's document, or the payable names no supplier document. It is evaluated per project, never across projects.
          *
