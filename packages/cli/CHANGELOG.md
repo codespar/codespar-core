@@ -1,5 +1,17 @@
 # @codespar/cli — changelog
 
+## 0.18.1 — 2026-09-29
+
+### Added
+
+- `codespar account balances`, `account ledger`, `account summary` e
+  `account agent-activity`, derivados do documento servido quando as quatro
+  leituras de `/v1/account/*` entraram nele (enterprise #1763, snapshot de
+  293 operacoes na `@codespar/sdk` 0.16.13). O grupo e uma linha em
+  `PUBLISHED_GROUPS`. Os comandos saem da tabela de operacoes da SDK
+  instalada: com uma SDK anterior a 0.16.13 o grupo aparece vazio. Instalacao
+  nova resolve `^0.16.1` para a mais recente e ja traz os quatro.
+
 ## 0.18.0 — 2026-09-27
 
 ### Added

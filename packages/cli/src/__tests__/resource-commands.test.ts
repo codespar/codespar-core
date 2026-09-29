@@ -136,6 +136,10 @@ const PINNED_COMMANDS = [
   "test fund → POST /v1/test/fund",
   "test pix-in → POST /v1/test/pix-in",
   "test settle-pix-in → POST /v1/test/settle-pix-in",
+  "account balances → GET /v1/account/balances",
+  "account ledger → GET /v1/account/ledger",
+  "account summary → GET /v1/account/summary",
+  "account agent-activity → GET /v1/account/agent-activity",
 ];
 
 

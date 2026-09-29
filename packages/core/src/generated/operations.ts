@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 21f8418c275b879b3364ead10f5420a1ccd4345bad40861c8aac41b0fdd5bed5, fetched 2026-09-27T15:49:16.141Z
+// Source: openapi-snapshot.json (sha256 9d4a34e631cdbb432fa8bf809791df57d7b0b0f19fddaa2fa77746c17f96bada, fetched 2026-09-29T02:41:12.153Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -64,6 +64,10 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/wallets/{id}/recon-anomalies", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/wallets/{id}/recon-anomalies/{aid}", body: "application/json", accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/agents/{did}/revoke", body: null, accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/account/balances", body: null, accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/account/ledger", body: null, accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/account/summary", body: null, accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/account/agent-activity", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/approvals", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/approvals/{id}/decide", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/approvals/health", body: null, accept: "application/json", deprecated: false },

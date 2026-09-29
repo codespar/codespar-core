@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 21f8418c275b879b3364ead10f5420a1ccd4345bad40861c8aac41b0fdd5bed5, fetched 2026-09-27T15:49:16.141Z
+// Source: openapi-snapshot.json (sha256 9d4a34e631cdbb432fa8bf809791df57d7b0b0f19fddaa2fa77746c17f96bada, fetched 2026-09-29T02:41:12.153Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -2888,6 +2888,331 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/account/balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Account balances, per currency
+         * @description The sum of the balance caches of every non-closed wallet in the caller's project, one row per currency. `held_minor` is `balance_minor − available_minor`, the money open holds reserve. `open_holds` counts HOLD entries that no release or debit settles yet, paired by `metadata.hold_ref`, by `withdrawal_id` for owner withdrawals, or by `attempt_id` — the same pairing the hold sweeper uses.
+         *
+         *     Scoped to the organization AND the project: another project's wallets are in no sum.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            project_id: string;
+                            currencies: {
+                                currency: string;
+                                /** @description Σ wallet_balances.balance_minor over the project's non-closed wallets. */
+                                balance_minor: string;
+                                /** @description Σ wallet_balances.available_minor over the same wallets. */
+                                available_minor: string;
+                                /** @description balance − available: money reserved by open holds. */
+                                held_minor: string;
+                                /** @description HOLD entries no release or debit settles yet. */
+                                open_holds: number;
+                            }[];
+                            /** Format: date-time */
+                            as_of: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/account/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The project's ledger, every wallet merged
+         * @description Every ledger entry of every wallet in the caller's project (closed wallets included: the ledger is history), newest first by entry id. Page with `before` set to the previous page's `next_before`; `next_before` is null on the last page.
+         *
+         *     `hold_ref` returns that hold and every release, debit and fee that settles it — an id that is not a hold of this project returns no entries.
+         *
+         *     `agent_id` is resolved through the entry's consumer mandate, else the wallet's agent. `balance_after_minor` is the running BOOKED balance of the project in the entry's currency, over every entry and not only the filtered ones: holds and releases leave it unchanged, as they leave `balance_minor` unchanged. At the newest entry it equals the sum of `balance_minor` over the project's wallets in that currency.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    before?: string;
+                    kind?: "fund" | "hold" | "release" | "debit" | "reconcile" | "reverse" | "fee";
+                    agent_id?: string;
+                    mandate_id?: string;
+                    currency?: string;
+                    since?: string;
+                    until?: string;
+                    hold_ref?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            entries: {
+                                /** @description wallet_ledger.id (bigint as string). */
+                                id: string;
+                                wallet_id: string;
+                                currency: string;
+                                /** @enum {string} */
+                                kind: "fund" | "hold" | "release" | "debit" | "reconcile" | "reverse" | "fee";
+                                /** @description Signed, per the wallet_ledger CHECK (fund > 0, hold < 0, release > 0, debit < 0, fee < 0). */
+                                amount_minor: string;
+                                /** Format: date-time */
+                                posted_at: string;
+                                mandate_id: string | null;
+                                /** @description consumer_mandates.agent_id through mandate_id, else wallets.agent_id. */
+                                agent_id: string | null;
+                                agent_display_name: string | null;
+                                /** @enum {string} */
+                                origin_kind: "agent" | "person" | "system";
+                                /** @description metadata.description, else payee, else purpose. */
+                                description: string | null;
+                                /** @description metadata.rail, else the rail of the hold this entry settles. */
+                                rail: string | null;
+                                external_ref: string | null;
+                                /** @description On a hold, its own id; on a release/debit/fee, the hold it settles. */
+                                hold_ref: string | null;
+                                receipt_id: string | null;
+                                authorization: string | null;
+                                /** @description Running BOOKED balance of the project in this currency right after this entry: Σ amount_minor of every fund/debit/fee/reverse entry up to and including it, in id order; hold, release and reconcile entries repeat the previous value. Equals Σ balance_minor at the head (= available + held). */
+                                balance_after_minor: string;
+                            }[];
+                            next_before: string | null;
+                        };
+                    };
+                };
+                /** @description The query did not match the schema. `details.issues` carries the Zod issues. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/account/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * BRL money in, agent spend, tool calls and sessions over a window
+         * @description BRL only. `received_minor` sums funding entries; `spent_by_agents_minor` sums debits attributed to an agent. The window is N whole buckets ending with the current, partial one: 24 hours for `24h`, 7 or 30 São Paulo calendar days for `7d` and `30d`. `series` has exactly those N buckets, oldest first, and sums to the two totals; `previous` covers the N buckets immediately before. `received_by_rail` groups funding by `metadata.rail`, null where the writer recorded none. `tool_calls` and `sessions` are counts over the same window and scope (tool calls by `called_at`, sessions by creation); `sessions.active_now` counts the sessions open at the time of the read, whenever they were created. `window` defaults to `7d`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    window?: "24h" | "7d" | "30d";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            window: "24h" | "7d" | "30d";
+                            /** @enum {string} */
+                            currency: "BRL";
+                            received_minor: string;
+                            spent_by_agents_minor: string;
+                            previous: {
+                                received_minor: string;
+                                spent_by_agents_minor: string;
+                            };
+                            series: {
+                                /** Format: date-time */
+                                bucket_start: string;
+                                received_minor: string;
+                                spent_by_agents_minor: string;
+                            }[];
+                            received_by_rail: {
+                                rail: string | null;
+                                received_minor: string;
+                            }[];
+                            /** @description session_tool_calls rows with called_at in the window; `errors` = status 'error'. Counts, not money. */
+                            tool_calls: {
+                                total: number;
+                                errors: number;
+                            };
+                            /** @description Sessions created in the window; `active_now` = status 'active' at the time of the read, whatever the creation time. A session stays 'active' until it is closed; nothing expires it. */
+                            sessions: {
+                                total: number;
+                                active_now: number;
+                            };
+                        };
+                    };
+                };
+                /** @description The query did not match the schema. `details.issues` carries the Zod issues. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/account/agent-activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * BRL spent and received per agent, last 30 days
+         * @description One row per agent of the organization plus any agent id this project's entries are attributed to, most spent first. `spent_minor` and `received_minor` are BRL over the last 30 São Paulo calendar days; `last_activity_at` is the newest entry attributed to the agent in this project, in any currency and at any time, and null when there is none.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    window?: "30d";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            window: "30d";
+                            /** @enum {string} */
+                            currency: "BRL";
+                            agents: {
+                                agent_id: string;
+                                spent_minor: string;
+                                received_minor: string;
+                                /** Format: date-time */
+                                last_activity_at: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description The query did not match the schema. `details.issues` carries the Zod issues. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -10049,6 +10374,11 @@ export interface paths {
                             name: string;
                             /** Format: date-time */
                             created_at: string;
+                            /**
+                             * @description `PF` for a person (CPF), `PJ` for a company (CNPJ). The type belongs to the account and is a declaration made at sign-up, not a verification: no document has been checked. The only change it admits is PF to PJ, made from the dashboard by a verified organization admin; a PJ account never becomes PF. Organizations read `PJ` unless they were created as PF: every organization that existed before the field, and every one created since, until the sign-up that asks the question ships.
+                             * @enum {string}
+                             */
+                            account_type: "PF" | "PJ";
                             /** @description Set while the organization's kill switch is pressed and every agent money door refuses `org_paused` (ent#1648); null otherwise. The full state, and pressing or releasing it, is `/v1/orgs/{orgId}/pause`. */
                             spend_pause: {
                                 /** Format: date-time */
@@ -15065,7 +15395,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Either a policy rule refused the spend (`policy_denied`, with `reason`, `ruleType` and `ruleId`, plus `approval_id` and `expires_at` when the rule opened an approval), or the destination is not on the mandate's signed withdrawal allowlist (`withdrawal_pin`, carrying the next consent step). Nothing was sent to the provider in either case. */
+                /** @description Either a policy rule refused the spend (`policy_denied`, with `reason`, `ruleType` and `ruleId`, plus `approval_id` and `expires_at` when the rule opened an approval; since ent#1807 an approval also carries `payment_state: awaiting_approval`, `attempt_id` and `hold_ref`, the wallet hold that reserves the amount until the decision, released on deny or expiry; a payment that could not be reserved is answered with the refusal instead, e.g. `insufficient_funds`, and its approval is closed), or the destination is not on the mandate's signed withdrawal allowlist (`withdrawal_pin`, carrying the next consent step), or a Pix is above the mandate's per-transaction cap and waits for a person (`approval_required`, flat body like `policy_denied`: `reason: per_tx_cap_exceeded`, `approval_id`, `expires_at`, `payment_state: awaiting_approval`, `attempt_id`, `amount_minor`, `per_tx_cap_minor`, `hold_ref`). Approving it settles exactly that amount once, debiting the held amount; the cumulative cap still binds. A retry of a waiting `attempt_id` answers the same approval. Nothing was sent to the provider in any case. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -15074,7 +15404,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "policy_denied" | "withdrawal_pin";
+                                code: "policy_denied" | "withdrawal_pin" | "approval_required";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15125,7 +15455,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. `carrier_crc_invalid`, `carrier_malformed`, `carrier_format_unsupported`: the payee is a Pix copia-e-cola that fails its own check (CRC, structure, or no usable Pix template); nothing was held or sent. */
+                /** @description The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. `carrier_crc_invalid`, `carrier_malformed`, `carrier_format_unsupported`: the payee is a Pix copia-e-cola that fails its own check (CRC, structure, or no usable Pix template); nothing was held or sent. `per_tx_cap_exceeded`: the amount is above the mandate's per-transaction cap and cannot wait for a person (not a Pix, or asked by a lane that does not park); `details` carries `amount_minor` and `per_tx_cap_minor` (integer strings in the mandate's own unit: minor for a v1 mandate, currency-native for `unit_version: 2`) and `currency`, beside the message "<amount> > <cap>". */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -15134,7 +15464,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source" | "carrier_crc_invalid" | "carrier_malformed" | "carrier_format_unsupported";
+                                code: "per_tx_cap_exceeded" | "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source" | "carrier_crc_invalid" | "carrier_malformed" | "carrier_format_unsupported";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15294,7 +15624,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The destination is not on the signed withdrawal allowlist. Nothing was sent to the provider. */
+                /** @description The destination is not on the signed withdrawal allowlist (`withdrawal_pin`), or a Pix is above the mandate's per-transaction cap and waits for a person (`approval_required`, same body as on the by-id route). Nothing was sent to the provider. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -15303,7 +15633,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "withdrawal_pin";
+                                code: "withdrawal_pin" | "approval_required";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15334,7 +15664,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The mandate refuses, the consumer has no funding source for this rail, or the payee is a Pix copia-e-cola that fails its own check (the three `carrier_*` codes). */
+                /** @description The mandate refuses, the consumer has no funding source for this rail, or the payee is a Pix copia-e-cola that fails its own check (the three `carrier_*` codes). `per_tx_cap_exceeded` carries `details.amount_minor`, `details.per_tx_cap_minor` and `details.currency`, as on the by-id route. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -15343,7 +15673,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source" | "carrier_crc_invalid" | "carrier_malformed" | "carrier_format_unsupported";
+                                code: "per_tx_cap_exceeded" | "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source" | "carrier_crc_invalid" | "carrier_malformed" | "carrier_format_unsupported";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15475,7 +15805,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The destination is not on the signed withdrawal allowlist. */
+                /** @description The destination is not on the signed withdrawal allowlist (`withdrawal_pin`), or a Pix is above the per-transaction cap and waits for a person (`approval_required`, sent as the `error` frame with `approval_id` and `payment_state`). */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -15484,7 +15814,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "withdrawal_pin";
+                                code: "withdrawal_pin" | "approval_required";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15495,7 +15825,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The mandate refuses, or there is no funding source for this rail. */
+                /** @description The mandate refuses, or there is no funding source for this rail. `per_tx_cap_exceeded` arrives as the `error` frame with `amount_minor`, `per_tx_cap_minor` and `currency`. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -15504,7 +15834,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source";
+                                code: "per_tx_cap_exceeded" | "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -20756,6 +21086,30 @@ export interface paths {
                              * @description When the organization paused. Null when `org_paused` is false.
                              */
                             org_paused_at: string | null;
+                            /** @description The renewing cap (0263): at most `cap_minor` per São Paulo calendar `window`. Null when the consent declared none, which means no period limit, not a zero one. */
+                            periodic_cap: {
+                                /** @enum {string} */
+                                window: "day" | "month";
+                                cap_minor: string;
+                            } | null;
+                            /** @description Destinations money may LEAVE to (0148). Null: this allowance authorizes no withdrawal. */
+                            withdrawal_allowlist: string[] | null;
+                            /** @description Documents this allowance authorizes to be registered for DDA (0238). Null: none. */
+                            dda_allowlist: string[] | null;
+                            /** @description Per-currency slots of a multi-slot allowance (0092); null for a single-currency one. Each slot's funding source is not returned, as the top-level one is not. */
+                            slots: {
+                                currency: string;
+                                rail: string;
+                                cap_minor: string | null;
+                                per_tx_cap_minor: string | null;
+                            }[] | null;
+                            /** @description The sums the spend path's cap gates run, in the allowance's own unit (the unit `cap_minor` is in: cents for a legacy v1 allowance even in USDC, the currency's native unit for v2). */
+                            usage: {
+                                /** @description Settled debits under this allowance, lifetime, in its currency. */
+                                spent_minor: string;
+                                /** @description Held plus settled in the current `periodic_cap` window — the figure that cap is checked against. Null without a `periodic_cap`. */
+                                period_spent_minor: string | null;
+                            };
                         };
                     };
                 };
@@ -25284,6 +25638,12 @@ export interface paths {
                         agent_id: string;
                         display_name?: string;
                         principal_ref: string;
+                        runtime?: {
+                            /** @enum {string} */
+                            kind: "sdk" | "mcp" | "hosted";
+                            detail?: string | null;
+                        };
+                        role?: string;
                     };
                 };
             };
@@ -31650,7 +32010,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `payable_rail_unsupported`: no boleto carrier to pay by. `insufficient_funds` and the mandate cap codes carry their usual consumer-payment meanings; the payable is `READY` again. */
+                /** @description `payable_rail_unsupported`: no boleto carrier to pay by. `insufficient_funds` and the mandate cap codes carry their usual consumer-payment meanings; the payable is `READY` again. `per_tx_cap_exceeded`: the payable's amount is above the mandate's per-transaction cap; a boleto is refused, never routed to approval. `details` carries `amount_minor` and `per_tx_cap_minor` (integer strings in the mandate's own unit: minor for a v1 mandate, currency-native for `unit_version: 2`) and `currency`, beside `payable_status` and the message "<amount> > <cap>". */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -31659,7 +32019,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "payable_rail_unsupported" | "insufficient_funds";
+                                code: "payable_rail_unsupported" | "insufficient_funds" | "per_tx_cap_exceeded";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -33730,6 +34090,14 @@ export interface paths {
                                 has_principal: boolean;
                                 /** Format: date-time */
                                 created_at: string;
+                                /** @description Where the agent runs, as declared at registration. Null for an agent registered without it. */
+                                runtime: {
+                                    /** @enum {string} */
+                                    kind: "sdk" | "mcp" | "hosted";
+                                    detail: string | null;
+                                } | null;
+                                /** @description What the agent is for, as declared at registration. */
+                                role: string | null;
                             }[];
                         };
                     };
@@ -33782,6 +34150,12 @@ export interface paths {
                         agent_id: string;
                         display_name?: string;
                         principal_ref: string;
+                        runtime?: {
+                            /** @enum {string} */
+                            kind: "sdk" | "mcp" | "hosted";
+                            detail?: string | null;
+                        };
+                        role?: string;
                     };
                 };
             };
