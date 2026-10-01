@@ -74,7 +74,7 @@ describe("codespar agent run", () => {
     const r = cli(["agent", "run", KIT, "--input", "x", "--deny"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toBe("echo: x\n");
-    expect(r.stderr).toContain("kit-under-test@0.0.1");
+    expect(r.stderr).toContain("agent run · kit-under-test 0.0.1");
     expect(r.stderr).toContain("[kit] start --input x --deny");
   }, 90_000);
 

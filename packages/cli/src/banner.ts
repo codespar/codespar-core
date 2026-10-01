@@ -23,17 +23,21 @@ function shouldRender(): boolean {
   return true;
 }
 
+/** The logo as the site draws it: solid blocks in the terminal's own foreground, the outline in gray. */
+function shade(line: string): string {
+  return line.replace(/[█]+|[^█]+/g, (run) => (run[0] === "█" ? c.bold(run) : c.gray(run)));
+}
+
 /** Print the banner. No-op when stdout is not a TTY or NO_BANNER=1. */
 export function printBanner(version: string): void {
   if (!shouldRender()) return;
 
   const out = process.stdout;
   out.write("\n");
-  for (const line of LOGO) out.write(c.blue(line) + "\n");
+  for (const line of LOGO) out.write(shade(line) + "\n");
   out.write(
-    `\n  ${c.bold("The agentic OS for money movement in Latin America")}\n`,
+    `\n  ${c.green("@codespar/cli")}  ${c.gray("·")}  ${c.gray(`v${version}`)}  ${c.gray("·")}  ${c.gray("The agentic OS for money movement, in your shell.")}\n`,
   );
-  out.write(
-    `  ${c.gray(`v${version}  ·  codespar.dev/docs/cli  ·  MIT`)}\n\n`,
-  );
+  const width = Math.min(process.stdout.columns ?? 80, 96);
+  out.write(`${c.gray("─".repeat(width))}\n\n`);
 }
