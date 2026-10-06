@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 1726870893764b6550eea4221adf35b190816df36171b16547d6947ab7ef05fe, fetched 2026-09-29T09:38:02.607Z
+// Source: openapi-snapshot.json (sha256 338d2d994c624526d3cdfde266375d86cb734687c43a6c2c681e7cf3a0411a3c, fetched 2026-10-06T14:10:54.514Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -1484,7 +1484,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
                         event: string;
                         server_id?: string;
                         /** Format: uri */
@@ -1602,7 +1602,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.paused_automatically, trigger.test_fire, user.signed_up. */
                         event: string;
                         server_id?: string;
                         /** Format: uri */
@@ -1710,7 +1710,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** @description Create a new policy rule. */
+        /** @description Create a new policy rule. A `budget` rule counts DECLARED intent, not money that left: the cost is added to the agent's daily and monthly counters when the call is evaluated, before anything is sent (the payment amount on consumer payments, the caller's `estimatedCost` on session execute). A payment that provably moved nothing (refused before dispatch, or refused by the provider) gives its cost back; one whose outcome is uncertain stays counted. */
         post: {
             parameters: {
                 query?: never;
@@ -1919,7 +1919,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List policy evaluations for the authenticated org, newest first. `limit` is clamped at 100. */
+        /** @description List policy evaluations, newest first. An API key or OAuth token reads the evaluations of its own project only. An evaluation recorded without a project (the history from before 2026-10-03, and org-level evaluations) is returned to service auth only. With service auth the answer covers the whole organization and the `x-codespar-project` header does not narrow it: `projectId` on each row is what a client filters on. `limit` is clamped at 100. */
         get: {
             parameters: {
                 query?: {
@@ -1959,7 +1959,7 @@ export interface paths {
         };
         /**
          * @deprecated
-         * @description Deprecated alias of `GET /v1/policy-evaluations` (ent#979), kept for two releases. Same handler, same required scope; switch the path and nothing else changes.
+         * @description Deprecated alias of `GET /v1/policy-evaluations` (ent#979), kept for two releases. Same handler, same required scope; switch the path and nothing else changes. An API key or OAuth token reads the evaluations of its own project only. An evaluation recorded without a project (the history from before 2026-10-03, and org-level evaluations) is returned to service auth only. With service auth the answer covers the whole organization and the `x-codespar-project` header does not narrow it: `projectId` on each row is what a client filters on.
          */
         get: {
             parameters: {
@@ -2823,9 +2823,11 @@ export interface paths {
          *
          *     `revoked` is not `retired`. Retired is a graceful exit; revoked is authority withdrawn, possibly adversarial. Both are reachable states and this verb writes the second one.
          *
-         *     WHAT IT STOPS: the agent can no longer be paid as an `agent:<id>` payee, can no longer mint a new KYA-bearing mandate, and can no longer spend under consumer mandates bound to its key: every consumer lane, card included, refuses them. The mandates themselves are not revoked -- the consumer signed them -- they stop clearing the spend-time check.
+         *     WHAT IT STOPS: the agent can no longer be paid as an `agent:<id>` payee, can no longer mint a new KYA-bearing mandate, and can no longer spend under any mandate issued to it, bound to its key or not: every consumer lane, card included, and the org wallet refuse with `agent_inactive`, and so do the money-moving calls of a session that acts as it. The mandates themselves are not revoked -- the consumer signed them -- they stop clearing the spend-time check.
          *
-         *     WHAT IT DOES NOT STOP: spending under consumer mandates not bound to a key (issued before that binding existed, or while the agent was unregistered), because they name no key a revocation could reach. The deployment can refuse those for every agent (CONSUMER_MANDATE_AGENT_ENFORCE); otherwise, revoke those mandates.
+         *     WHAT IT DOES NOT STOP: money moved by a caller that does not act as this agent -- a session that declared no agent, or another one, spending under another agent's mandate. The API key is not the agent: revoke or rescope keys separately.
+         *
+         *     To stop an agent without ending it, suspend it instead (`POST /v1/agents/{did}/suspend`).
          *
          *     A `{did}` belonging to another org returns 404, not 403: 403 would confirm that the identity exists, which is what a caller sweeping DIDs is asking.
          */
@@ -2883,6 +2885,125 @@ export interface paths {
                         "application/json": {
                             /** @enum {string} */
                             error: "agent_already_revoked";
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{did}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suspend one agent's spend
+         * @description Stops every money door from spending on this agent's behalf while the rest of the organization keeps running: spends under any mandate issued to it (every consumer lane, card included, and the org wallet) and the money-moving calls of a session that acts as it refuse with `agent_suspended` (403), with nothing reserved or sent. Once this call answers, no new reservation is taken for the agent; a spend that already reserved its funds finishes. Reads keep working, and the agent reads back as `status: "suspended"` on `GET /v1/agents`.
+         *
+         *     A bearer key needs `agents:write`; the dashboard path needs an admin. Idempotent: suspending a suspended agent answers `changed: false`. Only an `active` agent can be suspended (`agent_not_suspendable` otherwise). Registering the agent again does not lift it. Resuming is NOT an API-key operation: a verified admin does it from the dashboard. Appends `agent_suspended` to the organization's audit chain.
+         *
+         *     Card authorizations are refused at the issuer that waits for our answer (Pomelo). Bridge decides before we hear of it: freeze those cards at the issuer as well.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    did: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            changed: boolean;
+                            agent: {
+                                did: string;
+                                agent_id: string;
+                                /** @enum {string} */
+                                status: "suspended";
+                            };
+                        };
+                    };
+                };
+                /** @description The body did not parse, or carried a key it does not declare. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No agent with this DID in the authenticated organization. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "agent_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The agent is not `active`: revoked, retired or unregistered. `details.status` names it. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "agent_not_suspendable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
                         };
                     };
                 };
@@ -2963,6 +3084,8 @@ export interface paths {
          *
          *     `hold_ref` returns that hold and every release, debit and fee that settles it — an id that is not a hold of this project returns no entries.
          *
+         *     `category` returns the entries stamped with that spend category at write time: `recebivel` on money received, `fornecedor` on a payable's payment, `compra` on a codespar_shop purchase, and otherwise what the agent declared on codespar_pay. It is never inferred from the description, so an entry no writer categorised is in no category and is listed only without the filter.
+         *
          *     `agent_id` is resolved through the entry's consumer mandate, else the wallet's agent. `balance_after_minor` is the running BOOKED balance of the project in the entry's currency, over every entry and not only the filtered ones: holds and releases leave it unchanged, as they leave `balance_minor` unchanged. At the newest entry it equals the sum of `balance_minor` over the project's wallets in that currency.
          */
         get: {
@@ -2977,6 +3100,7 @@ export interface paths {
                     since?: string;
                     until?: string;
                     hold_ref?: string;
+                    category?: "compra" | "fornecedor" | "assinatura" | "recebivel";
                 };
                 header?: never;
                 path?: never;
@@ -3017,6 +3141,11 @@ export interface paths {
                                 hold_ref: string | null;
                                 receipt_id: string | null;
                                 authorization: string | null;
+                                /**
+                                 * @description metadata.category as the writer stamped it: recebivel on money received, fornecedor on a payable's payment, compra on a codespar_shop purchase, else what the agent declared on codespar_pay. Null when none did.
+                                 * @enum {string|null}
+                                 */
+                                category: "compra" | "fornecedor" | "assinatura" | "recebivel" | null;
                                 /** @description Running BOOKED balance of the project in this currency right after this entry: Σ amount_minor of every fund/debit/fee/reverse entry up to and including it, in id order; hold, release and reconcile entries repeat the previous value. Equals Σ balance_minor at the head (= available + held). */
                                 balance_after_minor: string;
                             }[];
@@ -8585,6 +8714,8 @@ export interface paths {
          * Ingest and execute a foreign x402 authorization
          * @description Takes an EIP-3009 `transferWithAuthorization` signed OUTSIDE CodeSpar by a foreign wallet, verifies it, translates it onto an internal mandate, runs it through the same cap gate every other spend passes, settles it on-chain and seals a receipt. A 200 here means USDC MOVED. Requires the `facilitator:execute` scope.
          *
+         *     THE CAPS ARE DECLARED BY THE CALLER. `intent.max_amount_minor` and `intent.total_cap_minor` come from this request, so they are limits the caller states for itself, not a ceiling the organization sets. The amount charged is the one the payer signed (`authorization.value`), and on mainnet an operator hard cap applies on top.
+         *
          *     OMITTING `intent.total_cap_minor` DOES NOT REMOVE THE LIFETIME CAP — it sets that cap equal to `max_amount_minor`. The translation reads `totalCap = totalCapAtomic ?? perTxCap`, and this route never marks the intent pay-per-access, so the gate compares the signer's PRIOR EXECUTED spend in this organization plus this payment against that cap. The practical consequence: leave `total_cap_minor` out and the SECOND execution by the same signer is refused with 422 `total_cap_exceeded`, even though the first succeeded and each authorization was independently signed. Send `total_cap_minor` explicitly whenever a signer may pay more than once.
          *
          *     AMOUNTS ARE MINOR ON THE WIRE AND ATOMIC INSIDE. `max_amount_minor` and `total_cap_minor` are cents; they are converted to atomic USDC at the boundary, and the cap gate then compares them against `authorization.value`, which is already atomic. So the authorization's value is not scaled to match the caps — the caps are scaled to match it.
@@ -10205,7 +10336,9 @@ export interface paths {
          * Read graded dependency health, as this credential's tenant sees it
          * @description Six dependency checks and the schema version, graded into one `status`. The checks run in parallel behind a three-second budget each; one that throws or times out is reported in its own failed shape with `message` carrying the reason, and the response still carries the other five. So the operation is expected back in under four seconds however badly the database is behaving.
          *
-         *     GRADE ON `status`, AND READ THE RULE BEFORE WRITING THE ALERT, because the rule is narrower than "anything off nominal". `down` means `db.ok` or `vault.ok` is false. `degraded` means one of exactly four things: `embeddings.status` is `empty`, `fx_rates.status` is anything other than `usable`, `telemetry.status` is `stale`, or `connections.status` is `none`. Everything else grades `healthy`.
+         *     GRADE ON `status`, AND READ THE RULE BEFORE WRITING THE ALERT, because the rule is narrower than "anything off nominal". `down` means `db.ok` or `vault.ok` is false. `degraded` means one of exactly seven things: `embeddings.status` is `empty`, `fx_rates.status` is anything other than `usable`, `telemetry.status` is `stale`, `connections.status` is `none`, `celcoin_webhook_subscriptions.status` is `missing`, the Pix Automático hold resolver (`recurrence_holds`) is stale, failing or has a hold past its time, or the Pix Automático instruction scheduler (`recurrence_scheduler`) is stale, failing or never ran with work to do. Everything else grades `healthy`.
+         *
+         *     `metrics` IS READ, NEVER GRADED. `metrics.recurrence_instruction_alarms` counts the Pix Automático instruction alarms still open on a cycle still ahead, per kind and reason, for the calling org: a cycle not announced, an instruction refused, held back by a ceiling, or queued and expired. Each alarm already reached its tenant as an event in the recurrence's project; this is the standing number, and it never moves `status`.
          *
          *     THREE NON-NOMINAL VALUES DO NOT MOVE THE GRADE, and an alert that wants them has to read the field rather than the grade: `embeddings.status` `low` (fewer than half the tool rows carry an embedding), `connections.status` `partial` (one or two connections rather than three or more), and `telemetry.status` `idle` (a quiet hour that still had traffic inside the day). All three come back `healthy` at the top level, on purpose — none of them stops a call from being served.
          *
@@ -10306,6 +10439,25 @@ export interface paths {
                                     message?: string;
                                 };
                             };
+                            metrics: {
+                                recurrence_instruction_alarms: {
+                                    /**
+                                     * @description `unchecked` when the count failed or timed out; `open` is then 0 and says nothing.
+                                     * @enum {string}
+                                     */
+                                    status: "ok" | "unchecked";
+                                    /** @description Alarms raised, not cleared, whose cycle is still ahead, in the calling org. */
+                                    open: number;
+                                    /** @description kind -> reason -> open alarms. Kinds: instruction_missing, announced_late, instruction_refused, instruction_blocked, queued_expired. */
+                                    kinds: {
+                                        [key: string]: {
+                                            [key: string]: number;
+                                        };
+                                    };
+                                    /** @description Present only when the count failed or timed out. */
+                                    message?: string;
+                                };
+                            };
                             schema_version: {
                                 /** @description Name of the most recently applied migration. The literal `none` when the table holds no row, and the literal `unknown` when the lookup failed or timed out — neither is a migration name and neither moves `status`. */
                                 latest: string;
@@ -10375,10 +10527,17 @@ export interface paths {
                             /** Format: date-time */
                             created_at: string;
                             /**
-                             * @description `PF` for a person (CPF), `PJ` for a company (CNPJ). The type belongs to the account and is a declaration made at sign-up, not a verification: no document has been checked. The only change it admits is PF to PJ, made from the dashboard by a verified organization admin; a PJ account never becomes PF. Organizations read `PJ` unless they were created as PF: every organization that existed before the field, and every one created since, until the sign-up that asks the question ships.
+                             * @description `PF` for a person (CPF), `PJ` for a company (CNPJ). The type belongs to the account and is a declaration made at sign-up, not a verification: no document has been checked. MEANINGFUL ONLY WHEN `account_type_declared` IS `true`: an organization that has not declared yet reads `PJ`, the stored default, and that value says nothing about it. Once declared, the only change it admits is PF to PJ, made from the dashboard by a verified organization admin; a declared PJ never becomes PF. Every organization that existed before the declaration was introduced is declared with the type it had.
                              * @enum {string}
                              */
                             account_type: "PF" | "PJ";
+                            /** @description Whether the account has declared its type. `false` for an organization created since the declaration was introduced that has not chosen PF or PJ yet; the dashboard keeps such an organization provisional, with nothing reserved to companies open, until it declares. The declaration is made through the dashboard, once, by an organization admin or owner; no API key can make it. */
+                            account_type_declared: boolean;
+                            /**
+                             * Format: date-time
+                             * @description When the type was declared; `null` while `account_type_declared` is `false`. For an organization that existed before the declaration was introduced it is when that change was deployed, not when its type was first decided.
+                             */
+                            account_type_declared_at: string | null;
                             /** @description Whether CodeSpar has approved this organization for live projects. While it is `false`, `POST /v1/projects` with `environment: "live"` answers 403 `org_not_approved_for_live` and test projects are unaffected. Approval is a manual review by CodeSpar, requested through your CodeSpar contact; no call on this API grants or revokes it, and who approved and when are not exposed. */
                             live_approved: boolean;
                             /** @description Set while the organization's kill switch is pressed and every agent money door refuses `org_paused` (ent#1648); null otherwise. The full state, and pressing or releasing it, is `/v1/orgs/{orgId}/pause`. */
@@ -10457,7 +10616,9 @@ export interface paths {
          *
          *     WITHOUT `trigger_id` the event goes to every ACTIVE subscription in this project whose subscribed event type matches the stored event's. With it, the fan-out is narrowed to that one subscription, which is the useful shape when debugging a single receiver — and the subscription is checked up front, so a mismatch or a paused subscription is refused before anything is delivered rather than dropped silently downstream.
          *
-         *     202, NOT 200, AND THE NUMBER IS A HANDOFF COUNT. `dispatched` is how many active subscriptions the event was handed to. Delivery is attempted for all of them and each settles independently, so a receiver that is down does not lower this number and does not fail the call. Zero means nothing in this project subscribes to this event's type — it is not an error, and it is the answer you get when the subscription you meant lives in another project.
+         *     202, NOT 200, AND THE NUMBERS ARE HANDOFF COUNTS. `dispatched` is how many active subscriptions the event was handed to and recorded against: each gets a delivery row and settles independently, so a receiver that is down does not lower this number and does not fail the call — its failed delivery is retried. `rejected` is how many dispatches left NO delivery row — the dispatch failed, or its attempt could not be recorded even in minimal form — so nothing will retry them, and a non-zero `rejected` is ours to investigate, not the receiver's. `dispatched + rejected` is the number of matching subscriptions. Both zero means nothing in this project subscribes to this event's type — it is not an error, and it is the answer you get when the subscription you meant lives in another project.
+         *
+         *     A write-scope refusal while recording a dispatch is never folded into `rejected`: the rest of the fan-out still runs, and then the call answers with the refusal itself (`write_scope_undeclared` and its siblings, in their own `{ error, remediation }` envelope), because that is a defect on our side and not a receiver outcome.
          */
         post: {
             parameters: {
@@ -10483,8 +10644,10 @@ export interface paths {
                         "application/json": {
                             /** @description Echoes the replayed event. Unchanged: replay does not mint a new event. */
                             event_id: string;
-                            /** @description Active subscriptions the event was handed to. Counted before delivery, so a failing receiver does not lower it. */
+                            /** @description Active subscriptions the event was handed to and recorded against. A failing receiver does not lower it: its delivery is recorded and retried. */
                             dispatched: number;
+                            /** @description Dispatches that left no delivery row — the dispatch failed, or its attempt could not be recorded — so nothing will retry them. Not counted in `dispatched`. */
+                            rejected: number;
                             /** @description Echoes the query parameter, or null when the fan-out was not narrowed. */
                             trigger_id: string | null;
                         };
@@ -10640,9 +10803,14 @@ export interface paths {
                                 provider_id: string;
                                 /** @description Modelled cost in minor units. */
                                 cost_minor: number;
-                                /** @description Observed median latency, rounded to whole milliseconds. */
+                                /** @description A MEAN, not a median: total latency / attempts over the rolling 24h window, rounded to whole milliseconds. It is this organization's own attempts when it has any in the window, otherwise the platform's aggregate for this provider and tool. With no attempts at all it is the catalog's static estimate, or 1000 ms when the catalog has none: not an observation; `reasons` then reads `(n=0)`. */
+                                mean_latency_ms: number;
+                                /**
+                                 * @deprecated
+                                 * @description Deprecated alias of `mean_latency_ms`; same value. Despite the name it is a mean, not a median. Read `mean_latency_ms`.
+                                 */
                                 latency_p50_ms: number;
-                                /** @description Observed success rate for this provider on this rail. */
+                                /** @description Success rate for this provider on this rail over the same rolling 24h window, from the same attempts as `mean_latency_ms`. With no attempts at all it is an assumed 1.0, not an observation; `reasons` then reads `(n=0)`. */
                                 success_rate: number;
                                 reasons: string[];
                             }[];
@@ -11734,7 +11902,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Bad Gateway. `send_failed`: the rail refused or failed the send. The hold is released, so the balance is restored, and the withdrawal row is marked failed — which means the idempotency key, if you sent one, is now permanently spent and a retry needs a new one. */
+                /** @description Bad Gateway. `send_failed`: the rail refused the send or it never went out. The hold is released, so the balance is restored, and the withdrawal row is marked failed — which means the idempotency key, if you sent one, is now permanently spent and a retry needs a new one. `withdrawal_dispatch_uncertain`: the send failed in a way that does not prove the money stayed put (a timeout, a provider 5xx). The funds stay held and the withdrawal stays in progress until an operator reconciles it; a retry under the same key answers 409 `withdrawal_in_progress`. Do not resend with a new key: the first one may have paid. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -11743,7 +11911,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "send_failed";
+                                code: "send_failed" | "withdrawal_dispatch_uncertain";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15457,7 +15625,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. `carrier_crc_invalid`, `carrier_malformed`, `carrier_format_unsupported`: the payee is a Pix copia-e-cola that fails its own check (CRC, structure, or no usable Pix template); nothing was held or sent. `per_tx_cap_exceeded`: the amount is above the mandate's per-transaction cap and cannot wait for a person (not a Pix, or asked by a lane that does not park); `details` carries `amount_minor` and `per_tx_cap_minor` (integer strings in the mandate's own unit: minor for a v1 mandate, currency-native for `unit_version: 2`) and `currency`, beside the message "<amount> > <cap>". */
+                /** @description The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. `carrier_crc_invalid`, `carrier_malformed`, `carrier_format_unsupported`: the payee is a Pix copia-e-cola that fails its own check (CRC, structure, or no usable Pix template); nothing was held or sent. `per_tx_cap_exceeded`: the amount is above the mandate's per-transaction cap and cannot wait for a person (not a Pix, or asked by a lane that does not park); `details` carries `amount_minor` and `per_tx_cap_minor` (integer strings in the mandate's own unit: minor for a v1 mandate, currency-native for `unit_version: 2`) and `currency`, beside the message "<amount> > <cap>". `psp_refused`: the provider answered and declined (in test mode, the sandbox's reserved refusal key); the hold is released and nothing moved. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -15466,7 +15634,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "per_tx_cap_exceeded" | "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source" | "carrier_crc_invalid" | "carrier_malformed" | "carrier_format_unsupported";
+                                code: "per_tx_cap_exceeded" | "psp_refused" | "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source" | "carrier_crc_invalid" | "carrier_malformed" | "carrier_format_unsupported";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15666,7 +15834,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The mandate refuses, the consumer has no funding source for this rail, or the payee is a Pix copia-e-cola that fails its own check (the three `carrier_*` codes). `per_tx_cap_exceeded` carries `details.amount_minor`, `details.per_tx_cap_minor` and `details.currency`, as on the by-id route. */
+                /** @description The mandate refuses, the consumer has no funding source for this rail, or the payee is a Pix copia-e-cola that fails its own check (the three `carrier_*` codes). `per_tx_cap_exceeded` carries `details.amount_minor`, `details.per_tx_cap_minor` and `details.currency`, as on the by-id route. `psp_refused`: the provider declined, nothing moved. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -15675,7 +15843,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "per_tx_cap_exceeded" | "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source" | "carrier_crc_invalid" | "carrier_malformed" | "carrier_format_unsupported";
+                                code: "per_tx_cap_exceeded" | "psp_refused" | "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source" | "carrier_crc_invalid" | "carrier_malformed" | "carrier_format_unsupported";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -15827,7 +15995,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The mandate refuses, or there is no funding source for this rail. `per_tx_cap_exceeded` arrives as the `error` frame with `amount_minor`, `per_tx_cap_minor` and `currency`. */
+                /** @description The mandate refuses, or there is no funding source for this rail. `per_tx_cap_exceeded` arrives as the `error` frame with `amount_minor`, `per_tx_cap_minor` and `currency`. `psp_refused`: the provider declined, nothing moved. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -15836,7 +16004,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "per_tx_cap_exceeded" | "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source";
+                                code: "per_tx_cap_exceeded" | "psp_refused" | "mandate_verify" | "mandate_projection_mismatch" | "no_funding_source";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -16028,14 +16196,14 @@ export interface paths {
                             /** @description The issuer's charge id. Null while the issuance is unconfirmed. */
                             id: string | null;
                             /**
-                             * @description The provider's state as far as we know it, normalized (`PROCESSING`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`). Forced to PROCESSING until the issuance is confirmed.
+                             * @description The provider's state as far as we know it, normalized (`PROCESSING`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`, `ERROR`). Forced to PROCESSING until the issuance is confirmed. `ERROR` is the issuer rejecting the charge: no boleto and no Pix were ever issued, so nobody can pay it.
                              *
-                             *     **A charge settled by the sandbox payer answers `CONFIRMED` here**, the same value a real payment leaves a live read answering — so a client that polls `status` sees the test payment exactly where it would see a live one. The issuer's homolog account never sees that money and keeps answering PENDING (EXPIRED after the due date); that answer stays in `raw` and is not reported as `status` or as a `status_conflict`, because for a test charge the fixture is the issuer's truth. `settlement: "confirmed"` and `local_status: "settled"` say the same thing from our side.
+                             *     **A charge settled by the sandbox payer answers `CONFIRMED` here**, the same value a real payment leaves a live read answering — so a client that polls `status` sees the test payment exactly where it would see a live one. The issuer's homolog account never sees that money and keeps answering PENDING (EXPIRED after the due date); that answer stays in `raw` and is not reported as `status` or as a `status_conflict`, because for a test charge the fixture is the issuer's truth. `settlement: "confirmed"` and `local_status: "settled"` say the same thing from our side. Any other issuer answer (ERROR, CANCELLED, PROCESSING) is reported as the issuer said it, with `status_conflict: true`.
                              */
                             status: string;
                             /** @description What CodeSpar recorded, which is a different question from `status`. */
                             local_status: string;
-                            /** @description True when the two disagree terminally, instead of one of them silently winning. */
+                            /** @description True whenever the issuer's known state and ours disagree, instead of one of them silently winning. They agree only as follows: our `pending` beside the issuer's PENDING or PROCESSING; our `settled` beside CONFIRMED or PENDING (the issuer's read can lag a payment); our `expired` beside CANCELLED or PENDING (lag after a cancel). Every other pair is a conflict, including an issuer ERROR, an issuer terminal state on a charge we still hold open, and a status spelling we do not recognise. False when no issuer state is known at all. `settlement: "unconfirmable"` is the narrower case of both sides terminal and different. */
                             status_conflict: boolean;
                             method: string;
                             currency: string;
@@ -16189,14 +16357,14 @@ export interface paths {
                             /** @description The issuer's charge id. Null while the issuance is unconfirmed. */
                             id: string | null;
                             /**
-                             * @description The provider's state as far as we know it, normalized (`PROCESSING`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`). Forced to PROCESSING until the issuance is confirmed.
+                             * @description The provider's state as far as we know it, normalized (`PROCESSING`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`, `ERROR`). Forced to PROCESSING until the issuance is confirmed. `ERROR` is the issuer rejecting the charge: no boleto and no Pix were ever issued, so nobody can pay it.
                              *
-                             *     **A charge settled by the sandbox payer answers `CONFIRMED` here**, the same value a real payment leaves a live read answering — so a client that polls `status` sees the test payment exactly where it would see a live one. The issuer's homolog account never sees that money and keeps answering PENDING (EXPIRED after the due date); that answer stays in `raw` and is not reported as `status` or as a `status_conflict`, because for a test charge the fixture is the issuer's truth. `settlement: "confirmed"` and `local_status: "settled"` say the same thing from our side.
+                             *     **A charge settled by the sandbox payer answers `CONFIRMED` here**, the same value a real payment leaves a live read answering — so a client that polls `status` sees the test payment exactly where it would see a live one. The issuer's homolog account never sees that money and keeps answering PENDING (EXPIRED after the due date); that answer stays in `raw` and is not reported as `status` or as a `status_conflict`, because for a test charge the fixture is the issuer's truth. `settlement: "confirmed"` and `local_status: "settled"` say the same thing from our side. Any other issuer answer (ERROR, CANCELLED, PROCESSING) is reported as the issuer said it, with `status_conflict: true`.
                              */
                             status: string;
                             /** @description What CodeSpar recorded, which is a different question from `status`. */
                             local_status: string;
-                            /** @description True when the two disagree terminally, instead of one of them silently winning. */
+                            /** @description True whenever the issuer's known state and ours disagree, instead of one of them silently winning. They agree only as follows: our `pending` beside the issuer's PENDING or PROCESSING; our `settled` beside CONFIRMED or PENDING (the issuer's read can lag a payment); our `expired` beside CANCELLED or PENDING (lag after a cancel). Every other pair is a conflict, including an issuer ERROR, an issuer terminal state on a charge we still hold open, and a status spelling we do not recognise. False when no issuer state is known at all. `settlement: "unconfirmable"` is the narrower case of both sides terminal and different. */
                             status_conflict: boolean;
                             method: string;
                             currency: string;
@@ -16372,14 +16540,14 @@ export interface paths {
                             /** @description The issuer's charge id. Null while the issuance is unconfirmed. */
                             id: string | null;
                             /**
-                             * @description The provider's state as far as we know it, normalized (`PROCESSING`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`). Forced to PROCESSING until the issuance is confirmed.
+                             * @description The provider's state as far as we know it, normalized (`PROCESSING`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`, `ERROR`). Forced to PROCESSING until the issuance is confirmed. `ERROR` is the issuer rejecting the charge: no boleto and no Pix were ever issued, so nobody can pay it.
                              *
-                             *     **A charge settled by the sandbox payer answers `CONFIRMED` here**, the same value a real payment leaves a live read answering — so a client that polls `status` sees the test payment exactly where it would see a live one. The issuer's homolog account never sees that money and keeps answering PENDING (EXPIRED after the due date); that answer stays in `raw` and is not reported as `status` or as a `status_conflict`, because for a test charge the fixture is the issuer's truth. `settlement: "confirmed"` and `local_status: "settled"` say the same thing from our side.
+                             *     **A charge settled by the sandbox payer answers `CONFIRMED` here**, the same value a real payment leaves a live read answering — so a client that polls `status` sees the test payment exactly where it would see a live one. The issuer's homolog account never sees that money and keeps answering PENDING (EXPIRED after the due date); that answer stays in `raw` and is not reported as `status` or as a `status_conflict`, because for a test charge the fixture is the issuer's truth. `settlement: "confirmed"` and `local_status: "settled"` say the same thing from our side. Any other issuer answer (ERROR, CANCELLED, PROCESSING) is reported as the issuer said it, with `status_conflict: true`.
                              */
                             status: string;
                             /** @description What CodeSpar recorded, which is a different question from `status`. */
                             local_status: string;
-                            /** @description True when the two disagree terminally, instead of one of them silently winning. */
+                            /** @description True whenever the issuer's known state and ours disagree, instead of one of them silently winning. They agree only as follows: our `pending` beside the issuer's PENDING or PROCESSING; our `settled` beside CONFIRMED or PENDING (the issuer's read can lag a payment); our `expired` beside CANCELLED or PENDING (lag after a cancel). Every other pair is a conflict, including an issuer ERROR, an issuer terminal state on a charge we still hold open, and a status spelling we do not recognise. False when no issuer state is known at all. `settlement: "unconfirmable"` is the narrower case of both sides terminal and different. */
                             status_conflict: boolean;
                             method: string;
                             currency: string;
@@ -16515,6 +16683,8 @@ export interface paths {
          *
          *     **Nothing claims money moved.** The event payload, the ledger entry and the charge row all carry `simulated: true` and `settled_against: "sandbox_fixture"`; a real `charge-in` never carries either.
          *
+         *     **Only a payable charge settles.** The debtor can only pay a document the issuer handed over: the charge must be open, a boleto or Pix recorded, and the issuer's last known status PENDING (or CONFIRMED, the issuer already calling it paid) — the conditions of `payable: true` on the read. Anything else is refused with 409 `charge_not_payable` before anything is written, exactly as a live debtor would find nothing to pay.
+         *
          *     **Idempotent.** The provider event id is the one the real delivery would carry, so a second pay dedupes at the event (no second trigger fire), the ledger dedupes on the charge, and a charge already `settled` answers its recorded state with `idempotent_replay: true` whatever amount the second call names.
          *
          *     `chargeId` is the id `create` returned, or your own idempotency key, resolved under the caller's org and project: another tenant's charge is `charge_not_found`, never `forbidden`.
@@ -16640,7 +16810,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The charge exists and cannot be paid: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge already closed (expired or cancelled); `charge_reference_ambiguous` is a reference that is one charge's id and another's idempotency key — pay by the charge id. */
+                /** @description The charge exists and cannot be paid, and nothing was settled, credited or published: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge with no document a debtor could pay, and `details.reason` says which: `issuer_rejected` (the issuer left it in ERROR, no boleto or Pix ever existed — terminal, create a new charge), `charge_closed` (expired or cancelled, ours or the issuer's — terminal, create a new charge), `instrument_not_registered` (the issuer has not handed over a boleto or Pix yet — read the charge and pay once it answers `payable: true`); `charge_reference_ambiguous` is a reference that is one charge's id and another's idempotency key — pay by the charge id. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -16708,6 +16878,8 @@ export interface paths {
          *
          *     **Nothing claims money moved.** The event payload, the ledger entry and the charge row all carry `simulated: true` and `settled_against: "sandbox_fixture"`; a real `charge-in` never carries either.
          *
+         *     **Only a payable charge settles.** The debtor can only pay a document the issuer handed over: the charge must be open, a boleto or Pix recorded, and the issuer's last known status PENDING (or CONFIRMED, the issuer already calling it paid) — the conditions of `payable: true` on the read. Anything else is refused with 409 `charge_not_payable` before anything is written, exactly as a live debtor would find nothing to pay.
+         *
          *     **Idempotent.** The provider event id is the one the real delivery would carry, so a second pay dedupes at the event (no second trigger fire), the ledger dedupes on the charge, and a charge already `settled` answers its recorded state with `idempotent_replay: true` whatever amount the second call names.
          *
          *     `chargeId` is the id `create` returned, or your own idempotency key, resolved under the caller's org and project: another tenant's charge is `charge_not_found`, never `forbidden`.
@@ -16833,7 +17005,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The charge exists and cannot be paid: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge already closed (expired or cancelled); `charge_reference_ambiguous` is a reference that is one charge's id and another's idempotency key — pay by the charge id. */
+                /** @description The charge exists and cannot be paid, and nothing was settled, credited or published: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge with no document a debtor could pay, and `details.reason` says which: `issuer_rejected` (the issuer left it in ERROR, no boleto or Pix ever existed — terminal, create a new charge), `charge_closed` (expired or cancelled, ours or the issuer's — terminal, create a new charge), `instrument_not_registered` (the issuer has not handed over a boleto or Pix yet — read the charge and pay once it answers `payable: true`); `charge_reference_ambiguous` is a reference that is one charge's id and another's idempotency key — pay by the charge id. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -18590,9 +18762,9 @@ export interface paths {
                                     nonce: string;
                                     scope: string;
                                     currency: string;
-                                    /** @description The mandate's HMAC signature. It must not be shared with a third party. Chains of version 1-3 seal it, which is why only the tenant can recompute those; a version 4 chain seals `sig_sha256` instead. */
-                                    sig: string;
-                                    /** @description SHA-256 over the UTF-8 bytes of `sig`, lowercase hex. What a version 4 chain seals in the mandate link, so a third party recomputes it without ever seeing `sig`. */
+                                    /** @description The mandate's HMAC signature. With the mandate payload it authorizes spends, so it must not be shared with a third party. PRESENT ONLY when the credential making the request can already spend without it: a key holding `mandates:spend` or the wildcard `*` (service auth holds the wildcard). For every other credential, `receipts:read` included, the key is ABSENT, not null. Chains of version 1-3 seal it, which is why only such a credential can recompute those; a version 4 chain seals `sig_sha256` instead. */
+                                    sig?: string;
+                                    /** @description SHA-256 over the UTF-8 bytes of `sig`, lowercase hex. Always present, for every credential. What a version 4 chain seals in the mandate link, so a third party recomputes it without ever seeing `sig`. */
                                     sig_sha256: string;
                                 };
                                 /** @description Null when the receipt carries neither a seller nor a resource. */
@@ -18651,7 +18823,7 @@ export interface paths {
                                 /**
                                  * @description SHA-256 (64 lowercase hex) over the UTF-8 bytes of the RFC 8785 (JCS) canonical JSON of `{ "v": chain_version, "links": [...] }`. Every value a link needs is in this read, so the chain can be recomputed from it and bound to `receipt_sig_ed25519`. The links, in order, each left out when it does not apply:
                                  *
-                                 *     1. mandate — always: `id`, `nonce`, `scope`, `currency`, then `sig` (v1-v3) or `sig_sha256` (v4), from `mandate`.
+                                 *     1. mandate — always: `id`, `nonce`, `scope`, `currency`, then `sig` (v1-v3) or `sig_sha256` (v4), from `mandate`. `sig` is in the read only for a credential that can spend (see `mandate.sig`), so any other caller verifies a v1-v3 receipt at the signature level only.
                                  *     2. quote — when `quote` is not null: `seller`, `resource`, `price_minor`, `payee`, `session_id`, `sig`, `at`, nulls included.
                                  *     3. approval — v4 only: `items_hash`, `batch_hash` (null when absent).
                                  *     4. payment — always: `rail`, `provider`, `tx_id`, `amount_minor`, `attempt_id`, `money_moved`, `at`, plus each of `amount_atomic`, `amount_authorized`, `amount_charged`, `amount_refunded`, `metering`, `sandbox` only when present and not null.
@@ -18738,9 +18910,9 @@ export interface paths {
                                 nonce: string;
                                 scope: string;
                                 currency: string;
-                                /** @description The mandate's HMAC signature. It must not be shared with a third party. Chains of version 1-3 seal it, which is why only the tenant can recompute those; a version 4 chain seals `sig_sha256` instead. */
-                                sig: string;
-                                /** @description SHA-256 over the UTF-8 bytes of `sig`, lowercase hex. What a version 4 chain seals in the mandate link, so a third party recomputes it without ever seeing `sig`. */
+                                /** @description The mandate's HMAC signature. With the mandate payload it authorizes spends, so it must not be shared with a third party. PRESENT ONLY when the credential making the request can already spend without it: a key holding `mandates:spend` or the wildcard `*` (service auth holds the wildcard). For every other credential, `receipts:read` included, the key is ABSENT, not null. Chains of version 1-3 seal it, which is why only such a credential can recompute those; a version 4 chain seals `sig_sha256` instead. */
+                                sig?: string;
+                                /** @description SHA-256 over the UTF-8 bytes of `sig`, lowercase hex. Always present, for every credential. What a version 4 chain seals in the mandate link, so a third party recomputes it without ever seeing `sig`. */
                                 sig_sha256: string;
                             };
                             /** @description Null when the receipt carries neither a seller nor a resource. */
@@ -18799,7 +18971,7 @@ export interface paths {
                             /**
                              * @description SHA-256 (64 lowercase hex) over the UTF-8 bytes of the RFC 8785 (JCS) canonical JSON of `{ "v": chain_version, "links": [...] }`. Every value a link needs is in this read, so the chain can be recomputed from it and bound to `receipt_sig_ed25519`. The links, in order, each left out when it does not apply:
                              *
-                             *     1. mandate — always: `id`, `nonce`, `scope`, `currency`, then `sig` (v1-v3) or `sig_sha256` (v4), from `mandate`.
+                             *     1. mandate — always: `id`, `nonce`, `scope`, `currency`, then `sig` (v1-v3) or `sig_sha256` (v4), from `mandate`. `sig` is in the read only for a credential that can spend (see `mandate.sig`), so any other caller verifies a v1-v3 receipt at the signature level only.
                              *     2. quote — when `quote` is not null: `seller`, `resource`, `price_minor`, `payee`, `session_id`, `sig`, `at`, nulls included.
                              *     3. approval — v4 only: `items_hash`, `batch_hash` (null when absent).
                              *     4. payment — always: `rail`, `provider`, `tx_id`, `amount_minor`, `attempt_id`, `money_moved`, `at`, plus each of `amount_atomic`, `amount_authorized`, `amount_charged`, `amount_refunded`, `metering`, `sandbox` only when present and not null.
@@ -20745,9 +20917,9 @@ export interface paths {
                                 nonce: string;
                                 scope: string;
                                 currency: string;
-                                /** @description The mandate's HMAC signature. It must not be shared with a third party. Chains of version 1-3 seal it, which is why only the tenant can recompute those; a version 4 chain seals `sig_sha256` instead. */
-                                sig: string;
-                                /** @description SHA-256 over the UTF-8 bytes of `sig`, lowercase hex. What a version 4 chain seals in the mandate link, so a third party recomputes it without ever seeing `sig`. */
+                                /** @description The mandate's HMAC signature. With the mandate payload it authorizes spends, so it must not be shared with a third party. PRESENT ONLY when the credential making the request can already spend without it: a key holding `mandates:spend` or the wildcard `*` (service auth holds the wildcard). For every other credential, `receipts:read` included, the key is ABSENT, not null. Chains of version 1-3 seal it, which is why only such a credential can recompute those; a version 4 chain seals `sig_sha256` instead. */
+                                sig?: string;
+                                /** @description SHA-256 over the UTF-8 bytes of `sig`, lowercase hex. Always present, for every credential. What a version 4 chain seals in the mandate link, so a third party recomputes it without ever seeing `sig`. */
                                 sig_sha256: string;
                             };
                             /** @description Null when the receipt carries neither a seller nor a resource. */
@@ -20806,7 +20978,7 @@ export interface paths {
                             /**
                              * @description SHA-256 (64 lowercase hex) over the UTF-8 bytes of the RFC 8785 (JCS) canonical JSON of `{ "v": chain_version, "links": [...] }`. Every value a link needs is in this read, so the chain can be recomputed from it and bound to `receipt_sig_ed25519`. The links, in order, each left out when it does not apply:
                              *
-                             *     1. mandate — always: `id`, `nonce`, `scope`, `currency`, then `sig` (v1-v3) or `sig_sha256` (v4), from `mandate`.
+                             *     1. mandate — always: `id`, `nonce`, `scope`, `currency`, then `sig` (v1-v3) or `sig_sha256` (v4), from `mandate`. `sig` is in the read only for a credential that can spend (see `mandate.sig`), so any other caller verifies a v1-v3 receipt at the signature level only.
                              *     2. quote — when `quote` is not null: `seller`, `resource`, `price_minor`, `payee`, `session_id`, `sig`, `at`, nulls included.
                              *     3. approval — v4 only: `items_hash`, `batch_hash` (null when absent).
                              *     4. payment — always: `rail`, `provider`, `tx_id`, `amount_minor`, `attempt_id`, `money_moved`, `at`, plus each of `amount_atomic`, `amount_authorized`, `amount_charged`, `amount_refunded`, `metering`, `sandbox` only when present and not null.
@@ -21162,12 +21334,17 @@ export interface paths {
          *
          *     The status flip and the evidence row are one transaction, and the UPDATE is guarded on the status this request read.
          *
+         *     Who may call it: a project API key or an OAuth token holding `mandates:write`, or the dashboard acting for a verified admin or owner (`x-codespar-user-token`). The evidence row and the `commerce.mandate.*` event name the actor as `actor_kind` and `actor_id`.
+         *
          *     `POST /v1/consumers/mandates/{id}/pause` is the legacy spelling, kept for two releases (ent#979): same handler, same `mandates:write` scope.
          */
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description Service auth (the dashboard) only: the acting person's Clerk session token. Required there, and its subject must be an admin or owner of the organization. A project API key or an OAuth token does not send it. */
+                    "x-codespar-user-token"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -21219,6 +21396,21 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Service auth (the dashboard) did not establish an admin. `user_token_required`: no `x-codespar-user-token` was forwarded, and a service key alone never moves a mandate. `user_token_invalid`: the token did not verify; mint a fresh one. `user_token_identity_mismatch`: `x-codespar-user` names somebody else. `insufficient_role`: that person is not an admin or owner of the organization. A project API key without `mandates:write` gets the scope refusal instead. Nothing was written. Bare `{ error, remediation }` body. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "insufficient_role";
+                            remediation?: string;
+                            /** @enum {string} */
+                            required?: "admin";
+                        };
+                    };
+                };
                 /** @description No such allowance for this credential's organization. An allowance belonging to another organization answers exactly the same way: the org predicate sits in the SELECT, so the handler cannot tell absent from someone else's, and must not. */
                 404: {
                     headers: {
@@ -21259,6 +21451,19 @@ export interface paths {
                         };
                     };
                 };
+                /** @description `user_token_verification_unconfigured`: a deployment fault on the dashboard path, not a caller fault; retrying the same request will not help. Bare body. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_verification_unconfigured";
+                            remediation: string;
+                        };
+                    };
+                };
             };
         };
         delete?: never;
@@ -21282,12 +21487,17 @@ export interface paths {
          *
          *     Caps and expiry are untouched: the UPDATE sets `status` and `updated_at` and nothing else, so the allowance resumes with the spend it had already used still counted against it. Resuming an allowance whose `expires_at` has passed is legal here and still buys nothing, because the spend path refuses an expired mandate on its own.
          *
+         *     Who may call it: a project API key or an OAuth token holding `mandates:write`, or the dashboard acting for a verified admin or owner (`x-codespar-user-token`). The evidence row and the `commerce.mandate.*` event name the actor as `actor_kind` and `actor_id`.
+         *
          *     `POST /v1/consumers/mandates/{id}/resume` is the legacy spelling, kept for two releases (ent#979): same handler, same `mandates:write` scope.
          */
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description Service auth (the dashboard) only: the acting person's Clerk session token. Required there, and its subject must be an admin or owner of the organization. A project API key or an OAuth token does not send it. */
+                    "x-codespar-user-token"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -21339,6 +21549,21 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Service auth (the dashboard) did not establish an admin. `user_token_required`: no `x-codespar-user-token` was forwarded, and a service key alone never moves a mandate. `user_token_invalid`: the token did not verify; mint a fresh one. `user_token_identity_mismatch`: `x-codespar-user` names somebody else. `insufficient_role`: that person is not an admin or owner of the organization. A project API key without `mandates:write` gets the scope refusal instead. Nothing was written. Bare `{ error, remediation }` body. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "insufficient_role";
+                            remediation?: string;
+                            /** @enum {string} */
+                            required?: "admin";
+                        };
+                    };
+                };
                 /** @description No such allowance for this credential's organization. An allowance belonging to another organization answers exactly the same way: the org predicate sits in the SELECT, so the handler cannot tell absent from someone else's, and must not. */
                 404: {
                     headers: {
@@ -21379,6 +21604,19 @@ export interface paths {
                         };
                     };
                 };
+                /** @description `user_token_verification_unconfigured`: a deployment fault on the dashboard path, not a caller fault; retrying the same request will not help. Bare body. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_verification_unconfigured";
+                            remediation: string;
+                        };
+                    };
+                };
             };
         };
         delete?: never;
@@ -21402,12 +21640,17 @@ export interface paths {
          *
          *     Revoking stops the spend on the same three gates that pausing does.
          *
+         *     Who may call it: a project API key or an OAuth token holding `mandates:write`, or the dashboard acting for a verified admin or owner (`x-codespar-user-token`). The evidence row and the `commerce.mandate.*` event name the actor as `actor_kind` and `actor_id`.
+         *
          *     `POST /v1/consumers/mandates/{id}/revoke` is the legacy spelling, kept for two releases (ent#979): same handler, same `mandates:write` scope.
          */
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description Service auth (the dashboard) only: the acting person's Clerk session token. Required there, and its subject must be an admin or owner of the organization. A project API key or an OAuth token does not send it. */
+                    "x-codespar-user-token"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -21459,6 +21702,21 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Service auth (the dashboard) did not establish an admin. `user_token_required`: no `x-codespar-user-token` was forwarded, and a service key alone never moves a mandate. `user_token_invalid`: the token did not verify; mint a fresh one. `user_token_identity_mismatch`: `x-codespar-user` names somebody else. `insufficient_role`: that person is not an admin or owner of the organization. A project API key without `mandates:write` gets the scope refusal instead. Nothing was written. Bare `{ error, remediation }` body. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "insufficient_role";
+                            remediation?: string;
+                            /** @enum {string} */
+                            required?: "admin";
+                        };
+                    };
+                };
                 /** @description No such allowance for this credential's organization. An allowance belonging to another organization answers exactly the same way: the org predicate sits in the SELECT, so the handler cannot tell absent from someone else's, and must not. */
                 404: {
                     headers: {
@@ -21496,6 +21754,19 @@ export interface paths {
                             };
                             /** @description Echoes the `X-Request-Id` header when the request carried one. */
                             request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `user_token_verification_unconfigured`: a deployment fault on the dashboard path, not a caller fault; retrying the same request will not help. Bare body. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_verification_unconfigured";
+                            remediation: string;
                         };
                     };
                 };
@@ -22210,7 +22481,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description Service auth (the dashboard) only: the acting person's Clerk session token. Required there, and its subject must be an admin or owner of the organization. A project API key or an OAuth token does not send it. */
+                    "x-codespar-user-token"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -22262,6 +22536,21 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Service auth (the dashboard) did not establish an admin. `user_token_required`: no `x-codespar-user-token` was forwarded, and a service key alone never moves a mandate. `user_token_invalid`: the token did not verify; mint a fresh one. `user_token_identity_mismatch`: `x-codespar-user` names somebody else. `insufficient_role`: that person is not an admin or owner of the organization. A project API key without `mandates:write` gets the scope refusal instead. Nothing was written. Bare `{ error, remediation }` body. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "insufficient_role";
+                            remediation?: string;
+                            /** @enum {string} */
+                            required?: "admin";
+                        };
+                    };
+                };
                 /** @description No such allowance for this credential's organization. An allowance belonging to another organization answers exactly the same way: the org predicate sits in the SELECT, so the handler cannot tell absent from someone else's, and must not. */
                 404: {
                     headers: {
@@ -22302,6 +22591,19 @@ export interface paths {
                         };
                     };
                 };
+                /** @description `user_token_verification_unconfigured`: a deployment fault on the dashboard path, not a caller fault; retrying the same request will not help. Bare body. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_verification_unconfigured";
+                            remediation: string;
+                        };
+                    };
+                };
             };
         };
         delete?: never;
@@ -22327,7 +22629,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description Service auth (the dashboard) only: the acting person's Clerk session token. Required there, and its subject must be an admin or owner of the organization. A project API key or an OAuth token does not send it. */
+                    "x-codespar-user-token"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -22379,6 +22684,21 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Service auth (the dashboard) did not establish an admin. `user_token_required`: no `x-codespar-user-token` was forwarded, and a service key alone never moves a mandate. `user_token_invalid`: the token did not verify; mint a fresh one. `user_token_identity_mismatch`: `x-codespar-user` names somebody else. `insufficient_role`: that person is not an admin or owner of the organization. A project API key without `mandates:write` gets the scope refusal instead. Nothing was written. Bare `{ error, remediation }` body. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "insufficient_role";
+                            remediation?: string;
+                            /** @enum {string} */
+                            required?: "admin";
+                        };
+                    };
+                };
                 /** @description No such allowance for this credential's organization. An allowance belonging to another organization answers exactly the same way: the org predicate sits in the SELECT, so the handler cannot tell absent from someone else's, and must not. */
                 404: {
                     headers: {
@@ -22419,6 +22739,19 @@ export interface paths {
                         };
                     };
                 };
+                /** @description `user_token_verification_unconfigured`: a deployment fault on the dashboard path, not a caller fault; retrying the same request will not help. Bare body. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_verification_unconfigured";
+                            remediation: string;
+                        };
+                    };
+                };
             };
         };
         delete?: never;
@@ -22444,7 +22777,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description Service auth (the dashboard) only: the acting person's Clerk session token. Required there, and its subject must be an admin or owner of the organization. A project API key or an OAuth token does not send it. */
+                    "x-codespar-user-token"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -22496,6 +22832,21 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Service auth (the dashboard) did not establish an admin. `user_token_required`: no `x-codespar-user-token` was forwarded, and a service key alone never moves a mandate. `user_token_invalid`: the token did not verify; mint a fresh one. `user_token_identity_mismatch`: `x-codespar-user` names somebody else. `insufficient_role`: that person is not an admin or owner of the organization. A project API key without `mandates:write` gets the scope refusal instead. Nothing was written. Bare `{ error, remediation }` body. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "insufficient_role";
+                            remediation?: string;
+                            /** @enum {string} */
+                            required?: "admin";
+                        };
+                    };
+                };
                 /** @description No such allowance for this credential's organization. An allowance belonging to another organization answers exactly the same way: the org predicate sits in the SELECT, so the handler cannot tell absent from someone else's, and must not. */
                 404: {
                     headers: {
@@ -22533,6 +22884,19 @@ export interface paths {
                             };
                             /** @description Echoes the `X-Request-Id` header when the request carried one. */
                             request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `user_token_verification_unconfigured`: a deployment fault on the dashboard path, not a caller fault; retrying the same request will not help. Bare body. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "user_token_verification_unconfigured";
+                            remediation: string;
                         };
                     };
                 };
@@ -27356,7 +27720,9 @@ export interface paths {
          * Earnings for one paywall
          * @description What this paywall has settled and what the seller kept, aggregated at read time from the evidence the gateway already writes. No counter is stored for it.
          *
-         *     ATTRIBUTION is by the paywall's gateway URL: a settlement counts when the x402 intent's resource URL is exactly `https://gw.codespar.dev/<slug>` or any path underneath it. Slugs are globally unique, so that prefix names exactly one paywall; the org filter on the aggregate is defence in depth on top of it.
+         *     ATTRIBUTION is what the gateway wrote into the x402 intent, on both fields: the purpose is `paywall:<slug>` AND the resource URL is exactly `https://gw.codespar.dev/<slug>` or a path underneath it, within the paywall's organization and project. The purpose keeps a paywall slugged `mcp` or `pay` from counting MCP or payment-link settlements that live under its URL. `GET /v1/gate/stats` uses the same rule.
+         *
+         *     A metered refund counts against the settlement it refunds, joined by the settlement's transaction hash.
          *
          *     A slug cannot be edited, so attribution never moves under a live paywall. Deleting the paywall does end the reading: the evidence rows outlive it, and the id that reached them is gone.
          */
@@ -27413,6 +27779,121 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "paywall_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/gate/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gate earnings and 402 conversion for the project
+         * @description Everything the project sells through gw.codespar.dev in one read: its paywalls and the tools of its MCP servers, over the last 30 Sao Paulo calendar days including today. Scope `paywalls:read`, and `mcp-servers:read` as well, checked by the handler because the body carries the MCP tools: a key without it gets the same 403 `forbidden` the scope gate sends.
+         *
+         *     Earnings, paid calls and paying agents are aggregated at read time from the settlement evidence, with the attribution rule `GET /v1/paywalls/{id}/stats` uses; x402 settlements only. A sale of an item deleted since still counts toward the totals and has no row in `items`.
+         *
+         *     `earnings_atomic` is what the seller kept: net of metered refunds and of the MCP platform fee recorded on each sale; `gross_earnings_atomic` is before the fee.
+         *
+         *     `challenges_issued`, `payment_attempts` and `challenges_paid` come from a per-day counter the gateway keeps. The conversion is `challenges_paid / payment_attempts`, at most 100% by construction: every settle is counted on the row of its own attempt. No ratio should be built on `challenges_issued`, since a client that knows the terms pays without receiving a 402.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    window?: "30d";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            window: "30d";
+                            /**
+                             * Format: date-time
+                             * @description Window start: Sao Paulo midnight, 29 days before today.
+                             */
+                            from: string;
+                            /**
+                             * Format: date-time
+                             * @description Window end: the time of the read.
+                             */
+                            to: string;
+                            /** @description What the seller kept in the window: settled amounts minus metered refunds owed ('claimed', 'sent', 'confirmed') minus the MCP platform fee recorded for each sale. The fee is the accrual taken on that very sale, not the server's current rate. A sale made before migration 0295 has no linked accrual, and nothing is subtracted for it. USDC atomic. */
+                            earnings_atomic: string;
+                            /** @description Settled amounts in the window minus metered refunds owed, before the platform fee. USDC atomic. */
+                            gross_earnings_atomic: string;
+                            /** @description `earnings_atomic` (net of the fee) over the span of equal length ending at `from`. Null when nothing on the project's Gate predates the window: no settlement before `from` and no current paywall or MCP server created before it. */
+                            previous_earnings_atomic: string | null;
+                            /** @description Settled x402 calls in the window. */
+                            paid_calls: number;
+                            /** @description Gate links published at some point in the window, a link being a paywall or an MCP server (`/mcp/<slug>`, not each tool). Nothing records when an item was switched on or off, so this counts the links the window PROVES were published: every paywall or MCP server of the project that is active now (`to` is now, so it is published inside the window), plus every one, inactive or since deleted, with at least one settled call in the window (the gateway only settles for an active item). An item that is inactive now and sold nothing in the window is not counted, although it may have been live for part of it. So every link that produced a `paid_calls` entry is in this count, and `paid_calls / published_links` is the web's payments-per-link (it can exceed 1). */
+                            published_links: number;
+                            /** @description Distinct payer addresses (the x402 signer) with a settled call in the window. */
+                            paying_agents: number;
+                            /** @description Of `paying_agents`, those whose first settled call on this project's Gate falls in the current Sao Paulo calendar month. */
+                            new_paying_agents_this_month: number;
+                            /** @description 402 responses carrying PAYMENT-REQUIRED that the gateway sent in the window, for any reason (no payment, an unusable or refused one, a replay outside the re-delivery window). Recorded since migration 0295; days before it count zero. Not a conversion denominator: a client that knows the terms pays without receiving one. */
+                            challenges_issued: number | null;
+                            /** @description Requests in the window that arrived carrying an x402 payment (a non-empty PAYMENT-SIGNATURE or X-PAYMENT header) at an active paywall, or at a priced MCP tool on the Mode B path, whatever became of them: settled, undecodable, underpriced, refused by the settle pipeline, a replay of an earlier authorization, or answered from the Idempotency-Key store. Counted before the header is read. A Mode A (mandate) MCP call is not counted. Recorded since migration 0295. */
+                            payment_attempts: number | null;
+                            /** @description Genuine x402 settles (a re-delivered replay is not one) recorded by the same counter over the same days. Each is counted on the row and day of its own attempt, so it never exceeds `payment_attempts`: `challenges_paid / payment_attempts` is the conversion, at most 100%. It is NOT linked to a 402 and can exceed `challenges_issued`. It differs from `paid_calls` only by what the counter did not see: days before migration 0295 and increments lost to a replica that died between flushes. */
+                            challenges_paid: number | null;
+                            /** @description Every current paywall, and every tool of every current MCP server, of the project. */
+                            items: {
+                                /** @enum {string} */
+                                kind: "paywall" | "mcp_tool";
+                                /** @description Paywall id, or MCP server id. */
+                                id: string;
+                                /** @description For kind=mcp_tool. */
+                                tool_name?: string;
+                                /** @description Settled calls in the 24 hours before `to`. */
+                                paid_calls_24h: number;
+                                /** @description What the seller kept from this item in the window: `gross_earnings_atomic` minus the platform fee recorded on each sale. USDC atomic. */
+                                earnings_atomic: string;
+                                /** @description This item's settlements in the window minus metered refunds owed, before any platform fee. USDC atomic. */
+                                gross_earnings_atomic: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description `window` is not `30d`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -34024,8 +34505,6 @@ export interface paths {
          * List the payment links in this project
          * @description Every link under the caller's org AND project, newest first. Not paginated and not filtered: there is no query parameter on this route, so a growing project returns a growing array.
          *
-         *     Note the asymmetry with the read-by-id below, which matches on the organization alone. A link created under a different project of the same organization is readable by its id and absent from this list.
-         *
          *     Unlike the three writes on this resource, the list carries no role gate at all.
          */
         get: {
@@ -34311,6 +34790,229 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/payment-links/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Collect totals for this project's payment links
+         * @description Totals over the last 30 days, `[from, to)`, computed from the seller-side payment records only: one record per settled link payment, on either rail, written in the link owner's project when the payment settles. Payments made before those records existed are not counted.
+         *
+         *     Money is reported per currency and BRL and USDC are never added together. A Pix payment whose settlement was uncertain is not counted until it settles.
+         *
+         *     `window` accepts only `30d`, which is also the default.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    window?: "30d";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            window: "30d";
+                            /** Format: date-time */
+                            from: string;
+                            /**
+                             * Format: date-time
+                             * @description The request time. The window is `[from, to)`.
+                             */
+                            to: string;
+                            /** @description One entry per currency with a payment in this window or the one before. BRL and USDC are never summed. */
+                            received: {
+                                /** @enum {string} */
+                                currency: "BRL" | "USDC";
+                                amount_minor: string;
+                                /** @description The same sum over the window before `from`. Null when this project has no payment in that currency before `from`, so there is nothing to compare. */
+                                previous_amount_minor: string | null;
+                            }[];
+                            payments: number;
+                            /** @description Counts in the window. `page` and `whatsapp` have no path yet and answer 0. */
+                            by_surface: {
+                                agent_x402: number;
+                                agent_pix: number;
+                                page: number;
+                                whatsapp: number;
+                            };
+                            /** @description Only links with at least one payment in the window, most payments first. */
+                            links: {
+                                link_id: string;
+                                payments: number;
+                                agent_payments: number;
+                                volume: {
+                                    /** @enum {string} */
+                                    currency: "BRL" | "USDC";
+                                    amount_minor: string;
+                                }[];
+                            }[];
+                        };
+                    };
+                };
+                /** @description Bad Request. `window` is not one this read computes. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payment-links/{id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The payments one payment link received
+         * @description One entry per settled payment of this link, newest first, read from the seller-side record written in this project when the payment settled. The payer's own records stay in the payer's organization and are not part of it.
+         *
+         *     Paginated: send `next_before` back as `before` for the next page; it is null on the last page and opaque otherwise. `limit` is 1 to 100, default 20.
+         *
+         *     The link is addressed within the caller's org and project, like the read by id: a link of another project answers 404.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    before?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            payments: {
+                                /** @description `lpm_` + nanoid. */
+                                id: string;
+                                link_id: string;
+                                /**
+                                 * @description Where the payer came from. Only `agent_x402` and `agent_pix` have a path today; `page` and `whatsapp` never appear on a row yet.
+                                 * @enum {string}
+                                 */
+                                surface: "agent_x402" | "agent_pix" | "page" | "whatsapp";
+                                /** @enum {string} */
+                                rail: "x402" | "pix";
+                                /**
+                                 * @description `USDC` on the x402 rail, `BRL` on pix. Never mixed.
+                                 * @enum {string}
+                                 */
+                                currency: "BRL" | "USDC";
+                                /** @description Integer string in the currency's native minor unit: USDC atomic (6 decimals) or BRL centavos. On x402 it is the value the payer's authorization moved, which may exceed the link's price. */
+                                amount_minor: string;
+                                payer: {
+                                    /** @enum {string} */
+                                    kind: "agent";
+                                    /** @description x402: the signer address. pix: the paying organization's name, as it read when the payment settled. */
+                                    label: string | null;
+                                };
+                                /** @description x402: the on-chain transaction hash. pix: the end-to-end id, when the rail produced one. */
+                                txid: string | null;
+                                /** @description The `fund` entry this payment produced in a wallet of this same org and project, when the money landed in an account CodeSpar holds for you. It is the entry the inbound Pix credit wrote, found by `txid`; this surface never writes a second one. Null on every x402 payment, which settles on-chain to the link's `pay_to` and never enters a wallet ledger, and null on a pix payment whose key is not on an account CodeSpar holds or whose credit has not arrived yet. */
+                                ledger_entry_id: string | null;
+                                /** Format: date-time */
+                                settled_at: string;
+                            }[];
+                            next_before: string | null;
+                        };
+                    };
+                };
+                /** @description Bad Request. `limit` is outside 1 to 100, or `before` is not a cursor this read issued for this link. The Zod issues, when there are any, are in `details.issues`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found. No payment link with that id in the caller's project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payment_link_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/payment-links/{id}": {
         parameters: {
             query?: never;
@@ -34320,7 +35022,7 @@ export interface paths {
         };
         /**
          * Read one payment link
-         * @description Addressed by id within the caller's ORGANIZATION: the lookup matches `id` and `org_id` and does not filter on the project, so a link belonging to another project of the same org is returned here. A link in another organization is invisible and answers 404, the same body as an id that was never minted.
+         * @description Addressed by id within the caller's org AND project, the same scope as the list. A link belonging to another project of the same organization, or to another organization, answers 404 with the same body as an id that was never minted.
          *
          *     `metadata` is not part of this response. There is no operation on this surface that reads it back.
          */
@@ -34396,7 +35098,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Not Found. No payment link with that id in the caller's organization. */
+                /** @description Not Found. No payment link with that id in the caller's project. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -34422,11 +35124,11 @@ export interface paths {
         post?: never;
         /**
          * Delete a payment link
-         * @description A HARD delete of the row, not a soft one: the link is configuration rather than audit data, so nothing is retained and the operation cannot be undone. It touches only the `payment_links` row, and no foreign key points at that table, so nothing cascades. What is gone is the record of what the link was, including for payments already made through it.
+         * @description A HARD delete of the row, not a soft one: the link is configuration rather than audit data, so the row is not retained and the operation cannot be undone. It touches only the `payment_links` row, and no foreign key points at that table, so nothing cascades. The seller-side records of payments already made through the link are kept and still count in `/v1/payment-links/stats`; the per-link payments read answers 404 once the link is gone.
          *
          *     Prefer `PATCH { "active": false }` when the intent is to stop a live link, which is reversible and keeps the slug held. Deleting RELEASES the slug back into the global namespace, where anyone can take it.
          *
-         *     Scoped like the PATCH and not like the read: the statement names the row by `id` and `org_id` and runs under the calling key's project declaration, so a link in another project of the same organization is not deletable with that key and answers 404.
+         *     Scoped like the read and the PATCH: the statement names the row by `id`, `org_id` and `project_id`, so a link in another project of the same organization is not deletable with that key and answers 404.
          *
          *     Not idempotent in its status code: a second delete of the same id answers 404, because the row count is what decides.
          *
@@ -34500,7 +35202,7 @@ export interface paths {
          *
          *     `active: false` takes the link out of service without deleting it, and is the reversible way to stop a live link. It does not change `status`.
          *
-         *     NARROWER THAN THE READ ABOVE, and this is the asymmetry to plan around. The statement names the row by `id` and `org_id`, but it runs under the calling key's PROJECT declaration, and payment links are tenant-owned at project grain — the row-level predicate the write is subject to also requires the row's project to be the caller's. A link that belongs to another project of the same organization is therefore readable by its id and not patchable with that key: it answers 404, because the update matched no row.
+         *     Scoped like the read: the statement names the row by `id`, `org_id` and `project_id`, so a link that belongs to another project of the same organization answers 404, because the update matched no row.
          *
          *     Role-gated: see the 403 below, and read it before assuming the gate runs for your credential.
          */
@@ -35807,6 +36509,8 @@ export interface paths {
                             created_at: string;
                             /** @description Whether a signing secret exists. The secret itself is never read back: the serializer drops the vault reference and reports only this boolean. */
                             signing_enabled: boolean;
+                            /** @description Whether `event` is a type this build emits. `false` means the subscription exists but will not fire until a release starts emitting that name: it was accepted so you can subscribe ahead of a release, not because it matches. */
+                            event_known: boolean;
                         };
                     };
                 };
@@ -35967,6 +36671,8 @@ export interface paths {
                             created_at: string;
                             /** @description Whether a signing secret exists. The secret itself is never read back: the serializer drops the vault reference and reports only this boolean. */
                             signing_enabled: boolean;
+                            /** @description Whether `event` is a type this build emits. `false` means the subscription exists but will not fire until a release starts emitting that name: it was accepted so you can subscribe ahead of a release, not because it matches. */
+                            event_known: boolean;
                         };
                     };
                 };
@@ -36071,6 +36777,8 @@ export interface paths {
                             created_at: string;
                             /** @description Whether a signing secret exists. The secret itself is never read back: the serializer drops the vault reference and reports only this boolean. */
                             signing_enabled: boolean;
+                            /** @description Whether `event` is a type this build emits. `false` means the subscription exists but will not fire until a release starts emitting that name: it was accepted so you can subscribe ahead of a release, not because it matches. */
+                            event_known: boolean;
                         };
                     };
                 };
@@ -36237,6 +36945,8 @@ export interface paths {
                             created_at: string;
                             /** @description Whether a signing secret exists. The secret itself is never read back: the serializer drops the vault reference and reports only this boolean. */
                             signing_enabled: boolean;
+                            /** @description Whether `event` is a type this build emits. `false` means the subscription exists but will not fire until a release starts emitting that name: it was accepted so you can subscribe ahead of a release, not because it matches. */
+                            event_known: boolean;
                         };
                     };
                 };
@@ -37716,6 +38426,7 @@ export interface components {
         };
         PolicyEvaluation: {
             id: string;
+            projectId: string | null;
             /** Format: date-time */
             timestamp: string;
             agentId: string;
@@ -37723,8 +38434,12 @@ export interface components {
             ruleName: string | null;
             ruleId: string | null;
             /** @enum {string} */
-            decision: "allow" | "deny";
+            decision: "allow" | "deny" | "approval_required";
             denialReason: string | null;
+            approvalId: string | null;
+            /** Format: date-time */
+            decidedAt: string | null;
+            decidedBy: string | null;
         };
         PolicyCreate: {
             name: string;
@@ -37958,6 +38673,8 @@ export interface components {
             created_at: string;
             /** @description Whether a signing secret exists. The secret itself is never read back — the serializer drops the vault reference and reports only this. */
             signing_enabled: boolean;
+            /** @description Whether `event` is a type this build emits. `false` means the subscription exists but will not fire until a release starts emitting that name: it was accepted so you can subscribe ahead of a release, not because it matches. */
+            event_known: boolean;
         };
         TriggerCreated: components["schemas"]["Trigger"] & {
             /** @description The webhook signing secret, in plaintext, shown EXACTLY ONCE. Later reads expose only `signing_enabled`. Lost secrets are replaced via POST /v1/triggers/{id}/rotate-secret. */

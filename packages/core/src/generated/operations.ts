@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 1726870893764b6550eea4221adf35b190816df36171b16547d6947ab7ef05fe, fetched 2026-09-29T09:38:02.607Z
+// Source: openapi-snapshot.json (sha256 338d2d994c624526d3cdfde266375d86cb734687c43a6c2c681e7cf3a0411a3c, fetched 2026-10-06T14:10:54.514Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -64,6 +64,7 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/wallets/{id}/recon-anomalies", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/wallets/{id}/recon-anomalies/{aid}", body: "application/json", accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/agents/{did}/revoke", body: null, accept: "application/json", deprecated: false },
+  { method: "post", path: "/v1/agents/{did}/suspend", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/account/balances", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/account/ledger", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/account/summary", body: null, accept: "application/json", deprecated: false },
@@ -252,6 +253,7 @@ export const API_OPERATIONS = [
   { method: "delete", path: "/v1/paywalls/{id}", body: null, accept: null, deprecated: false },
   { method: "patch", path: "/v1/paywalls/{id}", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/paywalls/{id}/stats", body: null, accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/gate/stats", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/payables", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/payables", body: "application/json", accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/payables/documents", body: "multipart/form-data", accept: "application/json", deprecated: false },
@@ -275,6 +277,8 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/sellers/{sellerId}/ledger", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/payment-links", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/payment-links", body: "application/json", accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/payment-links/stats", body: null, accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/payment-links/{id}/payments", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/payment-links/{id}", body: null, accept: "application/json", deprecated: false },
   { method: "delete", path: "/v1/payment-links/{id}", body: null, accept: null, deprecated: false },
   { method: "patch", path: "/v1/payment-links/{id}", body: "application/json", accept: "application/json", deprecated: false },
