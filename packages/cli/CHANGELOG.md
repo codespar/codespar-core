@@ -16,6 +16,11 @@
   servido (enterprise #1793, snapshot de 295 operacoes na `@codespar/sdk`
   0.16.14). O grupo `payables` ja existia: nenhuma linha nova, so os dois
   comandos derivados.
+- `codespar gate stats`, pelo mesmo caminho, quando `GET /v1/gate/stats`
+  entrou no documento servido (enterprise #1817, snapshot de 299 operacoes na
+  `@codespar/sdk` 0.16.15). O grupo `gate` e uma linha nova em
+  `PUBLISHED_GROUPS`; com uma SDK anterior a 0.16.15 ele aparece vazio. A
+  rota pede os escopos `paywalls:read` e `mcp-servers:read`.
 
 ## 0.18.0 — 2026-09-27
 

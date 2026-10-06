@@ -142,6 +142,7 @@ const PINNED_COMMANDS = [
   "account ledger → GET /v1/account/ledger",
   "account summary → GET /v1/account/summary",
   "account agent-activity → GET /v1/account/agent-activity",
+  "gate stats → GET /v1/gate/stats",
 ];
 
 

@@ -1,5 +1,119 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.15 — 2026-10-06
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: 295 operacoes viram 299,
+  quatro rotas novas e nenhuma removida. 39 operacoes mudaram: 22 de forma e
+  17 so de texto. `components.schemas` muda em `PolicyEvaluation` e em
+  `Trigger`. Snapshot `338d2d994c62`, API 0.3.0.
+
+  Suspensao de agente (enterprise #1764), rota nova, escopo `agents:write`:
+
+      POST /v1/agents/{did}/suspend   (corpo `reason`)
+
+  So um agente `active` pode ser suspenso (409 `agent_not_suspendable` nos
+  outros casos); suspender de novo responde `changed: false`. Enquanto
+  suspenso, todo gasto em nome do agente e recusado com 403
+  `agent_suspended`. Retomar nao e operacao de chave de API. No mesmo PR,
+  `POST /v1/agents/{did}/revoke` passa a documentar que a revogacao alcanca
+  todo mandato emitido para o agente, ligado ou nao a chave dele, com a recusa
+  `agent_inactive`. So texto.
+
+  Numeros de venda pelo gateway (enterprise #1817), rota nova, so leitura,
+  escopos `paywalls:read` e `mcp-servers:read`:
+
+      GET /v1/gate/stats   (`window`, so `30d`)
+
+  `GET /v1/paywalls/{id}/stats` documenta a mesma regra de atribuicao: o
+  proposito `paywall:<slug>` E a URL do recurso, dentro da organizacao e do
+  projeto do paywall. So texto.
+
+  Pagamentos de payment link (enterprise #1815), rotas novas, so leitura,
+  escopo `payment-links:read`:
+
+      GET /v1/payment-links/stats            (`window`, so `30d`)
+      GET /v1/payment-links/{id}/payments    (`limit`, `before`)
+
+  No mesmo PR, `GET`, `PATCH` e `DELETE /v1/payment-links/{id}` passam a
+  enderecar o link por organizacao E projeto, o mesmo escopo da lista: link de
+  outro projeto da mesma organizacao responde 404 tambem na leitura. O
+  `DELETE` documenta que os registros de pagamento do link ficam e seguem
+  contando em `/v1/payment-links/stats`. So texto, com `GET /v1/payment-links`.
+
+  Avaliacoes de politica por projeto (enterprise #1947, sobre a #1934):
+  `PolicyEvaluation` ganha `projectId`, `approvalId`, `decidedAt` e
+  `decidedBy`, os quatro obrigatorios e anulaveis, e `decision` passa a
+  admitir `approval_required`. `GET /v1/policy-evaluations` e o alias
+  `GET /v1/evaluations` documentam que chave de API e token OAuth leem so as
+  avaliacoes do proprio projeto; avaliacao gravada sem projeto (o historico
+  anterior a 2026-10-03 e as de nivel de organizacao) nao aparece para eles.
+
+  `event_known` (enterprise #1873): `Trigger` e as respostas de `GET` e
+  `PATCH` em `/v1/webhook-endpoints/{id}` e `/v1/triggers/{id}` ganham o
+  boolean obrigatorio `event_known`. `false` quer dizer que a assinatura
+  existe e nao dispara ate uma versao emitir aquele nome de evento.
+
+  Categoria no razao (enterprise #1797): `GET /v1/account/ledger` aceita o
+  filtro `category` (`compra`, `fornecedor`, `assinatura`, `recebivel`) e cada
+  lancamento devolve `category`, obrigatorio e anulavel. A categoria nunca e
+  inferida da descricao.
+
+  Declaracao do tipo de conta (enterprise #1919): `GET /v1/organizations/{id}`
+  devolve `account_type_declared` (boolean) e `account_type_declared_at`
+  (data ou `null`), os dois obrigatorios na resposta. `account_type` so tem
+  significado quando `account_type_declared` e `true`.
+
+  Mandatos pelo dashboard (enterprise #1883): `pause`, `resume` e `revoke`, em
+  `/v1/mandates/{id}` e em `/v1/consumers/mandates/{id}`, seis operacoes,
+  ganham o header opcional `x-codespar-user-token` e as respostas 403 e 503.
+  Os tres valem so para a autenticacao de servico; chave de API de projeto e
+  token OAuth nao enviam o header.
+
+  Recibos (enterprise #1865): em `GET /v1/consumers/{consumerId}/receipts`,
+  `GET /v1/consumers/receipts/{id}` e
+  `POST /v1/consumers/receipts/{id}/delivery`, `mandate.sig` deixa de ser
+  obrigatorio: so vem para a credencial que ja pode gastar (`mandates:spend`
+  ou `*`), e para as outras a chave fica AUSENTE, nao `null`.
+  `mandate.sig_sha256` vem sempre.
+
+  Replay de evento (enterprise #1867): o 202 de
+  `POST /v1/events/{event_id}/replay` ganha `rejected` (inteiro, obrigatorio),
+  os despachos que nao deixaram linha de entrega e por isso nao serao
+  retentados. `dispatched + rejected` e o numero de assinaturas que casam.
+
+  Latencia no discover (enterprise #1888): cada alternativa de
+  `POST /v1/meta-tools/discover` ganha `mean_latency_ms` (obrigatorio).
+  `latency_p50_ms` vira alias depreciado com o mesmo valor: sempre foi media,
+  nao mediana.
+
+  Health (enterprise #1907): `GET /v1/health` ganha `metrics`, obrigatorio,
+  com `recurrence_instruction_alarms` (`status`, `open`, `kinds`). E lido,
+  nunca entra na nota. `degraded` passa de quatro causas documentadas a sete.
+
+  Codigos de erro novos em enums de resposta: `withdrawal_dispatch_uncertain`
+  no 502 de `POST /v1/wallets/{id}/transfer` (enterprise #1872; o saldo segue
+  retido, nao reenviar com outra chave) e `psp_refused` no 422 de
+  `POST /v1/consumer-payments/execute`, `execute-stream` e
+  `POST /v1/consumers/mandates/{id}/spend` (enterprise #1900; o provedor
+  recusou, nada se moveu).
+
+  So texto, alem dos ja citados. Cobrancas (enterprise #1890):
+  `POST /v1/charges`, `GET /v1/charges/{chargeId}` e
+  `POST /v1/charges/{chargeId}/cancel` documentam o estado `ERROR` do emissor
+  e quando `status_conflict` e `true`; `POST /v1/test/charges/{chargeId}/pay`
+  e o alias `POST /v1/charges/{chargeId}/sandbox/pay` documentam que so
+  cobranca pagavel liquida, com `details.reason` no 409 `charge_not_payable`.
+  `POST /v1/policies` (enterprise #1886): regra `budget` conta a intencao
+  declarada, e um pagamento que comprovadamente nao moveu nada devolve o
+  custo. `POST /v1/facilitator/x402/executions` (enterprise #1878): os tetos
+  sao declarados por quem chama. Pix Automatico: a lista de eventos no campo
+  `event` de `POST /v1/webhook-endpoints` e de `POST /v1/triggers` ganha
+  `commerce.recurrence.cycle.announced_late` e `.instruction_missing`
+  (enterprise #1885), e `.instruction_blocked`, `.instruction_refused` e
+  `.queued_instruction_expired` (enterprise #1907).
+
 ## 0.16.14 — 2026-09-29
 
 ### Changed

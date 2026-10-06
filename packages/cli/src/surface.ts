@@ -198,6 +198,15 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     prefix: "/v1/account",
     description: "Account: balances per currency, the merged ledger, a money summary, spend per agent",
   },
+  {
+    // Chegou ao documento servido no refresh de 299 operações (ent#1817): a
+    // leitura única do que o projeto vende pelo gateway, paywalls e tools de
+    // MCP. Publicada, não excetuada: a lista de exceções só encolhe, e quem lê
+    // o número de vendas no terminal é uma pessoa.
+    name: "gate",
+    prefix: "/v1/gate",
+    description: "Gate: what the project sells through the gateway, over the last 30 days",
+  },
 ];
 
 /* ── Derivation ───────────────────────────────────────────────────── */
