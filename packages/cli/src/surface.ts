@@ -196,7 +196,8 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     // família do censo.
     name: "account",
     prefix: "/v1/account",
-    description: "Account: balances per currency, the merged ledger, a money summary, spend per agent",
+    description:
+      "Account: balances, the merged ledger, a money summary, spend per agent, payments, sessions, test balance and test funding",
   },
   {
     // Chegou ao documento servido no refresh de 299 operações (ent#1817): a
@@ -206,6 +207,29 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     name: "gate",
     prefix: "/v1/gate",
     description: "Gate: what the project sells through the gateway, over the last 30 days",
+  },
+  // The four families below arrived in the served document at the refresh to
+  // 340 operations (ent#1955). Published, not excepted: each one ends at a
+  // person reading or writing from a terminal.
+  {
+    name: "meters",
+    prefix: "/v1/meters",
+    description: "Meters: define one on a usage event, read its usage, its events and the cycle",
+  },
+  {
+    name: "meter-events",
+    prefix: "/v1/meter-events",
+    description: "Meter events: record one usage event, idempotent on its event id",
+  },
+  {
+    name: "onboarding",
+    prefix: "/v1/onboarding",
+    description: "Onboarding: the first-access guide's progress for the project",
+  },
+  {
+    name: "webhook-deliveries",
+    prefix: "/v1/webhook-deliveries",
+    description: "Webhook deliveries: every delivery attempt of the project, across endpoints",
   },
 ];
 
@@ -571,10 +595,22 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
     reason: "Liveness probe. `curl` is the right tool and needs no API key.",
     since: "2026-09-10",
   },
+  // The two below raised the pin from 38 to 40 at the refresh to 340
+  // operations (ent#1955). Both wait on a decision of the API's maintainer.
+  triggers: {
+    reason:
+      "Its two live routes (`GET /v1/triggers/events`, `POST /v1/triggers/simulate`) exist only under `/v1/triggers`, whose other 12 operations are deprecated, and the `triggers` command already points at `/v1/webhook-endpoints`.",
+    since: "2026-10-07",
+  },
+  collect: {
+    reason:
+      "Off unless the deployment enables it: every path of the family answers 404 `collect_disabled`, and the served API answers that today.",
+    since: "2026-10-07",
+  },
 };
 
 /** How many exceptions the gate expects. Lower it when one goes away. */
-export const EXCEPTION_PIN = 38;
+export const EXCEPTION_PIN = 40;
 
 export type ViolationKind =
   | "uncovered-group"

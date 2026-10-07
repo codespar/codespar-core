@@ -21,6 +21,29 @@
   `@codespar/sdk` 0.16.15). O grupo `gate` e uma linha nova em
   `PUBLISHED_GROUPS`; com uma SDK anterior a 0.16.15 ele aparece vazio. A
   rota pede os escopos `paywalls:read` e `mcp-servers:read`.
+- Quatro grupos novos, pelo mesmo caminho, quando as rotas entraram no
+  documento servido (enterprise #1955, snapshot de 340 operacoes na
+  `@codespar/sdk` 0.16.16), cada um uma linha em `PUBLISHED_GROUPS`:
+  `codespar meters list`, `create`, `cycle`, `get`, `usage` e `events`;
+  `codespar meter-events create`; `codespar onboarding list`;
+  `codespar webhook-deliveries list`. Com uma SDK anterior a 0.16.16 os
+  quatro aparecem vazios.
+- Sete comandos novos em grupos que ja existiam, do mesmo snapshot:
+  `codespar account payments`, `account sessions`, `account test-balance`,
+  `account fund-sandbox`, `account fund-sandbox-initial`,
+  `account fund-sandbox-refill` e `codespar test charges-scenarios`. Nenhum
+  comando existente mudou de nome.
+
+### Changed
+
+- `EXCEPTION_PIN` sobe de 38 para 40, por duas excecoes datadas de 2026-10-07
+  em `SURFACE_EXCEPTIONS`. A decisao sobre as duas fica com o mantenedor da
+  API. `triggers`: as duas rotas vivas (`GET /v1/triggers/events` e
+  `POST /v1/triggers/simulate`) so existem em `/v1/triggers`, cujas outras 12
+  operacoes estao deprecated, e o comando `triggers` ja aponta para
+  `/v1/webhook-endpoints`. `collect`: a familia responde 404
+  `collect_disabled` enquanto o deployment nao a liga, e e o que a API
+  servida responde hoje.
 
 ## 0.18.0 — 2026-09-27
 

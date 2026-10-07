@@ -1,5 +1,137 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.16 — 2026-10-07
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: 299 operacoes viram 340,
+  41 rotas novas e nenhuma removida. 62 operacoes mudaram: 56 de forma e 6 so
+  de texto. `components.schemas` muda em `Trigger` e em `ServerCatalogRow`.
+  Snapshot `942e7981a973`, API 0.3.0.
+
+  Tipos que alargam para `null`: `gateway_url` em mcp-servers e paywalls,
+  `pay_url` em payment-links e `webhook_url` em `Trigger` e nas respostas de
+  `/v1/triggers/{id}` e `/v1/webhook-endpoints/{id}` passam de `string` a
+  `string | null`. Cliente TypeScript que le esses campos como `string` deixa
+  de compilar ate tratar o `null`; em runtime nada muda para quem ja recebia
+  o valor. Nenhum campo de resposta foi removido.
+
+  Razao de carteira (enterprise #1951): `POST /v1/wallets/{id}/ledger` ganha
+  o 409 `fund_requires_test_project`. `kind: "fund"` so e aceito para
+  carteira de projeto de teste; fora disso nada e gravado.
+
+  Consentimento bancario vencido (enterprise #1952): `POST /v1/bank-consents`
+  e `POST /v1/bank-consents/{id}/callback`, com os alias em
+  `/v1/ofb/consents`, documentam que um consentimento alem da janela de
+  validade passa a `expired` e deixa de ocupar a vaga do consumidor naquele
+  banco. Consentimento `expired` nao pode ser revogado
+  (`illegal_transition`). So texto, quatro operacoes.
+
+  O restante vem da enterprise #1955.
+
+  Collect, 20 rotas novas em `/v1/collect`, escopos `collect:read` e
+  `collect:write`: links (criar, listar, ler, alterar, rascunho, publicar,
+  pausar, retomar, arquivar, `stats`), tentativas, pagamentos, reembolsos,
+  recebedores, `test-pay` e `honor`. `GET /v1/collect/{linkId}` e
+  `POST /v1/collect/{linkId}/attempts` nao pedem credencial. A familia
+  responde 404 `collect_disabled` enquanto o deployment nao a liga.
+  `GET /.well-known/codespar-receipt-keys.json` ganha `collect_receipt`,
+  obrigatorio. `collect_simulated_settle_refused` entra no 409 de
+  `POST /v1/test/charges/{chargeId}/pay` e do alias
+  `POST /v1/charges/{chargeId}/sandbox/pay`.
+
+  Medidores, 7 rotas novas, escopos `meters:read` e `meters:write`:
+
+      GET  /v1/meters                    (`period`)
+      POST /v1/meters
+      GET  /v1/meters/cycle
+      GET  /v1/meters/{meterId}
+      GET  /v1/meters/{meterId}/usage
+      GET  /v1/meters/{meterId}/events
+      POST /v1/meter-events              (idempotente em `event_id`)
+
+  Conta, 6 rotas novas:
+
+      GET  /v1/account/payments
+      GET  /v1/account/sessions
+      GET  /v1/account/test-balance
+      POST /v1/account/fund/sandbox           (escopo `consumers:fund`)
+      POST /v1/account/fund/sandbox/initial
+      POST /v1/account/fund/sandbox/refill
+
+  `GET /v1/account/ledger` aceita `proposal_id` e cada lancamento ganha sete
+  campos obrigatorios: `test_funding`, `test_funding_kind`, `proposal_id`,
+  `reverses`, `source`, `phase` e `executor`. `GET /v1/account/summary` ganha
+  `sessions.active_idle_ms`. `GET /v1/account/agent-activity` admite as
+  janelas `24h` e `7d`, e cada agente ganha `tool_calls` e
+  `spent_within_mandate_minor`.
+
+  Condicoes e acoes de trigger: `Trigger` ganha `condition` e `action`
+  (`webhook`, `human_review`, `pause_agent`), os dois obrigatorios, e
+  `webhook_url` passa a anulavel; a criacao deixa de exigir `webhook_url`. As
+  linhas da lista ganham `consecutive_failures`, `last_response_status` e
+  `last_delivery_at`. Codigos novos: 400 `trigger_condition_invalid` e
+  `trigger_action_invalid` no `PATCH`, 409 `trigger_test_fire_webhook_only` no
+  test-fire. Doze operacoes, em `/v1/triggers` e em `/v1/webhook-endpoints`.
+  Rotas novas, escopo `triggers:read`:
+
+      GET  /v1/triggers/events
+      POST /v1/triggers/simulate
+      GET  /v1/webhook-deliveries
+      GET  /v1/events/summary
+
+  `POST /v1/events/{event_id}/replay` documenta que a condicao da assinatura
+  vale tambem no replay. So texto.
+
+  Aprovacoes: as seis leituras e decisoes, em `/v1/approvals` e em
+  `/v1/orgs/{orgId}/approvals`, ganham `origin` (`agent` ou `trigger`),
+  obrigatorio.
+
+  Disponibilidade do gateway: mcp-servers, paywalls e payment-links, doze
+  operacoes, ganham `gateway_unavailable_reason`, obrigatorio e anulavel, e
+  `gateway_url` e `pay_url` passam a anulaveis. `GET /v1/discovery/manifest`
+  ganha o mesmo motivo. mcp-servers ganham `last_paid_call_at`.
+
+  Conexoes: as cinco leituras e escritas de conexao ganham
+  `is_shared_sandbox` e `shared_sandbox_tools`, obrigatorios.
+  `POST /v1/connections` ganha o 403 `cdp_self_serve_connect_disabled`. As
+  duas rotas de verify-connection ganham `shared_sandbox_operation_refused` e
+  `shared_sandbox_credential_not_test`. `ServerCatalogRow` ganha
+  `description_pt_br`, `connect_fields` e `connectable`, obrigatorios.
+  `GET /v1/servers/{id}/auth-schema` documenta quais tipos de autenticacao
+  devolvem campos. So texto.
+
+  Health: `GET /v1/health` ganha o objeto `attention`, obrigatorio, e cada
+  verificacao ganha `state`, `required`, `reason` e um `action` opcional.
+  Rota nova, so leitura, escopo `connections:read`:
+
+      GET /v1/health/history   (`days`, 1 a 30)
+
+  Sessoes e agentes: `GET /v1/sessions` aceita `agent_id` e cada linha ganha
+  `agent_did`, `agent_id` e `tool_calls_count`. `GET /v1/agents` aceita
+  `project_id` e cada agente ganha `projects`, obrigatorio. Rotas novas, so
+  leitura, escopo `sessions:read`:
+
+      GET /v1/tool-calls/stats   (`window`)
+      GET /v1/onboarding         (`project_id`)
+
+  `POST /v1/consumer-payments/execute`, `execute-stream` e
+  `POST /v1/consumers/mandates/{id}/spend` aceitam `session_id`, opcional.
+
+  Eventos de auditoria: `GET /v1/audit-events` e o alias
+  `GET /v1/audit/events` aceitam `actor_kind` e `project_id`, cada evento
+  ganha `actor_person_id`, obrigatorio e anulavel, e o 400 ganha
+  `invalid_actor_kind` e `invalid_project_id`.
+
+  Sandbox: rota nova `POST /v1/test/charges/{chargeId}/scenarios`, escopo
+  `tools:execute`. `funding_account_not_owned` entra no 403 de
+  `POST /v1/consumers/{consumerId}/fund/sandbox` e de `POST /v1/test/fund`.
+  `POST /v1/consents/{token}/submit` admite o metodo de atestacao
+  `sandbox_fixture` e ganha o 403 `attestation_sandbox_fixture_not_permitted`.
+
+  `GET /v1/mandates/{id}` ganha `funding` (`rail`, `currency`), obrigatorio e
+  anulavel. `GET /v1/payables/counts` ganha `overdue`, obrigatorio.
+
 ## 0.16.15 — 2026-10-06
 
 ### Changed

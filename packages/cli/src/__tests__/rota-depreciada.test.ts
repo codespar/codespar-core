@@ -33,6 +33,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { census, censusGroup, derivedSurface, OPERATIONS } from "../surface.js";
 
+// No snapshot de 340 operações `/v1/triggers` deixou de ser 12 de 12
+// depreciada: ganhou duas rotas vivas, sem gêmea em `/v1/webhook-endpoints`.
+// As 12 antigas seguem depreciadas e a família voltou ao censo.
+const TRIGGERS_VIVAS = ["/v1/triggers/events", "/v1/triggers/simulate"];
+
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const BIN = join(AQUI, "../../dist/index.js");
 
@@ -49,9 +54,11 @@ describe("a tabela de operações carrega a marca do documento", () => {
   it("marca as depreciadas e não marca as vivas", () => {
     const triggers = OPERATIONS.filter((o) => o.path.startsWith("/v1/triggers"));
     const webhooks = OPERATIONS.filter((o) => o.path.startsWith("/v1/webhook-endpoints"));
+    const antigas = triggers.filter((o) => !TRIGGERS_VIVAS.includes(o.path));
 
-    expect(triggers.length).toBeGreaterThan(0);
-    expect(triggers.every((o) => o.deprecated)).toBe(true);
+    expect(antigas).toHaveLength(12);
+    expect(antigas.every((o) => o.deprecated)).toBe(true);
+    expect(triggers.filter((o) => !o.deprecated).map((o) => o.path).sort()).toEqual(TRIGGERS_VIVAS);
     expect(webhooks.length).toBeGreaterThan(0);
     expect(webhooks.every((o) => !o.deprecated)).toBe(true);
   });
@@ -59,9 +66,14 @@ describe("a tabela de operações carrega a marca do documento", () => {
 
 describe("família morta não é cobrada, e comando morto se anuncia", () => {
   it("uma família 100% depreciada sai do censo", () => {
-    const grupos = [...census().keys()];
+    const semAsVivas = OPERATIONS.filter((o) => !TRIGGERS_VIVAS.includes(o.path));
+    const grupos = [...census(semAsVivas).keys()];
     expect(grupos).not.toContain("triggers");
     expect(grupos).toContain("webhook-endpoints");
+  });
+
+  it("e volta ao censo quando ganha rota viva", () => {
+    expect([...census().keys()]).toContain("triggers");
   });
 
   it("o grupo `triggers` aponta para a rota viva, com as mesmas grafias", () => {
