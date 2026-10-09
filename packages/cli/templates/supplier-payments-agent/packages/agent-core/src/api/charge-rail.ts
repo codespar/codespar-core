@@ -1,6 +1,6 @@
 /**
  * The CodeSpar receivable rail: the merchant COLLECTS. `pay()` issues a
- * cobranca com vencimento through `POST /v1/charges` (the REST form of the
+ * cobrança com vencimento through `POST /v1/charges` (the REST form of the
  * `codespar_charge` meta-tool, action=create): `method: "boleto"` plus a
  * `due_date` is what makes it ONE receivable the payer settles either by
  * boleto or by Pix; `idempotency_key` is REQUIRED on that create and is our
@@ -65,6 +65,17 @@ export function instrumentOf(view: ChargeView): ChargeInstrument {
   };
 }
 
+/**
+ * Issuer statuses that end a registration with no instrument: no Pix, no
+ * boleto, nothing a payer can pay, and nothing will be. `ERROR` is the one
+ * measured (staging, 2026-09-27, OPEN_QUESTIONS §63): the read's documented
+ * set is `PROCESSING`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`, and the
+ * field is a plain string. Any status this kit does not know stays
+ * `accepted` and unpayable: failing it could close an order a payer may yet
+ * pay, and waiting pays nobody.
+ */
+export const ISSUER_ERROR_STATUSES: readonly string[] = ["ERROR"];
+
 /** What a charge view means for the attempt. The row's own status wins over the issuer's normalized one where they name a terminal state. */
 export function outcomeOf(view: ChargeView): RailOutcome | { status: "in_flight" } {
   if (view.issuance_unconfirmed || !view.id) return { status: "in_flight" };
@@ -77,6 +88,9 @@ export function outcomeOf(view: ChargeView): RailOutcome | { status: "in_flight"
   }
   if (view.status === "CANCELLED" || view.local_status === "cancelled") {
     return { status: "failed", code: "charge_cancelled", message: `charge ${id} was withdrawn`, raw: view };
+  }
+  if (ISSUER_ERROR_STATUSES.includes(view.status)) {
+    return { status: "failed", code: "charge_issuer_error", message: `the issuer ended charge ${id}'s registration in ${view.status}: no Pix, no boleto, nothing a payer can pay`, raw: view };
   }
   return { status: "accepted", transaction_id: id, instrument: instrumentOf(view), sandbox: true, raw: view };
 }

@@ -18,18 +18,21 @@ import { relative } from "node:path";
 import qrcode from "qrcode-terminal";
 import {
   CodeSparChargeRail,
-  NotATestKeyError,
   StubChargeRail,
   createCodeSparClient,
-  isTestKey,
+  assertTestKey,
   loadMandate,
-  paySandboxCharge,
+  payIfPayable,
+  formatBRL,
+  formatDay,
+  CORE_STRINGS,
   type Execution,
   type StubChargeRailOptions,
+  railErrorOf,
 } from "@codespar/agent-core";
 import { defineAgent, envName, type AgentKit, type Setup } from "@codespar/agent-runtime";
-import { formatBRL, formatDate } from "./catalog.js";
 import { checkOrder, loadEnvelope, priceCart, localDate } from "./pricing.js";
+import { STRINGS } from "./strings.js";
 import { claimOrder, CartBook, makeCartHandlers, type Cart } from "./modules/storefront-cart.js";
 import { followCart, makeChargeHandlers, orderProposal } from "./modules/bolepix-receivables.js";
 import { CodeSparInvoiceRail, followSale, InvoiceBook, resumeInvoices, StubInvoiceRail, type InvoiceDeps, type InvoiceRail, type StubIssuerBehaviour } from "./modules/nfse-invoice.js";
@@ -68,7 +71,7 @@ function invoiceDeps(s: Setup, say: (line: string) => void): InvoiceDeps {
 async function placeOrder(s: Setup, customer: string, lines: Array<{ sku: string; quantity: number }>): Promise<Execution> {
   const book = new CartBook(s.store);
   const now = s.engine.clock();
-  const priced = priceCart({ lines }, loadEnvelope(s.guardrails), localDate(now, s.guardrails.timezone));
+  const priced = priceCart({ lines }, loadEnvelope(s.guardrails), localDate(now, s.guardrails.timezone), s.locale);
   const runId = s.runId;
   const cartId = book.nextId(runId);
   const cart: Cart = { ...priced, cart_id: cartId, ref: `${runId}/${cartId}`, run_id: runId, version: 1, currency: "BRL", order_discount_pct: 0, updated_at: now.toISOString() };
@@ -87,17 +90,11 @@ const kit: AgentKit = {
   labels: {
     defaultUser: "usr_atendente",
     evalUser: "usr_atendente",
-    mandateWord: "politica",
-    receiptWord: "pedido",
-    intro: 'Voce e o cliente. Diga o que quer ("oi, sou a Marina, quero o pacote de dez aulas e uma avaliacao inicial"). Ctrl+D ou "sair" encerra.',
-    prompt: "cliente> ",
-    approveQuestion: "  [atendente] Confirmar este pedido? [s/N] ",
-    uncertainDispatch: "  desfecho desconhecido no trilho; rode `npm run resume` para reconciliar (nunca repita a emissao)",
     missingReceiptKind: "record_missing_locally",
     missingReceiptDetail: (receiptId, runId) => `paid charge ${receiptId} is not in runs/${runId}/receipts`,
     stillExecuting: (e) => `${e.id}: still executing (${e.reason}) — ${e.detail}; nothing was re-issued; \`npm run poll\` keeps looking`,
-    waitingForPayer: (round) => `  aguardando o pagamento... (${round} consultas)`,
   },
+  strings: STRINGS,
 
   usage: () => `checkout-agent
   npm start                                                        interactive terminal (you are the customer; the attendant answers the approval question)
@@ -109,12 +106,13 @@ const kit: AgentKit = {
   npm run poll -- --channel whatsapp --conversation <name>         back to a conversation whose payment landed after the run ended
 options: --mode human|mandate  --provider anthropic|replay  --transcript <file>  --rail stub|api  --user <id>
          --wait <seconds>  --simulate-payer  --payer pays|expires|never (stub only)  --json
-         --now <ISO 8601>  pin the run to that instant (service hours, the due date, timestamps); env CODESPAR_AGENT_NOW is the same thing`,
+         --now <ISO 8601>  pin the run to that instant (service hours, the due date, timestamps); env CODESPAR_AGENT_NOW is the same thing
+         --locale pt-BR|en  the language of what the code prints, WhatsApp templates included (the model answers in the language the customer types either way)`,
 
   buildRail: (ctx) => {
     const mandate = ctx.mandate ?? loadMandate(ctx.manifest.resolvePath(ctx.manifest.manifest.mandate_schema));
     if (ctx.kind === "api") {
-      if (!isTestKey(ctx.env["CODESPAR_API_KEY"])) throw new NotATestKeyError();
+      assertTestKey(ctx.env["CODESPAR_API_KEY"]);
       const client = createCodeSparClient({ apiKey: ctx.env["CODESPAR_API_KEY"], baseUrl: ctx.env["CODESPAR_API_URL"], projectId: ctx.env["CODESPAR_PROJECT_ID"] });
       return {
         rail: new CodeSparChargeRail(client),
@@ -124,8 +122,8 @@ options: --mode human|mandate  --provider anthropic|replay  --transcript <file> 
         payer: {
           kind: "api" as const,
           async pay(chargeId: string) {
-            const result = await paySandboxCharge(client, chargeId);
-            if (!result.ok) return { ok: false as const, detail: `${result.failure.code}: ${result.failure.message}` };
+            const result = await payIfPayable(client, chargeId);
+            if (!result.ok) return { ok: false as const, detail: "refused" in result ? `${result.refused.code}: ${result.refused.message}` : `${result.failure.code}: ${result.failure.message}` };
             const s = result.state;
             return { ok: true as const, detail: `sandbox payer: ${s.charge_id} ${s.status} (${s.payment}, ${s.paid_minor} of ${s.quoted_minor}), simulated=${s.simulated}, settled_against=${s.settled_against}, money_moved=${s.money_moved}${s.idempotent_replay ? ", replay" : ""}` };
           },
@@ -161,37 +159,40 @@ options: --mode human|mandate  --provider anthropic|replay  --transcript <file> 
     const envelope = loadEnvelope(setup.guardrails);
     const book = new CartBook(setup.store);
     // On a channel that binds a conversation, the customer is the one it is bound to: read at call time, because the channel binds after setup.
-    const orderDeps = { book, runId: setup.runId, timezone: setup.guardrails.timezone, clock: setup.engine.clock, boundCustomer: () => setup.conversation?.subject };
+    const orderDeps = { book, runId: setup.runId, timezone: setup.guardrails.timezone, clock: setup.engine.clock, boundCustomer: () => setup.conversation?.subject, locale: () => setup.locale };
     return {
       ...makeCartHandlers({ ...orderDeps, envelope, onReplaced: (cart, engine) => void followCart(cart, engine, orderDeps) }),
       ...makeChargeHandlers(orderDeps),
     };
   },
 
-  policyExtension: ({ guardrails, store }) => {
+  policyExtension: ({ guardrails, store, locale }) => {
     const envelope = loadEnvelope(guardrails);
     const book = new CartBook(store);
-    return (execution, ctx) => checkOrder(execution, execution.composition ? book.get(execution.composition.ref) : undefined, envelope, ctx.now, ctx.guardrails.timezone);
+    return (execution, ctx) => checkOrder(execution, execution.composition ? book.get(execution.composition.ref) : undefined, envelope, ctx.now, ctx.guardrails.timezone, locale());
   },
 
   describeExecution: (execution, setup) => {
+    const text = setup.coreStrings;
+    const words = STRINGS[setup.locale];
+    const money = (minor: number) => formatBRL(minor, setup.locale);
     const lines: string[] = [];
     const cart = cartOf(setup, execution);
-    lines.push(`  pedido ${execution.id}: ${execution.state}${execution.reason ? ` (${execution.reason})` : ""}`);
-    lines.push(`    cliente ${execution.items[0]?.beneficiary ?? "?"}${cart ? `, carrinho ${cart.cart_id} v${cart.version}` : ""}`);
-    for (const l of cart?.line_items ?? []) lines.push(`    - ${l.quantity}x ${l.name}: ${formatBRL(l.totals.find((t) => t.type === "total")!.amount)}${l.discount_pct ? ` (desconto ${l.discount_pct}%)` : ""}`);
-    for (const d of cart?.order_discounts ?? []) lines.push(`    - ${d.kind === "coupon" ? `cupom ${d.ref.replace("coupon:", "")}` : "desconto no pedido"}: ${formatBRL(-d.amount)}`);
-    lines.push(`    total (calculado pelo core): ${formatBRL(execution.total)}${execution.items[0]?.due_date ? `, vence ${formatDate(execution.items[0].due_date)}` : ""}`);
-    if (execution.composition) lines.push(`    cart_hash ${execution.composition.composition_hash.slice(0, 19)}… (${execution.composition.line_count} linha(s))`);
-    if (execution.escalation) lines.push(`    escalado por: ${execution.escalation.trigger} — ${execution.escalation.detail}`);
-    if (execution.blocking_reasons.length) lines.push(`    bloqueado: ${execution.blocking_reasons.join(", ")} — a politica nao autoriza; nao ha o que aprovar`);
+    lines.push(`  ${words.order} ${execution.id}: ${execution.state}${execution.reason ? ` (${execution.reason})` : ""}`);
+    lines.push(`    ${words.customerLine(execution.items[0]?.beneficiary ?? "?", cart ? `${cart.cart_id} v${cart.version}` : undefined)}`);
+    for (const l of cart?.line_items ?? []) lines.push(`    - ${l.quantity}x ${l.name}: ${money(l.totals.find((t) => t.type === "total")!.amount)}${l.discount_pct ? words.lineDiscount(l.discount_pct) : ""}`);
+    for (const d of cart?.order_discounts ?? []) lines.push(`    - ${d.kind === "coupon" ? words.coupon(d.ref.replace("coupon:", "")) : words.orderDiscount}: ${money(-d.amount)}`);
+    lines.push(`    ${text.totalByCore}: ${money(execution.total)}${execution.items[0]?.due_date ? text.dueOn(formatDay(execution.items[0].due_date, setup.locale)) : ""}`);
+    if (execution.composition) lines.push(`    cart_hash ${execution.composition.composition_hash.slice(0, 19)}… (${words.cartLines(execution.composition.line_count)})`);
+    if (execution.escalation) lines.push(`    ${text.escalatedBy}: ${execution.escalation.trigger} — ${execution.escalation.detail}`);
+    if (execution.blocking_reasons.length) lines.push(`    ${text.blocked(execution.blocking_reasons.join(", "), words.notAuthorized)}`);
     if (execution.detail && execution.state !== "awaiting_approval") lines.push(`    ${execution.detail}`);
     for (const outcome of execution.outcomes) {
-      if (outcome.transaction_id) lines.push(`    cobranca: ${outcome.transaction_id} — ${outcome.status}${outcome.code ? ` (${outcome.code})` : ""}`);
-      if (outcome.receipt_id) lines.push(`    pedido pago: ${relative(process.cwd(), `${setup.bundle.dir}/receipts/${outcome.receipt_id}.json`)}`);
+      if (outcome.transaction_id) lines.push(`    ${words.charge}: ${outcome.transaction_id} — ${outcome.status}${outcome.code ? ` (${outcome.code})` : ""}`);
+      if (outcome.receipt_id) lines.push(`    ${words.paidOrder}: ${relative(process.cwd(), `${setup.bundle.dir}/receipts/${outcome.receipt_id}.json`)}`);
     }
     const invoice = new InvoiceBook(setup.store).of(execution.id);
-    if (invoice) lines.push(`    NFS-e ${invoice.id}: ${invoice.state}${invoice.reason ? ` (${invoice.reason}, ${invoice.code})` : ""}${invoice.document ? ` — documento ${invoice.document.id}` : ""}`);
+    if (invoice) lines.push(`    NFS-e ${invoice.id}: ${invoice.state}${invoice.reason ? ` (${invoice.reason}, ${invoice.code})` : ""}${invoice.document ? words.invoiceDocument(invoice.document.id) : ""}`);
     return lines;
   },
 
@@ -214,6 +215,7 @@ options: --mode human|mandate  --provider anthropic|replay  --transcript <file> 
           id: e.id,
           state: e.state,
           reason: e.reason ?? null,
+          rail_error: railErrorOf(e),
           escalation: e.escalation ?? null,
           cart_id: cart?.cart_id ?? null,
           cart_hash: e.composition?.composition_hash ?? null,
@@ -234,18 +236,19 @@ options: --mode human|mandate  --provider anthropic|replay  --transcript <file> 
   },
 
   /** What the customer reads when the charge is payable: the QR as an image, the copy-and-paste under it, the bank line if any. */
-  presentInstrument: (execution, _instalment, chargeId, instrument, tell) => {
+  presentInstrument: (execution, _instalment, chargeId, instrument, tell, locale) => {
+    const text = CORE_STRINGS[locale];
     tell("");
-    tell(`Pedido de ${formatBRL(execution.total)}${instrument.due_date ? `, vence ${formatDate(instrument.due_date)}` : ""} — cobranca ${chargeId}`);
+    tell(`${STRINGS[locale].orderOf(formatBRL(execution.total, locale))}${instrument.due_date ? text.dueOn(formatDay(instrument.due_date, locale)) : ""}${text.chargeRef(chargeId)}`);
     if (instrument.pix_copy_paste) {
       qrcode.generate(instrument.pix_copy_paste, { small: true }, (qr: string) => {
         for (const line of qr.split("\n")) tell(line);
       });
-      tell("Pix copia e cola:");
+      tell(text.pixCopyPaste);
       tell(instrument.pix_copy_paste);
     }
     if (instrument.boleto_bank_line) {
-      tell("Ou pelo boleto, linha digitavel:");
+      tell(text.boletoLine);
       tell(instrument.boleto_bank_line);
     }
     tell("");
@@ -255,14 +258,15 @@ options: --mode human|mandate  --provider anthropic|replay  --transcript <file> 
   announceOutcome: (execution, setup, tell) => {
     if (!["settled", "failed", "denied", "expired"].includes(execution.state)) return false;
     if (!setup.engine.markTold(execution.id, execution.state)) return false;
+    const words = STRINGS[setup.locale];
     let text: string;
-    if (execution.state === "settled") text = `Recebemos, pedido confirmado! Obrigado. (${execution.outcomes.map((o) => o.transaction_id).filter(Boolean).join(", ")})`;
-    else if (execution.reason === "charge_expired") text = "A cobranca venceu sem pagamento. Se quiser, emito uma nova para o mesmo pedido.";
-    else if (execution.reason === "charge_cancelled") text = "A cobranca foi cancelada. Nada foi pago.";
-    else if (execution.reason === "charge_reference_ambiguous") text = "A cobranca deste pedido ja foi emitida e estamos conferindo a situacao dela. Nao pague de novo; te aviso assim que estiver conferida.";
-    else if (execution.state === "failed") text = `Nao consegui emitir a cobranca (${execution.reason ?? "falha no trilho"}). Nada foi cobrado.`;
-    else if (execution.state === "denied") text = `Nao consigo fechar o pedido nesses termos (${execution.reason ?? "recusado"}).`;
-    else text = `O pedido expirou sem confirmacao (${execution.reason ?? execution.state}).`;
+    if (execution.state === "settled") text = words.toldSettled(execution.outcomes.map((o) => o.transaction_id).filter(Boolean).join(", "));
+    else if (execution.reason === "charge_expired") text = words.toldExpired;
+    else if (execution.reason === "charge_cancelled") text = words.toldCancelled;
+    else if (execution.reason === "charge_reference_ambiguous") text = words.toldAmbiguous;
+    else if (execution.state === "failed") text = words.toldFailed(execution.reason);
+    else if (execution.state === "denied") text = words.toldDenied(execution.reason);
+    else text = words.toldUndecided(execution.reason ?? execution.state);
     tell(text);
     setup.engine.note("message.debtor", execution.id, { state: execution.state, reason: execution.reason ?? null, text });
     return true;
@@ -284,8 +288,8 @@ options: --mode human|mandate  --provider anthropic|replay  --transcript <file> 
    * is answered inside the turn that produced it, so it has no template, and
    * the poll reports it rather than sending approximate copy.
    */
-  outcomeTemplate: (execution) => {
-    const total = formatBRL(execution.total);
+  outcomeTemplate: (execution, locale) => {
+    const total = formatBRL(execution.total, locale);
     if (execution.state === "settled") return { template: "pedido_confirmado", variables: [total] };
     if (execution.reason === "charge_expired") return { template: "pedido_cobranca_vencida", variables: [total] };
     if (execution.reason === "charge_cancelled") return { template: "pedido_cobranca_cancelada", variables: [total] };

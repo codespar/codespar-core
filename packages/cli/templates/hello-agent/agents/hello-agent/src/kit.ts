@@ -9,7 +9,10 @@ import { listBills } from "./bills.js";
 
 export const agent = defineAgent(import.meta.url, {
   ...defaultKit,
-  labels: { ...defaultKit.labels, intro: 'Pergunte sobre as contas do mes ("quais contas vencem em outubro?"). Ctrl+D ou "sair" encerra.' },
+  strings: {
+    "pt-BR": { ...defaultKit.strings["pt-BR"], intro: 'Pergunte sobre as contas do mês ("quais contas vencem em outubro?"). Ctrl+D ou "sair" encerra.' },
+    en: { ...defaultKit.strings.en, intro: 'Ask about the month\'s bills ("which bills are due in October?"). Ctrl+D or "exit" ends.' },
+  },
   handlers: () => ({ list_bills: listBills }),
 
   /** The same `commerce.payment.succeeded` twice, and `paid` before `created`: one settled, never two. */

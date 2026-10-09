@@ -62,6 +62,13 @@ export interface TransitionRecord {
   actor: Actor;
 }
 
+/** The code and message a rail answered for one attempt, as the rail gave them. */
+export interface RailAnswer {
+  attempt_id: string;
+  code: string;
+  message: string;
+}
+
 export interface Execution<S extends ExecutionState = ExecutionState> {
   id: string;
   run_id: string;
@@ -97,6 +104,13 @@ export interface Execution<S extends ExecutionState = ExecutionState> {
   reason?: ExecutionReason;
   detail?: string;
   outcomes: ItemOutcome[];
+  /**
+   * What the rail answered, verbatim, for attempts whose outcome it left
+   * UNKNOWN (a timeout, a 5xx such as `provider_error`): no outcome exists for
+   * them, so their code and message would otherwise live only in the event
+   * log. An entry whose attempt later gains an outcome is superseded by it.
+   */
+  uncertain_answers?: RailAnswer[];
   history: TransitionRecord[];
   created_at: string;
   updated_at: string;

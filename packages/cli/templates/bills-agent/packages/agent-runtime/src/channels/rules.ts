@@ -24,7 +24,7 @@
  * Every rule can only REFUSE. None of them rewrites a message: a message
  * that is edited on the way out is not the message the transcript shows.
  */
-import { isOutsideHours, localClock } from "@codespar/agent-core";
+import { CORE_STRINGS, isOutsideHours, localClock, type Locale } from "@codespar/agent-core";
 import type { Conversation, OutboundBody } from "./types.js";
 
 export interface ChannelRefusal {
@@ -44,6 +44,8 @@ export interface RuleContext {
   now: () => Date;
   /** Agreement aliases this agent knows, so "names another agreement" is decidable. */
   knownSubjects?: readonly string[] | undefined;
+  /** The language of the refusal details. It never changes what is refused. Default pt-BR. */
+  locale?: Locale | undefined;
 }
 
 /** `123.456.789-00`, `12345678900`, `12.345.678/0001-95`, `12345678000195`. */
@@ -90,7 +92,7 @@ export function checkOutbound(to: string, body: OutboundBody, ctx: RuleContext):
     if (isOutsideHours(`${close}-${open}`, ctx.now(), ctx.hours.timezone)) {
       return {
         rule: "collection_hours",
-        detail: `fora do horario de cobranca (${ctx.hours.window} ${ctx.hours.timezone}); agora sao ${localClock(ctx.now(), ctx.hours.timezone)}`,
+        detail: CORE_STRINGS[ctx.locale ?? "pt-BR"].outsideCollectionHours(ctx.hours.window, ctx.hours.timezone, localClock(ctx.now(), ctx.hours.timezone)),
       };
     }
   }

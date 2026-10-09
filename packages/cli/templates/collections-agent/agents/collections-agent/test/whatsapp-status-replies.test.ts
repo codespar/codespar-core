@@ -25,9 +25,20 @@ const AFTER_WINDOW = new Date(new Date(TUESDAY).getTime() + 26 * 3600_000).toISO
 const AGREED = "test/fixtures/agreed-1042-awaiting-payer.transcript.jsonl";
 const CONTACT = "5511987654321";
 
+/**
+ * Every call this file makes to the emulator closes its connection. An agent
+ * run here is a `spawnSync`, which blocks this process's event loop for longer
+ * than the emulator's keep-alive (`Keep-Alive: timeout=5`), so fetch never gets
+ * to expire the socket it pooled; the next call writes to a socket the
+ * emulator already closed and dies `fetch failed … ECONNRESET`. A retry would
+ * hide that too, but `/_sim/clock` advances and `/_sim/status` marks: a call
+ * the emulator did receive, retried, would apply twice.
+ */
+const FRESH_CONNECTION = { connection: "close" } as const;
+
 const emulatorUp = await (async () => {
   try {
-    return (await fetch(`${EMULATOR}/health`, { signal: AbortSignal.timeout(2000) })).ok;
+    return (await fetch(`${EMULATOR}/health`, { headers: FRESH_CONNECTION, signal: AbortSignal.timeout(2000) })).ok;
   } catch {
     return false;
   }
@@ -48,7 +59,7 @@ function run(args: string[], env: Record<string, string>) {
 const lastJson = (stdout: string) => JSON.parse(stdout.split("\n").filter(Boolean).pop()!) as Record<string, unknown>;
 
 async function sim(path: string, body?: unknown) {
-  const r = await fetch(`${EMULATOR}${path}`, body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const r = await fetch(`${EMULATOR}${path}`, body === undefined ? { headers: FRESH_CONNECTION } : { method: "POST", headers: { "content-type": "application/json", ...FRESH_CONNECTION }, body: JSON.stringify(body) });
   return (await r.json()) as Record<string, unknown>;
 }
 
@@ -88,7 +99,9 @@ describe.skipIf(!emulatorUp)("§46 on the collections-agent, against the emulato
       if (!template) await new Promise((r) => setTimeout(r, 50));
     }
     expect(template).toBeDefined();
-    await sim("/_sim/status", { status: "failed", message_id: template, reason: "not on whatsapp" });
+    // The emulator answers after its webhook did: a 200 here means the poll's receiver heard the failure inside its grace.
+    const marked = await sim("/_sim/status", { status: "failed", message_id: template, reason: "not on whatsapp" });
+    expect(marked["webhook"]).toMatchObject({ status: 200 });
 
     expect(await exit).toBe(1);
     const polled = (lastJson(stdout)["polled"] as Array<{ state: string; delivery: { told: boolean; reason?: string } }>)[0]!;

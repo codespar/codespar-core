@@ -12,7 +12,7 @@
  */
 import { canonicalJson, sha256Hex } from "../hash.js";
 import { checkQuote } from "../quote.js";
-import { checkSpendApproval, type PaymentRail, type RailLookup, type RailOutcome, type RailPayment, type RailReceipt } from "../rail.js";
+import { checkSpendApproval, wireActorOf, type PaymentRail, type RailLookup, type RailOutcome, type RailPayment, type RailReceipt, type WireActor } from "../rail.js";
 import type { StateStore } from "../state/store.js";
 import type { Actor } from "../types.js";
 
@@ -98,9 +98,11 @@ export class StubRail implements PaymentRail {
     if (!quoted.ok) return { status: "failed", code: quoted.code, message: `${quoted.detail}; nothing was sent` };
     const approval = checkSpendApproval(payment);
     if (!approval.ok) return { status: "failed", code: approval.code, message: `${approval.detail}; nothing was sent` };
-    const { actor: _actor, ...request } = payment;
+    const { actor, ...asked } = payment;
+    // Like the API: the actor the spend declared is recorded with it and read back on the receipt, and is not part of the attempt tuple.
+    const request = { ...asked, sealed_actor: wireActorOf(actor) };
     const existing = this.store.stubRailGet(payment.attempt_id);
-    if (existing) return this.repeat(payment.attempt_id, existing.request as Omit<RailPayment, "actor">, existing.outcome as Recorded, request);
+    if (existing) return this.repeat(payment.attempt_id, existing.request as Omit<RailPayment, "actor">, existing.outcome as Recorded, asked);
 
     const uncertainPayee = this.options.uncertainPayees?.includes(payment.payee) === true && !this.uncertainAnswered.has(payment.attempt_id);
     if (this.uncertainArmed || this.uncertainPending.has(payment.attempt_id) || uncertainPayee) {
@@ -169,7 +171,7 @@ export class StubRail implements PaymentRail {
   async receipt(receiptId: string, actor: Actor): Promise<RailReceipt | undefined> {
     const sealed = this.store.stubRailFindByReceipt(receiptId);
     if (!sealed) return undefined;
-    const req = sealed.request as Omit<RailPayment, "actor">;
+    const req = sealed.request as Omit<RailPayment, "actor"> & { sealed_actor?: WireActor };
     const out = sealed.outcome as Extract<RailOutcome, { status: "settled" }>;
     // Like the API: the payee on the receipt is the one the quote sealed, and none when the spend carried no quote.
     const body = {
@@ -192,6 +194,7 @@ export class StubRail implements PaymentRail {
       receipt_sig_ed25519: null,
       receipt_sig_kid: null,
       actor,
+      sealed_actor: req.sealed_actor ?? null,
       raw: { stub: true, transaction_id: out.transaction_id },
     };
   }

@@ -13,11 +13,21 @@
  * caller and have no path to this object at all — not a check, a shape: there
  * is no method here that an operator line could be handed to.
  */
-import { declaredReplies, type ProofBundle, type QuickReply, type WhatsAppTemplate } from "@codespar/agent-core";
+import { CORE_STRINGS, WHATSAPP_LANGUAGE, declaredReplies, type CoreStrings, type Locale, type ProofBundle, type QuickReply, type WhatsAppTemplate } from "@codespar/agent-core";
 import { checkOutbound, type HoursRule, type RuleContext } from "../rules.js";
 import type { Channel, ChannelBackend, ChannelLogLine, Conversation, DeliveryState, InboundMessage, OutboundBody, SentMessage, StatusUpdate } from "../types.js";
 import { maskContact } from "../contact.js";
 import { SessionWindow, type SessionState } from "./session.js";
+
+/**
+ * How far along a message a status puts it. Status webhooks are not ordered:
+ * the emulator dispatches a send's own `sent` and `delivered` while a status
+ * posted meanwhile goes out between them, and Meta does not promise order
+ * either. A `delivered` that lands after a `failed` must not un-fail the
+ * message (#63), so `failed` ranks above everything, and a late `sent` does
+ * not rewind a `read`.
+ */
+const PROGRESS: Record<DeliveryState, number> = { queued: 0, sent: 1, delivered: 2, read: 3, failed: 4 };
 
 export interface WhatsAppChannelOptions {
   backend: ChannelBackend;
@@ -52,6 +62,12 @@ export interface WhatsAppChannelOptions {
   onDeliveryFailed?: ((line: ChannelLogLine) => void) | undefined;
   /** Lines an earlier run wrote for this conversation, so a status about a message it sent can be tied back to what that message was. */
   priorLines?: ReadonlyArray<ChannelLogLine> | undefined;
+  /**
+   * The conversation's locale. It picks the language of every template this
+   * channel sends and of the quick replies it reads a tap by, and the words of
+   * the operator's lines. Fixed for the conversation. Default pt-BR.
+   */
+  locale?: Locale | undefined;
 }
 
 export class WhatsAppChannel implements Channel {
@@ -61,7 +77,7 @@ export class WhatsAppChannel implements Channel {
   private readonly lines: ChannelLogLine[] = [];
   private lastInbound: InboundMessage | undefined;
   private readonly replies: Map<string, QuickReply>;
-  /** The latest state the provider reported per message id, this process. */
+  /** The furthest state the provider reported per message id (`PROGRESS`), this process. */
   private readonly delivery = new Map<string, DeliveryState>();
   /**
    * Failures reported for a message not yet in the log. A provider can post
@@ -71,10 +87,16 @@ export class WhatsAppChannel implements Channel {
    */
   private readonly earlyFailures = new Map<string, ChannelLogLine>();
 
+  /** Meta's language code for this conversation: the one every template send carries. */
+  readonly language: string;
+  private readonly text: CoreStrings;
+
   constructor(private readonly options: WhatsAppChannelOptions) {
     this.conversation = options.conversation;
+    this.language = WHATSAPP_LANGUAGE[options.locale ?? "pt-BR"];
+    this.text = CORE_STRINGS[options.locale ?? "pt-BR"];
     this.session = new SessionWindow(options.templates ?? [], options.session);
-    this.replies = declaredReplies(options.templates ?? []);
+    this.replies = declaredReplies(options.templates ?? [], this.language);
   }
 
   get backend(): string {
@@ -111,9 +133,9 @@ export class WhatsAppChannel implements Channel {
     return (this.options.templates ?? []).find((t) => t.fallback)?.name;
   }
 
-  /** What the agent declared about a template it is about to send. The language is the registry's, never the sender's guess. */
+  /** The copy of a template declared in this conversation's language, for a caller about to send it. */
   declaredTemplate(name: string): WhatsAppTemplate | undefined {
-    return this.session.declared(name);
+    return this.session.declared(name, this.language);
   }
 
   async open(): Promise<void> {
@@ -160,7 +182,7 @@ export class WhatsAppChannel implements Channel {
           : undefined;
       if (refusal) {
         this.record({ ...base, kind: "reply", reply: tapped, refused: refusal });
-        this.options.say?.(`  [whatsapp] toque ignorado (${refusal.rule}): ${refusal.detail}`);
+        this.options.say?.(this.text.waTapIgnored(refusal.rule, refusal.detail));
         continue;
       }
       this.record({ ...base, kind: "reply", reply: tapped, text: declared!.intent });
@@ -182,7 +204,8 @@ export class WhatsAppChannel implements Channel {
    */
   private observeStatus(status: StatusUpdate): void {
     const sent = [...(this.options.priorLines ?? []), ...this.lines].find((l) => l.direction === "out" && l.message_id === status.message_id);
-    this.delivery.set(status.message_id, status.status);
+    const known = this.delivery.get(status.message_id);
+    if (known === undefined || PROGRESS[status.status] > PROGRESS[known]) this.delivery.set(status.message_id, status.status);
     const line: ChannelLogLine = {
       at: this.options.now().toISOString(),
       direction: "status",
@@ -206,13 +229,11 @@ export class WhatsAppChannel implements Channel {
   private reportFailure(line: ChannelLogLine): void {
     const status = { message_id: line.message_id, errors: line.errors ?? [] };
     const codes = status.errors.map((e) => `${e.code ?? "?"}${e.details ? ` ${e.details}` : ""}`).join("; ") || "no error given";
-    this.options.say?.(
-      `  [operador] ENTREGA FALHOU da mensagem ${status.message_id} (${codes})${line.about ? ` — era o aviso de ${line.about.execution_id} (${line.about.state}): a pessoa NAO foi avisada` : ""}`,
-    );
+    this.options.say?.(this.text.waDeliveryFailed(status.message_id, codes, line.about ? `${line.about.execution_id} (${line.about.state})` : undefined));
     this.options.onDeliveryFailed?.(line);
   }
 
-  /** The latest status the provider reported for a message this process saw a status for. */
+  /** The furthest status the provider reported for a message this process saw a status for; a `failed` stays `failed`. */
   deliveryOf(messageId: string): DeliveryState | undefined {
     return this.delivery.get(messageId);
   }
@@ -234,6 +255,7 @@ export class WhatsAppChannel implements Channel {
       hours: this.options.hours,
       now: this.options.now,
       knownSubjects: this.options.knownSubjects,
+      locale: this.options.locale,
     };
 
     // The house rules first: a message the law refuses is not a message the provider should ever see.
@@ -241,15 +263,15 @@ export class WhatsAppChannel implements Channel {
     if (refusal) {
       const sent: SentMessage = { id: "", state: "failed", refused: refusal };
       this.logOutbound(body, sent);
-      this.options.say?.(`  [whatsapp] recusado (${refusal.rule}): ${refusal.detail}`);
+      this.options.say?.(this.text.waRefused(refusal.rule, refusal.detail));
       return sent;
     }
 
     // A template carries the quick replies its declaration offers, and only those.
-    const buttons = body.kind === "template" ? this.session.declared(body.template)?.buttons : undefined;
+    const buttons = body.kind === "template" ? this.session.declared(body.template, body.language)?.buttons : undefined;
     const outgoing: OutboundBody = body.kind === "template" && buttons?.length ? { ...body, buttons: buttons.map((b) => ({ id: b.id, title: b.title })) } : body;
     const sent = await this.options.backend.deliver(to, outgoing);
-    if (sent.refused) this.options.say?.(`  [whatsapp] recusado pelo backend (${sent.refused.rule}): ${sent.refused.detail}`);
+    if (sent.refused) this.options.say?.(this.text.waRefusedByBackend(sent.refused.rule, sent.refused.detail));
     if (sent.refused?.rule === "session_window_closed") this.session.observeProviderShut();
     this.logOutbound(outgoing, sent);
     return sent;
@@ -310,24 +332,24 @@ export class WhatsAppChannel implements Channel {
   private record(line: ChannelLogLine): void {
     this.lines.push(line);
     this.options.bundle?.channel({ ...line, channel: "whatsapp", backend: this.backend });
-    this.options.render?.(`  │ ${draw(line)}`);
+    this.options.render?.(`  │ ${draw(line, this.text)}`);
   }
 }
 
 /** One console line for one message. The refusals are visible: a message nobody got is part of the conversation's story. */
-function draw(line: ChannelLogLine): string {
+function draw(line: ChannelLogLine, text: CoreStrings): string {
   if (line.direction === "status") return `(status ${line.message_id}: ${line.state}${line.errors?.length ? ` ${line.errors.map((e) => e.code).join(",")}` : ""})`;
-  if (line.kind === "reply") return `${line.contact}: [toque: ${line.reply?.title ?? "?"}]${line.refused ? ` (ignorado: ${line.refused.rule})` : ` -> ${line.text ?? ""}`}`;
-  const who = line.direction === "in" ? `${line.contact}:` : "loja:";
+  if (line.kind === "reply") return `${line.contact}: ${text.waTap(line.reply?.title ?? "?")}${line.refused ? text.waTapIgnoredMark(line.refused.rule) : ` -> ${line.text ?? ""}`}`;
+  const who = line.direction === "in" ? `${line.contact}:` : text.waShop;
   const what =
     line.kind === "instrument"
-      ? `[copia e cola] ${line.text ?? ""}`
+      ? `${text.waCopyPaste} ${line.text ?? ""}`
       : line.kind === "media"
-        ? "[imagem: QR Pix]"
+        ? text.waQrImage
         : line.kind === "template"
           ? line.text ?? "[template]"
           : line.text ?? "";
-  return line.refused ? `${who} (nao enviada: ${line.refused.rule}) ${what}` : `${who} ${what}`;
+  return line.refused ? `${who} ${text.waNotSent(line.refused.rule)} ${what}` : `${who} ${what}`;
 }
 
 function textOf(body: OutboundBody): string | undefined {

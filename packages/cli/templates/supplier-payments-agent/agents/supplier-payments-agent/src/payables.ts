@@ -32,19 +32,19 @@ export const BATCHES: Batch[] = [
     label: "Fornecedores de outubro",
     due: "2026-10-10",
     lines: [
-      { alias: "grafica", name: "Grafica Litoral", amount_minor: 98000, reference: "NF 4471, catalogos" },
-      { alias: "insumos", name: "Insumos Atlantico", amount_minor: 125000, reference: "NF 8820, materia-prima" },
+      { alias: "grafica", name: "Gráfica Litoral", amount_minor: 98000, reference: "NF 4471, catálogos" },
+      { alias: "insumos", name: "Insumos Atlântico", amount_minor: 125000, reference: "NF 8820, matéria-prima" },
       { alias: "logistica", name: "Transporte Verde", amount_minor: 76000, reference: "NF 1290, fretes de setembro" },
     ],
   },
   {
     ref: "comissoes-2026-10",
     kind: "comissoes",
-    label: "Comissoes de outubro",
+    label: "Comissões de outubro",
     due: "2026-10-05",
     lines: [
-      { alias: "rep-sul", name: "Marcos (representante Sul)", amount_minor: 62000, reference: "comissao sobre setembro" },
-      { alias: "rep-norte", name: "Paula (representante Norte)", amount_minor: 48000, reference: "comissao sobre setembro" },
+      { alias: "rep-sul", name: "Marcos (representante Sul)", amount_minor: 62000, reference: "comissão sobre setembro" },
+      { alias: "rep-norte", name: "Paula (representante Norte)", amount_minor: 48000, reference: "comissão sobre setembro" },
     ],
   },
   {
@@ -53,9 +53,9 @@ export const BATCHES: Batch[] = [
     label: "Folha de outubro",
     due: "2026-10-05",
     lines: [
-      { alias: "ana", name: "Ana Ribeiro", amount_minor: 220000, reference: "salario outubro" },
-      { alias: "bruno", name: "Bruno Castro", amount_minor: 180000, reference: "salario outubro" },
-      { alias: "carla", name: "Carla Dias", amount_minor: 140000, reference: "salario outubro" },
+      { alias: "ana", name: "Ana Ribeiro", amount_minor: 220000, reference: "salário outubro" },
+      { alias: "bruno", name: "Bruno Castro", amount_minor: 180000, reference: "salário outubro" },
+      { alias: "carla", name: "Carla Dias", amount_minor: 140000, reference: "salário outubro" },
     ],
   },
 ];

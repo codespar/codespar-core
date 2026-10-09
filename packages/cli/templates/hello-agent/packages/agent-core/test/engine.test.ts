@@ -2,6 +2,7 @@ import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ESCOLA, FUNCIONARIA, harness, MERCADO } from "./helpers.js";
+import { isReplayedSettlement } from "../src/engine.js";
 
 const approver = { id: "usr_demo", channel: "terminal" };
 
@@ -230,6 +231,28 @@ describe("section 10: idempotency, restart, reconcile", () => {
     expect(resumed.store.stubRailGet(`att_${stuck.idempotency_key.slice(4)}_0`)).toBeDefined();
     const events = resumed.store.listEvents({ execution_id: stuck.id }).filter((e) => e.type === "commerce.payment.succeeded");
     expect(events).toHaveLength(1);
+  });
+
+  it("a payment this execution made and reconcile read back is not marked replayed: the look cannot say whose payment it reads", async () => {
+    const h = harness({ mode: "mandate", manifest: { escalate_above: {} }, guardrails: { escalate_above: {} }, rail: { afterDispatch: () => { throw new Error("SIGKILL simulated after dispatch"); } } });
+    const d = await h.engine.draft({ items: [{ payee: "escola", amount: 1000 }] });
+    if (!d.ok) throw new Error("refused");
+    await expect(h.engine.execute(d.execution.id)).rejects.toThrow("SIGKILL");
+
+    const resumed = harness({ mode: "mandate", dir: h.dir, manifest: { escalate_above: {} }, guardrails: { escalate_above: {} } });
+    const lookup = resumed.rail.lookup.bind(resumed.rail);
+    const seen: unknown[] = [];
+    resumed.rail.lookup = async (...args) => {
+      const answer = await lookup(...args);
+      seen.push(answer && answer.status === "settled" ? answer.replayed : undefined);
+      return answer;
+    };
+    const done = await resumed.engine.reconcile(d.execution.id);
+    expect(done.state).toBe("settled");
+    // The rail did answer from its record, as the API does to every look at a settled attempt.
+    expect(seen).toEqual([true]);
+    expect(done.outcomes[0]!.replayed).toBeUndefined();
+    expect(isReplayedSettlement(done)).toBe(false);
   });
 
   it("an uncertain outcome is never retried blind: it stays executing, marked unresolved, until the rail answers", async () => {

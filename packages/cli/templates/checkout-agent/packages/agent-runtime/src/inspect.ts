@@ -57,6 +57,8 @@ export interface InspectAttempt {
     receipt_id: string | null;
     money_moved: boolean | null;
     sandbox: boolean | null;
+    /** The rail answered from its record of an earlier presentation: the payment it names was not made by this call. */
+    idempotent_replay: boolean;
   } | null;
   /** The attempt's outcome as last known, from the call, a later look or a settlement event. */
   status: string | null;
@@ -71,6 +73,13 @@ export interface InspectAttempt {
 export interface InspectExecution {
   execution_id: string;
   final_state: string;
+  /**
+   * Settled, and every attempt that settled was answered at dispatch as a
+   * replay: the money moved, and this run did not move it. An attempt closed
+   * by a later look is never counted as one, because a look re-presents an
+   * attempt this run already sent and cannot say whose payment it reads.
+   */
+  replayed: boolean;
   mode: string | null;
   proposed_at: string | null;
   items: InspectItem[];
@@ -108,6 +117,8 @@ export interface InspectReceipt {
   money_moved: boolean | null;
   sandbox: boolean | null;
   at: string | null;
+  /** Every attempt naming this receipt got it back as a replay: the receipt of an earlier payment, read back by this run. */
+  replayed: boolean;
 }
 
 /**
@@ -128,7 +139,7 @@ export interface InspectBatch {
   /** Lines the list held when it was presented. */
   count: number;
   /** The lines this bundle holds an execution for, by their position in the list. */
-  lines: Array<{ index: number; execution_id: string; final_state: string; attested: boolean }>;
+  lines: Array<{ index: number; execution_id: string; final_state: string; replayed: boolean; attested: boolean }>;
   /** How many of the lines carry an approval artifact. The "3" of "3 of 4". */
   attested: number;
   /** Positions of the presented list this bundle holds no execution for at all. */
@@ -149,7 +160,10 @@ export interface InspectReport {
   mandate: {
     id: string;
     version: number;
+    /** The status in `mandate.snapshot.json`: what the local copy said when the run started. */
     status: string;
+    /** What the status source answered at a gate of this run, when that is the last word the run has on the mandate; null when no gate refused for it, or when a payment executed after the refusal. */
+    status_seen: MandateStatusSeen | null;
     expires_at: string;
     currency: string;
     per_tx_cap_minor: number;
@@ -309,6 +323,7 @@ export function assembleTimeline(bundle: ProofBundle): InspectReport {
   const executions = new Map<string, InspectExecution>();
   const attemptsBy = new Map<string, Map<string, InspectAttempt>>();
   const runEvents: InspectReport["run_events"] = [];
+  let statusSeen: MandateStatusSeen | null = null;
 
   const executionOf = (id: string): InspectExecution => {
     const existing = executions.get(id);
@@ -316,6 +331,7 @@ export function assembleTimeline(bundle: ProofBundle): InspectReport {
     const fresh: InspectExecution = {
       execution_id: id,
       final_state: "unknown",
+      replayed: false,
       mode: null,
       proposed_at: null,
       items: [],
@@ -340,6 +356,7 @@ export function assembleTimeline(bundle: ProofBundle): InspectReport {
     const p = payload(event);
 
     if (!executionId) {
+      if (type === "execution.refused_before_draft") statusSeen = mandateStatusSeen(str(p["reason"]), str(p["detail"]), at) ?? statusSeen;
       const detail = str(p["detail"]) ?? str(p["reason"]) ?? str(event["reason"]) ?? str(event["tool"]) ?? str(event["message"]) ?? "";
       const tool = str(event["tool"]);
       runEvents.push({ at, type, detail: redact(tool ? `${tool}: ${detail || String(event["reason"] ?? "")}` : detail) ?? "" });
@@ -363,6 +380,8 @@ export function assembleTimeline(bundle: ProofBundle): InspectReport {
         const to = str(p["to"]) ?? "unknown";
         execution.transitions.push({ at: str(p["at"]) ?? at, from: str(p["from"]), to, actor: actorLabel(p["actor"] ?? event["actor"]), reason: str(p["reason"]), detail: redact(str(p["detail"])) });
         execution.final_state = to;
+        // A gate that let a payment through read `active` after whatever an earlier gate saw (a mandate paused and resumed).
+        statusSeen = to === "executing" ? null : (mandateStatusSeen(str(p["reason"]), str(p["detail"]), str(p["at"]) ?? at) ?? statusSeen);
         break;
       }
       case "approval.created":
@@ -392,6 +411,7 @@ export function assembleTimeline(bundle: ProofBundle): InspectReport {
           receipt_id: str(p["receipt_id"]),
           money_moved: bool(p["money_moved"]),
           sandbox: bool(p["sandbox"]),
+          idempotent_replay: p["idempotent_replay"] === true,
         };
         attempt.status = attempt.answer.status;
         attempt.transaction_id = attempt.answer.transaction_id ?? attempt.transaction_id;
@@ -465,6 +485,15 @@ export function assembleTimeline(bundle: ProofBundle): InspectReport {
   }
 
   for (const [id, attempts] of attemptsBy) executionOf(id).attempts = [...attempts.values()];
+  for (const execution of executions.values()) {
+    const settled = execution.attempts.filter((a) => a.status === "settled");
+    execution.replayed = execution.final_state === "settled" && settled.length > 0 && settled.every((a) => a.answer?.idempotent_replay === true);
+  }
+  const replayedReceipts = new Set<string>();
+  const paidReceipts = new Set<string>();
+  for (const execution of executions.values()) {
+    for (const a of execution.attempts) if (a.receipt_id) (a.answer?.idempotent_replay ? replayedReceipts : paidReceipts).add(a.receipt_id);
+  }
 
   const receipts: InspectReceipt[] = bundle.listReceipts().map((file) => {
     const raw = bundle.readReceipt(file) ?? {};
@@ -478,8 +507,10 @@ export function assembleTimeline(bundle: ProofBundle): InspectReport {
       money_moved: bool(payment["money_moved"]),
       sandbox: bool(payment["sandbox"]),
       at: str(payment["at"]),
+      replayed: false,
     };
   });
+  for (const receipt of receipts) receipt.replayed = replayedReceipts.has(receipt.receipt_id) && !paidReceipts.has(receipt.receipt_id);
 
   const transcript = bundle.readTranscript();
   const toolCalls = transcript.filter((l) => l.kind === "tool_call");
@@ -501,6 +532,7 @@ export function assembleTimeline(bundle: ProofBundle): InspectReport {
           id: str(snapshot["id"]) ?? "unknown",
           version: num(snapshot["version"]) ?? 0,
           status: str(snapshot["status"]) ?? "unknown",
+          status_seen: statusSeen,
           expires_at: str(snapshot["expires_at"]) ?? "unknown",
           currency,
           per_tx_cap_minor: num(snapshot["per_tx_cap_minor"]) ?? 0,
@@ -538,7 +570,7 @@ function assembleBatches(executions: InspectExecution[]): InspectBatch[] {
     if (!binding) continue;
     const key = `${binding.ref}\u0000${binding.batch_hash}`;
     const entry = batches.get(key) ?? { ref: binding.ref, batch_hash: binding.batch_hash, count: binding.count, lines: [], attested: 0, missing: [] };
-    entry.lines.push({ index: binding.index, execution_id: execution.execution_id, final_state: execution.final_state, attested: execution.approval !== null });
+    entry.lines.push({ index: binding.index, execution_id: execution.execution_id, final_state: execution.final_state, replayed: execution.replayed, attested: execution.approval !== null });
     batches.set(key, entry);
   }
   for (const entry of batches.values()) {
@@ -597,7 +629,9 @@ function executionLines(execution: InspectExecution): Array<{ at: string; label:
     if (answer) {
       const bits = [answer.transaction_id ? `tx ${answer.transaction_id}` : "", answer.receipt_id ? `receipt ${answer.receipt_id}` : "", answer.money_moved !== null ? `money_moved ${answer.money_moved}` : "", answer.sandbox ? "sandbox" : ""].filter(Boolean);
       const why = [answer.code, answer.message].filter(Boolean).join(": ");
-      lines.push({ at: answer.at, label: "rail says", text: `${answer.status}${why ? `  ${why}` : ""}`, wrapped: bits.length ? [bits.join(" · ")] : [] });
+      const wrapped = bits.length ? [bits.join(" · ")] : [];
+      if (answer.idempotent_replay) wrapped.push(REPLAY_NOTE);
+      lines.push({ at: answer.at, label: "rail says", text: `${answer.status}${answer.idempotent_replay ? " (replayed)" : ""}${why ? `  ${why}` : ""}`, wrapped });
     }
     for (const i of a.instrument) lines.push({ at: i.at, label: "instrument", text: `${a.attempt_id}  ${i.status}${i.payable ? ", payable" : ", not payable yet"}${i.due_date ? `, due ${i.due_date}` : ""}`, wrapped: [] });
     for (const r of a.reconciles) lines.push({ at: r.at, label: "look again", text: `${a.attempt_id}  the rail says ${r.found}`, wrapped: [] });
@@ -616,6 +650,8 @@ function executionLines(execution: InspectExecution): Array<{ at: string; label:
  */
 export function batchSummary(batch: InspectBatch): string {
   const bits = [`${batch.attested} of ${batch.count} line(s) attested`];
+  const replayed = batch.lines.filter((l) => l.replayed).length;
+  if (replayed) bits.push(`${replayed} replayed, paid before and not by this run`);
   if (batch.lines.length !== batch.attested) bits.push(`${batch.lines.length} with an execution`);
   if (batch.missing.length) bits.push(`no execution for line(s) ${batch.missing.map((i) => i + 1).join(", ")}`);
   return bits.join(" · ");
@@ -628,14 +664,48 @@ export function batchLineRows(batch: InspectBatch): string[] {
     const line = byIndex.get(i);
     const where = `line ${i + 1} of ${batch.count}`;
     if (!line) return `${where}  — no execution in this bundle: approved as part of this list, and nothing here says it ran`;
-    return `${where}  ${line.execution_id}  ${line.final_state}  ${line.attested ? "approval artifact present" : "no approval artifact"}`;
+    return `${where}  ${line.execution_id}  ${line.final_state}${line.replayed ? " (replayed)" : ""}  ${line.attested ? "approval artifact present" : "no approval artifact"}`;
   });
 }
+
+/** The mandate's status as a gate of the run saw it, and who answered. */
+export interface MandateStatusSeen {
+  status: "revoked" | "paused" | "expired";
+  /** `api` or `stub`: the status source that answered. Null when the refusal names none: the run's own clock passed `expires_at`, or the bundle predates the source on the detail. */
+  source: "api" | "stub" | null;
+  at: string;
+}
+
+const SEEN_BY_REASON: Record<string, MandateStatusSeen["status"]> = { mandate_revoked: "revoked", mandate_paused: "paused", mandate_expired: "expired" };
+
+/** A refusal the mandate gate recorded (`mandateGate` in the core): the reason is the status, and the detail ends with the source that answered. */
+function mandateStatusSeen(reason: string | null, detail: string | null, at: string): MandateStatusSeen | undefined {
+  const status = reason ? SEEN_BY_REASON[reason] : undefined;
+  if (!status) return undefined;
+  const source = /\(source: (api|stub)\)/.exec(detail ?? "")?.[1] as "api" | "stub" | undefined;
+  return { status, source: source ?? null, at };
+}
+
+/**
+ * The header's word for the mandate. The snapshot is the local copy at the
+ * start of the run, and it goes on saying `active` under a mandate the API
+ * answered was revoked; where a gate of the run heard otherwise, the header
+ * says what it heard, from whom, and what the snapshot had said.
+ */
+function mandateStatusLabel(m: NonNullable<InspectReport["mandate"]>): string {
+  const seen = m.status_seen;
+  if (!seen || seen.status === m.status) return m.status;
+  const by = seen.source ? `source: ${seen.source}` : seen.status === "expired" ? "by the run's clock" : "source not recorded";
+  return `${seen.status} (${by}, ${clock(seen.at)}; ${m.status} in the snapshot at the start of the run)`;
+}
+
+/** What a replayed answer means, in the one sentence both renderings print under it. */
+export const REPLAY_NOTE = "idempotent_replay: the rail answered with an earlier payment of this attempt; this run moved no money for it";
 
 /** `execution exe_x — settled` gains ` · folha-2026-10 line 2 of 3` when it is one line of a batch. */
 function executionHeading(execution: InspectExecution): string {
   const b = execution.batch;
-  return `execution ${execution.execution_id} — ${execution.final_state}${b ? ` · ${b.ref} line ${b.index + 1} of ${b.count}` : ""}`;
+  return `execution ${execution.execution_id} — ${execution.final_state}${execution.replayed ? " (replayed, not paid by this run)" : ""}${b ? ` · ${b.ref} line ${b.index + 1} of ${b.count}` : ""}`;
 }
 
 export function renderText(report: InspectReport): string {
@@ -646,7 +716,7 @@ export function renderText(report: InspectReport): string {
   const m = report.mandate;
   if (m) {
     const caps = [`per payment ${formatMinor(m.per_tx_cap_minor)}`, m.periodic_cap ? `per ${m.periodic_cap.window} ${formatMinor(m.periodic_cap.cap_minor)}` : "", `lifetime ${formatMinor(m.cap_minor)}`].filter(Boolean);
-    out.push(`  mandate ${m.status}, expires ${m.expires_at} · ${caps.join(" · ")}`);
+    out.push(`  mandate ${mandateStatusLabel(m)}, expires ${m.expires_at} · ${caps.join(" · ")}`);
     if (m.beneficiaries.length) out.push(`  named payees: ${m.beneficiaries.map((b) => `${b.name} <${b.payee}>`).join(", ")}`);
   }
 
@@ -675,7 +745,7 @@ export function renderText(report: InspectReport): string {
   out.push("");
   out.push(`receipts (${report.receipts.length})`);
   for (const receipt of report.receipts) {
-    const bits = [receipt.state ?? "?", receipt.amount_minor !== null ? formatMinor(receipt.amount_minor) : "", receipt.payee ?? "", receipt.sandbox ? "sandbox" : "", receipt.money_moved === false ? "no money moved" : ""].filter(Boolean);
+    const bits = [receipt.state ?? "?", receipt.amount_minor !== null ? formatMinor(receipt.amount_minor) : "", receipt.payee ?? "", receipt.sandbox ? "sandbox" : "", receipt.money_moved === false ? "no money moved" : "", receipt.replayed ? "read back from a replay, not paid by this run" : ""].filter(Boolean);
     out.push(`  ${receipt.receipt_id}  ${bits.join("  ")}`);
     out.push(`    ${receipt.file}`);
   }
@@ -708,7 +778,7 @@ export function renderHtml(report: InspectReport): string {
     `<h1>${esc(r.run_id)}</h1>`,
     `<p class="lede">${esc(r.agent ?? "unknown agent")} · mode <b>${esc(r.mode ?? "?")}</b> · rail <b>${esc(r.rail ?? "?")}</b> · mandate <b>${esc(r.mandate_id ?? "?")}</b>${r.mandate_version !== null ? ` v${r.mandate_version}` : ""}${r.started_at ? ` · started ${esc(r.started_at)}` : ""}</p>`,
     m
-      ? `<p class="lede">mandate ${esc(m.status)}, expires ${esc(m.expires_at)} · per payment ${esc(formatMinor(m.per_tx_cap_minor))}${m.periodic_cap ? ` · per ${esc(m.periodic_cap.window)} ${esc(formatMinor(m.periodic_cap.cap_minor))}` : ""} · lifetime ${esc(formatMinor(m.cap_minor))}</p>`
+      ? `<p class="lede">mandate ${esc(mandateStatusLabel(m))}, expires ${esc(m.expires_at)} · per payment ${esc(formatMinor(m.per_tx_cap_minor))}${m.periodic_cap ? ` · per ${esc(m.periodic_cap.window)} ${esc(formatMinor(m.periodic_cap.cap_minor))}` : ""} · lifetime ${esc(formatMinor(m.cap_minor))}</p>`
       : "",
     m && m.beneficiaries.length ? `<p class="lede">named payees: ${m.beneficiaries.map((b) => `${esc(b.name)} <code>${esc(b.payee)}</code>`).join(", ")}</p>` : "",
   ].join("\n");
@@ -734,7 +804,8 @@ export function renderHtml(report: InspectReport): string {
         .join("\n");
       const b = execution.batch;
       const where = b ? `<span class="state">${esc(`${b.ref} line ${b.index + 1} of ${b.count}`)}</span>` : "";
-      return `<section><h2>execution ${esc(execution.execution_id)} <span class="state state-${esc(execution.final_state)}">${esc(execution.final_state)}</span> ${where}</h2><table>${rows}</table></section>`;
+      const replayed = execution.replayed ? ` <span class="state">replayed, not paid by this run</span>` : "";
+      return `<section><h2>execution ${esc(execution.execution_id)} <span class="state state-${esc(execution.final_state)}">${esc(execution.final_state)}</span>${replayed} ${where}</h2><table>${rows}</table></section>`;
     })
     .join("\n");
 
@@ -745,7 +816,7 @@ export function renderHtml(report: InspectReport): string {
   const receipts = report.receipts.length
     ? `<table>${report.receipts
         .map((receipt) => {
-          const bits = [receipt.state ?? "?", receipt.amount_minor !== null ? formatMinor(receipt.amount_minor) : "", receipt.payee ?? "", receipt.sandbox ? "sandbox" : "", receipt.money_moved === false ? "no money moved" : ""].filter(Boolean).join(" · ");
+          const bits = [receipt.state ?? "?", receipt.amount_minor !== null ? formatMinor(receipt.amount_minor) : "", receipt.payee ?? "", receipt.sandbox ? "sandbox" : "", receipt.money_moved === false ? "no money moved" : "", receipt.replayed ? "read back from a replay, not paid by this run" : ""].filter(Boolean).join(" · ");
           return `<tr><td class="k"><code>${esc(receipt.receipt_id)}</code></td><td>${esc(bits)}<div class="sub">${esc(receipt.file)}</div></td></tr>`;
         })
         .join("")}</table>`

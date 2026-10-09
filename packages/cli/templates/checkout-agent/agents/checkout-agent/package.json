@@ -23,7 +23,7 @@
   "dependencies": {
     "@codespar/agent-core": "0.1.0",
     "@codespar/agent-runtime": "0.1.0",
-    "@codespar/sdk": "0.16.10",
+    "@codespar/sdk": "0.16.16",
     "qrcode-terminal": "0.12.0",
     "zod": "3.25.76"
   },

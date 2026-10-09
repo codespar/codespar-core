@@ -11,12 +11,13 @@ escalate_above:
   new_beneficiary: true   # the first payment to each named payee asks a human
   outside_hours: "22:00-07:00"
 mcp: "@codespar/mcp@0.5.8"
-cli: "@codespar/cli@0.14.0"    # what npm publishes on 2026-09-23: ships `agent run`, `eval`, `mandate revoke`, `init --template bills-agent` (docs/OPEN_QUESTIONS.md §1)
+cli: "@codespar/cli@0.18.1"    # what npm publishes on 2026-10-08: ships `agent run`, `eval`, `mandate revoke`, `init --template bills-agent` (docs/OPEN_QUESTIONS.md §1)
 tools: ./tools.json
 guardrails: ./guardrails.json
 mandate_schema: ./mandate.example.json
 events: [commerce.payment.succeeded, commerce.payment.failed]
 channels: [terminal]
+locale: pt-BR             # pt-BR | en: the lines the code prints (approval, labels, templates); `--locale` overrides per run. The model replies in the language the person types either way
 maturity:
   pix-out: sandbox
   embedded-consent: sandbox

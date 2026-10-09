@@ -5,13 +5,19 @@
       "name": "acordo_quitado",
       "language": "pt_BR",
       "description": "The cycle closed with the receivable paid, told outside the 24-hour window. The normal collections case: the debtor agrees on Tuesday and pays on Friday, and by then this is the only message WhatsApp will carry. {{1}} is the agreement alias, which is also the only agreement this conversation may name.",
-      "body": "Oi! Recebemos o pagamento do {{1}} e ele esta quitado. Obrigado!"
+      "body": "Oi! Recebemos o pagamento do {{1}} e ele está quitado. Obrigado!"
+    },
+    {
+      "name": "acordo_quitado",
+      "language": "en_US",
+      "description": "The English copy of acordo_quitado, sent when the conversation's locale is `en`. Same variables and the same buttons as the pt_BR copy; Meta approves each language separately.",
+      "body": "Hi! We received the payment for {{1}} and it is settled. Thank you!"
     },
     {
       "name": "acordo_cobranca_vencida",
       "language": "pt_BR",
       "description": "The receivable reached its due date unpaid. The same message the terminal sends free-form, and it has to be its own template: a debtor whose charge expired must not be told the agreement is settled. {{1}} is the agreement alias.",
-      "body": "Oi! A cobranca do {{1}} venceu sem pagamento. Se quiser, emito uma nova dentro das mesmas condicoes.",
+      "body": "Oi! A cobrança do {{1}} venceu sem pagamento. Se quiser, emito uma nova dentro das mesmas condições.",
       "buttons": [
         {
           "id": "emitir_nova",
@@ -20,8 +26,26 @@
         },
         {
           "id": "agora_nao",
-          "title": "Agora nao",
+          "title": "Agora não",
           "intent": "agora nao quero uma nova cobranca para o meu acordo"
+        }
+      ]
+    },
+    {
+      "name": "acordo_cobranca_vencida",
+      "language": "en_US",
+      "description": "The English copy of acordo_cobranca_vencida, sent when the conversation's locale is `en`. Same variables and the same buttons as the pt_BR copy; Meta approves each language separately.",
+      "body": "Hi! The charge for {{1}} reached its due date unpaid. If you like, I can issue a new one on the same terms.",
+      "buttons": [
+        {
+          "id": "emitir_nova",
+          "title": "Issue a new one",
+          "intent": "I want you to issue a new charge for my agreement"
+        },
+        {
+          "id": "agora_nao",
+          "title": "Not now",
+          "intent": "I do not want a new charge for my agreement right now"
         }
       ]
     },
@@ -29,13 +53,19 @@
       "name": "acordo_cobranca_cancelada",
       "language": "pt_BR",
       "description": "The receivable was cancelled, so nothing was paid and nothing is owed on it. {{1}} is the agreement alias.",
-      "body": "Oi! A cobranca do {{1}} foi cancelada e nada foi pago. Qualquer coisa, e so falar por aqui."
+      "body": "Oi! A cobrança do {{1}} foi cancelada e nada foi pago. Qualquer coisa, é só falar por aqui."
+    },
+    {
+      "name": "acordo_cobranca_cancelada",
+      "language": "en_US",
+      "description": "The English copy of acordo_cobranca_cancelada, sent when the conversation's locale is `en`. Same variables and the same buttons as the pt_BR copy; Meta approves each language separately.",
+      "body": "Hi! The charge for {{1}} was cancelled and nothing was paid. If you need anything, just write here."
     },
     {
       "name": "atendimento_atualizacao",
       "language": "pt_BR",
       "description": "The FALLBACK: sent by a poll, outside the 24-hour window, when an outcome closed that the agent has no template of its own for (a charge the rail failed to issue, a proposal denied or expired days later). It states NOTHING about the outcome, so it can never be the wrong news; it asks the person to answer, and an answer reopens the window, inside which the agent says what happened in free text. Takes no variables.",
-      "body": "Oi! Temos uma atualizacao sobre o seu atendimento. Responda esta mensagem para continuarmos por aqui.",
+      "body": "Oi! Temos uma atualização sobre o seu atendimento. Responda esta mensagem para continuarmos por aqui.",
       "fallback": true,
       "buttons": [
         {
@@ -44,6 +74,20 @@
           "intent": "quero saber qual e a atualizacao do meu atendimento"
         }
       ]
+    },
+    {
+      "name": "atendimento_atualizacao",
+      "language": "en_US",
+      "description": "The English copy of atendimento_atualizacao, sent when the conversation's locale is `en`. Same variables and the same buttons as the pt_BR copy; Meta approves each language separately.",
+      "body": "Hi! We have an update about your request. Reply to this message so we can continue here.",
+      "buttons": [
+        {
+          "id": "falar_agora",
+          "title": "Talk now",
+          "intent": "I want to know what the update about my request is"
+        }
+      ],
+      "fallback": true
     }
   ]
 }

@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ProofBundle } from "@codespar/agent-core";
-import { assembleTimeline, redactorFor, renderHtml, renderText, VERIFY_NOTE } from "../src/inspect.js";
+import { assembleTimeline, redactorFor, renderHtml, renderText, REPLAY_NOTE, VERIFY_NOTE } from "../src/inspect.js";
 
 const ESCOLA = "financeiro@escola-aurora.example.com.br";
 const MASKED = "fi***@escola-aurora.example.com.br";
@@ -150,7 +150,7 @@ describe("the timeline `inspect` assembles from a bundle", () => {
 
   it("lists the receipts that came back, and the events that belong to no execution", () => {
     const report = assembleTimeline(fixtureBundle());
-    expect(report.receipts).toEqual([{ receipt_id: "rcpt_one", file: "receipts/rcpt_one.json", state: "paid", amount_minor: 185000, payee: MASKED, money_moved: false, sandbox: true, at: "2026-09-23T18:00:22.000Z" }]);
+    expect(report.receipts).toEqual([{ receipt_id: "rcpt_one", file: "receipts/rcpt_one.json", state: "paid", amount_minor: 185000, payee: MASKED, money_moved: false, sandbox: true, at: "2026-09-23T18:00:22.000Z", replayed: false }]);
     expect(report.executions.find((e) => e.execution_id === "exe_one")!.receipts).toEqual(["rcpt_one"]);
     expect(report.run_events.map((e) => e.type)).toEqual(["execution.refused_before_draft", "tool.refused"]);
   });
@@ -165,6 +165,67 @@ describe("the timeline `inspect` assembles from a bundle", () => {
     const report = assembleTimeline(fixtureBundle());
     expect(report.verify).toEqual({ present: false, note: VERIFY_NOTE });
     expect(report.verify.note).toContain("codespar audit replay");
+  });
+});
+
+/**
+ * Issue #60: the rail answered a dispatch from an earlier presentation of the
+ * same attempt. Settled, and paid by somebody else. An attempt closed by a
+ * later look is the other case: the look cannot say whose payment it read, so
+ * it is never counted as a replay.
+ */
+function withReplays(): ProofBundle {
+  const bundle = fixtureBundle();
+  const run = "run_fixture_human_abc123";
+  for (const event of [
+    { run_id: run, execution_id: "exe_three", type: "execution.drafted", payload: { items: [{ alias: "escola", beneficiary: "Escola Aurora", payee: ESCOLA, amount: 185000, currency: "BRL" }], total: 185000, mode: "mandate", batch: { ref: "folha", batch_hash: "sha256:abc", index: 0, count: 2 } }, at: "2026-09-23T18:03:00.000Z", actor: AGENT },
+    { run_id: run, execution_id: "exe_three", type: "rail.dispatch", payload: { attempt_id: "ska_three", payee: ESCOLA, amount: 185000, rail: "stub", idempotency_key: "idk_three" }, at: "2026-09-23T18:03:01.000Z", actor: AGENT },
+    { run_id: run, execution_id: "exe_three", type: "rail.outcome", payload: { attempt_id: "ska_three", status: "settled", transaction_id: "tx_earlier", receipt_id: "rcpt_earlier", money_moved: false, sandbox: true, idempotent_replay: true }, at: "2026-09-23T18:03:02.000Z", actor: AGENT },
+    { run_id: run, execution_id: "exe_three", type: "execution.transition", payload: { from: "executing", to: "settled", at: "2026-09-23T18:03:03.000Z", actor: AGENT }, at: "2026-09-23T18:03:03.000Z", actor: AGENT },
+    { run_id: run, execution_id: "exe_four", type: "execution.drafted", payload: { items: [{ alias: "escola", beneficiary: "Escola Aurora", payee: ESCOLA, amount: 185000, currency: "BRL" }], total: 185000, mode: "mandate", batch: { ref: "folha", batch_hash: "sha256:abc", index: 1, count: 2 } }, at: "2026-09-23T18:04:00.000Z", actor: AGENT },
+    { run_id: run, execution_id: "exe_four", type: "rail.dispatch", payload: { attempt_id: "ska_four", payee: ESCOLA, amount: 185000, rail: "stub", idempotency_key: "idk_four" }, at: "2026-09-23T18:04:01.000Z", actor: AGENT },
+    { run_id: run, execution_id: "exe_four", type: "rail.outcome", payload: { attempt_id: "ska_four", status: "uncertain", code: "psp_dispatch_uncertain", message: "timeout" }, at: "2026-09-23T18:04:02.000Z", actor: AGENT },
+    { run_id: run, execution_id: "exe_four", type: "rail.reconcile", payload: { attempt_id: "ska_four", found: "settled" }, at: "2026-09-23T18:05:00.000Z", actor: AGENT },
+    { run_id: run, execution_id: "exe_four", type: "execution.transition", payload: { from: "executing", to: "settled", at: "2026-09-23T18:05:01.000Z", actor: AGENT }, at: "2026-09-23T18:05:01.000Z", actor: AGENT },
+  ]) {
+    bundle.event(event as Record<string, unknown>);
+  }
+  writeFileSync(join(bundle.dir, "receipts", "rcpt_earlier.json"), JSON.stringify({ receipt_id: "rcpt_earlier", state: "paid", payment: { amount_minor: 185000, payee: MASKED, money_moved: false, sandbox: true, at: "2026-09-23T17:00:00.000Z" }, actor: AGENT }));
+  return bundle;
+}
+
+describe("inspect says which settlements this run did not pay (#60)", () => {
+  it("a dispatch answered as a replay is settled and replayed; one closed by a later look is settled and not", () => {
+    const report = assembleTimeline(withReplays());
+    const byId = new Map(report.executions.map((e) => [e.execution_id, e]));
+    expect(byId.get("exe_one")!.replayed).toBe(false);
+    expect(byId.get("exe_three")).toMatchObject({ final_state: "settled", replayed: true });
+    expect(byId.get("exe_three")!.attempts[0]!.answer).toMatchObject({ status: "settled", receipt_id: "rcpt_earlier", idempotent_replay: true });
+    expect(byId.get("exe_four")).toMatchObject({ final_state: "settled", replayed: false });
+    expect(report.batches[0]!.lines.map((l) => [l.execution_id, l.replayed])).toEqual([
+      ["exe_three", true],
+      ["exe_four", false],
+    ]);
+    expect(report.receipts.map((r) => [r.receipt_id, r.replayed])).toEqual([
+      ["rcpt_earlier", true],
+      ["rcpt_one", false],
+    ]);
+  });
+
+  it("the text and the HTML say it where a reader looks: the rail line, the heading, the batch header and the receipt", () => {
+    const report = assembleTimeline(withReplays());
+    const text = renderText(report);
+    expect(text).toContain("execution exe_three — settled (replayed, not paid by this run)");
+    expect(text).toContain("rail says   settled (replayed)");
+    expect(text).toContain(REPLAY_NOTE);
+    expect(text).toContain("1 replayed, paid before and not by this run");
+    expect(text).toContain("rcpt_earlier  paid  R$ 1.850,00");
+    expect(text).toMatch(/rcpt_earlier .*read back from a replay, not paid by this run/);
+    expect(text).not.toMatch(/rcpt_one .*read back from a replay/);
+    expect(text).toContain("execution exe_four — settled · folha");
+    const html = renderHtml(report);
+    expect(html).toContain("replayed, not paid by this run");
+    expect(html).toContain(REPLAY_NOTE);
   });
 });
 

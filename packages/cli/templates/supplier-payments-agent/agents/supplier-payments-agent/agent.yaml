@@ -11,12 +11,13 @@ escalate_above:
   new_beneficiary: true   # the first payment to each supplier, rep or employee asks a human
   outside_hours: "22:00-07:00"
 mcp: "@codespar/mcp@0.5.8"
-cli: "@codespar/cli@0.14.0"    # copied from agents/bills-agent/agent.yaml, which carries the pins verified against npm
+cli: "@codespar/cli@0.18.1"    # copied from agents/bills-agent/agent.yaml, which carries the pins verified against npm
 tools: ./tools.json
 guardrails: ./guardrails.json
 mandate_schema: ./mandate.example.json
 events: [commerce.payment.succeeded, commerce.payment.failed]
 channels: [terminal]
+locale: pt-BR             # pt-BR | en: the lines the code prints (approval, labels, templates); `--locale` overrides per run. The model replies in the language the person types either way
 maturity:
   pix-out: sandbox
   batch-payout: sandbox           # the loop of executions: one refusal does not stop the siblings, and a re-run pays nobody twice

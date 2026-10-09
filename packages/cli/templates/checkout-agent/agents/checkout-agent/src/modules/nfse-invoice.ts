@@ -178,7 +178,7 @@ export class StubInvoiceRail implements InvoiceRail {
       return { status: "unsent", code: "no_eligible_providers", message: "stub: routing found no issuer this time; nothing was sent" };
     }
     if (behaviour === "refuses" || (behaviour === undefined && !request.recipient.address)) {
-      return { status: "refused", code: "E0101", message: "stub issuer: tomador sem endereco; a NFS-e exige o endereco do tomador" };
+      return { status: "refused", code: "E0101", message: "stub issuer: tomador sem endereço; a NFS-e exige o endereço do tomador" };
     }
     // What the issuer did is recorded before the answer is lost, as a real one would have.
     const documentId = `nfse_stub_${key.slice(-16)}`;
@@ -248,7 +248,7 @@ export function nfseRequest(sale: Execution, cart: Cart, customer: Customer): Nf
       description: `${MERCHANT.name} - pedido ${cart.cart_id}: ${cart.line_items.map((l) => `${l.quantity}x ${l.name}`).join("; ")}`,
       // What was PAID, discounts included; the transform would otherwise sum list prices.
       servicesAmount: sale.total / 100,
-      additionalInformation: `cobranca ${chargeId}, ${formatBRL(sale.total)}`,
+      additionalInformation: `cobrança ${chargeId}, ${formatBRL(sale.total)}`,
     },
   };
 }
@@ -342,8 +342,8 @@ export async function dispatchInvoice(record: InvoiceRecord, deps: InvoiceDeps):
 function notify(record: InvoiceRecord, deps: InvoiceDeps): InvoiceRecord {
   const text =
     record.reason === "invoice_uncertain"
-      ? `NFS-e do pedido ${record.sale_execution_id} (cobranca ${record.charge_id}) com resultado INCERTO (${record.code}): pode ter sido emitida. Nao reemita; confira no emissor. A venda continua paga.`
-      : `NFS-e do pedido ${record.sale_execution_id} (cobranca ${record.charge_id}) falhou (${record.reason}, ${record.code}): ${record.detail}. A venda continua paga.`;
+      ? `NFS-e do pedido ${record.sale_execution_id} (cobrança ${record.charge_id}) com resultado INCERTO (${record.code}): pode ter sido emitida. Não reemita; confira no emissor. A venda continua paga.`
+      : `NFS-e do pedido ${record.sale_execution_id} (cobrança ${record.charge_id}) falhou (${record.reason}, ${record.code}): ${record.detail}. A venda continua paga.`;
   deps.say(`  [atendente] ${text}`);
   deps.engine.note("message.attendant", record.sale_execution_id, { invoice_id: record.id, state: record.state, reason: record.reason ?? null, code: record.code ?? null, text });
   return record;

@@ -16,7 +16,7 @@ export const MONTH = "2026-10";
 export const BILLS: Bill[] = [
   { alias: "escola", name: "Escola Aurora", amount_minor: 185000, due: "2026-10-10", reference: "mensalidade outubro" },
   { alias: "mercado", name: "Mercado do Bairro", amount_minor: 64000, due: "2026-10-05", reference: "compras da semana" },
-  { alias: "funcionaria", name: "Maria (diarista)", amount_minor: 120000, due: "2026-10-05", reference: "diarias de setembro" },
+  { alias: "funcionaria", name: "Maria (diarista)", amount_minor: 120000, due: "2026-10-05", reference: "diárias de setembro" },
   { alias: "contas", name: "Energia (conta de luz)", amount_minor: 31590, due: "2026-10-15", reference: "fatura 09/2026" },
 ];
 

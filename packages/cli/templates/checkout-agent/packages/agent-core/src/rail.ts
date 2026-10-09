@@ -75,7 +75,7 @@ export interface RailPayment {
    * its shape and never its content. A charge rail ignores it.
    */
   approval?: SpendApproval;
-  /** Section 4.5: carried on every call. The API has no wire field for it yet; see OPEN_QUESTIONS. */
+  /** Section 4.5: carried on every call, on the wire as `PaymentActor` (`wireActorOf`) since @codespar/sdk 0.16.10; see OPEN_QUESTIONS §2. */
   actor: Actor;
 }
 
@@ -167,7 +167,35 @@ export interface RailReceipt {
   receipt_sig_kid: string | null;
   /** Section 4.5: the kit stamps the actor onto the local copy of every receipt. */
   actor: Actor;
+  /**
+   * The actor the API RECORDED for the spend and read back (`PaymentActor`,
+   * @codespar/sdk 0.16.10): `null` when it recorded none — an API that did not
+   * take the field, or a spend that sent none. Absent when the rail cannot
+   * say: a charge, which records no actor.
+   */
+  sealed_actor?: WireActor | null;
   raw: unknown;
+}
+
+/**
+ * Who triggered a spend, in the API's own shape (`PaymentActor`,
+ * @codespar/sdk 0.16.10): the agent by its identifier and the consumer it acts
+ * for, or the person by id and the channel they acted from. The kit's `Actor`
+ * names the agent under `agent`; the wire names it under `id`, and that is the
+ * only difference.
+ */
+export type WireActor = { type: "agent"; id: string; on_behalf_of: string } | { type: "human"; id: string; channel?: string };
+
+export function wireActorOf(actor: Actor): WireActor {
+  return actor.type === "agent" ? { type: "agent", id: actor.agent, on_behalf_of: actor.on_behalf_of } : { type: "human", id: actor.id, channel: actor.channel };
+}
+
+/** The same actor, field for field. A human's channel counts: the same person on WhatsApp and on a dashboard are two events. */
+export function sameWireActor(a: WireActor | null, b: WireActor | null): boolean {
+  if (a === null || b === null) return a === b;
+  if (a.type === "agent" && b.type === "agent") return a.id === b.id && a.on_behalf_of === b.on_behalf_of;
+  if (a.type === "human" && b.type === "human") return a.id === b.id && (a.channel ?? null) === (b.channel ?? null);
+  return false;
 }
 
 /** What a reconcile learns: a recorded outcome, "still running", or nothing. Never a new payment. */

@@ -144,6 +144,7 @@ export function buildWhatsApp(options: OpenWhatsAppOptions): OpenedWhatsApp | { 
       driver,
       say,
       render: options.render ?? say,
+      locale: s.locale,
       ...(options.script ? { script: options.script } : {}),
       ...(options.ask ? { ask: options.ask } : {}),
       ...(options.pinAt ? { pinAt: options.pinAt } : {}),
@@ -166,6 +167,8 @@ export function buildWhatsApp(options: OpenWhatsAppOptions): OpenedWhatsApp | { 
     ...(options.session ? { session: options.session } : {}),
     ...(options.priorLines ? { priorLines: options.priorLines } : {}),
     onDeliveryFailed: (line) => recordDeliveryFailure(s, line),
+    // The run's locale, which for a poll is the conversation's recorded one: the templates go out in its language.
+    locale: s.locale,
   });
 
   return { channel, ...(driver ? { driver } : {}), ...(sessionKey ? { sessionKey } : {}) };

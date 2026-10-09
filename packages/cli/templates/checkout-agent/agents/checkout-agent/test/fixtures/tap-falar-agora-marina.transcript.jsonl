@@ -1,2 +1,2 @@
 {"kind": "assistant_step", "tool_calls": [{"id": "tc_1", "name": "codespar_charge", "input": {"action": "status"}}]}
-{"kind": "assistant_step", "reply": "Oi, Marina! Nao ha pedido em aberto nesta conversa. Quer montar um novo?"}
+{"kind": "assistant_step", "reply": "Oi, Marina! Não há pedido em aberto nesta conversa. Quer montar um novo?"}

@@ -10,14 +10,17 @@
  * envelope is preferred when it exists. Receipts come back from
  * `GET /v1/consumers/receipts/{id}`.
  *
- * The API has no `actor` field on the wire today (OPEN_QUESTIONS §2). The
- * spend carries `agent_id`, which the mandate binds; the full actor is
- * stamped on the local receipt copy and on every event of the bundle.
+ * Every spend carries the kit's `actor` on the wire (`PaymentActor`,
+ * @codespar/sdk 0.16.10): the agent and the consumer it acts for, or the
+ * person and their channel. The API records it on the receipt and reads it
+ * back, and the engine compares what came back with what was sent
+ * (OPEN_QUESTIONS §2). `agent_id` still goes too: it names the agent the
+ * mandate was SIGNED for, which is an authority, not the event.
  */
 import type { ApiClient } from "@codespar/sdk";
 import type { Mandate } from "../mandate.js";
 import { checkQuote } from "../quote.js";
-import { checkSpendApproval, type PaymentRail, type RailLookup, type RailOutcome, type RailPayment, type RailReceipt } from "../rail.js";
+import { checkSpendApproval, wireActorOf, type PaymentRail, type RailLookup, type RailOutcome, type RailPayment, type RailReceipt } from "../rail.js";
 import type { Actor } from "../types.js";
 import { describeApiError, isUncertain, type SpendErrorCode } from "./client.js";
 
@@ -59,11 +62,12 @@ export class CodeSparRail implements PaymentRail {
                 attempt_id: payment.attempt_id,
                 quote: quoted.quote,
                 approval: approval.approval,
+                actor: wireActorOf(payment.actor),
               },
             })
           : await this.api.post("/v1/consumers/mandates/{id}/spend", {
               path: { id: payment.mandate_id },
-              body: { amount_minor: payment.amount_minor, payee: payment.payee, agent_id: payment.agent_id, attempt_id: payment.attempt_id, quote: quoted.quote, approval: approval.approval },
+              body: { amount_minor: payment.amount_minor, payee: payment.payee, agent_id: payment.agent_id, attempt_id: payment.attempt_id, quote: quoted.quote, approval: approval.approval, actor: wireActorOf(payment.actor) },
             });
       return {
         status: "settled",
@@ -142,6 +146,8 @@ export class CodeSparRail implements PaymentRail {
         receipt_sig_ed25519: r.receipt_sig_ed25519 || null,
         receipt_sig_kid: r.receipt_sig_kid || null,
         actor,
+        // What the API recorded, as it read it back; the engine compares it with what the spend sent.
+        sealed_actor: r.actor,
         raw: r,
       };
     } catch (err) {

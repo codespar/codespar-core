@@ -3,12 +3,13 @@
  * `codespar_charge` hands the proposal to the engine and gets an execution in
  * `drafted` (then whatever the core decided); it cannot issue anything.
  * `list_agreements` is a read. The real call (`POST /v1/charges`, one
- * cobranca com vencimento per instalment, `idempotency_key` per attempt) is
+ * cobrança com vencimento per instalment, `idempotency_key` per attempt) is
  * built by the rail from the execution the core approved.
  */
-import type { ToolHandler } from "@codespar/agent-core";
+import type { Locale, ToolHandler } from "@codespar/agent-core";
 import { AGREEMENTS, agreementByAlias, formatBRL, formatDate } from "../agreements.js";
 import type { Envelope } from "../envelope.js";
+import { STRINGS } from "../strings.js";
 
 interface ChargeInput {
   action?: unknown;
@@ -18,8 +19,9 @@ interface ChargeInput {
   execution_id?: unknown;
 }
 
-export function makeHandlers(envelope: Envelope): Record<string, ToolHandler> {
+export function makeHandlers(envelope: Envelope, locale: () => Locale = () => "pt-BR"): Record<string, ToolHandler> {
   const listAgreements: ToolHandler = async (_input, ctx) => {
+    const text = STRINGS[locale()];
     const settled = ctx.engine.list({ state: "settled" });
     const open = ctx.engine.list({ state: "executing" });
     // Issued, then its reference turned ambiguous: the charge exists and may be paid. Not open, and the core refuses another until it is reconciled.
@@ -28,6 +30,8 @@ export function makeHandlers(envelope: Envelope): Record<string, ToolHandler> {
     const settledAliases = new Set(settled.flatMap((e) => e.items.map((i) => i.alias)).filter(Boolean));
     const issuedAliases = new Set(open.flatMap((e) => e.items.map((i) => i.alias)).filter(Boolean));
     return {
+      // Due dates are proposed by the model inside `due_date_window_days` of today; it has no calendar but this one.
+      today: ctx.engine.today(),
       agreements: AGREEMENTS.map((a) => ({
         alias: a.alias,
         debtor_first_name: a.first_name,
@@ -36,12 +40,12 @@ export function makeHandlers(envelope: Envelope): Record<string, ToolHandler> {
         origin: a.origin,
         opened_at: a.opened_at,
         status: settledAliases.has(a.alias)
-          ? "quitado"
+          ? text.statusSettled
           : issuedAliases.has(a.alias)
-            ? "cobranca emitida, aguardando pagamento"
+            ? text.statusIssued
             : unreconciledAliases.has(a.alias)
-              ? "cobranca emitida, em conferencia: nao emitir outra"
-              : "em aberto",
+              ? text.statusUnreconciled
+              : text.statusOpen,
       })),
       envelope: {
         max_discount_pct: envelope.max_discount_pct,
@@ -82,7 +86,11 @@ export function makeHandlers(envelope: Envelope): Record<string, ToolHandler> {
     const claimed = typeof input.total_minor === "number" ? { claimed_total: input.total_minor } : {};
 
     const draft = await ctx.engine.draft({ items, ...claimed });
-    if (!draft.ok) return { status: "refused", reason: draft.reason, message: draft.message, issued: false, paid: false };
+    if (!draft.ok) {
+      // Refused before a draft: no execution will ever say so, and the run's count is taken from this.
+      ctx.onNotRun?.({ ref: alias, why: "refused", detail: draft.reason });
+      return { status: "refused", reason: draft.reason, message: draft.message, issued: false, paid: false };
+    }
     const execution = await ctx.onExecution(draft.execution);
     return describe(execution);
   };

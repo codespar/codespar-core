@@ -178,6 +178,8 @@ export function copyDisagreesWithRead(copy: Record<string, unknown>, read: Recor
   // Written onto the copy since the rail reads them through the SDK's types (0.16.10); a copy from before carries neither, and is not faulted for it.
   if ("chain_version" in copy) expected.push(["chain_version", copy["chain_version"], read["chain_version"]]);
   if ("approval" in copy) expected.push(["approval", canonicalJson(copy["approval"] ?? null), canonicalJson(read["approval"] ?? null)]);
+  // Written onto the copy since every spend carries the actor (§2); the read calls it `actor`, the copy `sealed_actor` beside its own stamp.
+  if ("sealed_actor" in copy) expected.push(["sealed_actor", canonicalJson(copy["sealed_actor"] ?? null), canonicalJson(read["actor"] ?? null)]);
   return expected.filter(([, a, b]) => a !== b).map(([name]) => name);
 }
 

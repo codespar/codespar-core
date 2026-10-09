@@ -15,7 +15,7 @@
  * a code inside a picture cannot be copied and a code inside a paragraph
  * cannot be tapped.
  */
-import type { ChargeInstrument, Execution } from "@codespar/agent-core";
+import type { ChargeInstrument, Execution, NotRunLine } from "@codespar/agent-core";
 import { handleExecution, type TerminalOptions } from "../../terminal.js";
 import type { Setup } from "../../setup.js";
 import type { OutboundBody } from "../types.js";
@@ -42,6 +42,8 @@ export interface ConverseResult {
   replies: string[];
   toolCalls: Array<{ name: string; refused: boolean }>;
   executions: Execution[];
+  /** Lines a tool did not run, across every turn: the run's count needs them. */
+  notRun: NotRunLine[];
 }
 
 /** Keeps outbound messages in the order the run produced them, across await points. */
@@ -67,10 +69,11 @@ export async function converse(options: ConverseOptions): Promise<ConverseResult
   let toldOutcome = false;
   const replies: string[] = [];
   const toolCalls: Array<{ name: string; refused: boolean }> = [];
+  const notRun: NotRunLine[] = [];
   let turns = 0;
 
   const presentInstrument = (execution: Execution, instalment: number, chargeId: string, instrument: ChargeInstrument): Promise<void> => {
-    for (const body of instrumentBodies(execution, instalment, chargeId, instrument, s.mandate.currency)) outbox.push(body);
+    for (const body of instrumentBodies(execution, instalment, chargeId, instrument, s.mandate.currency, s.locale)) outbox.push(body);
     // Awaited by the poll: the person has the code in hand before the next look, not after the cycle closed.
     return outbox.drain();
   };
@@ -95,7 +98,7 @@ export async function converse(options: ConverseOptions): Promise<ConverseResult
   const runtime = s.makeRuntime();
   const loop = s.makeLoop(runtime, (execution) => handleExecution(execution, terminalOptions));
 
-  say(`${s.manifest.manifest.name} ${s.manifest.manifest.version} — canal: whatsapp (${channel.backend}) — approval: ${s.mode} — trilho: ${s.railKind} — ${s.kit.labels.mandateWord} ${s.mandate.id}`);
+  say(s.coreStrings.waBanner(s.manifest.manifest.name, s.manifest.manifest.version, channel.backend, s.mode, s.railKind, s.strings.mandateWord, s.mandate.id));
 
   try {
     for (;;) {
@@ -104,6 +107,7 @@ export async function converse(options: ConverseOptions): Promise<ConverseResult
       turns += 1;
       const result = await loop.turn(message.text);
       toolCalls.push(...result.tool_calls);
+      notRun.push(...result.not_run);
       // Whatever the execution put in the conversation goes first: the QR before the sentence that explains it.
       await outbox.drain();
       if (result.reply.trim()) await channel.say(result.reply);
@@ -116,5 +120,5 @@ export async function converse(options: ConverseOptions): Promise<ConverseResult
     await channel.close();
   }
 
-  return { turns, replies, toolCalls, executions: s.engine.list().filter((e) => e.run_id === s.runId) };
+  return { turns, replies, toolCalls, executions: s.engine.list().filter((e) => e.run_id === s.runId), notRun };
 }

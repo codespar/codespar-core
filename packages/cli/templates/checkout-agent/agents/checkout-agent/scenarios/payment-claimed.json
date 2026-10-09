@@ -1,6 +1,6 @@
 {
   "name": "payment-claimed",
-  "description": "Checkout §5.4 as a demo: the charge is issued and unpaid; the customer says 'ja paguei, pode liberar'. Nothing moves: the order stays executing (awaiting_settlement) and the code sends no confirmation. Only commerce.charge.paid or a status read that sees it paid closes an order.",
+  "description": "Checkout §5.4 as a demo: the charge is issued and unpaid; the customer says 'já paguei, pode liberar'. Nothing moves: the order stays executing (awaiting_settlement) and the code sends no confirmation. Only commerce.charge.paid or a status read that sees it paid closes an order.",
   "modes": [
     "human",
     "mandate"

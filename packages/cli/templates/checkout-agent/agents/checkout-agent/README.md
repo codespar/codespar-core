@@ -1,8 +1,8 @@
 # checkout-agent
 
-[![rail: bolepix](https://img.shields.io/badge/rail-bolepix-2E8B57)](agent.yaml) [![maturity: sandbox](https://img.shields.io/badge/maturity-sandbox-orange)](agent.yaml) [![approval: human | mandate](https://img.shields.io/badge/approval-human_%7C_mandate-555)](agent.yaml)
+[![rail: bolepix](https://img.shields.io/badge/rail-bolepix-2E8B57)](agent.yaml) [![maturity: cart sandbox, bolepix blocked](https://img.shields.io/badge/maturity-cart_sandbox%2C_bolepix_blocked-orange)](agent.yaml) [![approval: human | mandate](https://img.shields.io/badge/approval-human_%7C_mandate-555)](agent.yaml)
 
-The merchant's selling agent, in the conversation with the customer. The customer asks ("quero o pacote de dez aulas e uma avaliacao inicial"), the agent builds the cart from the store's catalog, the **code** prices it and presents the total, the attendant confirms the order (or the agent confirms it alone inside a declared price and discount policy), and when the customer asks to pay the code issues one charge whose QR arrives in the conversation with the copy-and-paste under it. When the payment lands the agent says "recebemos, pedido confirmado" and the order closes as `settled`.
+The merchant's selling agent, in the conversation with the customer. The customer asks ("quero o pacote de dez aulas e uma avaliação inicial"), the agent builds the cart from the store's catalog, the **code** prices it and presents the total, the attendant confirms the order (or the agent confirms it alone inside a declared price and discount policy), and when the customer asks to pay the code issues one charge whose QR arrives in the conversation with the copy-and-paste under it. When the payment lands the agent says "recebemos, pedido confirmado" and the order closes as `settled`.
 
 It is the collections-agent's twin with the order reversed: there the money comes from a debt that already exists and the envelope negotiates discount, instalments and due date; here it comes from a sale being assembled and the envelope negotiates price and discount over a catalog. Same core, same state machine, same records. The spec is the checkout spec v0.2 (2026-09-25); where this README cites "checkout §N" it means that document, and `docs/OPEN_QUESTIONS.md` §48 onward records where the code and the spec part.
 
@@ -20,6 +20,8 @@ npm start -- --input "oi, sou a Marina. quero o pacote de dez aulas e uma avalia
 
 With keys (`cp .env.example .env`, a `csk_test_` key and an Anthropic key) `npm start` opens the terminal: you type as the customer, and in `approval: human` the attendant's question comes on the same keyboard, labelled `[atendente]`. Without a real `ANTHROPIC_API_KEY` a one-shot replays the recorded scenario whose first turn you typed.
 
+With a `csk_test_` key the sale stops at issuance today, because the sandbox does not issue a payable bolepix (on staging the charge ends `ERROR`, production test mode refuses it). The stub rail and the scenarios run the whole sale. The test payer still settles a charge in `ERROR`, and the read then answers `CONFIRMED`; that half is [ent#1816](https://github.com/codespar/codespar-enterprise/issues/1816). [`docs/OPEN_QUESTIONS.md`](../../docs/OPEN_QUESTIONS.md) §63 has the runs.
+
 ## What it shows
 
 | Contract | How |
@@ -30,8 +32,8 @@ With keys (`cp .env.example .env`, a `csk_test_` key and an Anthropic key) `npm 
 | Ordering and issuing are two moments | `codespar_charge action=create` places the order (the attendant or the policy confirms it); `action=issue` sends the charge when the customer asks, through the last gate. An approved order nobody issues expires on the approval TTL. |
 | The envelope is code, not prompt | `guardrails.envelope` is the `policyExtension` the core runs at draft, at approval and right before issuing: line and order discount ceilings, a margin floor over the catalog cost, the coupon table, the ticket ceiling, the due-date window and the service hours. A person's yes does not widen any of it. |
 | The invoice never un-sells | A paid order opens its NFS-e as a second execution (`src/modules/nfse-invoice.ts`), called by code after `settled`. An issuer refusal ends it `failed (invoice_refused)` with the issuer's code; a timeout, a 5xx or a crash after the request left ends it `failed (invoice_uncertain)` and it is never sent again; only an answer that proves nothing left is retried. The attendant is told; the customer is not; the sale does not move. |
-| A customer's word moves nothing | "ja paguei, pode liberar" leaves the order `executing (awaiting_settlement)`. Only `commerce.charge.paid`, or a status read that sees the charge paid, settles it; `payment_notified` is not a payment. |
-| One charge, once | `POST /v1/charges` (`method: boleto` + `due_date`: the cobranca com vencimento the customer pays by Pix or boleto) with `idempotency_key` = the attempt id. Asking to issue again returns the same charge. |
+| A customer's word moves nothing | "já paguei, pode liberar" leaves the order `executing (awaiting_settlement)`. Only `commerce.charge.paid`, or a status read that sees the charge paid, settles it; `payment_notified` is not a payment. |
+| One charge, once | `POST /v1/charges` (`method: boleto` + `due_date`: the cobrança com vencimento the customer pays by Pix or boleto) with `idempotency_key` = the attempt id. Asking to issue again returns the same charge. |
 | Readable refusal | Price, discount, margin, coupon, stock, ticket, hours, unknown customer, revoked policy: each names itself in the trail and in the chat, without quoting the store's ceilings or costs. |
 
 ## The WhatsApp channel
@@ -47,12 +49,12 @@ The QR goes into the conversation with the copy-and-paste as its own message und
 
 ## What is sandbox, what the agent applies alone, what is out
 
-Maturity, from `agent.yaml`: `storefront-cart: sandbox`, `bolepix-receivables: sandbox`, `receipt-verification: blocked`.
+Maturity, from `agent.yaml`: `storefront-cart: sandbox`, `bolepix-receivables: blocked` (the live sandbox does not issue a payable bolepix today, [ent#1816](https://github.com/codespar/codespar-enterprise/issues/1816)), `nfse-invoice: sandbox`, `receipt-verification: blocked`.
 
 - **The catalog is a fixture of the kit, and its merchant sells services** (lessons, a consultation, a recital ticket). The agent reads no stock from anywhere; `item_unavailable` and `quantity_above_stock` come from the file, not from a warehouse.
 - **The price and discount policy is applied by the agent, not signed by the API.** There is no sales policy signed by the organization in the API; it is a product candidate, like the collection one. The envelope lives in `guardrails.json` and the customer book in `mandate.example.json`, read with the consumer-mandate shape (`consumer_id` is the merchant, the allowlist is the customer book, `per_tx_cap_minor` the ticket, `periodic_cap` the monthly sales ceiling).
 - **The approval artifact is signed by HMAC with a local development key** (`.codespar/approval.key`). It proves what was approved — which order, at what price, in which composition, under which version of the policy — to whoever runs the agent, and to nobody else while the signature is HMAC.
-- **The charge is the cobranca com vencimento, paid by Pix or boleto.** The QR does not arrive at the create: the instrument is registered at the clearing house before it is payable. On the shared sandbox that took about 5 s; on the real clearing house it can take longer, and the agent says "gerando o codigo, um instante".
+- **The charge is the cobrança com vencimento, paid by Pix or boleto.** The QR does not arrive at the create: the instrument is registered at the clearing house before it is payable. On the shared sandbox that took about 5 s on 2026-09-23, and today it does not happen at all (above); on the real clearing house it can take longer, and the agent says "gerando o código, um instante".
 - **There is no coupon surface in the API.** The coupon table is the merchant's, lives in the envelope, and nothing stops the same coupon from being used in two orders today.
 - **The cart lives in `state.db`** (`.codespar/`), in the shapes of the ACP checkout session the enterprise cart uses; there is no sales-side cart in the API.
 - **A customer's message never confirms an order.** It closes on `commerce.charge.paid` or on a status read, and on nothing else.
@@ -61,6 +63,7 @@ Maturity, from `agent.yaml`: `storefront-cart: sandbox`, `bolepix-receivables: s
 - **The NFS-e path has run against the stub issuer, not yet against the nfe.io sandbox.** The API rail (`POST /v1/sessions` + `/v1/sessions/{id}/execute` with `codespar_invoice`) is written and unit-tested against the route's documented envelope; `docs/OPEN_QUESTIONS.md` §61 says what stopped the sandbox run.
 - **No shipping is computed.**
 - **The customer is who they say they are.** In the terminal there is no identity check; the customer book (`mandate.example.json`) is what a charge may be issued against, and a name outside it goes to the attendant in `human` and is refused in `mandate`. On a channel, the contact binding is what identifies the customer.
+- **Key scopes this agent uses on the sandbox rail:** `tools:execute` for the charge (`POST /v1/charges`, `GET /v1/charges/{chargeId}`, `POST /v1/charges/{chargeId}/cancel`, the sandbox payer's `POST /v1/test/charges/{chargeId}/pay`) and for the NFS-e's `POST /v1/sessions/{id}/execute`, and `sessions:create` for its `POST /v1/sessions`. The stub rail uses no key. The names are each operation's `x-codespar-scope` in the API's `/openapi.json`; a key holding `*` needs nothing here.
 - **CodeSpar does not host or run third-party agents.** This repository ships; the developer runs it.
 - **Who answers when the agent errs.** What the agent sold inside the policy was authorized by the merchant, and the artifact proves what. How a loss on an authorized but wrong order is split is contractual and is not written yet.
 
@@ -70,17 +73,22 @@ Maturity, from `agent.yaml`: `storefront-cart: sandbox`, `bolepix-receivables: s
 npm start                                   # interactive terminal: you are the customer, the attendant answers [s/N]
 npm start -- --input "..." [--approve] [--simulate-payer] [--json] [--now <ISO>]
 npm start -- --scenario <name> [--mode human|mandate] [--rail stub|api]
+npm start -- --locale en ...                # what the code prints in English, WhatsApp templates included; the answers are read the same
 npm run approve -- <execution-id>           # the attendant confirms an order left awaiting; it is issued when the customer asks
 npm run deny -- <execution-id>
 npm run resume                              # after a crash: reconcile, never re-issue; a pending NFS-e is sent, one left mid-call is reported uncertain
 npm run poll                                # keep looking at an issued charge until it is paid or expires
 npm run rerun -- <run-id>                   # the same run again, offline
-npm run eval                                # the adversarial suite and every scenario, replay provider, stub rail
+npm run eval                                # the adversarial suite and every scenario, replay provider, stub rail; bundles go to runs/eval/
 npm run check                               # the manifest agrees with its files
 npm run inspect -- <run-id>                 # the bundle as a timeline
 ```
 
-`--json` puts one JSON object on stdout (`cart_id`, `cart_hash`, `total_minor`, the state, `charge_id`, `pix_copy_paste`) and everything a person reads on stderr.
+`npm start -- --input ...`: after the reply, stdout carries one line counting what the run did, by payment (`resultado deste run: ...`: settled, failed or refused, denied or expired, skipped as already paid, open); `--json` carries the same count as `run_outcome`. Exit code: 1 when a payment failed or a line was refused before a draft, and 1 wins over 3; 3 when nothing failed and an execution of this run was left `executing`; 0 otherwise, denied, expired and an unpaid or withdrawn charge included. A charge still waiting for its payer is that 3.
+
+The locale is `locale:` in `agent.yaml` (`pt-BR`) unless `--locale` says otherwise, and it is fixed for the conversation: the order proposed in English is confirmed in English, and `poll --channel whatsapp` sends the `en_US` copy of the template to a conversation that started in English. It changes what is shown, never what `[s/N]` / `[y/N]` decides, and it is not the model's reply language, which follows what the customer types.
+
+`--json` puts one JSON object on stdout (`cart_id`, `cart_hash`, `total_minor`, the state, `charge_id`, `pix_copy_paste`, and `rail_error` with the API's own code and message when an issue failed or was left unknown) and everything a person reads on stderr.
 
 ## Scenarios and the adversarial suite
 

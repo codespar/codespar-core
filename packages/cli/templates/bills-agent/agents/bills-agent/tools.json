@@ -44,7 +44,7 @@
     {
       "name": "list_bills",
       "effect": "read",
-      "description": "The bills of the current month: payee alias, name, amount in BRL cents, due date and whether it was already paid in this mandate window. Read-only.",
+      "description": "The bills of the current month: payee alias, name, amount in BRL cents, due date, days until it falls due (negative once past) and whether it was already paid in this mandate window, plus `today`, the only date you know. Read-only.",
       "input_schema": { "type": "object", "properties": {} }
     }
   ]

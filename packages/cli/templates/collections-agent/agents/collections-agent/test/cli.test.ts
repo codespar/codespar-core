@@ -72,7 +72,7 @@ describe("npm start -- --input ... --json", () => {
       expect(payload.executions).toHaveLength(1);
       expect(payload.executions[0]).toMatchObject({ state: "denied", reason: "outside_hours", charges: [] });
       expect(payload.receipts).toHaveLength(0);
-      expect(out.stderr).toContain("agora sao 20:08");
+      expect(out.stderr).toContain("agora são 20:08");
     });
 
     it("at 14:00 America/Sao_Paulo the same command settles, whatever the wall clock says", () => {

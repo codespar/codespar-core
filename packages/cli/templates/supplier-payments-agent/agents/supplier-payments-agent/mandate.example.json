@@ -3,7 +3,7 @@
   "version": 1,
   "consumer_id": "usr_demo_financeiro",
   "agent_id": "supplier-payments-agent",
-  "purpose": "fornecedores, comissoes e folha",
+  "purpose": "fornecedores, comissões e folha",
   "currency": "BRL",
   "cap_minor": 9000000,
   "per_tx_cap_minor": 250000,
@@ -40,12 +40,12 @@
     },
     {
       "alias": "grafica",
-      "name": "Grafica Litoral",
+      "name": "Gráfica Litoral",
       "payee": "financeiro@grafica-litoral.example.com.br"
     },
     {
       "alias": "insumos",
-      "name": "Insumos Atlantico",
+      "name": "Insumos Atlântico",
       "payee": "contas@insumos-atlantico.example.com.br"
     },
     {

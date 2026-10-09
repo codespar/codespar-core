@@ -29,7 +29,7 @@
  */
 import { stdout } from "node:process";
 import { relative } from "node:path";
-import { ProofBundle, type ChargeInstrument, type Execution } from "@codespar/agent-core";
+import { ProofBundle, isLocale, type ChargeInstrument, type Execution, type Locale } from "@codespar/agent-core";
 import type { Agent } from "../agent.js";
 import { runsDir, type Setup } from "../setup.js";
 import { followUp, waitForPayer } from "../terminal.js";
@@ -53,6 +53,8 @@ export interface PollWhatsAppOptions {
   payer?: "pays" | "expires" | "never" | undefined;
   now: () => Date;
   say: (line: string) => void;
+  /** `--locale`, when given. The conversation's recorded locale wins, and a flag that disagrees with it is refused. */
+  locale?: Locale | undefined;
 }
 
 /** How the outcome reached the person, or why it did not. */
@@ -97,14 +99,14 @@ export async function pollWhatsApp(options: PollWhatsAppOptions): Promise<number
   const mine = subject ? open.filter((e) => e.items.length > 0 && e.items.every((i) => i.alias === subject || i.payee === subject)) : [];
 
   if (!subject && open.length) {
-    say(`a conversa ${script.name} nao declara subject: nao da para dizer quais execucoes sao dela, e mandar o desfecho de outra pessoa nesta conversa e exatamente o que a regra de sigilo proibe`);
+    say(s.coreStrings.pollNoSubject(script.name));
     return 2;
   }
   if (!mine.length) {
     // A clean no-op: nothing is waiting, so nothing is opened. The emulator is
     // not even contacted, which is the point — a poll with no work does no work.
     if (options.json) stdout.write(JSON.stringify({ polled: [], conversation: script.name, channel: null }) + "\n");
-    else say(`nada aguardando pagador em ${script.name}`);
+    else say(s.coreStrings.pollNothingWaiting(script.name));
     return 0;
   }
 
@@ -114,8 +116,20 @@ export async function pollWhatsApp(options: PollWhatsAppOptions): Promise<number
   // one conversation stays one record instead of ending in a second folder.
   const { bundle, session, lines: priorLines } = conversationRecord(agent, mine);
   if (!bundle) {
-    say(`nenhum bundle encontrado para ${mine.map((e) => e.run_id).join(", ")}: a conversa nao pode ser retomada sem o registro dela`);
+    say(s.coreStrings.pollNoBundle(mine.map((e) => e.run_id).join(", ")));
     return 1;
+  }
+
+  // The conversation keeps the locale it was recorded in: the outcome is told
+  // in the language the person was spoken to in, template and all. A bundle
+  // written before the field existed records none, and the run's own stands.
+  const recorded = bundle.readMeta()?.["locale"];
+  if (isLocale(recorded)) {
+    if (options.locale !== undefined && options.locale !== recorded) {
+      say(s.coreStrings.pollLocaleConflict(script.name, recorded, options.locale));
+      return 2;
+    }
+    s.locale = recorded;
   }
 
   const built = buildWhatsApp({
@@ -159,11 +173,7 @@ export async function pollWhatsApp(options: PollWhatsAppOptions): Promise<number
   const results: Polled[] = [];
   try {
     const remaining = channel.sessionRemainingSeconds;
-    say(
-      `${s.manifest.manifest.name} ${s.manifest.manifest.version} — poll no canal whatsapp (${channel.backend}) — conversa ${script.name} — janela de 24h ${
-        channel.sessionOpen ? `ABERTA (${Math.round(remaining / 60)} min restantes): mensagem livre` : "FECHADA: so template aprovado"
-      }`,
-    );
+    say(s.coreStrings.pollBanner(s.manifest.manifest.name, s.manifest.manifest.version, channel.backend, script.name, channel.sessionOpen ? Math.round(remaining / 60) : undefined));
     for (const execution of mine) {
       const sessionOpen = channel.sessionOpen;
       const result = await waitForPayer(execution.id, {
@@ -188,11 +198,8 @@ export async function pollWhatsApp(options: PollWhatsAppOptions): Promise<number
         session_open: sessionOpen,
         delivery,
       });
-      say(
-        `${closed.id}: ${closed.state}${closed.reason ? ` (${closed.reason})` : ""} apos ${result.rounds} consulta(s), ${result.seconds}s — ${
-          delivery.told ? `avisado por ${delivery.carrier === "template" ? `template ${delivery.template}${delivery.fallback ? " (reserva: o kit nao tem copia para este desfecho)" : ""}` : "mensagem livre"}` : `nao avisado (${delivery.reason}${delivery.detail ? `: ${delivery.detail}` : ""})`
-        }`,
-      );
+      const told = delivery.told ? (delivery.carrier === "template" ? s.coreStrings.pollToldByTemplate(delivery.template ?? "?", delivery.fallback === true) : s.coreStrings.pollToldByText) : s.coreStrings.pollNotTold(delivery.reason, delivery.detail);
+      say(`${closed.id}: ${closed.state}${closed.reason ? ` (${closed.reason})` : ""}${s.coreStrings.afterLooks(result.rounds, result.seconds, false)} — ${told}`);
     }
   } finally {
     await channel.close();
@@ -213,7 +220,7 @@ export async function pollWhatsApp(options: PollWhatsAppOptions): Promise<number
   };
 
   if (options.json) stdout.write(JSON.stringify({ polled: results, conversation: script.name, channel: channelSummary }) + "\n");
-  else say(`conversa em ${channelSummary.log} — ${channelSummary.messages_out} enviada(s)${refused.length ? `, ${refused.length} recusada(s)` : ""}`);
+  else say(s.coreStrings.waConversationSummary(channelSummary.log, undefined, channelSummary.messages_out, refused.length));
 
   if (results.some((r) => r.timed_out)) return 3;
   // A cycle that closed and a person who was not told is a failure worth an
@@ -267,7 +274,7 @@ function conversationRecord(agent: Agent, executions: readonly Execution[]): { b
  * it either.
  */
 async function presentInstrument(channel: WhatsAppChannel, s: Setup, execution: Execution, instalment: number, chargeId: string, instrument: ChargeInstrument): Promise<void> {
-  for (const body of instrumentBodies(execution, instalment, chargeId, instrument, s.mandate.currency)) await channel.send(body);
+  for (const body of instrumentBodies(execution, instalment, chargeId, instrument, s.mandate.currency, s.locale)) await channel.send(body);
 }
 
 /**
@@ -298,7 +305,7 @@ async function tellOutcome(channel: WhatsAppChannel, s: Setup, execution: Execut
     // The provider's is the one the window is counted on, so the message goes
     // the way it would have gone had we known: as the template. The cursor is
     // already this call's, taken by `announceOutcome` above.
-    if (sent.refused?.rule !== "session_window_closed") return confirmed(channel, sent, deliveryOf(sent, "text"));
+    if (sent.refused?.rule !== "session_window_closed") return confirmed(channel, sent, deliveryOf(s, sent, "text"));
     return tellByTemplate(channel, s, execution, { cursorHeld: true });
   }
   return tellByTemplate(channel, s, execution, { cursorHeld: false });
@@ -337,22 +344,23 @@ async function confirmed(channel: WhatsAppChannel, sent: SentMessage, delivery: 
  * defect, reported as one and not papered over by the fallback.
  */
 async function tellByTemplate(channel: WhatsAppChannel, s: Setup, execution: Execution, options: { cursorHeld: boolean }): Promise<Delivery> {
-  const chosen: { template: string; variables: string[]; fallback?: true } | undefined = s.kit.outcomeTemplate?.(execution) ?? fallbackOf(channel);
+  const chosen: { template: string; variables: string[]; fallback?: true } | undefined = s.kit.outcomeTemplate?.(execution, s.locale) ?? fallbackOf(channel);
   if (!chosen) {
     return {
       told: false,
       reason: "no_template_for_outcome",
-      detail: `a janela de 24h esta fechada e o agente nao declara template para ${execution.state}${execution.reason ? ` (${execution.reason})` : ""}, nem um template de reserva`,
+      detail: s.coreStrings.pollNoTemplateForOutcome(`${execution.state}${execution.reason ? ` (${execution.reason})` : ""}`),
     };
   }
+  // The copy in the conversation's language: an English conversation is never sent the pt_BR template.
   const declared = channel.declaredTemplate(chosen.template);
   if (!declared) {
-    return { told: false, reason: "no_template_for_outcome", detail: `o kit pediu o template ${chosen.template}, que channels/whatsapp/templates.json nao declara` };
+    return { told: false, reason: "no_template_for_outcome", detail: s.coreStrings.pollTemplateNotDeclared(`${chosen.template} (${channel.language})`) };
   }
   if (!options.cursorHeld && !s.engine.markTold(execution.id, execution.state)) return toldBefore(s, execution);
   const sent = await channel.send({ kind: "template", template: declared.name, language: declared.language, variables: chosen.variables, about: aboutOf(execution) });
-  s.engine.note("message.debtor", execution.id, { state: execution.state, reason: execution.reason ?? null, template: declared.name, variables: chosen.variables, ...(chosen.fallback ? { fallback: true } : {}) });
-  return confirmed(channel, sent, deliveryOf(sent, "template", declared.name, chosen.fallback));
+  s.engine.note("message.debtor", execution.id, { state: execution.state, reason: execution.reason ?? null, template: declared.name, language: declared.language, variables: chosen.variables, ...(chosen.fallback ? { fallback: true } : {}) });
+  return confirmed(channel, sent, deliveryOf(s, sent, "template", declared.name, chosen.fallback));
 }
 
 function fallbackOf(channel: WhatsAppChannel): { template: string; variables: string[]; fallback: true } | undefined {
@@ -360,8 +368,8 @@ function fallbackOf(channel: WhatsAppChannel): { template: string; variables: st
   return name ? { template: name, variables: [], fallback: true } : undefined;
 }
 
-function deliveryOf(sent: SentMessage, carrier: "text" | "template", template?: string, fallback?: boolean): Delivery {
+function deliveryOf(s: Setup, sent: SentMessage, carrier: "text" | "template", template?: string, fallback?: boolean): Delivery {
   if (sent.refused) return { told: false, reason: "refused", detail: `${sent.refused.rule}: ${sent.refused.detail}` };
-  if (sent.state === "failed") return { told: false, reason: "refused", detail: "o provedor nao aceitou a mensagem" };
+  if (sent.state === "failed") return { told: false, reason: "refused", detail: s.coreStrings.pollProviderRefused };
   return { told: true, carrier, ...(template ? { template } : {}), ...(fallback ? { fallback: true as const } : {}) };
 }

@@ -15,6 +15,8 @@ import type {
   LoadedManifest,
   LocalMandateStatusStub,
   Guardrails,
+  Locale,
+  LocaleTable,
   Mandate,
   MandateStatusSource,
   PaymentRail,
@@ -95,12 +97,30 @@ export interface RailBuild {
   pollIntervalMs?: number;
 }
 
+/**
+ * What an agent calls the people and the records of a run. None of it is
+ * localized, on purpose: who approved is an id in a signed artifact, and an
+ * approver that changed with the language would be a different approver.
+ */
 export interface RuntimeLabels {
   /** Who decides when no `--user` is given: `usr_terminal`, `usr_operator`. */
   defaultUser: string;
   /** Who decides inside a scenario or an adversarial case. */
   evalUser: string;
-  /** The word for the signed instrument in the banner: `mandato`, `politica`. */
+  /** `reconcile`'s finding kind and detail for a sealed outcome the bundle does not hold. */
+  missingReceiptKind: string;
+  missingReceiptDetail(receiptId: string, runId: string): string;
+  /** `resume`'s line for an execution it could not close. */
+  stillExecuting(execution: Execution): string;
+}
+
+/**
+ * The words the runner prints on an agent's behalf, one entry per locale
+ * (`kit.strings`). A kit adds keys of its own to the same entries; every key
+ * must exist in every locale, which `npm run check` verifies.
+ */
+export interface KitStrings {
+  /** The word for the signed instrument in the banner: `mandato`, `política`. */
   mandateWord: string;
   /** The word for a sealed outcome in the console: `recibo`, `registro`. */
   receiptWord: string;
@@ -108,15 +128,12 @@ export interface RuntimeLabels {
   intro: string;
   /** The interactive prompt. */
   prompt: string;
-  /** The question an `awaiting_approval` execution asks at the keyboard. */
+  /** The question an `awaiting_approval` execution asks at the keyboard. Its answers are read the same in every locale. */
   approveQuestion: string;
   /** What the console says when a dispatch ended with an unknown outcome. */
   uncertainDispatch: string;
-  /** `reconcile`'s finding kind and detail for a sealed outcome the bundle does not hold. */
-  missingReceiptKind: string;
-  missingReceiptDetail(receiptId: string, runId: string): string;
-  /** `resume`'s line for an execution it could not close. */
-  stillExecuting(execution: Execution): string;
+  /** Who refuses a blocked execution: "o mandato não autoriza", "the policy does not authorize". */
+  notAuthorized: string;
   /** `await-payer` only: the line printed every few looks while the payer has not acted. */
   waitingForPayer?(round: number): string;
 }
@@ -132,6 +149,8 @@ export interface OneShotContext {
 
 export interface ConsentContext {
   agentDir: string;
+  /** The run's locale: the consent summary and its question are printed in it. */
+  locale: Locale;
   argv: string[];
   say(line: string): void;
 }
@@ -153,6 +172,8 @@ export interface AgentKit {
    */
   scenarioRail?: "stub" | "requested";
   labels: RuntimeLabels;
+  /** The words the runner prints for this agent, per locale. */
+  strings: LocaleTable<KitStrings>;
   /** The usage text `--help`, a bad flag and a bad `--now` print. */
   usage(manifest: LoadedManifest): string;
   buildRail(ctx: RailContext): RailBuild;
@@ -169,13 +190,13 @@ export interface AgentKit {
    */
   executeOnApproval?: boolean;
   /** The deterministic policy the core runs as its `policyExtension`. `store` is the run's state.db, for a policy that judges durable state of the agent's own (a cart). */
-  policyExtension?(ctx: { agentDir: string; manifest: LoadedManifest; guardrails: Guardrails; store: StateStore }): PolicyExtension | undefined;
+  policyExtension?(ctx: { agentDir: string; manifest: LoadedManifest; guardrails: Guardrails; store: StateStore; locale: () => Locale }): PolicyExtension | undefined;
   /** The console lines that describe one execution. */
   describeExecution(execution: Execution, setup: Setup): string[];
   /** The `--json` body of a one-shot. */
   oneShotPayload(ctx: OneShotContext): Record<string, unknown>;
   /** `await-payer` only: what the payer reads when a receivable becomes payable. */
-  presentInstrument?(execution: Execution, instalment: number, chargeId: string, instrument: ChargeInstrument, tell: (line: string) => void): void;
+  presentInstrument?(execution: Execution, instalment: number, chargeId: string, instrument: ChargeInstrument, tell: (line: string) => void, locale: Locale): void;
   /** `await-payer` only: the one message per outcome the counterparty receives. */
   announceOutcome?(execution: Execution, setup: Setup, tell: (line: string) => void): boolean;
   /**
@@ -189,12 +210,13 @@ export interface AgentKit {
    * close on, or it cannot tell the person at all.
    *
    * The name must be one the agent declares in
-   * `channels/whatsapp/templates.json`; the language is the registry's and is
-   * not repeated here. `undefined` means this agent has no approved copy for
+   * `channels/whatsapp/templates.json`; the language is the conversation's
+   * locale's, and the registry declares every template in each. `locale` is
+   * there for the variables, which are display text too (a formatted total). `undefined` means this agent has no approved copy for
    * that outcome, which the caller REPORTS rather than papers over: a person
    * who was not told was not told.
    */
-  outcomeTemplate?(execution: Execution): { template: string; variables: string[] } | undefined;
+  outcomeTemplate?(execution: Execution, locale: Locale): { template: string; variables: string[] } | undefined;
   /**
    * Work that FOLLOWS an outcome and is not part of it: a sale's service
    * invoice once the order is `settled`. Runs after `announceOutcome`,

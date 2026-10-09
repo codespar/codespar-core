@@ -6,7 +6,7 @@
  * "the charge was issued" finds it again on `resume`.
  *
  * The fixture payer lives in the lookups: the first look after issuance
- * finds the instrument registered (a cobranca com vencimento answers
+ * finds the instrument registered (a cobrança com vencimento answers
  * PROCESSING at create and PENDING once the clearing house has it), the
  * second look finds what the payer did: paid (default), let it expire, or
  * nothing yet. With a real key the scenario runner calls the sandbox pay
@@ -29,6 +29,13 @@ export interface StubChargeRailOptions {
   uncertainOnce?: string[];
   /** Test hook: called after the issuance is persisted and before the outcome is returned. */
   afterDispatch?: (attemptId: string) => void;
+  /** Debtor documents whose registration the issuer ends in `ERROR` at the first look: no instrument, ever (staging, 2026-09-27, OPEN_QUESTIONS §63). */
+  issuerErrorPayees?: string[];
+  /**
+   * Debtor documents whose charge never becomes payable and is settled anyway at the second look: what the API's test
+   * pay route did to a charge in `ERROR` on staging (ent#1816). Here so the scenario gate can be shown refusing it.
+   */
+  settlesUnpayablePayees?: string[];
 }
 
 interface PayerState {
@@ -100,8 +107,14 @@ export class StubChargeRail implements PaymentRail {
     const looks = state.looks + 1;
     this.savePayerState(attemptId, { ...state, looks });
 
+    if (this.options.issuerErrorPayees?.includes(payment.payee)) {
+      const failed: RailOutcome = { status: "failed", code: "charge_issuer_error", message: `stub: the issuer ended charge ${outcome.transaction_id}'s registration in ERROR: no Pix, no boleto, nothing a payer can pay`, raw: { stub: true } };
+      this.replace(attemptId, payment, failed);
+      return failed;
+    }
+    if (this.options.settlesUnpayablePayees?.includes(payment.payee) && looks === 1) return this.update(attemptId, payment, "PROCESSING", false);
     // First look: the clearing house registered the instrument. It is payable from here.
-    if (looks === 1 || !outcome.instrument.payable) {
+    if ((looks === 1 || !outcome.instrument.payable) && !this.options.settlesUnpayablePayees?.includes(payment.payee)) {
       return this.update(attemptId, payment, "PENDING", true);
     }
     if (state.fate === "pays") {

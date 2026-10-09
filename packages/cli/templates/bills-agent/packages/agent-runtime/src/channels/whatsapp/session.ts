@@ -31,13 +31,15 @@ export interface SessionState {
 export type TemplateRefusal = { rule: string; detail: string } | undefined;
 
 export class SessionWindow {
-  private readonly templates: Map<string, WhatsAppTemplate>;
+  /** Every declared copy, by name: one per language, since Meta approves a template per (name, language). */
+  private readonly templates: Map<string, WhatsAppTemplate[]>;
   private lastInboundAt: number | undefined;
   /** The provider said the window is shut (131047) after ours read it open. Holds until the person writes again. */
   private shutByProvider = false;
 
   constructor(templates: readonly WhatsAppTemplate[], initial?: SessionState) {
-    this.templates = new Map(templates.map((t) => [t.name, t]));
+    this.templates = new Map();
+    for (const t of templates) this.templates.set(t.name, [...(this.templates.get(t.name) ?? []), t]);
     this.lastInboundAt = initial?.lastInboundAt;
   }
 
@@ -67,9 +69,9 @@ export class SessionWindow {
     return this.remainingSeconds(now) > 0;
   }
 
-  /** The declaration, for a caller that has to build a send: the language is the registry's, never the caller's guess. */
-  declared(name: string): WhatsAppTemplate | undefined {
-    return this.templates.get(name);
+  /** The copy declared in `language`, for a caller that has to build a send. `undefined` when the name or that language was never declared. */
+  declared(name: string, language: string): WhatsAppTemplate | undefined {
+    return this.templates.get(name)?.find((t) => t.language === language);
   }
 
   /**
@@ -80,17 +82,18 @@ export class SessionWindow {
    * delivers nothing, so each is refused here instead.
    */
   refuse(body: { template: string; language: string; variables: readonly string[] }): TemplateRefusal {
-    const declared = this.templates.get(body.template);
-    if (!declared) {
+    const copies = this.templates.get(body.template);
+    if (!copies) {
       return {
         rule: "template_unknown",
         detail: `the agent declares no template named ${body.template}; Meta only delivers templates it approved, and this one was never registered here`,
       };
     }
-    if (declared.language !== body.language) {
+    const declared = copies.find((t) => t.language === body.language);
+    if (!declared) {
       return {
         rule: "template_language_unknown",
-        detail: `${body.template} is declared in ${declared.language}, not ${body.language}; a template approved in one language does not exist in another`,
+        detail: `${body.template} is declared in ${copies.map((t) => t.language).join(", ")}, not ${body.language}; a template approved in one language does not exist in another`,
       };
     }
     const expected = templateArity(declared.body);

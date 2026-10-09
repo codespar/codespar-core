@@ -71,6 +71,16 @@ export function localClock(now: Date, timezone: string): string {
   return `${hour}:${minute}`;
 }
 
+/** The calendar day `now` falls on in `timezone`, as `YYYY-MM-DD`. */
+export function localDate(now: Date, timezone: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
+/** Whole days from `today` to `date` (both `YYYY-MM-DD`): 0 is today, negative is already past. */
+export function daysUntil(today: string, date: string): number {
+  return Math.round((Date.parse(`${date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
+}
+
 /** `"22:00-07:00"` is the CLOSED window: inside it, the trigger fires. Crosses midnight when start > end. */
 export function isOutsideHours(window: string, now: Date, timezone: string): boolean {
   const [start, end] = window.split("-") as [string, string];

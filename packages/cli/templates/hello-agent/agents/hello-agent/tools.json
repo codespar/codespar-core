@@ -4,7 +4,7 @@
     {
       "name": "list_bills",
       "effect": "read",
-      "description": "The bills of the current month: payee alias, name, amount in BRL cents and due date. Read-only.",
+      "description": "The bills of the current month: payee alias, name, amount in BRL cents, due date and days until it falls due (negative once past), plus `today`, the only date you know. Read-only.",
       "input_schema": { "type": "object", "properties": {} }
     }
   ]

@@ -3,7 +3,7 @@
   "version": 1,
   "consumer_id": "usr_demo_titular",
   "agent_id": "bills-agent",
-  "purpose": "contas do mes",
+  "purpose": "contas do mês",
   "currency": "BRL",
   "cap_minor": 7200000,
   "per_tx_cap_minor": 250000,

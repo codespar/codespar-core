@@ -49,19 +49,36 @@ the templates this agent sends. A conversation therefore cannot be called
       "name": "acordo_quitado",
       "language": "pt_BR",
       "description": "what this template is for and what {{1}} means",
-      "body": "Oi! Recebemos o pagamento do {{1}} e ele esta quitado. Obrigado!"
+      "body": "Oi! Recebemos o pagamento do {{1}} e ele está quitado. Obrigado!"
+    },
+    {
+      "name": "acordo_quitado",
+      "language": "en_US",
+      "description": "the English copy: same variables, same buttons",
+      "body": "Hi! We received the payment for {{1}} and it is settled. Thank you!"
     }
   ]
 }
 ```
+
+Meta approves a template per (name, language) pair, so each template is
+declared once per language, and every template exists in the language of each
+locale the agent can run in: `pt_BR` for `pt-BR`, `en_US` for `en` (`npm run
+check` fails otherwise, `channels_templates_locale`). The copies of one name
+carry the same variables, the same button ids and the same fallback flag; the
+titles, the body and each button's `intent` are the translation. A
+conversation sends the copy of its own locale and reads a tap by that copy's
+`intent`, so an English conversation hands the model the English intent.
 
 Outside the 24 hours that follow the person's last message WhatsApp carries an
 approved template and nothing else, so an agent that ever speaks after that —
 and a collections agent does it constantly, because the debtor agrees on
 Tuesday and pays on Friday — has to own one per outcome. `npm run poll --
 --channel whatsapp` is what sends them; `src/kit.ts` maps an outcome to a name
-in `outcomeTemplate`, and the language comes from here rather than from the
-kit, so there is one source for it.
+in `outcomeTemplate`, and the language is the conversation's locale, looked up
+here, rather than anything the kit says, so there is one source for it. A poll
+days later sends the language the conversation was RECORDED in, whatever the
+poll's own `--locale`; one that disagrees is refused.
 
 What this file PROVES is narrow and worth stating exactly: the agent declared
 the name, so a send of a name nobody declared is refused here instead of
@@ -112,7 +129,7 @@ the conversation's clock past 24 hours, pays, and polls.
 
 ## Taps, failed deliveries and the fallback (OPEN_QUESTIONS §46)
 
-A template may declare quick replies `{ id, title, intent }`. When the person taps one, the model is handed the `intent`, never the button's title, and a tap on an id no template declares is recorded and skipped. `acordo_cobranca_vencida` offers "Emitir nova" / "Agora nao", and `acordo-1042-retomada.json` is Joana tapping "Emitir nova" the day after.
+A template may declare quick replies `{ id, title, intent }`. When the person taps one, the model is handed the `intent`, never the button's title, and a tap on an id no template declares is recorded and skipped. `acordo_cobranca_vencida` offers "Emitir nova" / "Agora não" ("Issue a new one" / "Not now" in its `en_US` copy), and `acordo-1042-retomada.json` is Joana tapping "Emitir nova" the day after.
 
 A delivery the provider reports `failed` (131026: not on WhatsApp, blocked) is recorded, becomes `message.debtor.failed` when it told an outcome, reaches the operator's console, and makes the poll answer `delivery_failed` instead of "told". A `read` is recorded and nothing more.
 

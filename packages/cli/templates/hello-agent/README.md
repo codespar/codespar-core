@@ -1,7 +1,7 @@
 # {{name}}
 
 Scaffolded by `codespar init --template hello-agent` from the `hello-agent` starter kit
-(https://github.com/codespar/agent-starter-kits at `b766575306a71c9135c0d70e23d591e6523dc2f8`, agent 0.1.0).
+(https://github.com/codespar/agent-starter-kits at `d50c3d2fbb8707a4de67a6f8db5ee0bfb1b33794`, agent 0.1.0).
 
 The worked example of the codespar-agent-builder skill: a read-only agent that reads the month's bills and cannot pay. Built from the five files, the packs and one kit module.
 
@@ -20,4 +20,4 @@ against are vendored here and linked as npm workspaces; the agent's own
 
 The agent's guide is [`agents/hello-agent/README.md`](agents/hello-agent/README.md); its commands run at this root
 (`npm run check`, `npm run eval`, `npm test`) or inside `agents/hello-agent/`. The manifest pins
-`cli: "@codespar/cli@0.14.0"`, the CLI version whose `agent run`/`eval` this agent was written for.
+`cli: "@codespar/cli@0.18.1"`, the CLI version whose `agent run`/`eval` this agent was written for.

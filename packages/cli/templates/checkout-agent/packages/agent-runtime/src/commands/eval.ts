@@ -3,22 +3,27 @@
  * section 9 plus every scenario of section 12 in every mode it declares. Runs
  * on the replay provider and the stub rail, with no model and no network. A
  * regression blocks merge.
+ *
+ * Its proof bundles go to `runs/eval/`, apart from the runs a person made
+ * (`runs.ts`); `inspect` and `rerun` find them by run id all the same.
  */
 import { stderr, stdout } from "node:process";
 import type { Agent } from "../agent.js";
 import { listAdversarialCases, loadAdversarialCase, runAdversarialCase, type AdversarialResult } from "../adversarial.js";
 import { checkScenario, listScenarios, loadScenario, runScenario, type ScenarioCheck } from "../scenarios.js";
+import { evalRunsDir } from "../runs.js";
 
 export async function runEval(agent: Agent, argv: string[]): Promise<number> {
   const json = argv.includes("--json");
   const only = argv.includes("--case") ? argv[argv.indexOf("--case") + 1] : undefined;
   const say = (l: string) => stderr.write(l + "\n");
   const awaitsPayer = agent.settlement === "await-payer";
+  const runsDir = evalRunsDir(agent);
 
   const adversarial = [];
   for (const name of listAdversarialCases(agent)) {
     if (only && only !== name) continue;
-    const result = await runAdversarialCase(agent, loadAdversarialCase(agent, name));
+    const result = await runAdversarialCase(agent, loadAdversarialCase(agent, name), { runsDir });
     adversarial.push(result);
     say(agent.kit.evalAdversarialLine?.(result) ?? adversarialLine(result));
   }
@@ -29,7 +34,7 @@ export async function runEval(agent: Agent, argv: string[]): Promise<number> {
     const scenario = loadScenario(agent, name);
     if (!scenario.rails.includes("stub")) continue;
     for (const mode of scenario.modes) {
-      const check = checkScenario(scenario, await runScenario(agent, scenario, { mode, rail: "stub" }));
+      const check = checkScenario(scenario, await runScenario(agent, scenario, { mode, rail: "stub", runsDir }));
       scenarios.push({
         name,
         mode,

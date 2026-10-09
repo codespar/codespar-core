@@ -25,6 +25,12 @@ npm run inspect --workspace=agents/hello-agent -- <run-id>
 No key is needed: with `ANTHROPIC_API_KEY` empty the run replays the
 recorded conversation, the agent reaches no rail, and `maturity` is empty.
 
+The one word of its own the kit prints is the interactive intro, and it
+declares it in both locales (`strings`, spread over the default kit's): `npm
+run check` fails when a key exists in one and not the other. `--locale en`
+(or `locale: en` in `agent.yaml`) prints the runner's lines in English; the
+model answers in the language of the question either way.
+
 `npm run inspect <run-id>` reads the run's proof bundle back as a timeline,
 and an agent that cannot pay gets it for the same nothing every other command
 costs here: the command reads the bundle and nothing else, so on this agent

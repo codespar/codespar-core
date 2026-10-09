@@ -18,9 +18,10 @@
  * execution carries (`<run_id>/cart-1`) is unique across runs, so an order
  * approved from another process (`npm run approve`) finds its cart.
  */
-import type { ExecutionEngine, StateStore, ToolHandler } from "@codespar/agent-core";
+import type { ExecutionEngine, Locale, StateStore, ToolHandler } from "@codespar/agent-core";
 import { CATALOG, MERCHANT, formatBRL } from "../catalog.js";
 import { localDate, priceCart, type Envelope, type PricedCart, type ValidationIssue } from "../pricing.js";
+import { STRINGS } from "../strings.js";
 
 export interface Cart extends PricedCart {
   cart_id: string;
@@ -137,6 +138,8 @@ export interface CartDeps {
   runId: string;
   timezone: string;
   clock: () => Date;
+  /** The run's locale, read at call time: the cart's issues and totals are worded in it. Default pt-BR. */
+  locale?: () => Locale;
   /** Called after a replacement, with the cart as it is now: an open order follows it (`bolepix-receivables`). */
   onReplaced(cart: Cart, engine: ExecutionEngine): void;
 }
@@ -169,16 +172,16 @@ export function makeCartHandlers(deps: CartDeps): Record<string, ToolHandler> {
     })),
     policy: {
       service_hours: deps.envelope.service_hours,
-      payment: "bolepix (cobranca com vencimento): paga por Pix ou por boleto, vence hoje",
-      discounts: "so dentro da politica da loja, aplicada pelo codigo; o que estiver fora e recusado. Cupom: so os da tabela da loja, informados pelo cliente.",
-      prices: "sempre os do catalogo; nenhuma ferramenta aceita preco",
+      payment: "bolepix (cobrança com vencimento): paga por Pix ou por boleto, vence hoje",
+      discounts: "só dentro da política da loja, aplicada pelo código; o que estiver fora é recusado. Cupom: só os da tabela da loja, informados pelo cliente.",
+      prices: "sempre os do catálogo; nenhuma ferramenta aceita preço",
     },
   });
 
   const cartView: ToolHandler = async (raw, ctx) => {
     const input = raw as { cart_id?: unknown };
     const cart = resolveCart(ctx.engine, deps, input.cart_id);
-    if (!cart) return { cart: null, message: "nenhum carrinho aberto nesta conversa; cart_update abre um" };
+    if (!cart) return { cart: null, message: STRINGS[deps.locale?.() ?? "pt-BR"].noCart };
     return viewOf(ctx.engine, cart);
   };
 
@@ -191,7 +194,7 @@ export function makeCartHandlers(deps: CartDeps): Record<string, ToolHandler> {
     } else target = currentCart(ctx.engine, deps);
 
     const now = deps.clock();
-    const priced = priceCart({ lines: input.lines, coupon: input.coupon, order_discount_pct: input.order_discount_pct }, deps.envelope, localDate(now, deps.timezone));
+    const priced = priceCart({ lines: input.lines, coupon: input.coupon, order_discount_pct: input.order_discount_pct }, deps.envelope, localDate(now, deps.timezone), deps.locale?.());
     const cartId = target?.cart_id ?? deps.book.nextId(deps.runId);
     const cart: Cart = {
       ...priced,

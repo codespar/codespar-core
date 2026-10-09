@@ -14,6 +14,7 @@ import { loadManifest, ManifestSchema, type LoadedManifest } from "./manifest.js
 import { MandateSchema } from "./mandate.js";
 import { ToolsFileSchema } from "./tools.js";
 import { canonicalJson } from "./hash.js";
+import { LOCALES, WHATSAPP_LANGUAGE } from "./locale.js";
 import { PUBLISHED_EVENTS, isPublishedEvent } from "./events.js";
 
 export interface CheckFinding {
@@ -145,9 +146,30 @@ export function checkAgent(agentDir: string): CheckReport {
   if (manifest.channels.includes("whatsapp")) {
     if (!existsSync(registryPath)) error("channels_templates_missing", `agent.yaml declares the whatsapp channel and channels/whatsapp/${TEMPLATE_REGISTRY_FILE} does not exist`);
     else if (registry) {
-      const fallbacks = registry.templates.filter((t) => t.fallback);
-      if (fallbacks.length !== 1) error("channels_templates_fallback", `channels/whatsapp/${TEMPLATE_REGISTRY_FILE} declares ${fallbacks.length} fallback template(s); it must declare exactly one, for an outcome the agent has no template for`);
-      else if (templateArity(fallbacks[0]!.body) !== 0) error("channels_templates_fallback", `the fallback template ${fallbacks[0]!.name} takes variables; it is sent when nothing specific can be said, so it takes none`);
+      const names = [...new Set(registry.templates.filter((t) => t.fallback).map((t) => t.name))];
+      if (names.length !== 1) error("channels_templates_fallback", `channels/whatsapp/${TEMPLATE_REGISTRY_FILE} declares ${names.length} fallback template(s); it must declare exactly one, for an outcome the agent has no template for`);
+      for (const fallback of registry.templates.filter((t) => t.fallback)) {
+        if (templateArity(fallback.body) !== 0) error("channels_templates_fallback", `the fallback template ${fallback.name} (${fallback.language}) takes variables; it is sent when nothing specific can be said, so it takes none`);
+      }
+    }
+  }
+  // A conversation speaks the language of its locale, and either locale can be
+  // chosen per run (`--locale`), so every template exists in the language of
+  // every locale, with the same buttons and the same variables. A template
+  // missing in one language is an outcome that locale cannot tell once the
+  // 24-hour window shuts.
+  if (registry) {
+    const languages = LOCALES.map((l) => WHATSAPP_LANGUAGE[l]);
+    for (const template of registry.templates) {
+      if (!languages.includes(template.language)) error("channels_templates_locale", `channels/whatsapp/${TEMPLATE_REGISTRY_FILE}: ${template.name} is declared in ${template.language}, which no locale sends; the locales send ${languages.join(", ")}`);
+    }
+    for (const name of [...new Set(registry.templates.map((t) => t.name))]) {
+      const copies = registry.templates.filter((t) => t.name === name);
+      for (const language of languages) {
+        if (!copies.some((t) => t.language === language)) error("channels_templates_locale", `channels/whatsapp/${TEMPLATE_REGISTRY_FILE}: ${name} has no ${language} copy; a conversation in that locale could not send it`);
+      }
+      const shape = (t: (typeof copies)[number]) => JSON.stringify({ arity: templateArity(t.body), buttons: (t.buttons ?? []).map((b) => b.id), fallback: t.fallback ?? false });
+      if (new Set(copies.map(shape)).size > 1) error("channels_templates_locale", `channels/whatsapp/${TEMPLATE_REGISTRY_FILE}: the copies of ${name} differ in variables, buttons or fallback across languages; a translation says the same thing`);
     }
   }
   if (existsSync(registryPath)) {
