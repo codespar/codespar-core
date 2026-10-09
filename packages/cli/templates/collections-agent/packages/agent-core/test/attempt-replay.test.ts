@@ -65,8 +65,8 @@ beforeEach(() => {
 });
 
 function rail(): CodeSparRail {
-  // The placeholder passes the `csk_test_` guard and is the one test-key-shaped string the secret scan allows.
-  return new CodeSparRail(createCodeSparClient({ apiKey: "csk_test_your_key_here", baseUrl, timeoutMs: 5_000 }));
+  // Not the placeholder, which the guard refuses (#50); the underscore keeps it below the secret scan's key shape.
+  return new CodeSparRail(createCodeSparClient({ apiKey: "csk_test_unit_0000", baseUrl, timeoutMs: 5_000 }));
 }
 
 function refusal(code: string, details?: Record<string, unknown>): Answer {

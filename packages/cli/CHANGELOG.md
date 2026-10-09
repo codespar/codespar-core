@@ -1,5 +1,62 @@
 # @codespar/cli — changelog
 
+## 0.19.0 — 2026-10-09
+
+### Changed
+
+- **Kit templates bumped to `codespar/agent-starter-kits@d50c3d2`**, 68
+  commits on from the locked `b766575` (kits #50–#90). The sync script is
+  unchanged and the same five templates are carried. What a scaffolded kit
+  gains:
+  - **The pins a scaffold installs are the published ones**: `agent.yaml`
+    names `@codespar/cli@0.18.1` (it said 0.14.0) and the REST layer is pinned
+    at `@codespar/sdk` 0.16.16.
+  - **The terminal says what the run did.** The closing line counts what was
+    paid, refused and failed, and a run with a failed line exits 1. A
+    settlement the API replayed is not reported as paid by the run that got
+    the replay.
+  - **A request refused before a draft is said**, with its reason, on the
+    terminal and in `--json`. It used to end with no line at all.
+  - **`rerun` reproduces the approvals of the original run**, leaving open
+    the one the original left open, and refuses a run with no transcript by
+    name instead of dying on `ENOENT`. `start` refuses a missing transcript by
+    its path.
+  - **`rerun` runs on the original run's own clock**, and refuses by name a
+    run it cannot reproduce, saying what the world did that it does not
+    replay.
+  - **`npm run eval` writes its runs to `runs/eval/`**; `inspect` and `rerun`
+    still find them by id.
+  - **The kit reads the CLI's names for the API URL and the project**,
+    `CODESPAR_BASE_URL` and `CODESPAR_PROJECT`, next to its own, and refuses
+    two that disagree.
+  - **A key the kit cannot use says which mistake it is** (missing, the
+    `.env.example` placeholder, a live key), and a rail failure carries the
+    API's own answer.
+  - **The consent counts in reais** and names the mandate it replaces;
+    `inspect` says the mandate status a gate heard.
+  - **Every spend carries the kit's actor on the wire**, and the one on the
+    receipt is compared with it.
+  - **The agent answers in the person's language**, and the strings the code
+    prints follow a per-agent locale, `pt-BR` or `en`. Every user-visible
+    Portuguese string has its accents.
+  - **Recorded scenarios**: every scenario is reachable by its first turn,
+    `checkout-agent` included, and a recorded reply says where the result is
+    and cites no receipt.
+  - **Receivables**: a cycle closes on a payable instrument or does not close,
+    and the bolepix issuance is marked blocked in the `collections-agent` and
+    `checkout-agent` manifests.
+  - **WhatsApp**: a `delivered` that lands after a `failed` does not un-fail
+    the message.
+  - The template READMEs describe what the code does today.
+
+### Fixed
+
+- **A scaffold's `npm test` stays green in all five templates.** At an
+  intermediate kits commit a vendored `agent-core` language test asked for
+  more recorded turns than a single agent carries, so it failed in four of the
+  five scaffolds; the opt-in scaffold e2e caught it before any sync was
+  committed, and the kits fixed the test.
+
 ## 0.18.1 — 2026-09-29
 
 ### Added

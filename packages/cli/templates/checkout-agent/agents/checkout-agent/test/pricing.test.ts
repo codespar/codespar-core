@@ -110,7 +110,7 @@ describe("checkout §3.3, §5: the gate the core runs at every gate", () => {
     const over = priceCart({ lines: [{ sku: "aula-avulsa", quantity: 2 }], order_discount_pct: 9 }, envelope, TODAY);
     expect(checkOrder(order(over), over, envelope, AFTERNOON, TZ)?.reason).toBe("outside_envelope");
     const stacked = priceCart({ lines: [{ sku: "aula-avulsa", quantity: 2 }], coupon: "BEMVINDO10", order_discount_pct: 2 }, envelope, TODAY);
-    expect(checkOrder(order(stacked), stacked, envelope, AFTERNOON, TZ)?.detail).toContain("nao se somam");
+    expect(checkOrder(order(stacked), stacked, envelope, AFTERNOON, TZ)?.detail).toContain("não se somam");
     const coupon = priceCart({ lines: [{ sku: "aula-avulsa", quantity: 2 }], coupon: "BEMVINDO10" }, envelope, TODAY);
     expect(checkOrder(order(coupon), coupon, envelope, AFTERNOON, TZ)).toBeUndefined();
   });
@@ -133,6 +133,6 @@ describe("checkout §3.3, §5: the gate the core runs at every gate", () => {
 
   it("refuses an order above the ticket ceiling", () => {
     const big = priceCart({ lines: [{ sku: "pacote-10-aulas", quantity: 6 }] }, envelope, TODAY);
-    expect(checkOrder(order(big), big, envelope, AFTERNOON, TZ)?.detail).toContain("ticket maximo");
+    expect(checkOrder(order(big), big, envelope, AFTERNOON, TZ)?.detail).toContain("ticket máximo");
   });
 });

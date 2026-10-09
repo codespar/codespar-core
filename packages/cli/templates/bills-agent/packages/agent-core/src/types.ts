@@ -123,6 +123,11 @@ export type ExecutionReason =
   | "charge_expired"
   | "charge_cancelled"
   /**
+   * The issuer ended the receivable's registration in an error state (`ERROR`): no Pix, no boleto, nothing a payer can
+   * pay, and nothing will be. Terminal, and nothing was collected. Measured on staging on 2026-09-27 (OPEN_QUESTIONS §63).
+   */
+  | "charge_issuer_error"
+  /**
    * An ISSUED receivable whose read now answers that its reference matches more than one charge. Terminal for the
    * execution, but not "nothing moved": the charge exists and may still be paid. Reconcile it by the charge id; never
    * issue another to the same payee until that is done, which is why the core refuses one (`policy`).
@@ -166,16 +171,24 @@ export interface ItemOutcome {
   transaction_id?: string;
   /** The rail's code on a failed outcome (`charge_expired`, `charge_cancelled`, a provider code). */
   code?: string;
+  /** The rail's own message on a failed outcome, verbatim: for the CodeSpar rail, the API's `error.message`. */
+  message?: string;
   /** A failed outcome because the attempt id is held for another payment or another project (`RailOutcome.held`). */
   held?: "conflict" | "unavailable";
-  /** A settled outcome the rail answered from its record of an earlier presentation (`RailOutcome.replayed`). */
+  /**
+   * A settled outcome the rail answered, at dispatch, from its record of an
+   * earlier presentation (`RailOutcome.replayed`): the first time THIS
+   * execution presented the attempt, it was already paid, so this execution
+   * moved nothing for it. Never set by reconcile, whose lookup re-presents an
+   * attempt this execution already sent and cannot tell whose payment it reads.
+   */
   replayed?: true;
   error?: string;
   /** What the payer is shown for an accepted receivable, as the rail handed it back. Presentation only; nothing here decides money. */
   instrument?: ChargeInstrument;
 }
 
-/** The payable legs of a receivable. Null until the issuer registers the instrument (a cobranca com vencimento answers PROCESSING first). */
+/** The payable legs of a receivable. Null until the issuer registers the instrument (a cobrança com vencimento answers PROCESSING first). */
 export interface ChargeInstrument {
   payable: boolean;
   pix_copy_paste: string | null;

@@ -1,6 +1,6 @@
 {
   "name": "cart-replaced",
-  "description": "Checkout §5.2 as a demo: two lessons are ordered and confirmed; in the next message the customer says 'na verdade sao cinco' and asks to pay. The cart is REPLACED whole, the confirmed order follows it (restate), and the last gate sends it back to the attendant with items_hash_mismatch instead of issuing under the old approval. The second yes mints its own artifact; one charge is issued, for five lessons.",
+  "description": "Checkout §5.2 as a demo: two lessons are ordered and confirmed; in the next message the customer says 'na verdade são cinco' and asks to pay. The cart is REPLACED whole, the confirmed order follows it (restate), and the last gate sends it back to the attendant with items_hash_mismatch instead of issuing under the old approval. The second yes mints its own artifact; one charge is issued, for five lessons.",
   "modes": [
     "human",
     "mandate"
@@ -8,7 +8,7 @@
   "transcript": "./cart-replaced.transcript.jsonl",
   "turns": [
     {
-      "input": "oi, sou a Marina, quero duas aulas avulsas",
+      "input": "oi, sou a Marina, queria marcar duas aulas avulsas",
       "decision": "none"
     },
     {

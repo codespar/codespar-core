@@ -1,7 +1,7 @@
 # {{name}}
 
 Scaffolded by `codespar init --template collections-agent` from the `collections-agent` starter kit
-(https://github.com/codespar/agent-starter-kits at `b766575306a71c9135c0d70e23d591e6523dc2f8`, agent 0.1.0).
+(https://github.com/codespar/agent-starter-kits at `d50c3d2fbb8707a4de67a6f8db5ee0bfb1b33794`, agent 0.1.0).
 
 The merchant's agent that collects: agrees terms with the payer inside a negotiation envelope, issues one bolepix per instalment with an idempotency key, presents the QR and the copy-and-paste in the conversation, and closes the cycle on commerce.charge.paid or commerce.charge.expired.
 
@@ -25,4 +25,4 @@ run at this root as they do in the kits repo:
 
 The agent's guide is [`agents/collections-agent/README.md`](agents/collections-agent/README.md); its commands run at this root
 (`npm run check`, `npm run eval`, `npm test`) or inside `agents/collections-agent/`. The manifest pins
-`cli: "@codespar/cli@0.14.0"`, the CLI version whose `agent run`/`eval` this agent was written for.
+`cli: "@codespar/cli@0.18.1"`, the CLI version whose `agent run`/`eval` this agent was written for.

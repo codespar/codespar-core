@@ -10,8 +10,9 @@
  * policy (the debtors' book, the cap per receivable, the window cap).
  */
 import { z } from "zod";
-import { isOutsideHours, localClock, type Execution, type ExecutionReason, type Guardrails, type PolicyExtension } from "@codespar/agent-core";
+import { CORE_STRINGS, isOutsideHours, localClock, type Execution, type ExecutionReason, type Guardrails, type Locale, type PolicyExtension } from "@codespar/agent-core";
 import { agreementByDocument, type Agreement } from "./agreements.js";
+import { STRINGS } from "./strings.js";
 
 export const EnvelopeSchema = z
   .object({
@@ -57,11 +58,12 @@ export interface EnvelopeVerdict {
 }
 
 /** The pure check, for tests and for the tool handler's early answer. `undefined` means inside the envelope. */
-export function checkEnvelope(execution: Pick<Execution, "items" | "total">, envelope: Envelope, now: Date, timezone: string): EnvelopeVerdict | undefined {
+export function checkEnvelope(execution: Pick<Execution, "items" | "total">, envelope: Envelope, now: Date, timezone: string, locale: Locale = "pt-BR"): EnvelopeVerdict | undefined {
+  const text = STRINGS[locale];
   // Collection hours are the law's, not the merchant's: the window in which a debtor may be contacted at all.
   const [open, close] = envelope.collection_hours.split("-") as [string, string];
   if (isOutsideHours(`${close}-${open}`, now, timezone)) {
-    return { reason: "outside_hours", detail: `fora do horario de cobranca (${envelope.collection_hours} ${timezone}); agora sao ${localClock(now, timezone)}` };
+    return { reason: "outside_hours", detail: CORE_STRINGS[locale].outsideCollectionHours(envelope.collection_hours, timezone, localClock(now, timezone)) };
   }
 
   const documents = new Set(execution.items.map((i) => i.payee));
@@ -72,32 +74,32 @@ export function checkEnvelope(execution: Pick<Execution, "items" | "total">, env
   if (!agreement) return { reason: "outside_envelope", detail: "no open agreement for this debtor" };
 
   if (execution.items.length > envelope.max_instalments) {
-    return { reason: "outside_envelope", detail: `${execution.items.length} parcelas; o envelope permite ate ${envelope.max_instalments}` };
+    return { reason: "outside_envelope", detail: text.envelopeTooManyInstalments(execution.items.length, envelope.max_instalments) };
   }
   const floor = floorMinor(agreement, envelope);
   if (execution.total < floor) {
     const pct = Math.round((1 - execution.total / agreement.principal_minor) * 1000) / 10;
-    return { reason: "outside_envelope", detail: `total ${execution.total} e ${pct}% abaixo do principal ${agreement.principal_minor}; o desconto maximo e ${envelope.max_discount_pct}% (piso ${floor})` };
+    return { reason: "outside_envelope", detail: text.envelopeBelowFloor(execution.total, pct, agreement.principal_minor, envelope.max_discount_pct, floor) };
   }
   if (execution.total > agreement.principal_minor) {
-    return { reason: "outside_envelope", detail: `total ${execution.total} acima do principal ${agreement.principal_minor}; nao se cobra mais do que se deve` };
+    return { reason: "outside_envelope", detail: text.envelopeAbovePrincipal(execution.total, agreement.principal_minor) };
   }
   const small = execution.items.find((i) => i.amount < envelope.min_instalment_minor);
-  if (small) return { reason: "outside_envelope", detail: `parcela de ${small.amount} abaixo do minimo ${envelope.min_instalment_minor}` };
+  if (small) return { reason: "outside_envelope", detail: text.envelopeInstalmentTooSmall(small.amount, envelope.min_instalment_minor) };
 
   const today = localDate(now, timezone);
   const last = addDays(today, envelope.due_date_window_days);
   let previous = "";
   for (const [i, item] of execution.items.entries()) {
-    if (!item.due_date) return { reason: "outside_envelope", detail: `parcela ${i + 1} sem vencimento` };
-    if (item.due_date < today) return { reason: "outside_envelope", detail: `vencimento ${item.due_date} da parcela ${i + 1} ja passou (hoje e ${today})` };
-    if (item.due_date > last) return { reason: "outside_envelope", detail: `vencimento ${item.due_date} da parcela ${i + 1} fora da janela de ${envelope.due_date_window_days} dias (ate ${last})` };
-    if (item.due_date < previous) return { reason: "outside_envelope", detail: `parcela ${i + 1} vence antes da anterior` };
+    if (!item.due_date) return { reason: "outside_envelope", detail: text.envelopeNoDueDate(i + 1) };
+    if (item.due_date < today) return { reason: "outside_envelope", detail: text.envelopeDuePassed(item.due_date, i + 1, today) };
+    if (item.due_date > last) return { reason: "outside_envelope", detail: text.envelopeDueOutsideWindow(item.due_date, i + 1, envelope.due_date_window_days, last) };
+    if (item.due_date < previous) return { reason: "outside_envelope", detail: text.envelopeDueOutOfOrder(i + 1) };
     previous = item.due_date;
   }
   return undefined;
 }
 
-export function envelopePolicy(envelope: Envelope): PolicyExtension {
-  return (execution, ctx) => checkEnvelope(execution, envelope, ctx.now, ctx.guardrails.timezone);
+export function envelopePolicy(envelope: Envelope, locale: () => Locale = () => "pt-BR"): PolicyExtension {
+  return (execution, ctx) => checkEnvelope(execution, envelope, ctx.now, ctx.guardrails.timezone, locale());
 }

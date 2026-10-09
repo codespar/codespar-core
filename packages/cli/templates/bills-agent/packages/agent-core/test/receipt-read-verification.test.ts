@@ -124,6 +124,37 @@ describe("a v4 receipt: signature, body and approval", () => {
     expect(report.message).toContain(ITEMS_HASH);
   });
 
+  it("reports sandbox and money_moved off the bound body, and no other field of the read", () => {
+    for (const report of [verifyReceiptRead(sealed(4), keyDocument()), verifyReceiptRead(sealed(4), keyDocument(), { approval: artifact() })]) {
+      expect(report.sealed_payment).toEqual({ sandbox: true, money_moved: false });
+      expect(JSON.stringify(report)).not.toContain(MANDATE_SIG);
+    }
+  });
+
+  it("reports a field the recipe does not seal as null, not as the read's value", () => {
+    const base = PUBLISHED["chain_recipe"] as { links: Array<{ from: string; fields?: string[] }> };
+    const recipe = { ...base, links: base.links.map((l) => (l.from === "payment" ? { ...l, fields: l.fields!.filter((f) => f !== "sandbox?") } : l)) };
+    const b = body(4, { items_hash: ITEMS_HASH, batch_hash: null });
+    const m = b.mandate;
+    const q = b.quote;
+    const p = b.payment;
+    const chain = sha256(
+      canonicalize({
+        v: 4,
+        links: [
+          { id: m.id, nonce: m.nonce, scope: m.scope, currency: m.currency, sig_sha256: m.sig_sha256 },
+          { seller: q.seller, resource: q.resource, price_minor: q.price_minor, payee: q.payee, session_id: q.session_id, sig: q.sig, at: q.at },
+          b.approval,
+          { rail: p.rail, provider: p.provider, tx_id: p.tx_id, amount_minor: p.amount_minor, attempt_id: p.attempt_id, money_moved: p.money_moved, at: p.at },
+        ],
+      }),
+    );
+    const read = { ...sealed(4), chain, receipt_sig_ed25519: signDetached(null, Buffer.from(`codespar-receipt:v1:${RECEIPT_ID}:${chain}`, "utf8"), privateKey).toString("base64url") };
+    const report = verifyReceiptRead(read, keyDocument({ chain_recipe: recipe }));
+    expect(report.verdict).toBe("verified");
+    expect(report.sealed_payment).toEqual({ sandbox: null, money_moved: false });
+  });
+
   it("is chain_mismatch when the body beside a genuine signature was changed: payee, amount, approval", () => {
     const read = sealed(4);
     const q = read["quote"] as Record<string, unknown>;
@@ -136,6 +167,7 @@ describe("a v4 receipt: signature, body and approval", () => {
       const report = verifyReceiptRead(altered, keyDocument(), { approval: artifact() });
       expect(report.verdict).toBe("chain_mismatch");
       expect(report.chain_check).toMatchObject({ status: "mismatch", version: 4 });
+      expect(report.sealed_payment).toBeUndefined();
       expect(VERDICT_EXIT_CODES[report.verdict]).toBe(8);
     }
   });

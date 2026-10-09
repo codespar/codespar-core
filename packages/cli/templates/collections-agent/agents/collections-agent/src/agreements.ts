@@ -4,7 +4,7 @@
  * matches the named entries of the collection policy (`mandate.example.json`);
  * the core resolves it to the debtor's document, which the model never sees.
  * The documents are valid CPFs (check digits computed): the clearing house
- * validates them on a cobranca com vencimento.
+ * validates them on a cobrança com vencimento.
  */
 export interface Agreement {
   alias: string;

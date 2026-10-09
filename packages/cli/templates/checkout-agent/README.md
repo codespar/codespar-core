@@ -1,7 +1,7 @@
 # {{name}}
 
 Scaffolded by `codespar init --template checkout-agent` from the `checkout-agent` starter kit
-(https://github.com/codespar/agent-starter-kits at `b766575306a71c9135c0d70e23d591e6523dc2f8`, agent 0.1.0).
+(https://github.com/codespar/agent-starter-kits at `d50c3d2fbb8707a4de67a6f8db5ee0bfb1b33794`, agent 0.1.0).
 
 The merchant's agent that sells in the conversation: the customer builds a cart the code prices, the attendant (or the sales policy) confirms the order, one bolepix is issued with an idempotency key, the QR and the copy-and-paste go to the customer, and the order closes on commerce.charge.paid.
 
@@ -25,4 +25,4 @@ run at this root as they do in the kits repo:
 
 The agent's guide is [`agents/checkout-agent/README.md`](agents/checkout-agent/README.md); its commands run at this root
 (`npm run check`, `npm run eval`, `npm test`) or inside `agents/checkout-agent/`. The manifest pins
-`cli: "@codespar/cli@0.14.0"`, the CLI version whose `agent run`/`eval` this agent was written for.
+`cli: "@codespar/cli@0.18.1"`, the CLI version whose `agent run`/`eval` this agent was written for.

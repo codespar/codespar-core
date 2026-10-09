@@ -6,6 +6,7 @@
  */
 import type { ProofBundle } from "./bundle.js";
 import type { ExecutionEngine } from "./engine.js";
+import { detectLanguage, replyLanguageDirective, type ReplyLanguage } from "./language.js";
 import type { AgentRuntime, ConversationMessage, ToolCall, ToolSpec } from "./providers/types.js";
 import { isReply } from "./providers/types.js";
 import type { Execution } from "./state-machine.js";
@@ -25,6 +26,23 @@ export interface ToolContext {
    * `onExecution`, and still mints its own artifact.
    */
   onBatch?: (batch: BatchPresentation) => Promise<BatchGesture | undefined>;
+  /**
+   * Fires for a line a payment tool was asked to pay and created NO execution
+   * for in this run: one an earlier run already covers, or one refused before
+   * a draft existed. Without it such a line leaves nothing behind for the
+   * channel to count, and a run that paid nobody reads like one that had
+   * nothing to say.
+   */
+  onNotRun?: (line: NotRunLine) => void;
+}
+
+/** A line a payment tool did not turn into an execution in this run, and why. */
+export interface NotRunLine {
+  /** What the person would call the line: a batch line's alias, a payee. */
+  ref: string;
+  /** `already_settled`: an earlier run paid it. `in_progress`: an earlier execution for it is still open. `refused`: it was refused before a draft. */
+  why: "already_settled" | "in_progress" | "refused";
+  detail?: string;
 }
 
 /** What a person sees when a whole batch is put in front of them: the list, its total, and the hash of the list. */
@@ -74,6 +92,8 @@ export interface TurnResult {
   reply: string;
   tool_calls: Array<{ name: string; refused: boolean }>;
   executions: Execution[];
+  /** Lines the turn's payment tools did not turn into an execution (`ToolContext.onNotRun`). */
+  not_run: NotRunLine[];
 }
 
 export class AgentLoop {
@@ -81,6 +101,8 @@ export class AgentLoop {
   private readonly allowed: Set<string>;
   private readonly specs: ToolSpec[];
   private readonly clock: () => Date;
+  /** The language the person last wrote in, kept when a turn gives no lead of its own ("ok"). */
+  private language: ReplyLanguage | undefined;
 
   constructor(private readonly options: AgentLoopOptions) {
     this.allowed = allowedToolNames(options.tools);
@@ -97,24 +119,28 @@ export class AgentLoop {
     const maxSteps = this.options.maxSteps ?? 8;
     const calls: TurnResult["tool_calls"] = [];
     const executions: Execution[] = [];
+    const notRun: NotRunLine[] = [];
+
+    this.language = detectLanguage(userText) ?? this.language;
+    const system = this.language ? `${this.options.system.trimEnd()}\n\n${replyLanguageDirective(this.language)}\n` : this.options.system;
 
     this.messages.push({ role: "user", content: userText });
-    bundle.transcript({ at: this.now(), kind: "user", text: userText });
+    bundle.transcript({ at: this.now(), kind: "user", text: userText, reply_language: this.language ?? null });
 
     for (let step = 0; step < maxSteps; step += 1) {
-      const out = await runtime.step({ system: this.options.system, messages: this.messages }, this.specs);
+      const out = await runtime.step({ system, messages: this.messages }, this.specs);
       if (isReply(out)) {
         this.messages.push({ role: "assistant", content: out.text });
         bundle.transcript({ at: this.now(), kind: "assistant_step", reply: out.text });
         bundle.transcript({ at: this.now(), kind: "assistant", text: out.text });
-        return { reply: out.text, tool_calls: calls, executions };
+        return { reply: out.text, tool_calls: calls, executions, not_run: notRun };
       }
 
       this.messages.push({ role: "assistant", content: "", tool_calls: out });
       bundle.transcript({ at: this.now(), kind: "assistant_step", tool_calls: out });
 
       for (const call of out) {
-        const result = await this.dispatch(call, executions);
+        const result = await this.dispatch(call, executions, notRun);
         calls.push({ name: call.name, refused: result.refused });
         this.messages.push({ role: "tool", tool_call_id: call.id, name: call.name, content: JSON.stringify(result.content), ...(result.refused ? { is_error: true } : {}) });
         bundle.transcript({ at: this.now(), kind: "tool_result", tool_call_id: call.id, name: call.name, refused: result.refused, content: result.content });
@@ -124,10 +150,10 @@ export class AgentLoop {
     const text = "I stopped: too many tool steps in one turn. Nothing was paid beyond what the trail shows.";
     this.messages.push({ role: "assistant", content: text });
     bundle.transcript({ at: this.now(), kind: "assistant", text, truncated: true });
-    return { reply: text, tool_calls: calls, executions };
+    return { reply: text, tool_calls: calls, executions, not_run: notRun };
   }
 
-  private async dispatch(call: ToolCall, executions: Execution[]): Promise<{ refused: boolean; content: unknown }> {
+  private async dispatch(call: ToolCall, executions: Execution[], notRun: NotRunLine[]): Promise<{ refused: boolean; content: unknown }> {
     const { bundle, handlers, engine, onExecution, onBatch } = this.options;
     bundle.transcript({ at: this.now(), kind: "tool_call", tool_call_id: call.id, name: call.name, input: call.input });
 
@@ -148,6 +174,7 @@ export class AgentLoop {
           return settledOrNot;
         },
         ...(onBatch ? { onBatch } : {}),
+        onNotRun: (line) => void notRun.push(line),
       });
       return { refused: false, content };
     } catch (err) {

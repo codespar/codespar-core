@@ -11,18 +11,19 @@ escalate_above:
   # No `new_beneficiary`: a new customer is the normal case of a store, not a risk (checkout §3.2).
   # No `outside_hours`: service hours are a rule of the envelope, refused in BOTH modes, not an escalation.
 mcp: "@codespar/mcp@0.5.8"
-cli: "@codespar/cli@0.14.0"
+cli: "@codespar/cli@0.18.1"
 tools: ./tools.json
 guardrails: ./guardrails.json
 mandate_schema: ./mandate.example.json
 # The API's own names, the same four the collections-agent declares. `paid` closes the sale; `expired` and `cancelled` close it
-# as failed; `created` is when the cobranca com vencimento becomes payable (read from the status poll). `payment_notified` and
+# as failed; `created` is when the cobrança com vencimento becomes payable (read from the status poll). `payment_notified` and
 # `expiry_notified` are deliberately absent: neither proves a payment (checkout §5.4).
 events: [commerce.charge.created, commerce.charge.paid, commerce.charge.expired, commerce.charge.cancelled]
 channels: [terminal, whatsapp]   # WhatsApp through the adapter the collections-agent uses (checkout decision 6); `npm run check` confirms channels/whatsapp/ ships a conversation
+locale: pt-BR             # pt-BR | en: the lines the code prints (approval, labels, templates); `--locale` overrides per run. The model replies in the language the person types either way
 maturity:
   storefront-cart: sandbox
-  bolepix-receivables: sandbox
+  bolepix-receivables: blocked    # ent#1816: the sandbox does not issue a payable bolepix today; the stub rail and the scenarios run the sale
   nfse-invoice: sandbox           # NFS-e through codespar_invoice (nfe.io), after `settled`, by code; the stub issuer runs in CI. NF-e (product) waits for an A1 + IE
   receipt-verification: blocked   # the API seals no record for a paid charge: no chain, no signature to verify
 scenarios: ./scenarios/

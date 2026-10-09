@@ -14,6 +14,7 @@ import { stdout } from "node:process";
 import { relative } from "node:path";
 import type { ConversationScript } from "@codespar/agent-core";
 import type { Agent } from "../agent.js";
+import { outcomeExitCode, refusalLine, sayOutcome } from "../outcome.js";
 import type { Setup } from "../setup.js";
 import { defaultAsk } from "../terminal.js";
 import { converse } from "../channels/whatsapp/run.js";
@@ -116,19 +117,23 @@ export async function startWhatsApp(options: StartWhatsAppOptions): Promise<numb
     ...(cost ? { simulated_cost: cost } : {}),
   };
 
+  // The same count, refusals and exit code as the terminal's one-shot: the channel changes who is told, not what the run did.
+  const { executions, refusals, outcome, line } = sayOutcome(s, result.notRun);
+  for (const refusal of refusals) say(refusalLine(refusal));
   if (options.json) {
     const payload = s.kit.oneShotPayload({
       setup: s,
       reply: result.replies[result.replies.length - 1] ?? "",
       toolCalls: result.toolCalls,
-      executions: result.executions,
+      executions,
       startedAt: options.startedAt,
     });
-    stdout.write(JSON.stringify({ ...payload, channel: channelSummary }) + "\n");
+    stdout.write(JSON.stringify({ ...payload, run_outcome: outcome, refused_before_draft: refusals, channel: channelSummary }) + "\n");
   } else {
-    say(`conversa em ${channelSummary.log} — ${channelSummary.messages_in} recebida(s), ${channelSummary.messages_out} enviada(s)${refused.length ? `, ${refused.length} recusada(s)` : ""}`);
-    if (cost) say(`custo simulado desta conversa nas regras da Meta: ${cost.total.toFixed(4)} ${cost.currency} (conta do emulador, nao nossa)`);
+    say(line);
+    say(s.coreStrings.waConversationSummary(channelSummary.log, channelSummary.messages_in, channelSummary.messages_out, refused.length));
+    if (cost) say(s.coreStrings.waSimulatedCost(cost.total.toFixed(4), cost.currency));
   }
 
-  return result.executions.some((e) => e.state === "executing") ? 3 : 0;
+  return outcomeExitCode(outcome, executions);
 }

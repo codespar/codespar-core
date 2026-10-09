@@ -36,7 +36,7 @@ describe("a receivable closed charge_reference_ambiguous: reconcile, never reiss
       const handlers = s.kit.handlers(s);
       const ctx = { engine: s.engine, onExecution: async (e: Execution) => e };
       const listed = (await handlers["list_agreements"]!({}, ctx)) as { agreements: Array<{ alias: string; status: string }> };
-      expect(listed.agreements.find((a) => a.alias === "acordo-1042")?.status).toBe("cobranca emitida, em conferencia: nao emitir outra");
+      expect(listed.agreements.find((a) => a.alias === "acordo-1042")?.status).toBe("cobrança emitida, em conferência: não emitir outra");
 
       const again = (await handlers["codespar_charge"]!({ action: "create", agreement: "acordo-1042", instalments: [{ amount_minor: 108000, due_date: "2026-10-15" }] }, ctx)) as Record<string, unknown>;
       expect(again).toMatchObject({ status: "denied", reason: "charge_reference_ambiguous", issued: false, charges: [] });
@@ -46,7 +46,7 @@ describe("a receivable closed charge_reference_ambiguous: reconcile, never reiss
       const told: string[] = [];
       announceOutcome(closed, s, (l) => told.push(l));
       expect(told).toHaveLength(1);
-      expect(told[0]).toContain("ja foi emitida");
+      expect(told[0]).toContain("já foi emitida");
       expect(told[0]).not.toContain("Nada foi cobrado");
     } finally {
       s.close();

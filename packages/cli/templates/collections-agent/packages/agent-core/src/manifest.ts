@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
+import { LocaleSchema } from "./locale.js";
 
 const PINNED_PACKAGE = /^@codespar\/(mcp|cli)@\d+\.\d+\.\d+$/;
 const HOURS_WINDOW = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
@@ -34,12 +35,14 @@ export const ManifestSchema = z
     default_approval: z.enum(["human", "mandate"]),
     escalate_above: EscalateAboveSchema.optional(),
     mcp: z.string().regex(PINNED_PACKAGE, "mcp must pin an exact version, e.g. @codespar/mcp@0.5.8"),
-    cli: z.string().regex(PINNED_PACKAGE, "cli must pin an exact version, e.g. @codespar/cli@0.14.0"),
+    cli: z.string().regex(PINNED_PACKAGE, "cli must pin an exact version, e.g. @codespar/cli@0.18.1"),
     tools: z.string(),
     guardrails: z.string(),
     mandate_schema: z.string(),
     events: z.array(z.string().regex(/^commerce\.[a-z_.]+$/)),
     channels: z.array(z.enum(["terminal", "whatsapp"])).nonempty(),
+    /** The language of the strings the code prints (not of the model's replies). Optional: absent is `pt-BR`, which is what every agent printed before the field existed. */
+    locale: LocaleSchema.optional(),
     maturity: z.record(z.string(), MaturitySchema),
     scenarios: z.string(),
     evals: z.string(),

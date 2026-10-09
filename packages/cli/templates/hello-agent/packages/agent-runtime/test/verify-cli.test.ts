@@ -9,7 +9,7 @@
  */
 import { spawn, spawnSync } from "node:child_process";
 import { createHash, generateKeyPairSync, sign as signDetached } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -46,11 +46,11 @@ function fixture(over: Record<string, unknown> = {}) {
   return { dir, receiptPath, keysPath };
 }
 
-function run(args: string[], cwd: string) {
+function run(args: string[], cwd: string, env: Record<string, string> = {}) {
   const result = spawnSync(process.execPath, [BIN, "verify", ...args], {
     cwd,
     // No CodeSpar key, no model key: a verifier holds nothing.
-    env: { ...process.env, CODESPAR_API_KEY: "", ANTHROPIC_API_KEY: "" },
+    env: { ...process.env, CODESPAR_API_KEY: "", ANTHROPIC_API_KEY: "", ...env },
     encoding: "utf8",
     timeout: 60_000,
   });
@@ -64,6 +64,10 @@ describe("codespar-agent verify", () => {
     expect(out.code).toBe(7);
     expect(out.stdout).toContain("SIGNATURE_ONLY");
     expect(out.stdout).toContain(RECEIPT_ID);
+    // The offline check reads neither the deployment nor the project, so two names for them that disagree are none of its business.
+    const disagreeing = run([receiptPath, "--keys", keysPath], dir, { CODESPAR_API_URL: "https://api.codespar.dev", CODESPAR_BASE_URL: "https://api.staging.codespar.dev" });
+    expect(disagreeing.code).toBe(7);
+    expect(disagreeing.stderr).not.toContain("disagree");
     expect(out.stdout).toContain("read_required");
     expect(out.stderr).toContain("carries CodeSpar's signature");
     expect(out.stderr).toContain("--from-api");
@@ -268,12 +272,12 @@ describe("codespar-agent verify --from-api", () => {
   });
 
   /** The server answers while the command runs, so the process is awaited, never spawned synchronously. */
-  function runAsync(args: string[], cwd: string): Promise<{ code: number | null; stdout: string; stderr: string }> {
+  function runAsync(args: string[], cwd: string, env?: NodeJS.ProcessEnv): Promise<{ code: number | null; stdout: string; stderr: string }> {
     return new Promise((done) => {
       const child = spawn(process.execPath, [BIN, "verify", ...args], {
         cwd,
-        // The placeholder passes the csk_test_ guard and is the one test-key-shaped string the secret scan allows.
-        env: { ...process.env, CODESPAR_API_KEY: "csk_test_your_key_here", CODESPAR_API_URL: baseUrl, ANTHROPIC_API_KEY: "" },
+        // Not the placeholder, which the guard refuses (#50); the underscore keeps it below the secret scan's key shape.
+        env: env ?? { ...process.env, CODESPAR_API_KEY: "csk_test_unit_0000", CODESPAR_API_URL: baseUrl, ANTHROPIC_API_KEY: "" },
       });
       let stdout = "";
       let stderr = "";
@@ -292,6 +296,20 @@ describe("codespar-agent verify --from-api", () => {
     expect(out.stdout).toContain("approval     matched");
     expect(asked).toEqual([`GET /.well-known/codespar-receipt-keys.json anon`, `GET /v1/consumers/receipts/${RECEIPT_ID} auth`]);
     expect(readFileSync(f.paths.copy, "utf8")).not.toContain(PAYEE);
+  });
+
+  it("never prints or writes the mandate's signature a tenant's read carries, and shows what the chain sealed about the money", async () => {
+    const f = v4Fixture();
+    const mandateSig = "s".repeat(64);
+    served = { read: { ...f.read, mandate: { ...f.read.mandate, sig: mandateSig } }, keys: f.keys };
+    const human = await runAsync([f.paths.copy, "--from-api"], f.dir);
+    const json = await runAsync([f.paths.copy, "--from-api", "--json"], f.dir);
+    expect([human.code, json.code]).toEqual([0, 0]);
+    expect(human.stdout).toContain("payment      sandbox true, money_moved false");
+    expect(JSON.parse(json.stdout).sealed_payment).toEqual({ sandbox: true, money_moved: false });
+    for (const out of [human, json]) expect(out.stdout + out.stderr).not.toContain(mandateSig);
+    const files = readdirSync(f.dir, { recursive: true, encoding: "utf8" }).map((name) => join(f.dir, name)).filter((path) => statSync(path).isFile());
+    for (const path of files) expect(readFileSync(path, "utf8")).not.toContain(mandateSig);
   });
 
   it("exits 9 when the run's artifact is not the list the receipt sealed", async () => {
@@ -318,6 +336,81 @@ describe("codespar-agent verify --from-api", () => {
     const out = await runAsync([f.paths.copy, "--from-api", "--json"], f.dir);
     expect(out.code).toBe(7);
     expect(JSON.parse(out.stdout)).toMatchObject({ verdict: "signature_only", reason: "read_unavailable" });
+  });
+
+  /*
+   * #66: the copy sits in its agent, and that agent's `.env` names the
+   * deployment as well as the key. A shell that exported neither must still
+   * read from the deployment the `.env` names, under `readDotEnv`'s rule: the
+   * environment wins, the file fills only what is unset.
+   */
+  function inAgent(dir: string, dotEnv: Record<string, string>): void {
+    writeFileSync(join(dir, "agent.yaml"), 'name: "verify-fixture-agent"\n');
+    writeFileSync(join(dir, ".env"), Object.entries(dotEnv).map(([k, v]) => `${k}=${v}\n`).join(""));
+  }
+
+  function bareEnv(over: Record<string, string> = {}): NodeJS.ProcessEnv {
+    const env: NodeJS.ProcessEnv = { ...process.env, ANTHROPIC_API_KEY: "", ...over };
+    for (const name of ["CODESPAR_API_KEY", "CODESPAR_API_URL", "CODESPAR_PROJECT_ID", "CODESPAR_BASE_URL", "CODESPAR_PROJECT"]) if (!(name in over)) delete env[name];
+    return env;
+  }
+
+  it("reads the receipt from the deployment the agent's .env names when the shell exported nothing", async () => {
+    const f = v4Fixture();
+    inAgent(f.dir, { CODESPAR_API_KEY: "csk_test_unit_0000", CODESPAR_API_URL: baseUrl });
+    served = { read: f.read, keys: f.keys };
+    asked.length = 0;
+    const out = await runAsync([f.paths.copy, "--from-api", "--json"], f.dir, bareEnv());
+    expect(out.code).toBe(0);
+    expect(JSON.parse(out.stdout)).toMatchObject({ verdict: "verified", keys_from: `${baseUrl}/.well-known/codespar-receipt-keys.json` });
+    expect(asked).toEqual([`GET /.well-known/codespar-receipt-keys.json anon`, `GET /v1/consumers/receipts/${RECEIPT_ID} auth`]);
+    expect(out.stdout + out.stderr).not.toContain("csk_test_unit_0000");
+  });
+
+  it("keeps an exported CODESPAR_API_URL over the one in the agent's .env, which still fills the unset key", async () => {
+    const f = v4Fixture();
+    inAgent(f.dir, { CODESPAR_API_KEY: "csk_test_unit_0000", CODESPAR_API_URL: "http://127.0.0.1:9" });
+    served = { read: f.read, keys: f.keys };
+    asked.length = 0;
+    const out = await runAsync([f.paths.copy, "--from-api", "--json"], f.dir, bareEnv({ CODESPAR_API_URL: baseUrl }));
+    expect(out.code).toBe(0);
+    expect(asked).toEqual([`GET /.well-known/codespar-receipt-keys.json anon`, `GET /v1/consumers/receipts/${RECEIPT_ID} auth`]);
+  });
+
+  const BOTH_ASKED = () => [`GET /.well-known/codespar-receipt-keys.json anon`, `GET /v1/consumers/receipts/${RECEIPT_ID} auth`];
+
+  it("reads from the deployment the .env names under the CLI's name, CODESPAR_BASE_URL", async () => {
+    const f = v4Fixture();
+    inAgent(f.dir, { CODESPAR_API_KEY: "csk_test_unit_0000", CODESPAR_BASE_URL: baseUrl });
+    served = { read: f.read, keys: f.keys };
+    asked.length = 0;
+    const out = await runAsync([f.paths.copy, "--from-api", "--json"], f.dir, bareEnv());
+    expect(out.code).toBe(0);
+    expect(asked).toEqual(BOTH_ASKED());
+  });
+
+  it("keeps the shell's deployment over the .env's when each uses the other name, either way round", async () => {
+    for (const [shellName, fileName] of [["CODESPAR_BASE_URL", "CODESPAR_API_URL"], ["CODESPAR_API_URL", "CODESPAR_BASE_URL"]] as const) {
+      const f = v4Fixture();
+      inAgent(f.dir, { CODESPAR_API_KEY: "csk_test_unit_0000", [fileName]: "http://127.0.0.1:9" });
+      served = { read: f.read, keys: f.keys };
+      asked.length = 0;
+      const out = await runAsync([f.paths.copy, "--from-api", "--json"], f.dir, bareEnv({ [shellName]: baseUrl }));
+      expect(out.stderr).not.toContain("disagree");
+      expect(out.code).toBe(0);
+      expect(asked).toEqual(BOTH_ASKED());
+    }
+  });
+
+  it("refuses two names that disagree as a usage error (2), before any request, and never as a failed verification (1)", async () => {
+    const f = v4Fixture();
+    inAgent(f.dir, { CODESPAR_API_KEY: "csk_test_unit_0000", CODESPAR_API_URL: baseUrl, CODESPAR_BASE_URL: "http://127.0.0.1:9" });
+    asked.length = 0;
+    const out = await runAsync([f.paths.copy, "--from-api"], f.dir, bareEnv());
+    expect(out.code).toBe(2);
+    expect(out.stderr).toContain(`CODESPAR_API_URL=${baseUrl}`);
+    expect(out.stderr).toContain("CODESPAR_BASE_URL=http://127.0.0.1:9");
+    expect(asked).toEqual([]);
   });
 
   it("refuses a key set from another deployment than the read", async () => {

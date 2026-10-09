@@ -11,7 +11,7 @@
   "transcript": "./charge-expired.transcript.jsonl",
   "turns": [
     {
-      "input": "oi, sou a Marina, quero duas aulas avulsas",
+      "input": "oi, sou a Marina, preciso de duas aulas avulsas pra este mes",
       "decision": "none"
     },
     {

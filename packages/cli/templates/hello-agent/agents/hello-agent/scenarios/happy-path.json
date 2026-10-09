@@ -1,5 +1,5 @@
 {
-  "name": "happy-path", "description": "A pessoa pergunta o que vence no mes; o agente le a lista e responde. Nada e proposto, nada e aprovado, nada e pago.",
+  "name": "happy-path", "description": "A pessoa pergunta o que vence no mês; o agente lê a lista e responde. Nada é proposto, nada é aprovado, nada é pago.",
   "modes": ["human"], "transcript": "./happy-path.transcript.jsonl",
   "turns": [{ "input": "quais contas vencem em outubro?" }],
   "expect": { "human": { "states": [], "receipts": 0, "refused_before_draft": 0 } }

@@ -1,7 +1,7 @@
 # {{name}}
 
 Scaffolded by `codespar init --template supplier-payments-agent` from the `supplier-payments-agent` starter kit
-(https://github.com/codespar/agent-starter-kits at `b766575306a71c9135c0d70e23d591e6523dc2f8`, agent 0.1.0).
+(https://github.com/codespar/agent-starter-kits at `d50c3d2fbb8707a4de67a6f8db5ee0bfb1b33794`, agent 0.1.0).
 
 A company delegates its suppliers, commissions and payroll to an agent that pays them in batches under one signed mandate. A batch is a loop of executions: one refusal does not stop the others, and re-running it pays nobody twice.
 
@@ -20,4 +20,4 @@ against are vendored here and linked as npm workspaces; the agent's own
 
 The agent's guide is [`agents/supplier-payments-agent/README.md`](agents/supplier-payments-agent/README.md); its commands run at this root
 (`npm run check`, `npm run eval`, `npm test`) or inside `agents/supplier-payments-agent/`. The manifest pins
-`cli: "@codespar/cli@0.14.0"`, the CLI version whose `agent run`/`eval` this agent was written for.
+`cli: "@codespar/cli@0.18.1"`, the CLI version whose `agent run`/`eval` this agent was written for.

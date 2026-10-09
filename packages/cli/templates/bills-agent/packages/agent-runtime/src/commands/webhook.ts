@@ -7,7 +7,7 @@
  */
 import { stderr, stdout } from "node:process";
 import { envName, type Agent } from "../agent.js";
-import { setup } from "../setup.js";
+import { inLocaleOf, localeFlag, setup } from "../setup.js";
 import { announceOutcome, followUp } from "../terminal.js";
 import { startWebhookServer } from "../webhook.js";
 
@@ -15,14 +15,22 @@ export async function webhook(agent: Agent, argv: string[]): Promise<number> {
   const port = Number(argv.includes("--port") ? argv[argv.indexOf("--port") + 1] : process.env[envName(agent, "WEBHOOK_PORT")] ?? "8787");
   const secret = argv.includes("--secret") ? argv[argv.indexOf("--secret") + 1] : process.env[envName(agent, "TRIGGER_SECRET")];
   const say = (l: string) => stderr.write(l + "\n");
-  const s = setup(agent, { say, runId: `run_webhook_${Date.now().toString(36)}` });
+  let locale;
+  try {
+    locale = localeFlag(argv);
+  } catch (err) {
+    say(err instanceof Error ? err.message : String(err));
+    return 2;
+  }
+  const s = setup(agent, { say, runId: `run_webhook_${Date.now().toString(36)}`, locale });
   const server = startWebhookServer(
     port,
     {
       engine: s.engine,
       secret,
       onClosed: async (execution) => {
-        announceOutcome(execution, s, (l) => void stdout.write(l + "\n"));
+        // Told in the locale of the run that issued the charge, whatever this receiver's own is.
+        announceOutcome(execution, inLocaleOf(s, execution), (l) => void stdout.write(l + "\n"));
         await followUp(execution, s, say);
       },
     },

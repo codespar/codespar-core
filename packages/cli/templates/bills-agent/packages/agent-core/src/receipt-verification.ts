@@ -53,7 +53,7 @@
  */
 import { createPublicKey, verify as verifyDetached } from "node:crypto";
 import { itemsHash } from "./hash.js";
-import { readChainRecipe, readSealedApproval, recomputeChain, sameApprovalHash, type SealedApproval } from "./receipt-chain.js";
+import { readChainRecipe, readSealedApproval, recomputeChain, sameApprovalHash, type ChainRecipe, type SealedApproval } from "./receipt-chain.js";
 import type { ExecutionItem } from "./types.js";
 
 /** The domain tag. A receipt names the version it was sealed under through
@@ -123,6 +123,16 @@ export interface ChainCheck {
   reason: string;
 }
 
+/**
+ * Whether the sealed payment was a sandbox one and whether money moved, read off a body that recomputed to the signed chain. A field
+ * is `null` when the recipe's payment link for that version does not seal it: a value the chain does not cover is not reported as one
+ * it does. Only these two, so a verdict never carries the rest of the read (the tenant's read also carries `mandate.sig`).
+ */
+export interface SealedPayment {
+  sandbox: boolean | null;
+  money_moved: boolean | null;
+}
+
 /** What the sealed approval link was held against. Present on a v4 chain that recomputed. */
 export interface ApprovalLinkCheck {
   /** `matched`: the artifact's hashes are the sealed ones. `mismatch`: they are not. `not_compared`: no artifact was given. */
@@ -161,6 +171,8 @@ export interface ReceiptVerification {
   /** The body check, when one was attempted: only `verifyReceiptRead` attempts it, and only on a signature that verified. */
   chain_check?: ChainCheck;
   approval_check?: ApprovalLinkCheck;
+  /** Present exactly when the body recomputed to the signed chain. */
+  sealed_payment?: SealedPayment;
 }
 
 /** One published key, RFC 8037 shape, as the JWKS serves it. */
@@ -531,12 +543,13 @@ export function verifyReceiptRead(read: unknown, keyDocument: unknown, options: 
     };
   }
   const chainCheck: ChainCheck = { status: "recomputed", version: recomputed.version, recomputed: recomputed.chain, reason: "body_recomputes" };
+  const sealedPayment = sealedPaymentOf(read, recipe.recipe, recomputed.version);
   const bound = `the body recomputes to the signed chain under the published recipe (v${recomputed.version})`;
 
   const sealed = readSealedApproval(read);
   if (!sealed) {
     // Unreachable through the published recipe (v4 seals the link, and a read without it fails the recomputation above), kept so a future version is not misread.
-    return { ...signature, reason: "body_recomputes", message: `receipt ${signature.receipt_id} was sealed by CodeSpar and ${bound}; it seals no approval link`, chain_check: chainCheck };
+    return { ...signature, reason: "body_recomputes", message: `receipt ${signature.receipt_id} was sealed by CodeSpar and ${bound}; it seals no approval link`, chain_check: chainCheck, sealed_payment: sealedPayment };
   }
   const approval = options.approval;
   if (!approval) {
@@ -546,6 +559,7 @@ export function verifyReceiptRead(read: unknown, keyDocument: unknown, options: 
       message: `receipt ${signature.receipt_id} was sealed by CodeSpar and ${bound}. It seals the approval ${sealed.items_hash}${sealed.batch_hash ? ` (batch ${sealed.batch_hash})` : ""}; no approval artifact was given to hold it against`,
       chain_check: chainCheck,
       approval_check: { status: "not_compared", sealed, artifact: null, reason: "no_artifact" },
+      sealed_payment: sealedPayment,
     };
   }
 
@@ -557,6 +571,7 @@ export function verifyReceiptRead(read: unknown, keyDocument: unknown, options: 
     message: `receipt ${signature.receipt_id} was sealed by CodeSpar and ${bound}, and ${why}: this payment was not sealed against the list artifact ${approval.approval_id} approved`,
     chain_check: chainCheck,
     approval_check: { status: "mismatch", sealed, artifact, reason },
+    sealed_payment: sealedPayment,
   });
   if (approval.items && itemsHash(approval.items) !== approval.items_hash) {
     return mismatch("artifact_items_hash_inconsistent", `the artifact's items_hash ${approval.items_hash} is not the hash of the items it lists (${itemsHash(approval.items)})`);
@@ -573,5 +588,18 @@ export function verifyReceiptRead(read: unknown, keyDocument: unknown, options: 
     message: `receipt ${signature.receipt_id} was sealed by CodeSpar, ${bound}, and it was paid against the list artifact ${approval.approval_id} approved (${sealed.items_hash}${sealed.batch_hash ? `, batch ${sealed.batch_hash}` : ""}). WHO approved it is in the artifact, under a local key, and nowhere in the seal`,
     chain_check: chainCheck,
     approval_check: { status: "matched", sealed, artifact, reason: "approval_matches" },
+    sealed_payment: sealedPayment,
   };
+}
+
+function sealedPaymentOf(read: Record<string, unknown>, recipe: ChainRecipe, version: number): SealedPayment {
+  const spec = recipe.links.find((l) => l.from === "payment");
+  const fields = spec?.fields ?? spec?.fields_by_version?.[String(version)] ?? [];
+  const payment = read["payment"];
+  const pick = (name: string): boolean | null => {
+    if (!fields.includes(name) && !fields.includes(`${name}${recipe.optional_marker}`)) return null;
+    const value = isRecord(payment) ? payment[name] : undefined;
+    return typeof value === "boolean" ? value : null;
+  };
+  return { sandbox: pick("sandbox"), money_moved: pick("money_moved") };
 }

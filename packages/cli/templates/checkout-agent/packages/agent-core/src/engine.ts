@@ -13,7 +13,7 @@
  */
 import { checkApprovalArtifact, createApprovalArtifact, type ApprovalSigner } from "./approval.js";
 import { maskPayee, type ProofBundle } from "./bundle.js";
-import { evaluateEscalation, type Escalation } from "./escalate.js";
+import { evaluateEscalation, localDate, type Escalation } from "./escalate.js";
 import { CHARGE_CANCELLED, CHARGE_EXPIRED, CHARGE_PAID, PAYMENT_FAILED, PAYMENT_SUCCEEDED, type PublishedEvent } from "./events.js";
 import type { Guardrails } from "./guardrails.js";
 import { batchAttemptId, itemsHash, sha256Hex } from "./hash.js";
@@ -21,10 +21,10 @@ import { newId } from "./ids.js";
 import { mandateExpired, payeeAllowed, resolveBeneficiary, windowCap, windowStart, type Mandate } from "./mandate.js";
 import type { Manifest } from "./manifest.js";
 import { checkQuote, quoteFromApproval } from "./quote.js";
-import { spendApprovalOf, type PaymentRail, type RailOutcome, type RailPayment, type SealedSpendApproval, type SpendApproval } from "./rail.js";
+import { sameWireActor, spendApprovalOf, wireActorOf, type PaymentRail, type RailOutcome, type RailPayment, type SealedSpendApproval, type SpendApproval } from "./rail.js";
 import { sameApprovalHash } from "./receipt-chain.js";
 import type { MandateStatusReport, MandateStatusSource } from "./revocation.js";
-import { isTerminal, transition, type Execution, type ExecutionState } from "./state-machine.js";
+import { isTerminal, transition, type Execution, type ExecutionState, type RailAnswer } from "./state-machine.js";
 import type { StateStore } from "./state/store.js";
 import type { Actor, ApprovalArtifact, ApprovalMode, ExecutionBatch, ExecutionComposition, ExecutionItem, ExecutionReason, ItemOutcome } from "./types.js";
 
@@ -129,6 +129,16 @@ export class ExecutionEngine {
 
   get mandate(): Mandate {
     return this.deps.mandate;
+  }
+
+  /**
+   * The day it is for the person, in the guardrails' timezone, at this
+   * engine's clock (so `--now` pins it too). A tool that shows a due date
+   * shows this next to it: the model has no calendar of its own, and without
+   * it a bill due next week reads as one that already fell due.
+   */
+  today(): string {
+    return localDate(this.clock(), this.deps.guardrails.timezone);
   }
 
   // ---- the model's only entry point -------------------------------------
@@ -420,6 +430,7 @@ export class ExecutionEngine {
   private async dispatch(execution: Execution<"executing">, payments: RailPayment[]): Promise<Execution> {
     const outcomes: ItemOutcome[] = [...execution.outcomes];
     const unknown: string[] = [];
+    const unknownAnswers: RailAnswer[] = [];
     const sealMismatches: string[] = [];
     this.deps.store.updateOutbox(execution.idempotency_key, "sent", undefined, this.clock().toISOString());
 
@@ -453,10 +464,11 @@ export class ExecutionEngine {
         // sent: an unknown answer about THIS payee says nothing about the next
         // one, and the execution stays open until reconciliation settles it.
         unknown.push(`attempt ${payment.attempt_id}: ${outcome.code} — outcome unknown, kept for reconciliation`);
+        unknownAnswers.push({ attempt_id: payment.attempt_id, code: outcome.code, message: outcome.message });
         continue;
       }
       if (outcome.status === "failed") {
-        outcomes.push({ index, attempt_id: payment.attempt_id, status: "failed", code: outcome.code, error: `${outcome.code}: ${outcome.message}`, ...(outcome.held ? { held: outcome.held } : {}) });
+        outcomes.push({ index, attempt_id: payment.attempt_id, status: "failed", code: outcome.code, message: outcome.message, error: `${outcome.code}: ${outcome.message}`, ...(outcome.held ? { held: outcome.held } : {}) });
         continue;
       }
       if (outcome.status === "accepted") {
@@ -469,7 +481,12 @@ export class ExecutionEngine {
       const mismatch = await this.ingestSettlement(execution, index, payment, outcome.receipt_id, PAYMENT_SUCCEEDED);
       if (mismatch) sealMismatches.push(mismatch);
     }
-    const closed = this.close({ ...execution, outcomes, ...(Object.keys(generations).length > 0 ? { attempt_generations: generations } : {}) }, payments.length, unknown.join("; ") || undefined);
+    const answers = [...(execution.uncertain_answers ?? []).filter((a) => !unknownAnswers.some((u) => u.attempt_id === a.attempt_id)), ...unknownAnswers];
+    const closed = this.close(
+      { ...execution, outcomes, ...(Object.keys(generations).length > 0 ? { attempt_generations: generations } : {}), ...(answers.length > 0 ? { uncertain_answers: answers } : {}) },
+      payments.length,
+      unknown.join("; ") || undefined,
+    );
     if (sealMismatches.length > 0) throw new ReceiptSealMismatchError(execution.id, sealMismatches);
     return closed;
   }
@@ -494,13 +511,12 @@ export class ExecutionEngine {
     if (execution.outcomes.length < attempts) {
       return this.leaveUnresolved(updated, unknownDetail ?? `${execution.outcomes.length} of ${attempts} attempt(s) have an outcome`);
     }
-    // An ambiguous receivable outranks any other failure: it is the one outcome that must be reconciled rather than issued again.
-    const failed = execution.outcomes.find((o) => o.status === "failed" && o.code === "charge_reference_ambiguous") ?? execution.outcomes.find((o) => o.status === "failed");
+    const failed = decisiveFailure(execution.outcomes);
     if (failed) {
       this.deps.store.updateOutbox(execution.idempotency_key, "failed", execution.outcomes, at);
       // `org_paused` is the API refusing the spend itself: the kill switch was pressed after the gate read the status. Nothing moved.
       const reason: ExecutionReason =
-        failed.code === "charge_expired" || failed.code === "charge_cancelled" || failed.code === "org_paused" || failed.code === "charge_reference_ambiguous" ? failed.code : "rail_failed";
+        failed.code === "charge_expired" || failed.code === "charge_cancelled" || failed.code === "charge_issuer_error" || failed.code === "org_paused" || failed.code === "charge_reference_ambiguous" ? failed.code : "rail_failed";
       return this.persist(transition(updated, "failed", { at, actor: this.agentActor, reason, detail: failed.error ?? "rail refused" }));
     }
     if (execution.outcomes.filter((o) => o.status === "settled").length === attempts) {
@@ -583,6 +599,11 @@ export class ExecutionEngine {
     if (receipt.approval !== undefined && payment.approval && !sealsApproval(receipt.approval, payment.approval)) {
       this.record("receipt.seal_mismatch", executionId, { receipt_id: receiptId, attempt_id: payment.attempt_id, sealed_approval: receipt.approval, sent_approval: payment.approval });
       mismatches.push(`receipt ${receiptId} seals approval ${receipt.approval ? receipt.approval.items_hash : "none"}; attempt ${payment.attempt_id} sent ${payment.approval.items_hash}`);
+    }
+    // §2: the actor the spend declared, as the API recorded it. A different one, or none, is an event and not a seal mismatch:
+    // the money and its link to the approval are what the receipt proves, and who triggered it is what it RECORDS.
+    if (receipt.sealed_actor !== undefined && !sameWireActor(receipt.sealed_actor, wireActorOf(payment.actor))) {
+      this.record("receipt.actor_mismatch", executionId, { receipt_id: receiptId, attempt_id: payment.attempt_id, sealed_actor: receipt.sealed_actor, sent_actor: wireActorOf(payment.actor) });
     }
     return mismatches.length > 0 ? mismatches.join("; ") : undefined;
   }
@@ -671,7 +692,12 @@ export class ExecutionEngine {
         replace({ index, attempt_id: payment.attempt_id, status: "failed", code: seen.code, error: `${seen.code}: ${seen.message}`, ...(seen.held ? { held: seen.held } : {}) });
         continue;
       }
-      replace({ index, attempt_id: payment.attempt_id, status: "settled", transaction_id: seen.transaction_id, ...(seen.receipt_id ? { receipt_id: seen.receipt_id } : {}), ...(seen.replayed ? { replayed: true as const } : {}) });
+      // No `replayed` here, whatever the rail said. A lookup IS a second
+      // presentation of an attempt this execution already sent, so on the API
+      // every settled lookup answers `idempotent_replay`, including the one
+      // whose payment was this execution's own. The mark would say "someone
+      // else paid" about a payment nobody can attribute from here.
+      replace({ index, attempt_id: payment.attempt_id, status: "settled", transaction_id: seen.transaction_id, ...(seen.receipt_id ? { receipt_id: seen.receipt_id } : {}) });
       const mismatch = await this.ingestSettlement(execution, index, payment, seen.receipt_id, prior ? CHARGE_PAID : PAYMENT_SUCCEEDED);
       if (mismatch) sealMismatches.push(mismatch);
     }
@@ -1048,6 +1074,61 @@ function railAnswer(outcome: RailOutcome): Record<string, unknown> {
     default:
       return { code: outcome.code, message: outcome.message };
   }
+}
+
+/** The failed outcome an execution closes on. An ambiguous receivable outranks any other failure: it is the one outcome that must be reconciled rather than issued again. */
+function decisiveFailure(outcomes: readonly ItemOutcome[]): ItemOutcome | undefined {
+  return outcomes.find((o) => o.status === "failed" && o.code === "charge_reference_ambiguous") ?? outcomes.find((o) => o.status === "failed");
+}
+
+/** What the rail answered, verbatim: the code and message the API sent, not only `rail_failed` or `rail_uncertain` (#50). */
+export interface RailError {
+  /** `failed`: the answer the execution closed on. `uncertain`: an answer that left an attempt's outcome unknown. */
+  outcome: "failed" | "uncertain";
+  attempt_id: string;
+  code: string;
+  message: string | null;
+}
+
+/**
+ * The rail's own answer behind a failure, for `--json` and the terminal. The
+ * reason (`rail_failed`) says WHICH gate closed the execution; this says what
+ * the API said, so a first failure explains itself — `insufficient_funds` on
+ * an unfunded test wallet reads as that, not as a generic refusal. `null` when
+ * nothing failed and nothing was left unknown. A 5xx is not a failure — the
+ * money may have moved — so `provider_error` comes back as `uncertain`, with
+ * the API's words, while the execution stays open for reconciliation. An
+ * outcome stored before the message was kept carries only `code: message` in
+ * `error`, and that is what is returned.
+ */
+export function railErrorOf(execution: Pick<Execution, "outcomes" | "uncertain_answers">): RailError | null {
+  const failed = decisiveFailure(execution.outcomes);
+  if (failed?.code !== undefined) return { outcome: "failed", attempt_id: failed.attempt_id, code: failed.code, message: failed.message ?? failed.error ?? null };
+  const pending = (execution.uncertain_answers ?? []).find((a) => !execution.outcomes.some((o) => o.attempt_id === a.attempt_id));
+  return pending ? { outcome: "uncertain", attempt_id: pending.attempt_id, code: pending.code, message: pending.message } : null;
+}
+
+/**
+ * Settled, and every settled attempt was answered from the rail's record of
+ * an earlier presentation this execution never made: the money moved, and
+ * this execution did not move it. `dispatch` is the only writer of the mark,
+ * so a report can say "paid by this run" of everything else it calls settled.
+ */
+export function isReplayedSettlement(execution: Pick<Execution, "state" | "outcomes">): boolean {
+  const settled = execution.outcomes.filter((o) => o.status === "settled");
+  return execution.state === "settled" && settled.length > 0 && settled.every((o) => o.replayed === true);
+}
+
+/**
+ * A reason, or a rail code, that closes a payment without anything having
+ * failed: nobody paid the charge in time, the charge was withdrawn, or the
+ * organization pressed the kill switch. It reads with `denied` and `expired`,
+ * not with a rail failure, in every count and report.
+ */
+const DECLINED_REASONS: readonly string[] = ["charge_expired", "charge_cancelled", "org_paused"];
+
+export function isDeclinedReason(reason: string | null | undefined): boolean {
+  return typeof reason === "string" && DECLINED_REASONS.includes(reason);
 }
 
 /** The approval link a receipt sealed is the one a spend sent: the same hashes, in either spelling of the `sha256:` prefix. */

@@ -28,11 +28,11 @@ describe("the negotiation envelope is deterministic code", () => {
     expect(checkEnvelope(items([{ amount: 101999, due_date: "2026-09-30" }]), envelope, NOW, TZ)?.reason).toBe("outside_envelope");
     expect(checkEnvelope(items([{ amount: 120001, due_date: "2026-09-30" }]), envelope, NOW, TZ)?.detail).toContain("acima do principal");
     expect(checkEnvelope(items([{ amount: 30000, due_date: "2026-09-30" }, { amount: 30000, due_date: "2026-10-30" }, { amount: 30000, due_date: "2026-11-30" }, { amount: 30000, due_date: "2026-12-15" }]), envelope, NOW, TZ)?.detail).toContain("parcelas");
-    expect(checkEnvelope(items([{ amount: 118000, due_date: "2026-09-30" }, { amount: 2000, due_date: "2026-10-30" }]), envelope, NOW, TZ)?.detail).toContain("minimo");
+    expect(checkEnvelope(items([{ amount: 118000, due_date: "2026-09-30" }, { amount: 2000, due_date: "2026-10-30" }]), envelope, NOW, TZ)?.detail).toContain("mínimo");
   });
 
   it("due dates: in the past, beyond the window, out of order, missing", () => {
-    expect(checkEnvelope(items([{ amount: 120000, due_date: "2026-09-22" }]), envelope, NOW, TZ)?.detail).toContain("ja passou");
+    expect(checkEnvelope(items([{ amount: 120000, due_date: "2026-09-22" }]), envelope, NOW, TZ)?.detail).toContain("já passou");
     expect(checkEnvelope(items([{ amount: 120000, due_date: "2026-12-23" }]), envelope, NOW, TZ)?.detail).toContain("fora da janela");
     expect(checkEnvelope(items([{ amount: 120000, due_date: "2026-12-22" }]), envelope, NOW, TZ)).toBeUndefined();
     expect(checkEnvelope(items([{ amount: 60000, due_date: "2026-10-30" }, { amount: 60000, due_date: "2026-09-30" }]), envelope, NOW, TZ)?.detail).toContain("antes da anterior");

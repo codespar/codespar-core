@@ -6,7 +6,7 @@
  * ones expire.
  */
 import { stderr, stdout } from "node:process";
-import type { Execution } from "@codespar/agent-core";
+import { railErrorOf, type Execution } from "@codespar/agent-core";
 import type { Agent } from "../agent.js";
 import { setup } from "../setup.js";
 import { followUp } from "../terminal.js";
@@ -37,6 +37,7 @@ export async function resume(agent: Agent, argv: string[]): Promise<number> {
         state: e.state,
         ...(awaitsPayer ? { reason: e.reason ?? null } : {}),
         detail: e.detail ?? null,
+        rail_error: railErrorOf(e),
         ...(awaitsPayer ? { charge_ids: e.outcomes.map((o) => o.transaction_id ?? null) } : {}),
         receipt_ids: e.outcomes.filter((o) => o.receipt_id).map((o) => o.receipt_id),
       }));

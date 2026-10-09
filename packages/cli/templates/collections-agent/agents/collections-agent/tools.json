@@ -3,7 +3,7 @@
     {
       "name": "codespar_charge",
       "effect": "charge",
-      "description": "Propose the receivable(s) of an agreement the payer accepted: one instalment per bolepix (cobranca com vencimento: the payer settles by Pix or by boleto). This does NOT issue anything: it creates an execution in `drafted` that the code checks against the collection policy and the negotiation envelope (discount ceiling, instalment count, due-date window, collection hours) and, depending on the approval mode, asks the operator or issues. The code builds the real call (`POST /v1/charges`, `method: boleto`, the debtor's name and document from the agreement, `idempotency_key` per instalment) and presents the QR and the copy-and-paste; you never see or pass a document. action=status reads back the state of a receivable this run issued.",
+      "description": "Propose the receivable(s) of an agreement the payer accepted: one instalment per bolepix (cobrança com vencimento: the payer settles by Pix or by boleto). This does NOT issue anything: it creates an execution in `drafted` that the code checks against the collection policy and the negotiation envelope (discount ceiling, instalment count, due-date window, collection hours) and, depending on the approval mode, asks the operator or issues. The code builds the real call (`POST /v1/charges`, `method: boleto`, the debtor's name and document from the agreement, `idempotency_key` per instalment) and presents the QR and the copy-and-paste; you never see or pass a document. action=status reads back the state of a receivable this run issued.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -33,7 +33,7 @@
     {
       "name": "list_agreements",
       "effect": "read",
-      "description": "The open agreements this merchant collects: alias, debtor's first name, principal in BRL cents, origin, and the envelope you may negotiate inside (maximum discount, maximum instalments, due-date window). Read-only. Documents are not returned.",
+      "description": "The open agreements this merchant collects, with `today` (the date every due date is counted from): alias, debtor's first name, principal in BRL cents, origin, and the envelope you may negotiate inside (maximum discount, maximum instalments, due-date window). Read-only. Documents are not returned.",
       "input_schema": { "type": "object", "properties": {} }
     }
   ]

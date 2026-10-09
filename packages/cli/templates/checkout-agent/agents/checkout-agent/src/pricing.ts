@@ -13,8 +13,9 @@
  * `guardrails.json` under `envelope`, and every rule of it can only refuse.
  */
 import { z } from "zod";
-import { compositionHash, isOutsideHours, localClock, type CompositionLine, type Execution, type ExecutionReason, type Guardrails } from "@codespar/agent-core";
-import { catalogItem, formatBRL } from "./catalog.js";
+import { compositionHash, formatBRL, isOutsideHours, localClock, type CompositionLine, type Execution, type ExecutionReason, type Guardrails, type Locale } from "@codespar/agent-core";
+import { catalogItem } from "./catalog.js";
+import { STRINGS } from "./strings.js";
 
 const HOURS = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -131,7 +132,8 @@ export interface CartInput {
  * priced from the catalog. A coupon that does not exist, or does not apply,
  * is named and not applied, and nothing "equivalent" is applied in its place.
  */
-export function priceCart(input: CartInput, envelope: Envelope, today: string): PricedCart {
+export function priceCart(input: CartInput, envelope: Envelope, today: string, locale: Locale = "pt-BR"): PricedCart {
+  const text = STRINGS[locale];
   const issues: ValidationIssue[] = [];
   const lines: PricedLine[] = [];
   const raw = Array.isArray(input.lines) ? input.lines : [];
@@ -143,30 +145,30 @@ export function priceCart(input: CartInput, envelope: Envelope, today: string): 
     const line = (entry ?? {}) as Record<string, unknown>;
     const priced = PRICE_FIELDS.find((f) => f in line);
     if (priced) {
-      issues.push({ code: "price_not_caller_input", field: `${field}.${priced}`, message: "o preco vem do catalogo da loja; a linha foi recusada inteira" });
+      issues.push({ code: "price_not_caller_input", field: `${field}.${priced}`, message: text.issuePriceNotInput });
       continue;
     }
     const sku = typeof line["sku"] === "string" ? line["sku"].trim().toLowerCase() : "";
     const item = sku ? catalogItem(sku) : undefined;
     if (!item) {
-      issues.push({ code: "sku_unknown", field: `${field}.sku`, message: `nao temos ${sku || "esse item"} no catalogo` });
+      issues.push({ code: "sku_unknown", field: `${field}.sku`, message: text.issueSkuUnknown(sku) });
       continue;
     }
     if (!item.available) {
-      issues.push({ code: "item_unavailable", field: `${field}.sku`, message: `${item.title} esta indisponivel` });
+      issues.push({ code: "item_unavailable", field: `${field}.sku`, message: text.issueUnavailable(item.title) });
       continue;
     }
     const quantity = line["quantity"];
     if (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity <= 0 || quantity > envelope.max_units_per_line) {
-      issues.push({ code: "quantity_invalid", field: `${field}.quantity`, message: `quantidade deve ser um inteiro de 1 a ${envelope.max_units_per_line}` });
+      issues.push({ code: "quantity_invalid", field: `${field}.quantity`, message: text.issueQuantityInvalid(envelope.max_units_per_line) });
       continue;
     }
     if (seen.has(item.sku)) {
-      issues.push({ code: "quantity_invalid", field: `${field}.sku`, message: `${item.sku} aparece mais de uma vez; uma linha por item, com a quantidade total` });
+      issues.push({ code: "quantity_invalid", field: `${field}.sku`, message: text.issueDuplicateSku(item.sku) });
       continue;
     }
     if (item.stock !== undefined && quantity > item.stock) {
-      issues.push({ code: "quantity_above_stock", field: `${field}.quantity`, message: `so ha ${item.stock} de ${item.title}` });
+      issues.push({ code: "quantity_above_stock", field: `${field}.quantity`, message: text.issueAboveStock(item.stock, item.title) });
       continue;
     }
     const discount = line["discount_pct"] ?? 0;
@@ -184,9 +186,9 @@ export function priceCart(input: CartInput, envelope: Envelope, today: string): 
       discount_pct: discount,
       availability_status: item.stock !== undefined && item.stock - quantity <= 1 ? "low_stock" : "in_stock",
       totals: [
-        { type: "items_base_amount", display_text: "Valor", amount: base },
-        { type: "items_discount", display_text: "Desconto", amount: -off },
-        { type: "total", display_text: "Total da linha", amount: base - off },
+        { type: "items_base_amount", display_text: text.lineValue, amount: base },
+        { type: "items_discount", display_text: text.lineDiscountTotal, amount: -off },
+        { type: "total", display_text: text.lineTotal, amount: base - off },
       ],
     });
   }
@@ -198,9 +200,9 @@ export function priceCart(input: CartInput, envelope: Envelope, today: string): 
     if (typeof input.coupon !== "string") throw new Error("coupon must be a string");
     const code = input.coupon.trim().toUpperCase();
     const found = envelope.coupons.find((c) => c.code === code);
-    if (!found) issues.push({ code: "coupon_unknown", field: "coupon", message: `o cupom ${code} nao existe nesta loja` });
-    else if (found.expires_at < today) issues.push({ code: "coupon_not_applicable", field: "coupon", message: `o cupom ${code} expirou` });
-    else if (subtotal < found.min_order_minor) issues.push({ code: "coupon_not_applicable", field: "coupon", message: `o cupom ${code} vale para pedidos a partir de ${formatBRL(found.min_order_minor)}` });
+    if (!found) issues.push({ code: "coupon_unknown", field: "coupon", message: text.issueCouponUnknown(code) });
+    else if (found.expires_at < today) issues.push({ code: "coupon_not_applicable", field: "coupon", message: text.issueCouponExpired(code) });
+    else if (subtotal < found.min_order_minor) issues.push({ code: "coupon_not_applicable", field: "coupon", message: text.issueCouponMinimum(code, formatBRL(found.min_order_minor, locale)) });
     else {
       coupon = code;
       orderDiscounts.push({ kind: "coupon", ref: `coupon:${code}`, pct: found.discount_pct, amount: Math.round((subtotal * found.discount_pct) / 100) });
@@ -224,11 +226,11 @@ export function priceCart(input: CartInput, envelope: Envelope, today: string): 
     coupon,
     order_discounts: orderDiscounts,
     totals: [
-      { type: "items_base_amount", display_text: "Itens", amount: itemsBase },
-      { type: "items_discount", display_text: "Descontos nos itens", amount: subtotal - itemsBase },
-      { type: "subtotal", display_text: "Subtotal", amount: subtotal },
-      { type: "discount", display_text: "Desconto do pedido", amount: -orderOff },
-      { type: "total", display_text: "Total", amount: total },
+      { type: "items_base_amount", display_text: text.totalItems, amount: itemsBase },
+      { type: "items_discount", display_text: text.totalItemsDiscount, amount: subtotal - itemsBase },
+      { type: "subtotal", display_text: text.totalSubtotal, amount: subtotal },
+      { type: "discount", display_text: text.totalOrderDiscount, amount: -orderOff },
+      { type: "total", display_text: text.totalTotal, amount: total },
     ],
     total,
     validation_issues: issues,
@@ -248,46 +250,47 @@ export interface OrderVerdict {
  * envelope's numbers or a cost: the maximum discount and the margin floor are
  * negotiation information (checkout §5.6, exfiltration).
  */
-export function checkOrder(execution: Pick<Execution, "items" | "total" | "composition">, cart: PricedCart | undefined, envelope: Envelope, now: Date, timezone: string): OrderVerdict | undefined {
+export function checkOrder(execution: Pick<Execution, "items" | "total" | "composition">, cart: PricedCart | undefined, envelope: Envelope, now: Date, timezone: string, locale: Locale = "pt-BR"): OrderVerdict | undefined {
+  const text = STRINGS[locale];
   const [open, close] = envelope.service_hours.split("-") as [string, string];
   if (isOutsideHours(`${close}-${open}`, now, timezone)) {
-    return { reason: "outside_hours", detail: `fora do horario de atendimento (${envelope.service_hours} ${timezone}); agora sao ${localClock(now, timezone)}` };
+    return { reason: "outside_hours", detail: text.outsideServiceHours(envelope.service_hours, timezone, localClock(now, timezone)) };
   }
-  if (execution.items.length !== 1) return { reason: "outside_envelope", detail: "um pedido e uma cobranca: um item, cujo valor e o total do carrinho" };
-  if (!execution.composition) return { reason: "outside_envelope", detail: "um pedido nasce de um carrinho; esta execucao nao nomeia nenhum" };
-  if (!cart) return { reason: "outside_envelope", detail: `o carrinho ${execution.composition.ref} nao existe neste estado` };
-  if (cart.cart_hash !== execution.composition.composition_hash) return { reason: "outside_envelope", detail: "o pedido nao corresponde ao carrinho atual; o carrinho mudou depois" };
-  if (cart.line_items.length === 0) return { reason: "outside_envelope", detail: "carrinho vazio" };
-  if (cart.validation_issues.length > 0) return { reason: "outside_envelope", detail: `o carrinho tem pendencias (${cart.validation_issues.map((i) => i.code).join(", ")})` };
-  if (execution.total !== cart.total || execution.items[0]!.amount !== cart.total) return { reason: "outside_envelope", detail: `o pedido cobra ${execution.total} e o carrinho soma ${cart.total}` };
+  if (execution.items.length !== 1) return { reason: "outside_envelope", detail: text.gateOneItem };
+  if (!execution.composition) return { reason: "outside_envelope", detail: text.gateNoCart };
+  if (!cart) return { reason: "outside_envelope", detail: text.gateCartMissing(execution.composition.ref) };
+  if (cart.cart_hash !== execution.composition.composition_hash) return { reason: "outside_envelope", detail: text.gateCartChanged };
+  if (cart.line_items.length === 0) return { reason: "outside_envelope", detail: text.gateCartEmpty };
+  if (cart.validation_issues.length > 0) return { reason: "outside_envelope", detail: text.gateCartIssues(cart.validation_issues.map((i) => i.code).join(", ")) };
+  if (execution.total !== cart.total || execution.items[0]!.amount !== cart.total) return { reason: "outside_envelope", detail: text.gateTotalMismatch(execution.total, cart.total) };
 
   for (const line of cart.line_items) {
     const item = catalogItem(line.sku);
-    if (!item || !item.available) return { reason: "outside_envelope", detail: `${line.sku} nao esta a venda` };
-    if (line.unit_amount !== item.price_minor) return { reason: "outside_envelope", detail: `${line.sku} nao esta pelo preco de tabela` };
-    if (line.quantity > envelope.max_units_per_line || (item.stock !== undefined && line.quantity > item.stock)) return { reason: "outside_envelope", detail: `quantidade de ${line.sku} fora do permitido` };
-    if (line.discount_pct > envelope.max_discount_pct) return { reason: "outside_envelope", detail: `desconto em ${line.sku} acima do que a politica da loja permite` };
+    if (!item || !item.available) return { reason: "outside_envelope", detail: text.gateNotForSale(line.sku) };
+    if (line.unit_amount !== item.price_minor) return { reason: "outside_envelope", detail: text.gateNotListPrice(line.sku) };
+    if (line.quantity > envelope.max_units_per_line || (item.stock !== undefined && line.quantity > item.stock)) return { reason: "outside_envelope", detail: text.gateQuantity(line.sku) };
+    if (line.discount_pct > envelope.max_discount_pct) return { reason: "outside_envelope", detail: text.gateLineDiscount(line.sku) };
     const total = lineTotal(line);
-    if (marginBelow(total, item.cost_minor * line.quantity, envelope.min_margin_pct)) return { reason: "outside_envelope", detail: `${line.sku} ficaria abaixo do piso de margem da loja` };
+    if (marginBelow(total, item.cost_minor * line.quantity, envelope.min_margin_pct)) return { reason: "outside_envelope", detail: text.gateLineMargin(line.sku) };
   }
   const negotiated = cart.order_discounts.filter((d) => d.kind === "negotiated");
   const coupons = cart.order_discounts.filter((d) => d.kind === "coupon");
-  if (negotiated.some((d) => d.pct > envelope.max_order_discount_pct)) return { reason: "outside_envelope", detail: "desconto no pedido acima do que a politica da loja permite" };
-  if (negotiated.length > 0 && coupons.length > 0) return { reason: "outside_envelope", detail: "cupom e desconto negociado nao se somam" };
+  if (negotiated.some((d) => d.pct > envelope.max_order_discount_pct)) return { reason: "outside_envelope", detail: text.gateOrderDiscount };
+  if (negotiated.length > 0 && coupons.length > 0) return { reason: "outside_envelope", detail: text.gateCouponAndDiscount };
   const today = localDate(now, timezone);
   for (const c of coupons) {
     const code = c.ref.replace(/^coupon:/, "");
     const found = envelope.coupons.find((x) => x.code === code);
-    if (!found || found.expires_at < today || c.pct !== found.discount_pct) return { reason: "outside_envelope", detail: `o cupom ${code} nao vale para este pedido` };
+    if (!found || found.expires_at < today || c.pct !== found.discount_pct) return { reason: "outside_envelope", detail: text.gateCouponInvalid(code) };
   }
   const cost = cart.line_items.reduce((sum, l) => sum + (catalogItem(l.sku)?.cost_minor ?? 0) * l.quantity, 0);
-  if (marginBelow(cart.total, cost, envelope.min_margin_pct)) return { reason: "outside_envelope", detail: "o pedido ficaria abaixo do piso de margem da loja" };
-  if (cart.total > envelope.max_order_minor) return { reason: "outside_envelope", detail: `pedido de ${formatBRL(cart.total)} acima do ticket maximo da loja` };
+  if (marginBelow(cart.total, cost, envelope.min_margin_pct)) return { reason: "outside_envelope", detail: text.gateOrderMargin };
+  if (cart.total > envelope.max_order_minor) return { reason: "outside_envelope", detail: text.gateTicket(formatBRL(cart.total, locale)) };
 
   const due = execution.items[0]!.due_date;
-  if (!due) return { reason: "outside_envelope", detail: "a cobranca do pedido nao tem vencimento" };
+  if (!due) return { reason: "outside_envelope", detail: text.gateNoDueDate };
   const last = addDays(today, envelope.due_date_window_days);
-  if (due < today || due > last) return { reason: "outside_envelope", detail: `vencimento ${due} fora da janela da loja (de ${today} ate ${last})` };
+  if (due < today || due > last) return { reason: "outside_envelope", detail: text.gateDueOutsideWindow(due, today, last) };
   return undefined;
 }
 

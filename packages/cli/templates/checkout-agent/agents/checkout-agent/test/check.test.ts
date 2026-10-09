@@ -37,7 +37,10 @@ describe("npm run check: the manifest is the index", () => {
     writeFileSync(join(dir, "tools.json"), JSON.stringify({ ...t, meta_tools: t.meta_tools.filter((x) => x.effect !== "charge") }));
     expect(codes(dir)).toContain("tools_contradict_manifest");
     const again = copyAgent();
-    writeFileSync(join(again, "agent.yaml"), readFileSync(join(again, "agent.yaml"), "utf8").replace("  bolepix-receivables: sandbox\n", ""));
+    const manifest = readFileSync(join(again, "agent.yaml"), "utf8");
+    const dropped = manifest.replace(/^  bolepix-receivables:.*\n/m, "");
+    expect(dropped).not.toBe(manifest);
+    writeFileSync(join(again, "agent.yaml"), dropped);
     expect(codes(again)).toContain("tools_contradict_manifest");
   });
 

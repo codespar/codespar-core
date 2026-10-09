@@ -46,7 +46,7 @@
     {
       "name": "list_payables",
       "effect": "read",
-      "description": "The month's payables, grouped into the batches the company runs: suppliers, commissions, payroll. Each line carries its payee alias, name, amount in BRL cents, reference, and whether a previous run of that batch already covers it (`open`, `already_settled`, `in_progress`). Read-only.",
+      "description": "The month's payables, grouped into the batches the company runs: suppliers, commissions, payroll, each with its due date and days until it falls due, plus `today`, the only date you know. Each line carries its payee alias, name, amount in BRL cents, reference, and whether a previous run of that batch already covers it (`open`, `already_settled`, `in_progress`). Read-only.",
       "input_schema": { "type": "object", "properties": {} }
     }
   ]

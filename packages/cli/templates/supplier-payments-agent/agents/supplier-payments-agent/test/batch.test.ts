@@ -9,9 +9,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { StateStore, batchAttemptId, batchHash, fixedClock, maskPayee, type Execution, type StubRail, type StubRailOptions, type ToolContext } from "@codespar/agent-core";
-import { assembleTimeline, handleExecution, parseBatchGesture, presentBatch, setup, type BatchGestures, type Setup } from "@codespar/agent-runtime";
+import { REPLAY_NOTE, assembleTimeline, handleExecution, parseBatchGesture, presentBatch, renderHtml, renderText, setup, type BatchGestures, type Setup } from "@codespar/agent-runtime";
 import { agent } from "../src/kit.js";
-import { runBatch } from "../src/modules/batch-payout.js";
+import { runBatch, type BatchReport } from "../src/modules/batch-payout.js";
+import { codesparPay } from "../src/modules/pix-out.js";
 import { findBatch, type Batch } from "../src/payables.js";
 
 const APPROVER = { id: "usr_demo_financeiro", channel: "terminal" };
@@ -649,14 +650,73 @@ describe("batch-payout: a batch is idempotent across machines (§39c)", () => {
       expect(railOf(second).payCount).toBe(0);
       expect(attemptsOf(second)).toEqual(firstAttempts);
       expect(receiptsOf(second)).toEqual(firstReceipts);
-      // Recorded as the line's outcome — settled, with the first run's receipt — and never as a failure that invites a retry.
-      expect(report.lines.map((l) => l.dispatch)).toEqual(["settled", "settled", "settled"]);
+      // The execution settled, with the first run's receipt, and was never a failure that invites a retry; the report says whose payment it was.
+      expect(second.engine.list().map((e) => e.state)).toEqual(["settled", "settled", "settled"]);
+      expect(report.lines.map((l) => l.dispatch)).toEqual(["replayed", "replayed", "replayed"]);
       expect(payloadsOf(second, "rail.outcome").map((p) => [p["status"], p["idempotent_replay"]])).toEqual([
         ["settled", true],
         ["settled", true],
         ["settled", true],
       ]);
       expect(second.engine.list().flatMap((e) => e.outcomes.map((o) => o.replayed))).toEqual([true, true, true]);
+    } finally {
+      second.close();
+      ledger.close();
+    }
+  });
+
+  it("the machine that got the replay reports it as replayed, with the original receipt, and never as a payment of its own (#60)", async () => {
+    const ledger = newLedger();
+    const batch = findBatch("folha-2026-10")!;
+    const first = machine("r", { ledger });
+    let firstReceipts: Array<string | undefined>;
+    let paidByFirst: number;
+    try {
+      const result = (await codesparPay({ action: "pix", batch_ref: batch.ref }, { engine: first.engine, onExecution: approveAndRun(first) })) as BatchReport & { paid: boolean };
+      expect(result.lines.map((l) => l.dispatch)).toEqual(["settled", "settled", "settled"]);
+      expect(result).toMatchObject({ paid: true, settled_minor: 540000, replayed: [], replayed_minor: 0 });
+      firstReceipts = receiptsOf(first);
+      paidByFirst = result.settled_minor;
+    } finally {
+      first.close();
+    }
+
+    const second = machine("s", { ledger, now: "2026-09-23T15:00:00-03:00" });
+    try {
+      const result = (await codesparPay({ action: "pix", batch_ref: batch.ref }, { engine: second.engine, onExecution: approveAndRun(second) })) as BatchReport & { paid: boolean };
+      expect(railOf(second).payCount).toBe(0);
+      expect(result.lines.map((l) => l.dispatch)).toEqual(["replayed", "replayed", "replayed"]);
+      expect(result.lines.map((l) => l.receipt_id)).toEqual(firstReceipts);
+      expect(result.paid).toBe(false);
+      expect(result.settled_minor).toBe(0);
+      expect(result.settled).toBe("R$ 0,00");
+      expect(result.replayed).toEqual(batch.lines.map((l) => l.alias));
+      expect(result.replayed_minor).toBe(540000);
+      expect(result.failed).toEqual([]);
+      // Read together, the two reports claim the money once.
+      expect(paidByFirst + result.settled_minor).toBe(540000);
+      // The money did settle, so the state machine says so.
+      expect(second.engine.list().map((e) => e.state)).toEqual(["settled", "settled", "settled"]);
+
+      const oneShot = agent.kit.oneShotPayload({ setup: second, reply: "", toolCalls: [], executions: second.engine.list(), startedAt: 0 }) as { settled_minor: number; replayed_minor: number; replayed_execution_ids: string[]; executions: Array<{ id: string; replayed: boolean }> };
+      expect(oneShot.settled_minor).toBe(0);
+      expect(oneShot.replayed_minor).toBe(540000);
+      expect(oneShot.executions.map((e) => e.replayed)).toEqual([true, true, true]);
+      expect(oneShot.replayed_execution_ids).toEqual(oneShot.executions.map((e) => e.id));
+
+      const timeline = assembleTimeline(second.bundle);
+      expect(timeline.executions.map((e) => [e.final_state, e.replayed])).toEqual([
+        ["settled", true],
+        ["settled", true],
+        ["settled", true],
+      ]);
+      expect(timeline.batches[0]!.lines.map((l) => l.replayed)).toEqual([true, true, true]);
+      expect(timeline.receipts.map((r) => r.replayed)).toEqual([true, true, true]);
+      const text = renderText(timeline);
+      expect(text).toContain("3 replayed, paid before and not by this run");
+      expect(text).toContain("settled (replayed, not paid by this run)");
+      expect(text).toContain(REPLAY_NOTE);
+      expect(renderHtml(timeline)).toContain("replayed, not paid by this run");
     } finally {
       second.close();
       ledger.close();
@@ -700,9 +760,11 @@ describe("batch-payout: a batch is idempotent across machines (§39c)", () => {
     let paidAttempt: string;
     try {
       const report = await run(second, "fornecedores-2026-10");
-      expect(report.lines.map((l) => l.dispatch)).toEqual(["settled", "settled", "settled"]);
-      // One new payment: the refused line. The other two replayed.
+      expect(report.lines.map((l) => l.dispatch)).toEqual(["replayed", "settled", "replayed"]);
+      // One new payment: the refused line. The other two replayed, and only the one this run paid is counted as paid.
       expect(railOf(second).payCount).toBe(1);
+      expect(report.settled_minor).toBe(report.lines[1]!.amount_minor);
+      expect(report.replayed_minor).toBe(report.lines[0]!.amount_minor + report.lines[2]!.amount_minor);
       const line = second.engine.list()[1]!;
       paidAttempt = line.outcomes[0]!.attempt_id;
       expect(paidAttempt).toBe(batchAttemptId(line.mandate.id, line.batch!, 0, 1));
@@ -716,7 +778,8 @@ describe("batch-payout: a batch is idempotent across machines (§39c)", () => {
     const third = machine("g", { ledger });
     try {
       const report = await run(third, "fornecedores-2026-10");
-      expect(report.lines.map((l) => l.dispatch)).toEqual(["settled", "settled", "settled"]);
+      expect(report.lines.map((l) => l.dispatch)).toEqual(["replayed", "replayed", "replayed"]);
+      expect(report.settled_minor).toBe(0);
       expect(railOf(third).payCount).toBe(0);
       expect(third.engine.list()[1]!.outcomes[0]!.attempt_id).toBe(paidAttempt);
     } finally {
@@ -738,7 +801,7 @@ describe("batch-payout: a batch is idempotent across machines (§39c)", () => {
     const second = machine("k", { ledger, uncertainPayees: [INSUMOS] });
     try {
       const report = await run(second, "fornecedores-2026-10");
-      expect(report.lines.map((l) => l.dispatch)).toEqual(["settled", "uncertain", "settled"]);
+      expect(report.lines.map((l) => l.dispatch)).toEqual(["replayed", "uncertain", "replayed"]);
       const line = second.engine.list()[1]!;
       expect(line.attempt_generations).toEqual({ 0: 1 });
       const sent = batchAttemptId(line.mandate.id, line.batch!, 0, 1);
@@ -806,7 +869,9 @@ describe("batch-payout: a batch is idempotent across machines (§39c)", () => {
         return outcome;
       };
       const report = await run(s, "fornecedores-2026-10");
-      expect(report.lines.map((l) => l.dispatch)).toEqual(["already_settled", "settled", "already_settled"]);
+      expect(report.lines.map((l) => l.dispatch)).toEqual(["already_settled", "replayed", "already_settled"]);
+      expect(report.lines[1]!.receipt_id).toBe(receipt);
+      expect(report.settled_minor).toBe(0);
       expect(answers.map((x) => x.status)).toEqual(["failed", "failed", "settled"]);
       expect(answers[1]!.attempt_id).toBe(g1);
       expect(answers[2]).toEqual({ attempt_id: g2, status: "settled", replay: true });
@@ -863,7 +928,7 @@ describe("batch-payout: a batch is idempotent across machines (§39c)", () => {
     const second = machine("i", { ledger });
     try {
       const report = await run(second, "fornecedores-2026-10");
-      expect(report.lines.map((l) => l.dispatch)).toEqual(["settled", "uncertain", "settled"]);
+      expect(report.lines.map((l) => l.dispatch)).toEqual(["replayed", "uncertain", "replayed"]);
       expect(railOf(second).payCount).toBe(0);
       const line = second.engine.list()[1]!;
       expect(line.state).toBe("executing");

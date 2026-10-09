@@ -7,12 +7,12 @@
  * It reads the bundle and nothing else, so it works on any agent's run, and
  * on a folder copied off the machine that produced it.
  */
-import { existsSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { stderr, stdout } from "node:process";
-import { ProofBundle } from "@codespar/agent-core";
 import type { Agent } from "../agent.js";
 import { runsDir } from "../setup.js";
+import { listRuns, openRun } from "../runs.js";
 import { assembleTimeline, renderHtml, renderText } from "../inspect.js";
 
 const USAGE = "usage: npm run inspect <run-id> [--json] [--html <file>]";
@@ -50,15 +50,15 @@ export function inspect(agent: Agent, argv: string[]): number {
   const runs = runsDir(agent);
   if (!runId) {
     say(USAGE);
-    say(available(runs));
+    say(available(agent));
     return 2;
   }
 
   // An unknown run id is a refusal a person can act on, never a stack trace.
-  const bundle = ProofBundle.open(runs, runId);
+  const bundle = openRun(agent, runId)?.bundle;
   if (!bundle) {
     say(`no proof bundle for run ${runId}: nothing at ${resolve(runs, runId)}`);
-    say(available(runs));
+    say(available(agent));
     return 1;
   }
 
@@ -87,14 +87,12 @@ export function inspect(agent: Agent, argv: string[]): number {
 }
 
 /** What the person can inspect instead. Bounded: a long-lived agent has many runs and this is an error message, not a listing command. */
-function available(runs: string): string {
+function available(agent: Agent): string {
+  const { dir: runs, ids, evalDir, evalCount } = listRuns(agent);
+  // The eval suite's runs are counted, not listed: they are found by id like any other, and there are dozens per pass.
+  const evalNote = evalCount > 0 ? `\n${evalCount} more from \`npm run eval\` in ${evalDir}, inspected by run id the same way` : "";
   if (!existsSync(runs)) return `no runs yet: ${runs} does not exist. Run the agent once, then inspect the run id it printed.`;
-  const ids = readdirSync(runs, { withFileTypes: true })
-    .filter((e) => e.isDirectory())
-    .map((e) => e.name)
-    .sort()
-    .reverse();
-  if (!ids.length) return `no runs yet in ${runs}. Run the agent once, then inspect the run id it printed.`;
+  if (!ids.length) return `no runs yet in ${runs}. Run the agent once, then inspect the run id it printed.${evalNote}`;
   const shown = ids.slice(0, 10);
-  return `runs in ${runs}${ids.length > shown.length ? ` (newest ${shown.length} of ${ids.length})` : ""}:\n${shown.map((id) => `  ${id}`).join("\n")}`;
+  return `runs in ${runs}${ids.length > shown.length ? ` (newest ${shown.length} of ${ids.length})` : ""}:\n${shown.map((id) => `  ${id}`).join("\n")}${evalNote}`;
 }

@@ -11,7 +11,7 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseConversationScript, parseTemplateRegistry, templateArity, type Execution } from "@codespar/agent-core";
+import { WHATSAPP_LANGUAGE, parseConversationScript, parseTemplateRegistry, templateArity, type Execution } from "@codespar/agent-core";
 import { handleExecution, setup } from "@codespar/agent-runtime";
 import { agent } from "../src/kit.js";
 
@@ -65,9 +65,18 @@ const conversationOf = (p: Payload) => {
 };
 
 const EMULATOR = process.env["WHATSAPP_SIM_URL"] ?? "http://127.0.0.1:4290";
+/**
+ * The probe closes its connection, as every emulator call in these tests does.
+ * An agent run here is a `spawnSync`, which blocks this process's event loop
+ * for longer than the emulator's keep-alive (`Keep-Alive: timeout=5`), so a
+ * pooled socket is never expired by fetch and the next call on it dies
+ * `fetch failed … ECONNRESET`. This file makes one call today; the header is
+ * here so the next one does not inherit a pooled socket.
+ */
+const FRESH_CONNECTION = { connection: "close" } as const;
 const emulatorUp = await (async () => {
   try {
-    return (await fetch(`${EMULATOR}/health`, { signal: AbortSignal.timeout(2000) })).ok;
+    return (await fetch(`${EMULATOR}/health`, { headers: FRESH_CONNECTION, signal: AbortSignal.timeout(2000) })).ok;
   } catch {
     return false;
   }
@@ -82,6 +91,10 @@ describe.skipIf(!emulatorUp)("the sale closes over the WhatsApp channel", () => 
     expect(out.code).toBe(0);
     const p = payloadOf(out.stdout);
     expect(p.executions.map((e) => e.state)).toEqual(["settled"]);
+    // The channel's one-shot carries the same count and refusal list as the terminal's.
+    const counted = p as unknown as { run_outcome: Record<string, number>; refused_before_draft: unknown[] };
+    expect(counted.run_outcome).toMatchObject({ settled: 1, failed: 0 });
+    expect(counted.refused_before_draft).toEqual([]);
     expect(p.invoices.map((i) => i.state)).toEqual(["accepted"]);
     expect(p.channel.backend).toBe("emulator");
     const outbound = conversationOf(p).filter((l) => l.direction === "out");
@@ -158,14 +171,17 @@ describe("the conversation decides who is charged, with no emulator in sight", (
   it("every template the kit can send is declared, with the arity it is sent with", () => {
     const registry = parseTemplateRegistry(readFileSync(join(AGENT_DIR, "channels/whatsapp/templates.json"), "utf8"));
     const order = { total: 47990 } as Execution;
-    for (const e of [{ ...order, state: "settled" }, { ...order, state: "failed", reason: "charge_expired" }, { ...order, state: "failed", reason: "charge_cancelled" }] as Execution[]) {
-      const t = agent.kit.outcomeTemplate!(e)!;
-      const declared = registry.templates.find((x) => x.name === t.template);
-      expect(declared).toBeDefined();
-      expect(templateArity(declared!.body)).toBe(t.variables.length);
-      expect(t.variables).toEqual(["R$ 479,90"]);
+    // In each locale: the same template names, declared in that locale's language, the total formatted for its reader.
+    for (const [locale, total] of [["pt-BR", "R$ 479,90"], ["en", "R$479.90"]] as const) {
+      for (const e of [{ ...order, state: "settled" }, { ...order, state: "failed", reason: "charge_expired" }, { ...order, state: "failed", reason: "charge_cancelled" }] as Execution[]) {
+        const t = agent.kit.outcomeTemplate!(e, locale)!;
+        const declared = registry.templates.find((x) => x.name === t.template && x.language === WHATSAPP_LANGUAGE[locale]);
+        expect(declared).toBeDefined();
+        expect(templateArity(declared!.body)).toBe(t.variables.length);
+        expect(t.variables).toEqual([total]);
+      }
+      // An order refused or never approved is answered in the turn; no template pretends otherwise.
+      expect(agent.kit.outcomeTemplate!({ ...order, state: "denied", reason: "outside_envelope" } as Execution, locale)).toBeUndefined();
     }
-    // An order refused or never approved is answered in the turn; no template pretends otherwise.
-    expect(agent.kit.outcomeTemplate!({ ...order, state: "denied", reason: "outside_envelope" } as Execution)).toBeUndefined();
   });
 });

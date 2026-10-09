@@ -12,7 +12,7 @@
  * stock come from this file, not from any warehouse.
  *
  * The customers' documents are valid CPFs (check digits computed): the
- * clearing house validates the payer of a cobranca com vencimento. `alias`
+ * clearing house validates the payer of a cobrança com vencimento. `alias`
  * matches the named entries of the sales policy (`mandate.example.json`); the
  * core resolves it to the document, which the model never sees.
  */
@@ -28,15 +28,15 @@ export interface CatalogItem {
   service_code: string;
 }
 
-export const MERCHANT = { name: "Estudio Tom Maior", city: "Sao Paulo" } as const;
+export const MERCHANT = { name: "Estúdio Tom Maior", city: "São Paulo" } as const;
 
 export const CATALOG: CatalogItem[] = [
-  { sku: "aula-avulsa", title: "Aula avulsa de violao (60 min)", category: "aula", price_minor: 10000, cost_minor: 4500, available: true, service_code: "8.02" },
-  { sku: "pacote-10-aulas", title: "Pacote de 10 aulas de violao", category: "aula", price_minor: 39000, cost_minor: 30000, available: true, service_code: "8.02" },
-  { sku: "avaliacao-inicial", title: "Avaliacao inicial de nivel", category: "avaliacao", price_minor: 8990, cost_minor: 3000, available: true, service_code: "8.02" },
+  { sku: "aula-avulsa", title: "Aula avulsa de violão (60 min)", category: "aula", price_minor: 10000, cost_minor: 4500, available: true, service_code: "8.02" },
+  { sku: "pacote-10-aulas", title: "Pacote de 10 aulas de violão", category: "aula", price_minor: 39000, cost_minor: 30000, available: true, service_code: "8.02" },
+  { sku: "avaliacao-inicial", title: "Avaliação inicial de nível", category: "avaliacao", price_minor: 8990, cost_minor: 3000, available: true, service_code: "8.02" },
   { sku: "consultoria-1h", title: "Consultoria de carreira musical (1 h)", category: "consultoria", price_minor: 20000, cost_minor: 9000, available: true, service_code: "17.01" },
   { sku: "ingresso-recital", title: "Ingresso para o recital de dezembro", category: "ingresso", price_minor: 4500, cost_minor: 1500, available: true, stock: 4, service_code: "12.07" },
-  { sku: "masterclass-producao", title: "Masterclass de producao musical", category: "masterclass", price_minor: 25000, cost_minor: 10000, available: false, service_code: "8.02" },
+  { sku: "masterclass-producao", title: "Masterclass de produção musical", category: "masterclass", price_minor: 25000, cost_minor: 10000, available: false, service_code: "8.02" },
 ];
 
 /** Where the service invoice (NFS-e) is delivered: the borrower's registration at the store. */
@@ -60,7 +60,7 @@ export interface Customer {
   address?: FiscalAddress;
 }
 
-const SAO_PAULO = { city: "Sao Paulo", city_code: "3550308", state: "SP" } as const;
+const SAO_PAULO = { city: "São Paulo", city_code: "3550308", state: "SP" } as const;
 
 export const CUSTOMERS: Customer[] = [
   { alias: "marina", name: "Marina Costa", document: "27548613008", email: "marina.costa@example.com", address: { street: "Rua Harmonia", number: "120", district: "Vila Madalena", postal_code: "05435000", ...SAO_PAULO } },

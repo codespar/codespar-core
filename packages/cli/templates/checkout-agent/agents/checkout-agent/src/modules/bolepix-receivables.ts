@@ -2,7 +2,7 @@
  * Module `bolepix-receivables`, the sales version: the `codespar_charge`
  * handler. A copy of the collections-agent's module in its bones (agents do
  * not import each other's modules, OPEN_QUESTIONS §39f) and different in what
- * it charges: an ORDER, one cobranca com vencimento whose amount is the
+ * it charges: an ORDER, one cobrança com vencimento whose amount is the
  * cart's total as the code priced it, due today (checkout decision 1).
  *
  * Three actions, because ordering and issuing are two moments of a sale:
@@ -22,10 +22,11 @@
  * No input carries an amount. `total_minor` is recorded and, with
  * `model_total_mismatch: refuse`, refuses a total the model got wrong.
  */
-import type { Execution, ExecutionEngine, Proposal, ToolHandler } from "@codespar/agent-core";
+import type { Execution, ExecutionEngine, Locale, Proposal, ToolHandler } from "@codespar/agent-core";
 import { MERCHANT, formatBRL, formatDate } from "../catalog.js";
 import { localDate } from "../pricing.js";
 import { claimOrder, currentCart, orderOf, resolveCart, type Cart, type CartBook } from "./storefront-cart.js";
+import { STRINGS } from "../strings.js";
 
 interface ChargeInput {
   action?: unknown;
@@ -43,6 +44,8 @@ export interface OrderDeps {
   clock: () => Date;
   /** The customer a channel's conversation is bound to, when one is: an order in this conversation is theirs. */
   boundCustomer?: () => string | undefined;
+  /** The run's locale, read at call time: an order's status message is worded in it. Default pt-BR. */
+  locale?: () => Locale;
 }
 
 const OPEN = new Set(["awaiting_approval", "approved"]);
@@ -74,6 +77,7 @@ export function followCart(cart: Cart, engine: ExecutionEngine, deps: Pick<Order
 }
 
 export function makeChargeHandlers(deps: OrderDeps): Record<string, ToolHandler> {
+  const text = () => STRINGS[deps.locale?.() ?? "pt-BR"];
   const findOrder = (engine: ExecutionEngine, input: ChargeInput): { order: Execution | undefined; cart: Cart | undefined } => {
     if (typeof input.execution_id === "string" && input.execution_id) {
       const order = engine.get(input.execution_id);
@@ -91,14 +95,14 @@ export function makeChargeHandlers(deps: OrderDeps): Record<string, ToolHandler>
 
     if (action === "status") {
       const { order, cart } = findOrder(ctx.engine, input);
-      if (!order) return { found: false, message: cart ? `o carrinho ${cart.cart_id} ainda nao virou pedido` : "nenhum pedido nesta conversa" };
+      if (!order) return { found: false, message: cart ? text().noOrderForCart(cart.cart_id) : text().noOrder };
       return { found: true, ...describe(order, cart) };
     }
 
     if (action === "issue") {
       const { order, cart } = findOrder(ctx.engine, input);
       if (!order) throw new Error("codespar_charge: no order to issue; create the order from the cart first (action=create)");
-      if (order.state !== "approved") return { ...describe(order, cart), message: messageFor(order) };
+      if (order.state !== "approved") return { ...describe(order, cart), message: messageFor(order, text()) };
       // The cart may have moved since the order was approved; the order follows it, and the last gate compares.
       if (cart) followCart(cart, ctx.engine, deps);
       const executed = await ctx.engine.execute(order.id);
@@ -123,30 +127,34 @@ export function makeChargeHandlers(deps: OrderDeps): Record<string, ToolHandler>
     if (existing && (OPEN.has(existing.state) || existing.state === "executing" || existing.state === "settled")) {
       if (OPEN.has(existing.state)) followCart(cart, ctx.engine, deps);
       const current = ctx.engine.get(existing.id)!;
-      return { ...describe(current, cart), message: `este carrinho ja e o pedido ${current.id}; nada novo foi criado` };
+      return { ...describe(current, cart), message: text().alreadyOrdered(current.id) };
     }
 
     const claimed = typeof input.total_minor === "number" ? input.total_minor : undefined;
     const draft = await ctx.engine.draft(orderProposal(cart, customer, deps, claimed));
-    if (!draft.ok) return { status: "refused", reason: draft.reason, message: draft.message, issued: false, paid: false };
+    if (!draft.ok) {
+      // Refused before a draft: no execution will ever say so, and the run's count is taken from this.
+      ctx.onNotRun?.({ ref: cart.cart_id, why: "refused", detail: draft.reason });
+      return { status: "refused", reason: draft.reason, message: draft.message, issued: false, paid: false };
+    }
     claimOrder(ctx.engine, cart, draft.execution.id);
     const decided = await ctx.onExecution(draft.execution);
-    return { ...describe(decided, cart), message: messageFor(decided) };
+    return { ...describe(decided, cart), message: messageFor(decided, text()) };
   };
 
   return { codespar_charge: codesparCharge };
 }
 
-function messageFor(order: Execution): string {
+function messageFor(order: Execution, text: (typeof STRINGS)[Locale]): string {
   switch (order.state) {
     case "approved":
-      return "pedido confirmado; a cobranca sai quando o cliente pedir (action=issue)";
+      return text.orderApproved;
     case "awaiting_approval":
-      return order.reason === "items_hash_mismatch" ? "o carrinho mudou depois da confirmacao; o pedido voltou para o atendente" : "aguardando o atendente confirmar o pedido";
+      return order.reason === "items_hash_mismatch" ? text.orderCartChanged : text.orderAwaitingAttendant;
     case "executing":
-      return order.reason === "awaiting_settlement" ? "cobranca emitida; aguardando o pagamento" : "desfecho da emissao desconhecido; nada sera reemitido";
+      return order.reason === "awaiting_settlement" ? text.orderIssued : text.orderUncertain;
     case "settled":
-      return "pago";
+      return text.orderPaid;
     default:
       return `${order.state}${order.reason ? ` (${order.reason})` : ""}`;
   }

@@ -165,3 +165,80 @@ describe("the local registry refuses what Meta would refuse", () => {
     expect(templateArity("Oi {{ 1 }}.")).toBe(1);
   });
 });
+
+describe("a conversation speaks one locale, and its templates and taps are that locale's copies (#64)", () => {
+  const VENCIDA_PT: WhatsAppTemplate = {
+    name: "acordo_cobranca_vencida",
+    language: "pt_BR",
+    description: "expired",
+    body: "A cobrança do {{1}} venceu.",
+    buttons: [{ id: "emitir_nova", title: "Emitir nova", intent: "quero uma nova cobrança" }],
+  };
+  const VENCIDA_EN: WhatsAppTemplate = {
+    name: "acordo_cobranca_vencida",
+    language: "en_US",
+    description: "expired",
+    body: "The charge for {{1}} expired.",
+    buttons: [{ id: "emitir_nova", title: "Issue a new one", intent: "I want a new charge" }],
+  };
+
+  class Tapper extends Recorder {
+    private tapped = false;
+    override async next(): Promise<InboundMessage | undefined> {
+      if (this.tapped) return undefined;
+      this.tapped = true;
+      return { id: "wamid.tap", from: CONTACT, text: "Emitir nova", timestamp: Math.floor(FRIDAY.getTime() / 1000), reply: { type: "button", id: "emitir_nova", title: "Emitir nova" } };
+    }
+  }
+
+  function localized(locale: "pt-BR" | "en", backend: Recorder = new Recorder()) {
+    const c = new WhatsAppChannel({
+      backend,
+      conversation: { contact: CONTACT, subject: "acordo-1042" },
+      now: () => FRIDAY,
+      templates: [VENCIDA_PT, VENCIDA_EN],
+      session: { lastInboundAt: Math.floor(TUESDAY.getTime() / 1000) },
+      locale,
+    });
+    return { channel: c, backend };
+  }
+
+  it("an English conversation declares, and sends, the en_US copy with its own buttons", async () => {
+    const { channel: c, backend } = localized("en");
+    expect(c.language).toBe("en_US");
+    const declared = c.declaredTemplate("acordo_cobranca_vencida")!;
+    expect(declared.language).toBe("en_US");
+    const sent = await c.send({ kind: "template", template: declared.name, language: declared.language, variables: ["acordo-1042"] });
+    expect(sent.refused).toBeUndefined();
+    expect(backend.delivered).toEqual([{ kind: "template", template: "acordo_cobranca_vencida", language: "en_US", variables: ["acordo-1042"], buttons: [{ id: "emitir_nova", title: "Issue a new one" }] }]);
+  });
+
+  it("the default locale is pt-BR and picks the pt_BR copy", () => {
+    const c = new WhatsAppChannel({ backend: new Recorder(), conversation: { contact: CONTACT }, now: () => FRIDAY, templates: [VENCIDA_PT, VENCIDA_EN] });
+    expect(c.language).toBe("pt_BR");
+    expect(c.declaredTemplate("acordo_cobranca_vencida")?.body).toBe("A cobrança do {{1}} venceu.");
+  });
+
+  it("a tap is read as the intent its locale's copy declares: the same button id, the model handed that conversation's language", async () => {
+    const en = localized("en", new Tapper());
+    const pt = localized("pt-BR", new Tapper());
+    expect((await en.channel.next())?.text).toBe("I want a new charge");
+    expect((await pt.channel.next())?.text).toBe("quero uma nova cobrança");
+  });
+
+  it("refuses a language nobody registered, naming the ones that were", async () => {
+    const { channel: c, backend } = localized("en");
+    const sent = await c.send({ kind: "template", template: "acordo_cobranca_vencida", language: "es_MX", variables: ["acordo-1042"] });
+    expect(sent.refused?.rule).toBe("template_language_unknown");
+    expect(sent.refused?.detail).toContain("pt_BR, en_US");
+    expect(backend.delivered).toHaveLength(0);
+  });
+
+  it("an English conversation's refusal reaches the operator in English, and the rule it names is the same", async () => {
+    const said: string[] = [];
+    const c = new WhatsAppChannel({ backend: new Recorder(), conversation: { contact: CONTACT }, now: () => FRIDAY, templates: [VENCIDA_EN], session: { lastInboundAt: Math.floor(TUESDAY.getTime() / 1000) }, locale: "en", say: (l) => void said.push(l) });
+    const sent = await c.say("free text after the window");
+    expect(sent.refused?.rule).toBe("session_window_closed");
+    expect(said).toEqual([`  [whatsapp] refused (session_window_closed): ${sent.refused!.detail}`]);
+  });
+});

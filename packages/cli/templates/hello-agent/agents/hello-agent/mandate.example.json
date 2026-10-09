@@ -3,7 +3,7 @@
   "version": 1,
   "consumer_id": "usr_demo_titular",
   "agent_id": "hello-agent",
-  "purpose": "Ler as contas do mes e responder perguntas sobre elas. Nao paga nada.",
+  "purpose": "Ler as contas do mês e responder perguntas sobre elas. Não paga nada.",
   "currency": "BRL",
   "cap_minor": 100000,
   "per_tx_cap_minor": 10000,

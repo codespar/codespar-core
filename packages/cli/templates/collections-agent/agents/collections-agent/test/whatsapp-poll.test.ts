@@ -118,10 +118,21 @@ function poll(env: Record<string, string>, extra: string[] = []) {
   return { ...out, payload: JSON.parse(lines[0]!) as PollPayload };
 }
 
+/**
+ * Every call this file makes to the emulator closes its connection. An agent
+ * run here is a `spawnSync`, which blocks this process's event loop for longer
+ * than the emulator's keep-alive (`Keep-Alive: timeout=5`), so fetch never gets
+ * to expire the socket it pooled; the next call writes to a socket the
+ * emulator already closed and dies `fetch failed … ECONNRESET`. A retry would
+ * hide that too, but `/_sim/clock` advances and `/_sim/status` marks: a call
+ * the emulator did receive, retried, would apply twice.
+ */
+const FRESH_CONNECTION = { connection: "close" } as const;
+
 async function advanceConversationClock(hours: number) {
   const response = await fetch(`${EMULATOR}/_sim/clock`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...FRESH_CONNECTION },
     body: JSON.stringify({ advance_hours: hours }),
     signal: AbortSignal.timeout(5000),
   });
@@ -145,7 +156,7 @@ function countEvents(env: Record<string, string>, type: string): number {
 
 const emulatorUp = await (async () => {
   try {
-    return (await fetch(`${EMULATOR}/health`, { signal: AbortSignal.timeout(2000) })).ok;
+    return (await fetch(`${EMULATOR}/health`, { headers: FRESH_CONNECTION, signal: AbortSignal.timeout(2000) })).ok;
   } catch {
     return false;
   }
@@ -252,7 +263,63 @@ describe.skipIf(!emulatorUp)("a charge paid after the 24-hour window closed", ()
   });
 });
 
+/** The `payload` of every `message.debtor` event this state holds: which template, in which language. */
+function debtorMessages(env: Record<string, string>): Array<Record<string, unknown>> {
+  const db = new DatabaseSync(join(env["COLLECTIONS_STATE_DIR"]!, "state.db"));
+  try {
+    return (db.prepare("SELECT payload FROM events WHERE type = 'message.debtor' ORDER BY seq").all() as Array<{ payload: string }>).map((r) => JSON.parse(r.payload) as Record<string, unknown>);
+  } finally {
+    db.close();
+  }
+}
+
+describe.skipIf(!emulatorUp)("a conversation keeps the locale it started in (#64)", () => {
+  it("agreed in English, confirmed days later by the en_US copy of the template, and a --locale that disagrees is refused", async () => {
+    const env = scratch("locale-en");
+    const agreed = agent(
+      ["start", "--channel", "whatsapp", "--conversation", "acordo-1042", "--scripted", "--mode", "mandate", "--transcript", AGREED, "--now", TUESDAY, "--locale", "en", "--json"],
+      { ...env, COLLECTIONS_STUB_PAYER: "never" },
+    );
+    expect(agreed.code).toBe(3);
+    const opened = JSON.parse(agreed.stdout.split("\n").filter(Boolean).pop()!) as { channel: { log: string } };
+    // The line that introduces the payable code is the code's, so it is English; the QR and the code itself are the rail's.
+    const introduced = conversationOf(opened.channel.log).filter((l) => l.direction === "out" && l.kind === "text").map((l) => l.text ?? "");
+    expect(introduced.some((t) => /R\$1,080\.00, due 2026-09-30 — charge /.test(t))).toBe(true);
+    // The model's own replies are the recorded ones, in Portuguese; what must not be Portuguese is the code's line.
+    expect(introduced.some((t) => /, vence 30\/09\/2026 — cobrança /.test(t))).toBe(false);
+
+    await advanceConversationClock(ADVANCE_HOURS);
+
+    // Nothing is sent, nothing is paid: the refusal comes before the channel opens.
+    const conflicting = agent(["poll", "--channel", "whatsapp", "--conversation", "acordo-1042", "--json", "--simulate-payer", "--now", AFTER_WINDOW, "--locale", "pt-BR"], env);
+    expect(conflicting.code).toBe(2);
+    expect(conflicting.stderr).toContain("--locale pt-BR");
+    expect(debtorMessages(env)).toEqual([]);
+
+    // No flag: the poll takes the conversation's recorded locale.
+    const polled = poll(env, ["--simulate-payer", "--now", AFTER_WINDOW]);
+    expect(polled.code).toBe(0);
+    expect(polled.payload.polled[0]).toMatchObject({ state: "settled", session_open: false, delivery: { told: true, carrier: "template", template: "acordo_quitado" } });
+    expect(debtorMessages(env)).toEqual([expect.objectContaining({ template: "acordo_quitado", language: "en_US", variables: ["acordo-1042"] })]);
+  });
+
+  it("the same conversation in the default locale is confirmed by the pt_BR copy", async () => {
+    const env = scratch("locale-pt");
+    expect(agree(env).code).toBe(3);
+    await advanceConversationClock(ADVANCE_HOURS);
+    const polled = poll(env, ["--simulate-payer", "--now", AFTER_WINDOW]);
+    expect(polled.payload.polled[0]!.delivery).toMatchObject({ told: true, template: "acordo_quitado" });
+    expect(debtorMessages(env)).toEqual([expect.objectContaining({ template: "acordo_quitado", language: "pt_BR" })]);
+  });
+});
+
 describe("what the poll refuses to be asked, with no emulator in sight", () => {
+  it("refuses a --locale that is not one of the two", () => {
+    const out = agent(["poll", "--channel", "whatsapp", "--conversation", "acordo-1042", "--json", "--locale", "es"], scratch("locale-bad"));
+    expect(out.code).toBe(2);
+    expect(out.stderr).toContain("--locale must be pt-BR or en");
+  });
+
   it("nothing waiting for a payer is a clean no-op, not an error: a cron that fails on an empty queue gets turned off", () => {
     const env = scratch("noop");
     const out = poll(env, ["--now", TUESDAY]);

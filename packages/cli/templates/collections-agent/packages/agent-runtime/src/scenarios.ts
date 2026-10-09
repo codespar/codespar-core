@@ -10,9 +10,10 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { z } from "zod";
-import type { ApprovalMode, Execution } from "@codespar/agent-core";
+import type { ApprovalMode, Execution, Locale, StubChargeRailOptions, StubRailOptions } from "@codespar/agent-core";
 import type { Agent } from "./agent.js";
 import type { RailKind } from "./kit.js";
+import { draftRefusals } from "./outcome.js";
 import { setup, type Setup } from "./setup.js";
 import { announceOutcome, followUp, handleExecution } from "./terminal.js";
 
@@ -84,14 +85,33 @@ export interface ScenarioRun {
   run_id: string;
   bundle_dir: string;
   replies: string[];
-  executions: Array<{ id: string; state: string; reason: string | null; trigger: string | null; total: number; trail: string[]; charge_ids: string[]; receipt_ids: string[] }>;
+  executions: Array<{
+    id: string;
+    state: string;
+    reason: string | null;
+    trigger: string | null;
+    total: number;
+    trail: string[];
+    charge_ids: string[];
+    receipt_ids: string[];
+    /**
+     * A receivable that settled: whether a payable instrument (a Pix or a boleto line) was SEEN before anything paid it.
+     * `null` for anything that is not a settled receivable. `false` means the order settled on something nobody could
+     * have paid, which is how a failed issuance read as a closed cycle on staging (OPEN_QUESTIONS §63).
+     */
+    payable_seen: boolean | null;
+  }>;
   refused_before_draft: number;
   receipts: number;
   settled_total: number;
   charges_issued: number;
   debtor_messages: number;
-  /** Seconds from the first issuance to the last terminal state (wall clock on the API; the fake clock's ticks on the stub). */
-  cycle_seconds: number;
+  /**
+   * Seconds from the first issuance to the last terminal state (wall clock on the API; the fake clock's ticks on the stub).
+   * `null` when there was no real cycle to time: nothing was issued, nothing closed, or a receivable settled with no
+   * payable instrument seen first.
+   */
+  cycle_seconds: number | null;
   payer_calls: string[];
 }
 
@@ -127,6 +147,10 @@ export interface RunScenarioOptions {
   say?: (line: string) => void;
   tell?: (line: string) => void;
   waitSeconds?: number | undefined;
+  /** Test only: stub rail options merged over the scenario's, to script an issuer the packs do not (an error, an unpayable settlement). */
+  stubRail?: StubRailOptions | StubChargeRailOptions;
+  /** The locale of the lines the run prints. The pack's assertions are on states, never on wording, so it passes in either. */
+  locale?: Locale | undefined;
 }
 
 export async function runScenario(agent: Agent, scenario: Scenario, options: RunScenarioOptions): Promise<ScenarioRun> {
@@ -149,7 +173,8 @@ export async function runScenario(agent: Agent, scenario: Scenario, options: Run
     runsDir: options.runsDir ?? join(agent.dir, "runs"),
     stateDir,
     ...(rail === "stub" ? { now: tick } : {}),
-    ...(scenario.stub_refuse_payees.length > 0 ? { stubRail: { refusePayees: scenario.stub_refuse_payees } } : {}),
+    ...(options.locale ? { locale: options.locale } : {}),
+    ...(scenario.stub_refuse_payees.length > 0 || options.stubRail ? { stubRail: { ...(scenario.stub_refuse_payees.length > 0 ? { refusePayees: scenario.stub_refuse_payees } : {}), ...(options.stubRail ?? {}) } } : {}),
     say,
   });
   const stub = s.rail as { armUncertainOnce?: () => void };
@@ -186,7 +211,7 @@ export async function runScenario(agent: Agent, scenario: Scenario, options: Run
       });
       const result = await loop.turn(turn.input);
       replies.push(result.reply);
-      refusedBeforeDraft += s.store.listEvents({ run_id: s.runId }).filter((e) => e.type === "execution.refused_before_draft").length - refusedBeforeDraft;
+      refusedBeforeDraft = draftRefusals(s.store, s.runId).length;
       if (turn.payer === "late") for (const e of s.engine.list({ state: "executing" })) if (!before.has(e.id)) late.push(e.id);
     }
     // A late payer pays after the conversation ended (the receivable was in flight while the world changed).
@@ -219,6 +244,8 @@ export async function runScenario(agent: Agent, scenario: Scenario, options: Run
       if (e.type === "sandbox_payer") payerCalls.push(String((e.payload as { detail: string }).detail));
     }
     const executions = s.engine.list().filter((e) => e.run_id === s.runId);
+    const payableSeen = new Map(executions.map((e) => [e.id, awaitsPayer ? payableSeenBeforePayment(e, events) : null]));
+    const cycleIsReal = firstIssued !== undefined && lastClosed !== undefined && [...payableSeen.values()].every((seen) => seen !== false);
     return {
       scenario: scenario.name,
       mode: options.mode,
@@ -235,18 +262,33 @@ export async function runScenario(agent: Agent, scenario: Scenario, options: Run
         trail: e.history.map((h) => h.to),
         charge_ids: e.outcomes.map((o) => o.transaction_id).filter((x): x is string => typeof x === "string"),
         receipt_ids: e.outcomes.filter((o) => o.receipt_id).map((o) => o.receipt_id as string),
+        payable_seen: payableSeen.get(e.id) ?? null,
       })),
       refused_before_draft: refusedBeforeDraft,
       receipts: s.bundle.listReceipts().length,
       settled_total: executions.filter((e) => e.state === "settled").reduce((sum, e) => sum + e.total, 0),
       charges_issued: events.filter((e) => e.type === "rail.outcome" && (e.payload as { status: string }).status === "accepted").length,
       debtor_messages: events.filter((e) => e.type === "message.debtor").length,
-      cycle_seconds: firstIssued !== undefined && lastClosed !== undefined ? Math.round(((lastClosed - firstIssued) / 1000) * 10) / 10 : 0,
+      cycle_seconds: cycleIsReal ? Math.round(((lastClosed! - firstIssued!) / 1000) * 10) / 10 : null,
       payer_calls: payerCalls,
     };
   } finally {
     s.close();
   }
+}
+
+/**
+ * For a receivable that settled: was a payable instrument (`charge.instrument` with `payable: true`) recorded for it BEFORE the
+ * first thing that paid it (the sandbox payer's call, `commerce.charge.paid`, or the transition to `settled`)? `null` for an
+ * execution that is not a settled receivable.
+ */
+export function payableSeenBeforePayment(execution: Execution, events: ReadonlyArray<{ seq: number; execution_id: string | null; type: string; payload: unknown }>): boolean | null {
+  if (execution.state !== "settled") return null;
+  const own = events.filter((e) => e.execution_id === execution.id).sort((a, b) => a.seq - b.seq);
+  if (!own.some((e) => e.type === "rail.outcome" && (e.payload as { status?: string }).status === "accepted")) return null;
+  const paid = own.find((e) => e.type === "sandbox_payer" || e.type === "commerce.charge.paid" || (e.type === "execution.transition" && (e.payload as { to?: string }).to === "settled"));
+  if (!paid) return null;
+  return own.some((e) => e.seq < paid.seq && e.type === "charge.instrument" && (e.payload as { payable?: boolean }).payable === true);
 }
 
 function applyHook(s: Setup, hook: "revoke_mandate" | "pause_all" | undefined): void {
@@ -267,7 +309,12 @@ export function checkScenario(scenario: Scenario, run: ScenarioRun): ScenarioChe
     if (expect.settled_total !== undefined && run.settled_total !== expect.settled_total) failures.push(`settled_total ${run.settled_total} != ${expect.settled_total}`);
     if (expect.charges_issued !== undefined && run.charges_issued !== expect.charges_issued) failures.push(`charges_issued ${run.charges_issued} != ${expect.charges_issued}`);
     if (expect.debtor_messages !== undefined && run.debtor_messages !== expect.debtor_messages) failures.push(`debtor_messages ${run.debtor_messages} != ${expect.debtor_messages}`);
-    if (expect.max_cycle_seconds !== undefined && run.rail === "api" && run.cycle_seconds > expect.max_cycle_seconds) failures.push(`cycle_seconds ${run.cycle_seconds} > ${expect.max_cycle_seconds}`);
+    if (expect.max_cycle_seconds !== undefined && run.rail === "api" && run.cycle_seconds !== null && run.cycle_seconds > expect.max_cycle_seconds) failures.push(`cycle_seconds ${run.cycle_seconds} > ${expect.max_cycle_seconds}`);
+    if (expect.max_cycle_seconds !== undefined && run.rail === "api" && run.cycle_seconds === null && !run.executions.some((e) => e.payable_seen === false)) failures.push("cycle_seconds: no cycle was measured");
+  }
+  // Every run, every rail: a receivable that settled on an instrument nobody saw is not a closed cycle, whatever state it reached.
+  for (const e of run.executions) {
+    if (e.payable_seen === false) failures.push(`no_payable_instrument: ${e.id} settled on ${e.charge_ids.join(", ") || "a receivable"} with no payable instrument seen before the payment`);
   }
   // Every run, every mode: nothing reaches executing without an approval artifact carrying its hash.
   return { ok: failures.length === 0, mode: run.mode, failures, run };

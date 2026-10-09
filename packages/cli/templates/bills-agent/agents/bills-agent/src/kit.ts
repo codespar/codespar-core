@@ -8,16 +8,17 @@ import { join, relative, resolve } from "node:path";
 import {
   ApiMandateStatusSource,
   CodeSparRail,
-  NotATestKeyError,
   StubRail,
   createCodeSparClient,
-  isTestKey,
+  assertTestKey,
   loadMandate,
+  isReplayedSettlement,
   type Execution,
+  railErrorOf,
 } from "@codespar/agent-core";
-import { NoMandateError, defineAgent, type AgentKit } from "@codespar/agent-runtime";
-import { formatBRL } from "./bills.js";
+import { NoMandateError, defineAgent, describePayment, type AgentKit } from "@codespar/agent-runtime";
 import { loadLocalMandate, runEmbeddedConsent } from "./modules/embedded-consent.js";
+import { STRINGS } from "./strings.js";
 import { codesparLedger, codesparPay, listBills } from "./modules/pix-out.js";
 
 const mandatePath = (agentDir: string) => join(agentDir, ".codespar", "mandate.json");
@@ -29,27 +30,23 @@ const kit: AgentKit = {
   labels: {
     defaultUser: "usr_terminal",
     evalUser: "usr_demo_titular",
-    mandateWord: "mandato",
-    receiptWord: "recibo",
-    intro: 'Diga o que pagar ("pague a escola de outubro"). Ctrl+D ou "sair" encerra.',
-    prompt: "> ",
-    approveQuestion: "  Aprovar este pagamento? [s/N] ",
-    uncertainDispatch: "  desfecho desconhecido no trilho; rode `npm run resume` para reconciliar (nunca repita o pagamento)",
     missingReceiptKind: "receipt_missing_locally",
     missingReceiptDetail: (receiptId, runId) => `receipt ${receiptId} is not in runs/${runId}/receipts`,
     stillExecuting: (e) => `${e.id}: still executing — ${e.detail}; nothing was re-sent`,
   },
+  strings: STRINGS,
 
   usage: () => `bills-agent
   npm start                                         interactive terminal
   npm start -- --input "pague a escola de outubro"  one turn (add --approve/--deny to decide, --json for machine output)
   npm start -- --scenario <name>                    run a scenario pack (${"see scenarios/"})
 options: --mode human|mandate  --provider anthropic|replay  --transcript <file>  --rail stub|api  --user <id>  --json
-         --now <ISO 8601>  pin the run to that instant (escalation hours, timestamps); env CODESPAR_AGENT_NOW is the same thing`,
+         --now <ISO 8601>  pin the run to that instant (escalation hours, timestamps); env CODESPAR_AGENT_NOW is the same thing
+         --locale pt-BR|en  the language of what the code prints (the model answers in the language you type either way)`,
 
   buildRail: (ctx) => {
     if (ctx.kind === "api") {
-      if (!isTestKey(ctx.env["CODESPAR_API_KEY"])) throw new NotATestKeyError();
+      assertTestKey(ctx.env["CODESPAR_API_KEY"]);
       const api = createCodeSparClient({ apiKey: ctx.env["CODESPAR_API_KEY"], baseUrl: ctx.env["CODESPAR_API_URL"], projectId: ctx.env["CODESPAR_PROJECT_ID"] });
       const mandate = ctx.mandate ?? loadLocalMandate(mandatePath(ctx.agentDir));
       if (!mandate) throw new NoMandateError();
@@ -73,19 +70,7 @@ options: --mode human|mandate  --provider anthropic|replay  --transcript <file> 
 
   handlers: () => ({ codespar_pay: codesparPay, codespar_ledger: codesparLedger, list_bills: listBills }),
 
-  describeExecution: (execution, setup) => {
-    const lines: string[] = [];
-    lines.push(`  execucao ${execution.id}: ${execution.state}${execution.reason ? ` (${execution.reason})` : ""}`);
-    for (const item of execution.items) lines.push(`    - ${item.beneficiary}: ${formatBRL(item.amount)}${item.description ? ` — ${item.description}` : ""}`);
-    lines.push(`    total (calculado pelo core): ${formatBRL(execution.total)}`);
-    if (execution.escalation) lines.push(`    escalado por: ${execution.escalation.trigger} — ${execution.escalation.detail}`);
-    if (execution.blocking_reasons.length) lines.push(`    bloqueado: ${execution.blocking_reasons.join(", ")} — o mandato nao autoriza; nao ha o que aprovar`);
-    if (execution.detail && execution.state !== "awaiting_approval") lines.push(`    ${execution.detail}`);
-    for (const outcome of execution.outcomes) {
-      if (outcome.receipt_id) lines.push(`    recibo: ${relative(process.cwd(), `${setup.bundle.dir}/receipts/${outcome.receipt_id}.json`)}`);
-    }
-    return lines;
-  },
+  describeExecution: describePayment,
 
   oneShotPayload: ({ setup: s, reply, toolCalls, executions }) => ({
     run_id: s.runId,
@@ -100,11 +85,13 @@ options: --mode human|mandate  --provider anthropic|replay  --transcript <file> 
       id: e.id,
       state: e.state,
       reason: e.reason ?? null,
+      rail_error: railErrorOf(e),
       escalation: e.escalation ?? null,
       total_minor: e.total,
       items: e.items.map((i) => ({ beneficiary: i.beneficiary, amount_minor: i.amount })),
       approval_id: e.approval_id ?? null,
       receipt_ids: e.outcomes.filter((o) => o.receipt_id).map((o) => o.receipt_id),
+      replayed: isReplayedSettlement(e),
     })),
     receipts: s.bundle.listReceipts().map((f) => relative(process.cwd(), `${s.bundle.dir}/receipts/${f}`)),
     bundle_dir: relative(process.cwd(), s.bundle.dir),
@@ -121,7 +108,7 @@ options: --mode human|mandate  --provider anthropic|replay  --transcript <file> 
     }
     const api = createCodeSparClient({ apiKey: process.env["CODESPAR_API_KEY"], baseUrl: process.env["CODESPAR_API_URL"], projectId: process.env["CODESPAR_PROJECT_ID"] });
     const example = loadMandate(resolve(ctx.agentDir, "mandate.example.json"));
-    await runEmbeddedConsent({ api, example, mandatePath: path, say: ctx.say, confirm: async (q: string) => /^(s|sim|y|yes)$/i.test((await ctx.ask(q)).trim()) });
+    await runEmbeddedConsent({ api, example, mandatePath: path, locale: ctx.locale, say: ctx.say, confirm: async (q: string) => /^(s|sim|y|yes)$/i.test((await ctx.ask(q)).trim()) });
     return true;
   },
 
@@ -142,8 +129,8 @@ options: --mode human|mandate  --provider anthropic|replay  --transcript <file> 
       rl.close();
       return /^(s|sim|y|yes)$/i.test(answer);
     };
-    const mandate = await runEmbeddedConsent({ api, example, mandatePath: mandatePath(ctx.agentDir), say: ctx.say, confirm });
-    ctx.say(`mandato ${mandate.id} salvo em .codespar/mandate.json`);
+    const mandate = await runEmbeddedConsent({ api, example, mandatePath: mandatePath(ctx.agentDir), locale: ctx.locale, say: ctx.say, confirm });
+    ctx.say(STRINGS[ctx.locale].consentSaved(mandate.id));
     return 0;
   },
 

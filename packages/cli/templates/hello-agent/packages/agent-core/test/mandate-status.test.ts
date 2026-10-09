@@ -75,8 +75,8 @@ beforeEach(() => {
 });
 
 function apiClient(timeoutMs = 5_000) {
-  // The placeholder passes the `csk_test_` guard and is the one test-key-shaped string the secret scan allows.
-  return createCodeSparClient({ apiKey: "csk_test_your_key_here", baseUrl, timeoutMs });
+  // Not the placeholder, which the guard refuses (#50); the underscore keeps it below the secret scan's key shape.
+  return createCodeSparClient({ apiKey: "csk_test_unit_0000", baseUrl, timeoutMs });
 }
 
 function apiSource(timeoutMs = 5_000): ApiMandateStatusSource {

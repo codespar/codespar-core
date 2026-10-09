@@ -3,7 +3,7 @@
  * fixture: the demo has no bank feed, so the agent reads this list. Amounts
  * are BRL cents. The handler reads and returns; it touches nothing.
  */
-import type { ToolHandler } from "@codespar/agent-core";
+import { daysUntil, type ToolHandler } from "@codespar/agent-core";
 
 export const MONTH = "2026-10";
 
@@ -17,7 +17,11 @@ export function formatBRL(minor: number): string {
   return `R$ ${Math.floor(minor / 100).toLocaleString("pt-BR")},${String(minor % 100).padStart(2, "0")}`;
 }
 
-export const listBills: ToolHandler = async () => ({
-  month: MONTH,
-  bills: BILLS.map((b) => ({ ...b, amount: formatBRL(b.amount_minor) })),
-});
+export const listBills: ToolHandler = async (_input, ctx) => {
+  const today = ctx.engine.today();
+  return {
+    month: MONTH,
+    today,
+    bills: BILLS.map((b) => ({ ...b, amount: formatBRL(b.amount_minor), days_until_due: daysUntil(today, b.due) })),
+  };
+};

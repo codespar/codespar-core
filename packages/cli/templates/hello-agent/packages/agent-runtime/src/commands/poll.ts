@@ -15,9 +15,9 @@
  */
 import { stderr, stdout } from "node:process";
 import { join } from "node:path";
-import { loadManifest, resolveFixedClock, type ChannelName } from "@codespar/agent-core";
+import { loadManifest, parseLocale, resolveFixedClock, type ChannelName, type Locale } from "@codespar/agent-core";
 import type { Agent } from "../agent.js";
-import { setup } from "../setup.js";
+import { inLocaleOf, setup } from "../setup.js";
 import { announceOutcome, followUp, waitForPayer } from "../terminal.js";
 import { pollWhatsApp } from "./poll-whatsapp.js";
 import type { WhatsAppBackendName } from "../channels/whatsapp/open.js";
@@ -30,6 +30,8 @@ const USAGE = `codespar-agent poll [options]
   --simulate-payer              let the sandbox payer act once the receivable is payable
   --payer pays|expires|never    what the fixture payer does when it acts (stub rail only)
   --now <ISO 8601>              pin the run's clock; env CODESPAR_AGENT_NOW is the same thing
+  --locale pt-BR|en             the language of this command's lines. An outcome is told in the locale its run recorded,
+                                and --channel whatsapp refuses a --locale that disagrees with the conversation's
   --json                        machine output on stdout, everything else on stderr`;
 
 interface Args {
@@ -40,6 +42,7 @@ interface Args {
   simulatePayer: boolean;
   payer?: "pays" | "expires" | "never";
   now?: string;
+  locale?: Locale;
   json: boolean;
 }
 
@@ -73,6 +76,7 @@ export function parsePollArgs(argv: string[]): Args {
       args.payer = v;
     } else if (a === "--conversation") args.conversation = next();
     else if (a === "--now") args.now = next();
+    else if (a === "--locale") args.locale = parseLocale(next());
     else throw new Error(`unknown argument ${a}`);
   }
   if (args.channel !== "whatsapp" && (args.backend !== undefined || args.conversation !== undefined)) {
@@ -97,7 +101,7 @@ export async function poll(agent: Agent, argv: string[]): Promise<number> {
     return 2;
   }
 
-  const s = setup(agent, { say, runId: `run_poll_${Date.now().toString(36)}`, ...(now ? { now } : {}) });
+  const s = setup(agent, { say, runId: `run_poll_${Date.now().toString(36)}`, ...(now ? { now } : {}), ...(args.locale ? { locale: args.locale } : {}) });
   // The same flag `start` has, and it means more here: a receivable nobody
   // paid reaches its due date BETWEEN two runs, never inside one, so "what
   // happens when it expires" is a question only a poll can be asked.
@@ -115,6 +119,7 @@ export async function poll(agent: Agent, argv: string[]): Promise<number> {
         ...(args.payer ? { payer: args.payer } : {}),
         now: now ?? (() => new Date()),
         say,
+        ...(args.locale ? { locale: args.locale } : {}),
       });
     }
     // `behave` only changes the default for receivables the rail has not
@@ -129,8 +134,10 @@ export async function poll(agent: Agent, argv: string[]): Promise<number> {
     const results = [];
     for (const open of s.engine.list({ state: "executing" })) {
       if (open.reason !== "awaiting_settlement") continue;
-      const r = await waitForPayer(open.id, { setup: s, approver: { id: s.kit.labels.defaultUser, channel: "terminal" }, say, tell, waitSeconds: args.wait, simulatePayer: args.simulatePayer });
-      announceOutcome(r.execution, s, tell);
+      // The payer is told in the locale of the run that issued the charge, which is where they were spoken to.
+      const told = inLocaleOf(s, open);
+      const r = await waitForPayer(open.id, { setup: told, approver: { id: s.kit.labels.defaultUser, channel: "terminal" }, say, tell, waitSeconds: args.wait, simulatePayer: args.simulatePayer });
+      announceOutcome(r.execution, told, tell);
       if (r.execution.state !== "executing") await s.engine.collectReceipts(r.execution.id);
       await followUp(r.execution, s, say);
       results.push({ id: r.execution.id, state: r.execution.state, reason: r.execution.reason ?? null, rounds: r.rounds, seconds: r.seconds, timed_out: r.timed_out });

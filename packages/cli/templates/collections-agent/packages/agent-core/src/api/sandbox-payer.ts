@@ -14,6 +14,7 @@
  */
 import { ApiClient, type ApiOperation, type ApiSuccess } from "@codespar/sdk";
 import type { ApiFailure } from "./client.js";
+import { ISSUER_ERROR_STATUSES, type ChargeView } from "./charge-rail.js";
 import { createCodeSparClient, describeApiError } from "./client.js";
 
 /** What the payer route answers, as the SDK's generated OpenAPI types it. */
@@ -40,4 +41,39 @@ export async function paySandboxCharge(target: ApiClient | SandboxPayerTarget, c
   } catch (err) {
     return { ok: false, failure: describeApiError(err) };
   }
+}
+
+/** Why the payer did not call the pay route: there was nothing a payer could have paid. */
+export type PayerRefusal = { code: "no_payable_instrument" | "charge_issuer_error"; message: string };
+
+export type GuardedPayResult = SandboxPayResult | { ok: false; refused: PayerRefusal };
+
+/**
+ * The sandbox payer as a PAYER: it reads the charge first and pays only an
+ * instrument a person could have paid, a Pix or a boleto line the read calls
+ * `payable`. A charge the issuer ended in error (`ERROR`) is refused as
+ * `charge_issuer_error`, anything else unpayable as `no_payable_instrument`,
+ * and in both cases the pay route is never called.
+ *
+ * The route itself settles whatever it is handed: a charge still
+ * `PROCESSING`, and on staging on 2026-09-27 a charge the issuer ended in
+ * `ERROR`, after which the read answers `CONFIRMED` (ent#1816,
+ * OPEN_QUESTIONS §63). A payer that trusted it turned an issuance that failed
+ * into a "settled" order no customer could have paid. No live payer can pay a
+ * charge with no instrument, so neither does this one.
+ */
+export async function payIfPayable(api: ApiClient, chargeRef: string, amountMinor?: number): Promise<GuardedPayResult> {
+  let view: ChargeView;
+  try {
+    view = await api.get("/v1/charges/{chargeId}", { path: { chargeId: chargeRef } });
+  } catch (err) {
+    return { ok: false, failure: describeApiError(err) };
+  }
+  if (ISSUER_ERROR_STATUSES.includes(view.status)) {
+    return { ok: false, refused: { code: "charge_issuer_error", message: `the issuer ended charge ${chargeRef}'s registration in ${view.status}; there is no instrument to pay, so the pay route was not called` } };
+  }
+  if (!view.payable) {
+    return { ok: false, refused: { code: "no_payable_instrument", message: `charge ${chargeRef} has no payable instrument (status ${view.status}, local ${view.local_status}); the pay route was not called` } };
+  }
+  return paySandboxCharge(api, chargeRef, amountMinor);
 }

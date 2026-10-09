@@ -25,7 +25,7 @@
  * fetches `@dyvit/whatsapp-simulator-cli` at a pinned version and runs it;
  * `npm run whatsapp:emulator` is the command.
  */
-import type { ConversationScript } from "@codespar/agent-core";
+import { CORE_STRINGS, type ConversationScript, type Locale } from "@codespar/agent-core";
 import type { ChannelBackend, InboundMessage, OutboundBody, SentMessage, StatusUpdate } from "../types.js";
 import { WhatsAppCloudApi, type CloudApiOptions } from "./cloud-api.js";
 
@@ -129,6 +129,8 @@ export interface EmulatorBackendOptions extends CloudApiOptions {
   ask?: ((question: string) => Promise<string>) | undefined;
   /** Where the console draws the conversation as it goes. */
   render: (line: string) => void;
+  /** The language of the console lines above. Default pt-BR. */
+  locale?: Locale | undefined;
 }
 
 /**
@@ -147,7 +149,7 @@ export class WhatsAppEmulator implements ChannelBackend {
   private closed = false;
 
   constructor(private readonly options: EmulatorBackendOptions) {
-    const { driver: _driver, script: _script, pinAt: _pinAt, ask: _ask, render: _render, ...api } = options;
+    const { driver: _driver, script: _script, pinAt: _pinAt, ask: _ask, render: _render, locale: _locale, ...api } = options;
     this.api = new WhatsAppCloudApi(api);
   }
 
@@ -156,7 +158,7 @@ export class WhatsAppEmulator implements ChannelBackend {
     await this.options.driver.health();
     if (this.options.pinAt) await this.options.driver.pin(this.options.pinAt);
     this.options.render("");
-    this.options.render(`  ┌─ WhatsApp (dyvit-wa-sim, emulador local da Cloud API — sem rede externa, sem conta Meta)`);
+    this.options.render(this.text.waEmulatorOpen);
   }
 
   async next(): Promise<InboundMessage | undefined> {
@@ -193,7 +195,7 @@ export class WhatsAppEmulator implements ChannelBackend {
     if (!this.options.ask) return undefined;
     let answer: string;
     try {
-      answer = await this.options.ask("  │ voce> ");
+      answer = await this.options.ask(this.text.waYou);
     } catch {
       return undefined;
     }
@@ -207,10 +209,14 @@ export class WhatsAppEmulator implements ChannelBackend {
     return this.api.deliver(to, body);
   }
 
+  private get text() {
+    return CORE_STRINGS[this.options.locale ?? "pt-BR"];
+  }
+
   async close(): Promise<void> {
     if (this.closed) return;
     this.closed = true;
     await this.api.close();
-    this.options.render("  └─ fim da conversa");
+    this.options.render(this.text.waEmulatorClosed);
   }
 }

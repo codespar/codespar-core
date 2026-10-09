@@ -3,7 +3,7 @@
   "version": 1,
   "consumer_id": "merchant_demo_loja",
   "agent_id": "collections-agent",
-  "purpose": "cobranca de acordos em aberto",
+  "purpose": "cobrança de acordos em aberto",
   "currency": "BRL",
   "cap_minor": 24000000,
   "per_tx_cap_minor": 500000,

@@ -261,6 +261,12 @@ describe("outcomeOf: the API's charge view, mapped by fields and never by prose"
     expect(outcomeOf({ ...base, status: "CANCELLED" })).toMatchObject({ status: "failed", code: "charge_cancelled" });
     expect(outcomeOf({ ...base, id: null, issuance_unconfirmed: true })).toEqual({ status: "in_flight" });
   });
+  it("an issuer that ends the registration in ERROR fails the attempt with charge_issuer_error; a status nobody documented stays accepted and unpayable", () => {
+    const errored = { ...base, status: "ERROR", payable: false, pix_copy_paste: null, boleto_bank_line: null, boleto_bar_code: null };
+    expect(outcomeOf(errored)).toMatchObject({ status: "failed", code: "charge_issuer_error" });
+    expect((outcomeOf(errored) as { message: string }).message).toContain("ERROR");
+    expect(outcomeOf({ ...errored, status: "SOMETHING_NEW" })).toMatchObject({ status: "accepted", instrument: { payable: false, status: "SOMETHING_NEW" } });
+  });
   it("a payment notified and not yet credited is still accepted: nothing settles on a notification", () => {
     expect(outcomeOf({ ...base, payment_in_flight: true, settlement: "pending" })).toMatchObject({ status: "accepted" });
   });
@@ -314,6 +320,49 @@ describe("paySandboxCharge: the SDK's typed call to the payer route", () => {
     } finally {
       globalThis.fetch = realFetch;
     }
+  });
+});
+
+describe("payIfPayable: the sandbox payer pays only what a payer could have paid (OPEN_QUESTIONS §63, ent#1816)", () => {
+  const view = (over: Record<string, unknown>) => ({ id: "chg_1", status: "PENDING", local_status: "pending", status_conflict: false, method: "boleto", currency: "BRL", amount: 1080, amount_minor: 108000, due_date: "2026-09-30", payable: true, boleto_bar_code: "1".repeat(44), boleto_bank_line: "2".repeat(47), pix_copy_paste: "000201...", credit_correlation_armed: true, payment_in_flight: false, settlement: null, issuance_unconfirmed: false, ...over });
+  const paid = { charge_id: "chg_1", status: "paid", local_status: "settled", simulated: true, settled_against: "sandbox_fixture", money_moved: false, quoted_minor: 108000, paid_minor: 108000, payment: "full", idempotent_replay: false };
+
+  async function withCharge(read: Record<string, unknown>) {
+    const { payIfPayable } = await import("../src/api/sandbox-payer.js");
+    const { createCodeSparClient } = await import("../src/api/client.js");
+    const seen: Array<{ method: string; url: string }> = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      seen.push({ method, url: String(url) });
+      return new Response(JSON.stringify(method === "GET" ? read : paid), { status: 200, headers: { "content-type": "application/json" } });
+    }) as typeof fetch;
+    try {
+      const out = await payIfPayable(createCodeSparClient({ apiKey: "csk_test_unit_0000", baseUrl: "https://api.example.test/" }), "chg_1");
+      return { out, seen };
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  }
+  const posts = (seen: Array<{ method: string }>) => seen.filter((s) => s.method === "POST").length;
+
+  it("a charge the issuer ended in ERROR: refused as charge_issuer_error, and the pay route is never called", async () => {
+    const { out, seen } = await withCharge(view({ status: "ERROR", payable: false, pix_copy_paste: null, boleto_bank_line: null, boleto_bar_code: null }));
+    expect(out).toMatchObject({ ok: false, refused: { code: "charge_issuer_error" } });
+    expect(seen.map((s) => `${s.method} ${s.url}`)).toEqual(["GET https://api.example.test/v1/charges/chg_1"]);
+    expect(posts(seen)).toBe(0);
+  });
+
+  it("a charge still registering, with no QR and no line: refused as no_payable_instrument, and the pay route is never called", async () => {
+    const { out, seen } = await withCharge(view({ status: "PROCESSING", payable: false, pix_copy_paste: null, boleto_bank_line: null, boleto_bar_code: null }));
+    expect(out).toMatchObject({ ok: false, refused: { code: "no_payable_instrument" } });
+    expect(posts(seen)).toBe(0);
+  });
+
+  it("a payable charge is paid, once", async () => {
+    const { out, seen } = await withCharge(view({}));
+    expect(out).toMatchObject({ ok: true, state: { status: "paid", settled_against: "sandbox_fixture" } });
+    expect(seen.map((s) => `${s.method} ${s.url}`)).toEqual(["GET https://api.example.test/v1/charges/chg_1", "POST https://api.example.test/v1/test/charges/chg_1/pay"]);
   });
 });
 

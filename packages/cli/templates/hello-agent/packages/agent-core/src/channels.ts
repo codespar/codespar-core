@@ -154,22 +154,32 @@ export const TemplateRegistrySchema = z
   })
   .strict()
   .superRefine((registry, ctx) => {
+    // Meta approves a template per (name, language): the same name in two languages is two templates, the same pair twice is one declared twice.
     const seen = new Set<string>();
     const replyIds = new Set<string>();
+    const replyOwner = new Map<string, string>();
     for (const [i, template] of registry.templates.entries()) {
-      if (seen.has(template.name)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["templates", i, "name"], message: `${template.name} is declared twice` });
-      seen.add(template.name);
-      // A tap is resolved by its id alone, so one id means one intent across the whole registry.
+      const pair = `${template.name}/${template.language}`;
+      if (seen.has(pair)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["templates", i, "name"], message: `${template.name} is declared twice in ${template.language}` });
+      seen.add(pair);
+      // A tap is resolved by its id in the conversation's language, so one id means one intent per language, and one template across languages.
       for (const [j, button] of (template.buttons ?? []).entries()) {
-        if (replyIds.has(button.id)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["templates", i, "buttons", j, "id"], message: `reply id ${button.id} is declared twice` });
-        replyIds.add(button.id);
+        if (replyIds.has(`${button.id}/${template.language}`)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["templates", i, "buttons", j, "id"], message: `reply id ${button.id} is declared twice in ${template.language}` });
+        replyIds.add(`${button.id}/${template.language}`);
+        const owner = replyOwner.get(button.id);
+        if (owner !== undefined && owner !== template.name) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["templates", i, "buttons", j, "id"], message: `reply id ${button.id} is offered by ${owner} and by ${template.name}` });
+        replyOwner.set(button.id, template.name);
       }
     }
   });
 
-/** Every quick reply the registry declares, by id: the only taps that can become a turn. */
-export function declaredReplies(templates: readonly WhatsAppTemplate[]): Map<string, QuickReply> {
-  return new Map(templates.flatMap((t) => t.buttons ?? []).map((b) => [b.id, b]));
+/**
+ * Every quick reply the registry declares, by id: the only taps that can
+ * become a turn. With a `language`, only the copies declared in it: an English
+ * conversation hands the model the English intent of the button it tapped.
+ */
+export function declaredReplies(templates: readonly WhatsAppTemplate[], language?: string): Map<string, QuickReply> {
+  return new Map(templates.filter((t) => language === undefined || t.language === language).flatMap((t) => t.buttons ?? []).map((b) => [b.id, b]));
 }
 
 export type TemplateRegistry = z.infer<typeof TemplateRegistrySchema>;

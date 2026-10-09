@@ -71,6 +71,14 @@ describe("the collection rules, tried through the channel", () => {
     expect(backend.delivered).toHaveLength(0);
   });
 
+  it("refuses outside the hours in either locale, for the same rule, and only the detail is translated (#64)", () => {
+    const at = (locale: "pt-BR" | "en" | undefined) =>
+      checkOutbound(CONTACT, { kind: "text", text: "Oi, Joana!" }, { conversation: { contact: CONTACT }, hours: HOURS, now: () => OUTSIDE, ...(locale ? { locale } : {}) });
+    expect(at(undefined)).toEqual({ rule: "collection_hours", detail: "fora do horário de cobrança (08:00-20:00 America/Sao_Paulo); agora são 22:30" });
+    expect(at("pt-BR")).toEqual(at(undefined));
+    expect(at("en")).toEqual({ rule: "collection_hours", detail: "outside collection hours (08:00-20:00 America/Sao_Paulo); it is 22:30 now" });
+  });
+
   it("refuses a message to any contact but the one the conversation is bound to", () => {
     const refusal = checkOutbound("+5511900000000", { kind: "text", text: "sobre a sua divida" }, {
       conversation: { contact: CONTACT, subject: "acordo-1042" },

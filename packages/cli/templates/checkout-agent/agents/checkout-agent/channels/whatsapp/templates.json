@@ -8,10 +8,16 @@
       "body": "Oi! Recebemos o pagamento do seu pedido de {{1}}. Pedido confirmado, obrigado!"
     },
     {
+      "name": "pedido_confirmado",
+      "language": "en_US",
+      "description": "The English copy of pedido_confirmado, sent when the conversation's locale is `en`. Same variables and the same buttons as the pt_BR copy; Meta approves each language separately.",
+      "body": "Hi! We received the payment for your order of {{1}}. Order confirmed, thank you!"
+    },
+    {
       "name": "pedido_cobranca_vencida",
       "language": "pt_BR",
       "description": "The order's charge reached its due date unpaid. It has to be its own template: a customer whose charge expired must not be told the order is confirmed. {{1}} is the order's total.",
-      "body": "Oi! A cobranca do seu pedido de {{1}} venceu sem pagamento. Se quiser, emito uma nova por aqui.",
+      "body": "Oi! A cobrança do seu pedido de {{1}} venceu sem pagamento. Se quiser, emito uma nova por aqui.",
       "buttons": [
         {
           "id": "emitir_nova",
@@ -20,8 +26,26 @@
         },
         {
           "id": "agora_nao",
-          "title": "Agora nao",
+          "title": "Agora não",
           "intent": "agora nao quero uma nova cobranca para o meu pedido"
+        }
+      ]
+    },
+    {
+      "name": "pedido_cobranca_vencida",
+      "language": "en_US",
+      "description": "The English copy of pedido_cobranca_vencida, sent when the conversation's locale is `en`. Same variables and the same buttons as the pt_BR copy; Meta approves each language separately.",
+      "body": "Hi! The charge for your order of {{1}} reached its due date unpaid. If you like, I can issue a new one here.",
+      "buttons": [
+        {
+          "id": "emitir_nova",
+          "title": "Issue a new one",
+          "intent": "I want you to issue a new charge for my order"
+        },
+        {
+          "id": "agora_nao",
+          "title": "Not now",
+          "intent": "I do not want a new charge for my order right now"
         }
       ]
     },
@@ -29,13 +53,19 @@
       "name": "pedido_cobranca_cancelada",
       "language": "pt_BR",
       "description": "The order's charge was cancelled, so nothing was paid and nothing is owed on it. {{1}} is the order's total.",
-      "body": "Oi! A cobranca do seu pedido de {{1}} foi cancelada e nada foi pago. Qualquer coisa, e so falar por aqui."
+      "body": "Oi! A cobrança do seu pedido de {{1}} foi cancelada e nada foi pago. Qualquer coisa, é só falar por aqui."
+    },
+    {
+      "name": "pedido_cobranca_cancelada",
+      "language": "en_US",
+      "description": "The English copy of pedido_cobranca_cancelada, sent when the conversation's locale is `en`. Same variables and the same buttons as the pt_BR copy; Meta approves each language separately.",
+      "body": "Hi! The charge for your order of {{1}} was cancelled and nothing was paid. If you need anything, just write here."
     },
     {
       "name": "pedido_atualizacao",
       "language": "pt_BR",
       "description": "The FALLBACK: sent by a poll, outside the 24-hour window, when an outcome closed that the agent has no template of its own for (a charge the rail failed to issue, a proposal denied or expired days later). It states NOTHING about the outcome, so it can never be the wrong news; it asks the person to answer, and an answer reopens the window, inside which the agent says what happened in free text. Takes no variables.",
-      "body": "Oi! Temos uma atualizacao sobre o seu atendimento. Responda esta mensagem para continuarmos por aqui.",
+      "body": "Oi! Temos uma atualização sobre o seu atendimento. Responda esta mensagem para continuarmos por aqui.",
       "fallback": true,
       "buttons": [
         {
@@ -44,6 +74,20 @@
           "intent": "quero saber qual e a atualizacao do meu atendimento"
         }
       ]
+    },
+    {
+      "name": "pedido_atualizacao",
+      "language": "en_US",
+      "description": "The English copy of pedido_atualizacao, sent when the conversation's locale is `en`. Same variables and the same buttons as the pt_BR copy; Meta approves each language separately.",
+      "body": "Hi! We have an update about your request. Reply to this message so we can continue here.",
+      "buttons": [
+        {
+          "id": "falar_agora",
+          "title": "Talk now",
+          "intent": "I want to know what the update about my request is"
+        }
+      ],
+      "fallback": true
     }
   ]
 }

@@ -6,18 +6,29 @@
  *
  * `--json` puts machine data on stdout (valid JSON, nothing else) and the
  * human messages on stderr.
+ *
+ * A one-shot prints, after the reply, what the run did as the engine counts
+ * it (`outcome.ts`), and exits by it: see `EXIT_CODES`.
  */
+import { statSync } from "node:fs";
 import { stderr, stdout } from "node:process";
 import { relative, resolve } from "node:path";
-import { NotATestKeyError, declaredReplies, isTestKey, loadManifest, resolveFixedClock, type ApprovalMode, type ChannelName } from "@codespar/agent-core";
+import { CORE_STRINGS, NotATestKeyError, WHATSAPP_LANGUAGE, declaredReplies, loadManifest, parseLocale, resolveLocale, testKeyProblem, resolveFixedClock, type ApprovalMode, type ChannelName, type Locale } from "@codespar/agent-core";
 import { join } from "node:path";
 import type { Agent } from "../agent.js";
 import type { RailKind } from "../kit.js";
-import { resolveProvider, resolveRailKind, setup, type ProviderKind } from "../setup.js";
+import { envFileOf, resolveProvider, resolveRailKind, setup, type ProviderKind } from "../setup.js";
 import { checkScenario, listScenarios, loadScenario, runScenario, scenariosDir } from "../scenarios.js";
 import { closeTerminal, defaultAsk, handleExecution, interactive } from "../terminal.js";
 import { loadTemplates, resolveConversation } from "../channels/index.js";
 import { startWhatsApp, type WhatsAppBackendName } from "./start-whatsapp.js";
+import { outcomeExitCode, refusalLine, sayOutcome } from "../outcome.js";
+
+const EXIT_CODES = `exit (--input): 0 nothing failed (settled, already paid, denied, expired or still open: the last line counts each payment); 1 a payment failed or a line was refused before a draft, and 1 wins over 3; 3 nothing failed and an execution of this run was left executing (npm run reconcile). A line an earlier run still holds is open and exits 0.`;
+
+function isFile(path: string): boolean {
+  return statSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
+}
 
 interface Args {
   input?: string;
@@ -40,6 +51,8 @@ interface Args {
   conversation?: string;
   /** Replay the conversation's turns instead of reading them from the keyboard. */
   scripted: boolean;
+  /** The language of what the code prints; absent means agent.yaml's `locale`, else pt-BR. */
+  locale?: Locale;
   help: boolean;
 }
 
@@ -92,6 +105,7 @@ export function parseArgs(argv: string[], awaitsPayer: boolean): Args {
       args.backend = v;
     } else if (a === "--conversation") args.conversation = next();
     else if (a === "--scripted") args.scripted = true;
+    else if (a === "--locale") args.locale = parseLocale(next());
     else if (a === "--help" || a === "-h") args.help = true;
     else throw new Error(`unknown argument ${a}`);
   }
@@ -109,10 +123,12 @@ export async function start(agent: Agent, argv: string[]): Promise<number> {
     return 2;
   }
   if (args.help) {
-    stderr.write(usage + "\n");
+    stderr.write(`${usage}\n${EXIT_CODES}\n`);
     return 0;
   }
   const say = (line: string) => stderr.write(line + "\n");
+  // Fixed for the run, and for a conversation: the proposal and its approval are asked in the same language.
+  const locale = resolveLocale(args.locale, loadManifest(join(agent.dir, "agent.yaml")).manifest);
 
   // A pinned instant makes the guardrails deterministic: the CI runs the fixture inside the declared hours whatever the hour is.
   let now: (() => Date) | undefined;
@@ -125,12 +141,19 @@ export async function start(agent: Agent, argv: string[]): Promise<number> {
 
   // Sandbox by construction: a live key dies here, before anything else runs.
   const railKind = resolveRailKind(process.env, args.rail);
-  if (railKind === "api" && !isTestKey(process.env["CODESPAR_API_KEY"])) {
-    say(new NotATestKeyError().message);
+  const keyProblem = railKind === "api" ? testKeyProblem(process.env["CODESPAR_API_KEY"]) : undefined;
+  if (keyProblem) {
+    say(new NotATestKeyError(keyProblem, envFileOf(agent.dir)).message);
     return 1;
   }
 
-  if (args.scenario) return runScenarioCommand(agent, args, railKind, say);
+  // A recording that is not there is said by its path, before a mandate is asked for or a run is opened.
+  if (args.transcript !== undefined && !isFile(args.transcript)) {
+    say(`no transcript at ${args.transcript}`);
+    return 1;
+  }
+
+  if (args.scenario) return runScenarioCommand(agent, args, railKind, locale, say);
 
   // A channel is a conversation, so the flags a one-shot and a scenario pack use have no meaning on one.
   if (args.channel === "whatsapp" && (args.input !== undefined || args.scenario !== undefined)) {
@@ -147,7 +170,7 @@ export async function start(agent: Agent, argv: string[]): Promise<number> {
   }
 
   if (agent.kit.ensureMandate) {
-    const ok = await agent.kit.ensureMandate({ agentDir: agent.dir, argv, say, railKind, oneShot: args.input !== undefined, ask: defaultAsk });
+    const ok = await agent.kit.ensureMandate({ agentDir: agent.dir, argv, locale, say, railKind, oneShot: args.input !== undefined, ask: defaultAsk });
     if (!ok) return 1;
   }
 
@@ -159,9 +182,9 @@ export async function start(agent: Agent, argv: string[]): Promise<number> {
     say(err instanceof Error ? err.message : String(err));
     return 2;
   }
-  // A first turn that is a TAP is looked up by the intent the tap stands for, which is what the model is handed.
+  // A first turn that is a TAP is looked up by the intent the tap stands for in the run's language, which is what the model is handed.
   const firstTurn = args.scripted ? conversationScript?.turns[0] : undefined;
-  const firstInput = args.input ?? firstTurn?.text ?? (firstTurn?.reply ? declaredReplies(loadTemplates(agent)).get(firstTurn.reply.id)?.intent : undefined);
+  const firstInput = args.input ?? firstTurn?.text ?? (firstTurn?.reply ? declaredReplies(loadTemplates(agent), WHATSAPP_LANGUAGE[locale]).get(firstTurn.reply.id)?.intent : undefined);
 
   // No model: replay the recorded scenario whose first turn is what the person said first.
   let transcript = args.transcript;
@@ -175,7 +198,7 @@ export async function start(agent: Agent, argv: string[]): Promise<number> {
     }
   }
 
-  const s = setup(agent, { mode: args.mode, rail: railKind, provider, transcript, now, say });
+  const s = setup(agent, { mode: args.mode, rail: railKind, provider, transcript, now, say, locale });
   if (args.payer) s.payer?.behave(args.payer);
   const approver = { id: args.user ?? s.kit.labels.defaultUser, channel: "terminal" };
   const startedAt = Date.now();
@@ -207,18 +230,23 @@ export async function start(agent: Agent, argv: string[]): Promise<number> {
       handleExecution(execution, { setup: s, approver, decision: args.decision ?? "none", say, waitSeconds: args.wait, simulatePayer: args.simulatePayer, ...(args.json ? { tell: say } : {}) }),
     );
     const result = await loop.turn(args.input);
-    const executions = s.engine.list().filter((e) => e.run_id === s.runId);
+    // Counted from the engine, printed whatever the reply says: a recorded reply cannot know what this run found.
+    const { executions, refusals, outcome, line } = sayOutcome(s, result.not_run);
+    // A request refused before a draft left no execution to describe: said here with the engine's own reason, or the terminal would be silent about it.
+    for (const refusal of refusals) say(refusalLine(refusal));
     const payload = s.kit.oneShotPayload({ setup: s, reply: result.reply, toolCalls: result.tool_calls, executions, startedAt });
-    if (args.json) stdout.write(JSON.stringify(payload) + "\n");
-    else stdout.write(result.reply + "\n");
-    return executions.some((e) => e.state === "executing") ? 3 : 0;
+    // `run_outcome`, not `outcome`: the payload is the kit's, and a kit may name a field of its own that.
+    if (args.json) stdout.write(JSON.stringify({ ...payload, run_outcome: outcome, refused_before_draft: refusals }) + "\n");
+    else stdout.write(`${result.reply}\n${line}\n`);
+    return outcomeExitCode(outcome, executions);
   } finally {
     closeTerminal();
     s.close();
   }
 }
 
-async function runScenarioCommand(agent: Agent, args: Args, railKind: RailKind, say: (l: string) => void): Promise<number> {
+async function runScenarioCommand(agent: Agent, args: Args, railKind: RailKind, locale: Locale, say: (l: string) => void): Promise<number> {
+  const text = CORE_STRINGS[locale];
   const scenario = loadScenario(agent, args.scenario!);
   const picksRail = agent.kit.scenarioRail === "requested";
   const rail: RailKind = picksRail ? railKind : "stub";
@@ -237,10 +265,13 @@ async function runScenarioCommand(agent: Agent, args: Args, railKind: RailKind, 
       say: args.json ? () => undefined : say,
       ...(picksRail ? { tell: args.json ? () => undefined : (l: string) => void stdout.write(l + "\n") } : {}),
       waitSeconds: args.wait,
+      locale,
     });
     const check = checkScenario(scenario, run);
-    for (const reply of run.replies) say(`agente: ${reply}`);
-    say(check.ok ? `== ok — ${agent.settlement === "await-payer" ? `${run.cycle_seconds}s — ` : ""}bundle em ${relative(process.cwd(), run.bundle_dir)}` : `== FAIL: ${check.failures.join("; ")}`);
+    for (const reply of run.replies) say(text.scenarioReply(reply));
+    // Seconds are said only where a clock measured them. On the stub the clock is the scenario's, ticking a second per read: its "16s" is a count of reads in a run that took under one.
+    const measured = agent.settlement === "await-payer" && run.rail === "api" ? run.cycle_seconds : undefined;
+    say(check.ok ? text.scenarioOk(measured, relative(process.cwd(), run.bundle_dir)) : `== FAIL: ${check.failures.join("; ")}`);
     results.push({ mode, ok: check.ok, failures: check.failures, run });
   }
   if (args.json) stdout.write(JSON.stringify({ scenario: scenario.name, ...(picksRail ? { rail } : {}), results }) + "\n");

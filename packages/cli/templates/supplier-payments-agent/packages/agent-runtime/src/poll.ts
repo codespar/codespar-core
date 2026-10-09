@@ -30,9 +30,8 @@ export interface PollOptions extends PollHooks {
   timeoutMs: number;
   /** Cap on looks, for a zero-interval (stub) loop: the fixture payer acts within two looks; a third proves nothing changes. */
   maxRounds?: number;
-  /** When set, the payer plays once every instalment is payable, or after `payerAfterRounds` looks (a scenario, `--simulate-payer`). */
+  /** When set, the payer plays once every instalment is payable (a scenario, `--simulate-payer`), and never before. */
   payer?: SandboxPayer | undefined;
-  payerAfterRounds?: number;
   clock?: () => Date;
   sleep?: (ms: number) => Promise<void>;
 }
@@ -85,13 +84,14 @@ export async function pollUntilClosed(engine: ExecutionEngine, executionId: stri
     rounds += 1;
     execution = await engine.reconcile(execution.id);
     await present(execution);
-    // The sandbox payer plays once every receivable is payable (the QR was shown first, as in the scene), or after a few looks if the
-    // clearing house is still registering: the API's test route settles a PROCESSING charge too, and on the shared sandbox the
-    // registration can take minutes. A real payer is not this hook.
+    // The sandbox payer plays once every receivable is payable, the QR shown first, as in the scene, and never before. It used to
+    // play after a few looks whatever it found, because the API's test route settles a charge still registering; on staging on
+    // 2026-09-27 that route settled a charge the issuer had ended in ERROR, with no QR at all, and the scenario called the order
+    // settled (OPEN_QUESTIONS §63, ent#1816). A payer can only pay what it can see, so a registration that never ends payable
+    // leaves the order open until the wait runs out, or closes it with the issuer's own failure.
     const issued = execution.outcomes.filter((o) => o.status === "accepted" && o.transaction_id);
     const allPayable = issued.length > 0 && issued.every((o) => o.instrument?.payable);
-    const patienceOver = rounds >= (options.payerAfterRounds ?? 5);
-    if (options.payer && !paidRequested && execution.state === "executing" && issued.length > 0 && issued.length === execution.outcomes.filter((o) => o.status === "accepted").length && (allPayable || patienceOver)) {
+    if (options.payer && !paidRequested && execution.state === "executing" && issued.length > 0 && issued.length === execution.outcomes.filter((o) => o.status === "accepted").length && allPayable) {
       paidRequested = true;
       for (const outcome of issued) {
         const result = await options.payer.pay(outcome.transaction_id!, outcome.attempt_id);

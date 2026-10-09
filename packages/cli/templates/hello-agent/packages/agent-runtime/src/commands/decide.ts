@@ -6,8 +6,9 @@
  */
 import { relative } from "node:path";
 import { stderr, stdout } from "node:process";
+import { railErrorOf } from "@codespar/agent-core";
 import type { Agent } from "../agent.js";
-import { setup } from "../setup.js";
+import { localeFlag, setup } from "../setup.js";
 import { handleExecution } from "../terminal.js";
 
 export async function decide(agent: Agent, decision: "approve" | "deny", argv: string[]): Promise<number> {
@@ -16,13 +17,20 @@ export async function decide(agent: Agent, decision: "approve" | "deny", argv: s
   const user = argv.includes("--user") ? argv[argv.indexOf("--user") + 1] : undefined;
   const wait = awaitsPayer && argv.includes("--wait") ? Number(argv[argv.indexOf("--wait") + 1]) : undefined;
   const simulatePayer = awaitsPayer && argv.includes("--simulate-payer");
-  const executionId = argv.find((a, i) => !a.startsWith("--") && argv[i - 1] !== "--user" && (!awaitsPayer || argv[i - 1] !== "--wait"));
+  const executionId = argv.find((a, i) => !a.startsWith("--") && argv[i - 1] !== "--user" && argv[i - 1] !== "--locale" && (!awaitsPayer || argv[i - 1] !== "--wait"));
   const say = (l: string) => stderr.write(l + "\n");
-  if (!executionId) {
-    say(`usage: npm run ${decision} <execution-id> [--user <id>]${awaitsPayer ? " [--wait <seconds>] [--simulate-payer]" : ""} [--json]`);
+  let locale;
+  try {
+    locale = localeFlag(argv);
+  } catch (err) {
+    say(err instanceof Error ? err.message : String(err));
     return 2;
   }
-  const s = setup(agent, { say, runId: `run_${decision}_${Date.now().toString(36)}` });
+  if (!executionId) {
+    say(`usage: npm run ${decision} <execution-id> [--user <id>]${awaitsPayer ? " [--wait <seconds>] [--simulate-payer]" : ""} [--locale pt-BR|en] [--json]`);
+    return 2;
+  }
+  const s = setup(agent, { say, runId: `run_${decision}_${Date.now().toString(36)}`, locale });
   try {
     const execution = s.engine.get(executionId);
     if (!execution) {
@@ -48,6 +56,7 @@ export async function decide(agent: Agent, decision: "approve" | "deny", argv: s
           execution_id: final.id,
           state: final.state,
           reason: final.reason ?? null,
+          rail_error: railErrorOf(final),
           approval_id: final.approval_id ?? null,
           ...(awaitsPayer ? { charge_ids: final.outcomes.map((o) => o.transaction_id ?? null) } : {}),
           receipt_ids: final.outcomes.filter((o) => o.receipt_id).map((o) => o.receipt_id),

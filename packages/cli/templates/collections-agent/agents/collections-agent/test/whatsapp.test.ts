@@ -84,10 +84,19 @@ function conversationOf(payload: Payload): ChannelLine[] {
 }
 
 const EMULATOR = process.env["WHATSAPP_SIM_URL"] ?? "http://127.0.0.1:4290";
+/**
+ * The probe closes its connection, as every emulator call in these tests does.
+ * An agent run here is a `spawnSync`, which blocks this process's event loop
+ * for longer than the emulator's keep-alive (`Keep-Alive: timeout=5`), so a
+ * pooled socket is never expired by fetch and the next call on it dies
+ * `fetch failed … ECONNRESET`. This file makes one call today; the header is
+ * here so the next one does not inherit a pooled socket.
+ */
+const FRESH_CONNECTION = { connection: "close" } as const;
 /** Probed at module level: `describe.skipIf` is read when the file is collected, before any hook runs. */
 const emulatorUp = await (async () => {
   try {
-    return (await fetch(`${EMULATOR}/health`, { signal: AbortSignal.timeout(2000) })).ok;
+    return (await fetch(`${EMULATOR}/health`, { headers: FRESH_CONNECTION, signal: AbortSignal.timeout(2000) })).ok;
   } catch {
     return false;
   }
@@ -127,7 +136,7 @@ describe.skipIf(!emulatorUp)("the cycle closes over the WhatsApp channel", () =>
     const payload = payloadOf(out.stdout);
     expect(payload.executions.map((e) => e.state)).toEqual(["settled"]);
     // The question is the operator's and is on the console; nothing like it is in the conversation.
-    for (const line of conversationOf(payload)) expect(line.text ?? "").not.toMatch(/operador|Aprovar a emissao/i);
+    for (const line of conversationOf(payload)) expect(line.text ?? "").not.toMatch(/operador|Aprovar a emiss[aã]o/i);
   });
 
   it("writes the conversation into the bundle with the contact masked", () => {
@@ -150,8 +159,11 @@ describe.skipIf(!emulatorUp)("the cycle closes over the WhatsApp channel", () =>
     const outbound = conversationOf(payload).filter((l) => l.direction === "out");
     expect(outbound.some((l) => l.kind === "media")).toBe(true);
     // The kit's one-per-outcome message, sent once however many looks carried the event.
-    // The model's own reply also says the charge expired, which is the terminal's behaviour too.
-    expect(outbound.filter((l) => String(l.text ?? "").startsWith("A cobranca venceu sem pagamento"))).toHaveLength(1);
+    // The model's own reply also says the charge expired, which is the terminal's behaviour too, and since #64 both
+    // spell "cobrança"; the kit's message is the one that carries the outcome it tells (`about`).
+    const told = outbound.filter((l) => (l as { about?: unknown }).about !== undefined);
+    expect(told.filter((l) => String(l.text ?? "").startsWith("A cobrança venceu sem pagamento"))).toHaveLength(1);
+    expect(told).toHaveLength(1);
   });
 
   it("refuses to say anything at all outside the collection hours, and issues nothing", () => {

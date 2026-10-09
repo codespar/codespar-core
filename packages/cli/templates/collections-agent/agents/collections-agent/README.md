@@ -1,12 +1,14 @@
 # collections-agent
 
-[![rail: bolepix](https://img.shields.io/badge/rail-bolepix-2E8B57)](agent.yaml) [![maturity: sandbox](https://img.shields.io/badge/maturity-sandbox-orange)](agent.yaml) [![approval: human | mandate](https://img.shields.io/badge/approval-human_%7C_mandate-555)](agent.yaml) [![charge → settled: 10 s](https://img.shields.io/badge/charge_%E2%86%92_settled-10_s-8A2BE2)](#quickstart)
+[![rail: bolepix](https://img.shields.io/badge/rail-bolepix-2E8B57)](agent.yaml) [![maturity: blocked](https://img.shields.io/badge/maturity-blocked-lightgrey)](agent.yaml) [![approval: human | mandate](https://img.shields.io/badge/approval-human_%7C_mandate-555)](agent.yaml)
 
 The merchant's collections agent. A customer replies about an open debt; the agent proposes terms inside a negotiation envelope (maximum discount, number of instalments, due-date window, collection hours), and once the customer accepts, the code issues one bolepix per instalment, shows the QR code and the copy-and-paste Pix code in the chat, and closes the loop when the charge is paid or expires. Two channels: the terminal, and WhatsApp against a local Cloud API emulator that needs no Meta account.
 
 ## Quickstart
 
 Node 22.13+ and a sandbox key (`csk_test_...`) from [codespar.dev/auth/signup](https://codespar.dev/auth/signup). No money moves: a sandbox payer plays the customer's bank.
+
+Today the sandbox does not issue a payable bolepix. On staging the charge ends `ERROR` with no Pix and no boleto, and production test mode refuses it at issuance. With a `csk_test_` key this agent stops at issuance, and the 10 s from issuance to `settled` measured on 2026-09-23 does not reproduce. The stub rail and the scenarios run the whole cycle. The test payer still settles a charge in `ERROR`, and the read then answers `CONFIRMED`; that half is [ent#1816](https://github.com/codespar/codespar-enterprise/issues/1816). [`docs/OPEN_QUESTIONS.md`](../../docs/OPEN_QUESTIONS.md) §22 and §63 have the runs.
 
 ```sh
 git clone https://github.com/codespar/agent-starter-kits && cd agent-starter-kits
@@ -18,7 +20,7 @@ pagador> oi, recebi a mensagem sobre o acordo do pedido 1042
 
 You type as the customer. In `human` mode the operator's approval is asked on the same keyboard, labelled `[operador]`. Without a real `ANTHROPIC_API_KEY` (empty or the `.env.example` placeholder) the agent replays the recorded scenario.
 
-Scaffold instead of cloning: `npx -y @codespar/cli@0.14.0 init my-agent --template collections-agent`.
+Scaffold instead of cloning: `npx -y @codespar/cli@0.18.1 init my-agent --template collections-agent`.
 
 ## What it shows
 
@@ -26,7 +28,7 @@ Scaffold instead of cloning: `npx -y @codespar/cli@0.14.0 init my-agent --templa
 |---|---|
 | The model proposes, the code executes | `codespar_charge` creates an execution in `drafted`. Only `ExecutionEngine` in `@codespar/agent-core` checks the collection policy (debtors' book, cap per receivable, window cap), the envelope, `escalate_above` and `items_hash`, and only it reaches `executing`. |
 | The envelope is code, not prompt | `guardrails.envelope` is the `policyExtension` the core runs at every gate: a discount above the ceiling, more instalments than allowed, a due date outside the window or a message outside collection hours is `denied` with reason `outside_envelope` or `outside_hours`, in both modes, whatever anyone typed. |
-| One receivable per instalment, once | Each instalment is one `POST /v1/charges` (`method: boleto` + `due_date`, the cobranca com vencimento the payer settles by Pix or boleto) with `idempotency_key` = the attempt id. A retry returns the same charge. `GET /v1/charges/{id}` accepts that key, which is what lets a restart find the charge instead of issuing again. |
+| One receivable per instalment, once | Each instalment is one `POST /v1/charges` (`method: boleto` + `due_date`, the cobrança com vencimento the payer settles by Pix or boleto) with `idempotency_key` = the attempt id. A retry returns the same charge. `GET /v1/charges/{id}` accepts that key, which is what lets a restart find the charge instead of issuing again. |
 | The cycle closes on the state machine | An accepted receivable leaves the execution in `executing` with reason `awaiting_settlement`. `commerce.charge.paid` moves it to `settled`; `expired` and `cancelled` to `failed` with that reason. Duplicate events are dropped by id; `paid` after `expired`, or the reverse, moves nothing; the payer is told once. |
 | Two modes, one envelope | `approval: human` (default): the operator approves each issuance. `approval: mandate`: the agent issues alone inside the envelope and asks the operator above R$ 3.000,00. Same code, same states, same records. |
 | Readable refusal | Discount, instalments, due date, hours, cap, unknown debtor, revoked policy: each names itself in the trail and in the chat. |
@@ -156,7 +158,8 @@ debtor's agreement out of another's chat, used in the other direction.
 
 **The templates are the agent's**, declared in
 [`channels/whatsapp/templates.json`](channels/whatsapp/templates.json) with the
-name, the language and the body as submitted. `npm run check` validates it, and
+name, the language and the body as submitted, once per language (`pt_BR` and
+`en_US`, one per locale). `npm run check` validates it, and
 the channel refuses a name nobody declared, a language the template was not
 registered in, and a variable count the body has no placeholders for — the
 three things a local registry can see that Meta answers with a 4xx. Whether
@@ -199,7 +202,7 @@ Read from `agent.yaml`, field `maturity`:
 
 | Capability | Maturity | Meaning |
 |---|---|---|
-| `bolepix-receivables` | sandbox | Cobranca com vencimento through the CodeSpar sandbox, paid by the sandbox payer. No real money. |
+| `bolepix-receivables` | blocked | Cobrança com vencimento, paid by the sandbox payer, no real money. Blocked because the live sandbox does not issue a payable one today ([ent#1816](https://github.com/codespar/codespar-enterprise/issues/1816), see [Quickstart](#quickstart)); the stub rail and the scenarios run the whole cycle. |
 | `receipt-verification` | blocked | Ed25519 landed on the API's payment receipts, and this agent mints none: the API still seals no record for a paid charge, so what the bundle keeps is the paid charge as the API reports it, marked `kind: "charge"`, with no chain and no signature to check. |
 
 What the agent applies on its own (`guardrails.json`): the envelope (15% maximum discount, up to 3 instalments, due dates within 90 days, R$ 50,00 minimum instalment, collection hours 08:00–20:00 in America/Sao_Paulo), the escalation threshold (R$ 3.000,00 per agreement in `mandate`), and "the core's total wins" when the model states another.
@@ -211,17 +214,18 @@ Not in this kit yet: a policy signed by the API for the receiving side (section 
 | Command | Does |
 |---|---|
 | `npm start` | Interactive terminal. You are the payer; the operator's approval is asked on the same keyboard. |
-| `npm start -- --input "oi, recebi a mensagem sobre o acordo do pedido 1042" [--approve] [--simulate-payer] [--wait 60] [--json] [--now <ISO>]` | One turn, no prompt. Without `ANTHROPIC_API_KEY` it replays the recorded scenario whose first turn is that input. `--json`: machine data on stdout, people on stderr (add npm's `-s` when piping). Exit code 3 when a receivable is still waiting. `--now 2026-09-23T14:00:00-03:00` pins the clock the guardrails read (collection hours `08:00-20:00`, the due-date window, every timestamp) instead of the wall clock; the CI gate passes it so the fixture is inside collection hours at any hour. `CODESPAR_AGENT_NOW` in the environment is the same pin and reaches every command (`approve`, `resume`, `poll`, `rerun`, `reconcile`); the flag wins when both are set. |
+| `npm start -- --input "oi, recebi a mensagem sobre o acordo do pedido 1042" [--approve] [--simulate-payer] [--wait 60] [--json] [--now <ISO>]` | One turn, no prompt. Without `ANTHROPIC_API_KEY` it replays the recorded scenario whose first turn is that input. `--json`: machine data on stdout, people on stderr (add npm's `-s` when piping). After the reply, stdout carries one line counting what the run did, by payment (`resultado deste run: ...`: settled, failed or refused, denied or expired, skipped as already paid, open); `--json` carries the same count as `run_outcome`. Exit code: 1 when a payment failed or a line was refused before a draft, and 1 wins over 3; 3 when nothing failed and an execution of this run was left `executing`; 0 otherwise, denied, expired and an unpaid or withdrawn charge included. A receivable still waiting is that 3. `--now 2026-09-23T14:00:00-03:00` pins the clock the guardrails read (collection hours `08:00-20:00`, the due-date window, every timestamp) instead of the wall clock; the CI gate passes it so the fixture is inside collection hours at any hour. `CODESPAR_AGENT_NOW` in the environment is the same pin and reaches every command (`approve`, `resume`, `poll`, `rerun`, `reconcile`); the flag wins when both are set. |
 | `npm start -- --channel whatsapp [--scripted] [--conversation <name>] [--backend simulator\|cloud-api]` | The conversation channel. The default backend is the local emulator (`npm run whatsapp:emulator`, no Meta account and no credential); `--scripted` replays the debtor's turns from `channels/whatsapp/`. See [The WhatsApp channel](#the-whatsapp-channel). |
-| `npm start -- --scenario <name> [--mode human\|mandate] [--rail stub\|api]` | A scenario pack from `scenarios/`. With `--rail api` and a test key the charge, the poll and the sandbox payer are real, and `cycle_seconds` is measured. |
+| `npm start -- --locale en` (any form above; `poll`, `approve`, `webhook` take it too) | The lines the code prints in English: the operator's question, the execution lines, the payable instrument (`R$1,080.00, due 2026-09-30 — charge …`), the one message per outcome, the envelope's refusal details, and on WhatsApp the `en_US` copy of each template. The default is `locale:` in `agent.yaml`, `pt-BR`. A conversation keeps the locale it started in: `poll` tells the outcome in the locale the run that issued the charge recorded, and `poll --channel whatsapp` refuses a `--locale` that disagrees with the conversation's. The model's reply language is separate: it follows what the payer types. |
+| `npm start -- --scenario <name> [--mode human\|mandate] [--rail stub\|api]` | A scenario pack from `scenarios/`. With `--rail api` and a test key the charge, the poll and the sandbox payer are real, and `cycle_seconds` is measured — only when the payer saw a payable QR or boleto line first: the sandbox payer never pays a charge with no payable instrument, an issuer `ERROR` fails the charge as `charge_issuer_error`, and a receivable settled on nothing anyone could pay fails the scenario as `no_payable_instrument` with `cycle_seconds: null`. |
 | `npm run check` | The manifest gate: fails if the prompt, tools or guardrails contradict `agent.yaml`, if `AGENTS.md` and `CLAUDE.md` differ, or if `mcp`, `cli` or `schema` are missing. |
-| `npm run eval` | The adversarial suite (`evals/adversarial/`) and every scenario in every mode, on the replay provider and the stub rail. |
+| `npm run eval` | The adversarial suite (`evals/adversarial/`) and every scenario in every mode, on the replay provider and the stub rail. Its proof bundles go to `runs/eval/`, apart from your own runs; `inspect` and `rerun` take their run ids as usual. |
 | `npm run approve <execution-id>` / `npm run deny <execution-id>` | The operator's decision as its own command: decides an execution left in `awaiting_approval`, writes the section 4.2 artifact, runs it through the same last gate `npm start` uses, and waits for the payer (`--wait`, `--simulate-payer`). |
 | `npm run poll [--wait <s>] [--simulate-payer] [--payer pays\|expires\|never]` | Keeps looking at every receivable still waiting for its payer. Shows an instrument not shown yet, tells the payer the outcome once, fetches the paid record. `--payer` scripts the stub's fixture, which is how "nobody paid and it expired" is reachable at all: a due date passes between two runs, never inside one. |
 | `npm run poll -- --channel whatsapp --conversation <name>` | The same, back in the conversation. Free-form while the 24-hour window is open, an approved template once it has shut. Nothing waiting is a clean no-op; polling twice tells the person once. See [Agreed on Tuesday, paid on Friday](#agreed-on-tuesday-paid-on-friday). |
 | `npm run webhook [--port 8787] [--secret <trigger secret>]` | The receiving end of a trigger delivery, on localhost. A stub: you register the trigger and expose the URL. |
 | `npm run resume` | After a crash: dispatches only what the outbox proves was never sent, reconciles the rest from the rail. Never issues twice. |
-| `npm run rerun <run-id>` | Replays a recorded run with no network and checks the state sequence matches; the payer's behaviour (paid, expired) is read from the recording. |
+| `npm run rerun <run-id>` | Replays a recorded run with no network and checks the state sequence matches; the payer's behaviour (paid, expired) is read from the recording. It runs on the clock the run started on. A run that met a revoked or paused mandate, an uncertain answer from the rail or a charge nobody paid is refused by name: a rerun does not replay those. |
 | `npm run reconcile` | Compares local state with the rail. One look, read-only; names what is waiting for a payer, what is uncertain, what record is missing locally. |
 | `npm run inspect <run-id> [--json] [--html <file>]` | The proof bundle of that run read back as a timeline: who proposed what, who approved it and when (with the `items_hash` and the escalation trigger when one fired), under which version of the mandate, every state transition with its actor, which call went out under which idempotency key, what the rail answered, and which receipts came back. `--json` puts the whole report on stdout and nothing else; `--html` writes one self-contained page that opens from disk with nothing fetched. Payees are masked the way the bundle masks them, and the conversation is reported as counts, not text. |
 
@@ -258,6 +262,7 @@ was shown as it became payable, and what closed the cycle.
 - Revocation and the kill switch run against a **local stub** (`LocalMandateStatusStub` in `packages/agent-core/src/stubs/mandate-status.ts`); the collection policy has no API-side status to read.
 - The `actor` of every call is carried locally on every event, approval and record copy. The API has no `actor` field on the wire today.
 - Collection over WhatsApp has rules: hours, secrecy of the debt, no embarrassment, LGPD. Two of them are decidable and are code above the channel, on every backend: nothing is sent outside the collection hours, a message goes to the bound contact and to no other number, a message may not name another debtor's agreement, and a CPF or CNPJ in a message is refused. The other two are the prompt's and the operator's: no code reads a sentence and tells whether it shames somebody.
+- Key scope this agent uses on the sandbox rail: `tools:execute`, for `POST /v1/charges`, `GET /v1/charges/{chargeId}`, `POST /v1/charges/{chargeId}/cancel` and the sandbox payer's `POST /v1/test/charges/{chargeId}/pay`. The stub rail uses no key. The names are each operation's `x-codespar-scope` in the API's `/openapi.json`; a key holding `*` needs nothing here.
 - CodeSpar does not host or run this agent. The repository delivers it; whoever runs it, runs it.
 - What the agent issues inside the policy was authorized by the merchant, and the approval artifact proves what. The split of loss between partner, institution and CodeSpar on an authorized but wrong receivable is contractual and not yet written.
 
