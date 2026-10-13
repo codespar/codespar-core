@@ -1,5 +1,75 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.17 — 2026-10-13
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: seguem 340 operacoes,
+  nenhuma rota nova e nenhuma removida. 16 operacoes mudaram: 11 de forma e 5
+  so de texto. `components.schemas` muda em `Policy`, `PolicyCreate`,
+  `PolicyUpdate` e `Whoami`. Snapshot `7fa10f86b0a2`, API 0.3.0.
+
+  Tipos que estreitam ou alargam, e o que isso pede de um cliente TypeScript:
+
+  - `Whoami.user` (enterprise #1971) passa de objeto opcional a
+    `object | null`, obrigatorio. A
+    API devolve `user: null` para API key e para token OAuth: a chave e de
+    uma org e de um projeto, nao de uma pessoa. Quem le `me.user.email` sem
+    tratar o `null` deixa de compilar. A credencial se identifica por
+    `organization`, `project` e `key`.
+  - O enum `type` de `Policy`, `PolicyCreate` e `PolicyUpdate` perde
+    `"allow"` (enterprise #1968). Ficam `deny`, `budget`, `rate-limit`,
+    `time-window` e `approval-required`. Quem escreve `type: "allow"` deixa de compilar.
+    Nada escrito a mao nesta SDK, na CLI ou no pacote Python usa esse valor.
+  - `executor` em `GET /v1/account/ledger`, `/payments` e `/sessions` ganha o
+    valor `"celcoin_sandbox"` ao lado de `"codespar_simulator"` (enterprise
+    #1965). Um `switch`
+    exaustivo sobre o campo precisa do caso novo.
+
+  `GET /v1/whoami`: a descricao diz que a rota nao nomeia pessoa. So texto; a
+  mudanca de forma esta no schema `Whoami`, acima.
+
+  `POST /v1/policies` (enterprise #1968 e #1974): a descricao da regra
+  `budget` passa a dizer o que e
+  contado em um `codespar_pay` (o valor da chamada, em unidades inteiras de
+  BRL; o `estimatedCost` declarado ao lado nao conta), que um `codespar_pay`
+  em outra moeda ou sem valor passa sem contar, e que o custo contado pelo
+  caminho da meta-tool nao e devolvido quando a chamada falha. So texto.
+
+  Health (enterprise #1961): em `GET /v1/health/history` cada ponto, em
+  `checks` e em `overall`,
+  ganha `ok_share`, obrigatorio: a parcela das observacoes do dia em que a
+  verificacao nao estava em `state: failure`. `uptime` segue obrigatorio, com
+  o mesmo valor, marcado `deprecated` e servido por um ciclo de release; leia
+  `ok_share`. A resposta ganha `first_sampled_day`, obrigatorio e anulavel.
+  `GET /v1/health` documenta que cada chamada autenticada conta uma
+  observacao nesse historico. So texto em `/v1/health`.
+
+  Auditoria (enterprise #1956): `GET /v1/audit-events` e o alias
+  `GET /v1/audit/events` ganham o
+  403 `audit_project_out_of_scope`, quando uma API key ou um token OAuth
+  nomeia em `project_id` um projeto que nao e o seu, e documentam que a chave
+  le so o proprio projeto mais as entradas de nivel de organizacao, de modo
+  que a pagina de uma chave nao e contigua na cadeia.
+  `GET /v1/audit-events/export` e o alias depreciado
+  `GET /v1/orgs/{orgId}/audit/export` ganham o codigo 403
+  `audit_export_key_unavailable`: API key e token OAuth nao exportam por
+  enquanto.
+
+  Fundos de teste (enterprise #1965): `POST /v1/test/fund` e
+  `POST /v1/consumers/{consumerId}/fund/sandbox` aceitam `idempotency_key`,
+  opcional (`^[A-Za-z0-9_-]{8,64}$`). Onde a chave de retentativa vale, a
+  mesma chave responde o credito ja feito em um 200 novo, com
+  `idempotent_replay: true`, em vez de creditar de novo; o 201 declara o
+  mesmo campo, opcional.
+
+  Conta: `GET /v1/account/summary` ganha `test_funding_minor` (enterprise
+  #1962), opcional, nos
+  totais, em `previous` e em cada ponto de `series`, presente so em projeto
+  de teste e nunca somado a `received_minor`. `GET /v1/account/test-balance`
+  e `POST /v1/account/fund/sandbox/refill` reescrevem a descricao de
+  `balance.total_minor` (enterprise #1957). So texto nas duas.
+
 ## 0.16.16 — 2026-10-07
 
 ### Changed

@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 942e7981a973aa71e2014b0b5bbb2c653ee81b6d43cca3a4202300347aa4c3fc, fetched 2026-10-07T17:37:10.947Z
+// Source: openapi-snapshot.json (sha256 7fa10f86b0a2281bff5edec1be2113eb589315fa1d7ea55e5775f0e92b503b0d, fetched 2026-10-13T14:21:41.388Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -1836,7 +1836,7 @@ export interface paths {
         };
         /**
          * What this credential is
-         * @description The cheapest way to prove a key works and to see which org, project and environment it resolves to. `key.scopes` is what the key holds, which is not the same as what each route requires.
+         * @description The cheapest way to prove a key works and to see which org, project and environment it resolves to. `key.scopes` is what the key holds, which is not the same as what each route requires. It names no person: `user` is `null` for an API key.
          */
         get: {
             parameters: {
@@ -1895,7 +1895,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** @description Create a new policy rule. A `budget` rule counts DECLARED intent, not money that left: the cost is added to the agent's daily and monthly counters when the call is evaluated, before anything is sent (the payment amount on consumer payments, the caller's `estimatedCost` on session execute). A payment that provably moved nothing (refused before dispatch, or refused by the provider) gives its cost back; one whose outcome is uncertain stays counted. */
+        /** @description Create a new policy rule. A `budget` rule counts DECLARED intent, not money that left: the cost is added to the agent's daily and monthly counters when the call is evaluated, before anything is sent (the payment amount on consumer payments; for an agent's `codespar_pay`, the amount of the call; for any other tool on session execute, the caller's `estimatedCost`). The counters are kept in major units of BRL: a `codespar_pay` of amount 2500 in BRL counts 25, and the `estimatedCost` a caller declares beside a `codespar_pay` is not counted. A `codespar_pay` in another currency, or with no amount, is allowed and counts nothing, and so does every other outbound meta-tool; the API logs `budget rule matched without derivable cost` each time a budget rule lets one through. A consumer payment that provably moved nothing (refused before dispatch, or refused by the provider) gives its cost back; one whose outcome is uncertain stays counted. A `codespar_pay` counted through the meta-tool path is not given back when it fails. */
         post: {
             parameters: {
                 query?: never;
@@ -3374,10 +3374,10 @@ export interface paths {
                                 /** @description metadata.phase as the writer stamped it: which step of that writer posted the entry. With `source`, it names the entry: `consumer-payments` + `settle-fund` is a payment's settlement FUND, `+ settle-debit` its DEBIT. A phase is only unique within its source. Open vocabulary; null when the writer stamped none. */
                                 phase: string | null;
                                 /**
-                                 * @description "codespar_simulator" on the hold and the debit of a demonstration payment, settled on the CodeSpar simulator ("Simulado pela CodeSpar"); null on every other entry.
+                                 * @description "codespar_simulator" on the hold and the debit of a demonstration payment, settled on the CodeSpar simulator ("Simulado pela CodeSpar"); "celcoin_sandbox" on those of a payment of the restricted integrated proof, made at the Celcoin sandbox ("Integrado (sandbox Celcoin)"); null on every other entry.
                                  * @enum {string|null}
                                  */
-                                executor: "codespar_simulator" | null;
+                                executor: "codespar_simulator" | "celcoin_sandbox" | null;
                                 /** @description Running BOOKED balance of the project in this currency right after this entry: Σ amount_minor of every fund/debit/fee/reverse entry up to and including it, in id order; hold, release and reconcile entries repeat the previous value. Equals Σ balance_minor at the head (= available + held). */
                                 balance_after_minor: string;
                             }[];
@@ -3424,7 +3424,7 @@ export interface paths {
         };
         /**
          * BRL money in, agent spend, tool calls and sessions over a window
-         * @description BRL only. `received_minor` sums the funding entries stamped as money received (category `recebivel`): test funding and the fund legs that mirror a payment on its way out are not received. `spent_by_agents_minor` sums debits attributed to an agent. The window is N whole buckets ending with the current, partial one: 24 hours for `24h`, 7 or 30 São Paulo calendar days for `7d` and `30d`. `series` has exactly those N buckets, oldest first, and sums to the two totals; `previous` covers the N buckets immediately before. `received_by_rail` groups that received funding by `metadata.rail`, null where the writer recorded none. `tool_calls` and `sessions` are counts over the same window and scope (tool calls by `called_at`, sessions by creation); `sessions.active_now` counts the sessions open at the time of the read that were created or made a tool call in the last 15 minutes, whatever the window: nothing closes an idle session, so an open session idle for longer is not counted. `sessions.active_idle_ms` states that threshold (900000). `window` defaults to `7d`.
+         * @description BRL only. `received_minor` sums the funding entries stamped as money received (category `recebivel`): test funding and the fund legs that mirror a payment on its way out are not received. A TEST project's body also carries, apart, the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets): `test_funding_minor` in the totals, in `previous` and in each `series` bucket; it is not a receipt rail and never appears in `received_by_rail`. A live project's body has no such field. `spent_by_agents_minor` sums debits attributed to an agent. The window is N whole buckets ending with the current, partial one: 24 hours for `24h`, 7 or 30 São Paulo calendar days for `7d` and `30d`. `series` has exactly those N buckets, oldest first, and sums to the two totals; `previous` covers the N buckets immediately before. `received_by_rail` groups that received funding by `metadata.rail`, null where the writer recorded none. `tool_calls` and `sessions` are counts over the same window and scope (tool calls by `called_at`, sessions by creation); `sessions.active_now` counts the sessions open at the time of the read that were created or made a tool call in the last 15 minutes, whatever the window: nothing closes an idle session, so an open session idle for longer is not counted. `sessions.active_idle_ms` states that threshold (900000). `window` defaults to `7d`.
          */
         get: {
             parameters: {
@@ -3450,16 +3450,23 @@ export interface paths {
                             currency: "BRL";
                             received_minor: string;
                             spent_by_agents_minor: string;
+                            /** @description TEST projects only: the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets). Never part of `received_minor`. Absent in a live project. */
+                            test_funding_minor?: string;
                             previous: {
                                 received_minor: string;
                                 spent_by_agents_minor: string;
+                                /** @description TEST projects only: the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets). Never part of `received_minor`. Absent in a live project. */
+                                test_funding_minor?: string;
                             };
                             series: {
                                 /** Format: date-time */
                                 bucket_start: string;
                                 received_minor: string;
                                 spent_by_agents_minor: string;
+                                /** @description TEST projects only: the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets). Never part of `received_minor`. Absent in a live project. */
+                                test_funding_minor?: string;
                             }[];
+                            /** @description Received funding by metadata.rail, null where none was recorded: money received only. Test funding is not a receipt rail and never appears here; a TEST project carries it in `test_funding_minor`. */
                             received_by_rail: {
                                 rail: string | null;
                                 received_minor: string;
@@ -3642,10 +3649,10 @@ export interface paths {
                                 /** @description The ledger DEBIT of a settled payment, the id GET /v1/account/ledger shows. */
                                 debit_entry_id: string | null;
                                 /**
-                                 * @description "codespar_simulator" when the payment was a demonstration settled on the CodeSpar simulator ("Simulado pela CodeSpar"); null for every other payment.
+                                 * @description "codespar_simulator" when the payment was a demonstration settled on the CodeSpar simulator ("Simulado pela CodeSpar"); "celcoin_sandbox" when it ran in the restricted integrated proof, at the Celcoin sandbox ("Integrado (sandbox Celcoin)"); null for every other payment. What the payment recorded when it ran.
                                  * @enum {string|null}
                                  */
-                                executor: "codespar_simulator" | null;
+                                executor: "codespar_simulator" | "celcoin_sandbox" | null;
                                 /** Format: date-time */
                                 created_at: string;
                                 /** Format: date-time */
@@ -4118,10 +4125,10 @@ export interface paths {
                                 title: string | null;
                                 scene: string | null;
                                 /**
-                                 * @description "codespar_simulator" when this session's payments were demonstrations settled on the CodeSpar simulator ("Simulado pela CodeSpar"); null otherwise.
+                                 * @description "codespar_simulator" when this session's payments were demonstrations settled on the CodeSpar simulator ("Simulado pela CodeSpar"); "celcoin_sandbox" when they ran in the restricted integrated proof, at the Celcoin sandbox ("Integrado (sandbox Celcoin)"); null otherwise.
                                  * @enum {string|null}
                                  */
-                                executor: "codespar_simulator" | null;
+                                executor: "codespar_simulator" | "celcoin_sandbox" | null;
                             }[];
                             next_before: string | null;
                             /** @description Sessions matching the filters, cursor aside. */
@@ -4310,7 +4317,7 @@ export interface paths {
                              */
                             mode: "sandbox_float" | "account";
                             balance: {
-                                /** @description Available + held, every wallet of the project, BRL: what a refill compares to the target. */
+                                /** @description Available + held in BRL of the test balance, what a refill compares to the target: in test_balance_mode "account" the project's account wallet plus what the other wallets HOLD for payments in flight; in sandbox_float every wallet of the project. */
                                 total_minor: string;
                                 available_minor: string;
                                 held_minor: string;
@@ -4392,7 +4399,7 @@ export interface paths {
                              */
                             mode: "sandbox_float" | "account";
                             balance: {
-                                /** @description Available + held, every wallet of the project, BRL: what a refill compares to the target. */
+                                /** @description Available + held in BRL of the test balance, what a refill compares to the target: in test_balance_mode "account" the project's account wallet plus what the other wallets HOLD for payments in flight; in sandbox_float every wallet of the project. */
                                 total_minor: string;
                                 available_minor: string;
                                 held_minor: string;
@@ -4442,7 +4449,7 @@ export interface paths {
                              */
                             mode: "sandbox_float" | "account";
                             balance: {
-                                /** @description Available + held, every wallet of the project, BRL: what a refill compares to the target. */
+                                /** @description Available + held in BRL of the test balance, what a refill compares to the target: in test_balance_mode "account" the project's account wallet plus what the other wallets HOLD for payments in flight; in sandbox_float every wallet of the project. */
                                 total_minor: string;
                                 available_minor: string;
                                 held_minor: string;
@@ -5760,6 +5767,8 @@ export interface paths {
          *
          *     **The manifest signs the SCOPE, not just the content.** Besides `final_hash` and `row_count`, it carries the `filters` applied: without this, an export narrowed to one agent was presented, honestly signed and intact, as if it were the whole day. The `rows_digest` covers the numbering, so a renumbering does not get past a `final_hash` that would still match.
          *
+         *     **An API key or an OAuth token cannot export, for now.** The export covers every project of the organization, and a key reads its own project only (see `GET /v1/audit-events`). Narrowing the export to one project has to be stated in the signed scope, which is a change to the manifest; until it ships, a key or a token is refused with 403 `audit_export_key_unavailable` and the export answers service auth (the dashboard) only.
+         *
          *     A window that is too large is refused BEFORE the stream opens, with the count and the ceiling in the body.
          */
         get: {
@@ -5832,7 +5841,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The credential cannot export audit data for this organization. Bare body. */
+                /** @description `forbidden`: the credential cannot export audit data for this organization. `audit_export_key_unavailable`: the caller is an API key or an OAuth token, and the export answers service auth only until it can be narrowed to one project. Bare body. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -5840,7 +5849,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "forbidden";
+                            error: "forbidden" | "audit_export_key_unavailable";
                         };
                     };
                 };
@@ -5883,6 +5892,8 @@ export interface paths {
          *
          *     `actor_kind=person` keeps the entries that name a member of the organization as their actor, and `project_id` the entries whose payload names that project; `actor_person_id` is that member on every entry, null when it names none.
          *
+         *     An API key or an OAuth token reads its own project only: the entries whose payload names the credential's project, plus the organization-level entries, which name no project. A `policy_evaluation` recorded without a project is the exception and is not returned to a key, the same line `GET /v1/policy-evaluations` draws. Naming another project in `project_id` is refused with 403 `audit_project_out_of_scope`. The dashboard (service auth) reads the whole organization, and the `x-codespar-project` header does not narrow it. A key's page is therefore NOT contiguous in the chain: `sequence_number` skips the entries of other projects, and `prev_hash` of one entry is not the `entry_hash` of the one listed before it.
+         *
          *     Pagination walks backwards: pass the previous response's `next_before_sequence` as `before_sequence`. It is null on the last page, and a full page whose `sequence_number` values happen to end at the chain floor still returns a non-null cursor, so the last call is the one that returns fewer rows than `limit`.
          */
         get: {
@@ -5900,7 +5911,7 @@ export interface paths {
                     before_sequence?: number;
                     /** @description `person`: only entries that name a member of the organization as their actor (see `actor_person_id`). Any other value is refused with `invalid_actor_kind`. */
                     actor_kind?: "person";
-                    /** @description Only entries whose payload names this project (`project_id`, else `projectId`). The chain has no project column, so an organization-level entry, which names no project, is not returned under this filter. A malformed id is refused with `invalid_project_id`. */
+                    /** @description Only entries whose payload names this project (`project_id`, else `projectId`). The chain has no project column, so an organization-level entry, which names no project, is not returned under this filter. A malformed id is refused with `invalid_project_id`. An API key or an OAuth token may name its own project only: any other is refused with 403 `audit_project_out_of_scope`. */
                     project_id?: string;
                 };
                 header?: never;
@@ -5945,6 +5956,18 @@ export interface paths {
                         "application/json": {
                             /** @enum {string} */
                             error: "invalid_before_sequence" | "invalid_iso_8601" | "from_after_to" | "invalid_actor_kind" | "invalid_project_id";
+                        };
+                    };
+                };
+                /** @description Forbidden, in a bare body. `audit_project_out_of_scope` when an API key or an OAuth token names in `project_id` a project that is not its own. Service auth is never refused here. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "audit_project_out_of_scope";
                         };
                     };
                 };
@@ -11652,7 +11675,7 @@ export interface paths {
          *
          *     ONLY HALF OF ONE CHECK IS PER TENANT. `connections.connected` counts connections in the calling credential's own org and project. `connections.total_servers` counts every active provider in the catalog and is the same number for every reader, so the ratio between them is not a tenant completion percentage.
          *
-         *     THIS READ WRITES, and the write is observable. Each call stores a snapshot of its own result against the calling org, and when the grade differs from the previous snapshot's it publishes `system.health.degraded` or `system.health.recovered` into the calling project, carrying a field-by-field diff of what moved. Anything subscribed to those event types in that project fires. Polling this endpoint therefore has side effects, and two monitors polling the same org write into one shared snapshot history — a transition either of them causes is seen once, by whoever's call crossed it.
+         *     THIS READ WRITES, and the write is observable. Each call stores a snapshot of its own result against the calling org, and when the grade differs from the previous snapshot's it publishes `system.health.degraded` or `system.health.recovered` into the calling project, carrying a field-by-field diff of what moved. Anything subscribed to those event types in that project fires. Polling this endpoint therefore has side effects, and two monitors polling the same org write into one shared snapshot history — a transition either of them causes is seen once, by whoever's call crossed it. Where the 30-day history is switched on, each call also counts one observation in `GET /v1/health/history` for the calling org, so a monitor polling this endpoint moves that history too.
          *
          *     THE HANDLER ANSWERS 200 FOR EVERY STATE IT GRADES, `down` included: a dead dependency is reported in the body and never mapped onto an HTTP status. That is why the map below has one entry. It is not a promise that nothing else can come back. Three things produce a non-200 here and none of them is a grade: a credential that does not authenticate, a credential whose grants do not cover this read — both refused before the handler runs, and neither described in the map below, because the answer to them is the same on every operation the same door guards — and a refusal of the snapshot write above, which is a defect on our side rather than a dependency being down. Alert on `status`. A non-200 is a bug report, and which of the three it is decides who should be reading it.
          */
@@ -11946,10 +11969,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Read the per-day uptime of each health check, for the caller's organization
-         * @description One point per Sao Paulo calendar day for every check of `GET /v1/health` and for its grade (`overall`), over the last `days` days (1 to 30, default 30) ending today. A point is `uptime`, the share of that day's health observations in which the check was not in `state: failure` (for `overall`, in which `status` was `healthy`), and `samples`, how many observations there were.
+         * Read the per-day share of ok health observations of each check, for the caller's organization
+         * @description One point per Sao Paulo calendar day for every check of `GET /v1/health` and for its grade (`overall`), over the last `days` days (1 to 30, default 30) ending today. A point is `ok_share`, the share of that day's health observations in which the check was not in `state: failure` (for `overall`, in which `status` was `healthy`), and `samples`, how many observations there were. `uptime` is a deprecated alias of `ok_share` with the same value, served for one release cycle; read `ok_share`. `first_sampled_day` is the earliest day of the window with an observation.
          *
-         *     AN OBSERVATION IS A STORED SNAPSHOT: each `GET /v1/health` call and each pass of the server-side health scraper for the org. So uptime is a share of observations, not of time, and a day with a dashboard open weighs its hours unevenly; read `samples` beside it. A day with no observation is ABSENT from the series, never reported as 100%. Configuration pending, no activity and a feature not in use count as up, as they do not move the grade.
+         *     AN OBSERVATION IS A STORED SNAPSHOT: each authenticated `GET /v1/health` call (so `GET /v1/health` writes, it is not read-only, and an open dashboard tab polls it every 30 seconds) and each pass of the server-side health scraper for the org (every 5 minutes). So `ok_share` is a share of observations, not of time: it is not uptime or availability, and a day with a dashboard open weighs its hours unevenly; read `samples` beside it. A day with no observation is ABSENT from the series, never reported as 100% or 0%. Configuration pending, no activity and a feature not in use count as ok, as they do not move the grade.
          *
          *     Organization-wide, like the snapshots it is built from: the two per-tenant checks were measured for the project of each observation. Same credential and grant as `GET /v1/health`.
          */
@@ -11976,25 +11999,37 @@ export interface paths {
                             from: string;
                             /** @description Today in Sao Paulo, YYYY-MM-DD. */
                             to: string;
+                            /** @description The earliest day of this window with at least one observation, YYYY-MM-DD, or null when the window has none. Observation of this organization started on this day, unless it equals `from`, in which case it may have started before the window. */
+                            first_sampled_day: string | null;
                             /** @description Per check of the health body (db, vault, tool_catalog, connections, ...), the days with at least one observation, oldest first. A check never observed in the window is absent. A sample is ok unless the check's `state` was `failure`. */
                             checks: {
                                 [key: string]: {
                                     /** @description Sao Paulo calendar day, YYYY-MM-DD. */
                                     day: string;
-                                    /** @description ok_samples / samples for the day, 0 to 1, rounded to four decimals. A share of observations, not of time. */
-                                    uptime: number;
-                                    /** @description Health observations persisted that day. */
+                                    /** @description Share of that day's health observations in which the check was not in `state: failure` (for `overall`, in which `status` was `healthy`): ok observations / `samples`, 0 to 1, rounded to four decimals. A share of observations, not of time: it is not uptime or availability. */
+                                    ok_share: number;
+                                    /** @description Health observations persisted that day (always at least 1). */
                                     samples: number;
+                                    /**
+                                     * @deprecated
+                                     * @description Deprecated alias of `ok_share`; same value, kept for one release cycle. Despite the name it is not uptime: read `ok_share`.
+                                     */
+                                    uptime: number;
                                 }[];
                             };
                             /** @description The response's grade per day: a sample is ok when `status` was `healthy`. Days with no observation are absent. */
                             overall: {
                                 /** @description Sao Paulo calendar day, YYYY-MM-DD. */
                                 day: string;
-                                /** @description ok_samples / samples for the day, 0 to 1, rounded to four decimals. A share of observations, not of time. */
-                                uptime: number;
-                                /** @description Health observations persisted that day. */
+                                /** @description Share of that day's health observations in which the check was not in `state: failure` (for `overall`, in which `status` was `healthy`): ok observations / `samples`, 0 to 1, rounded to four decimals. A share of observations, not of time: it is not uptime or availability. */
+                                ok_share: number;
+                                /** @description Health observations persisted that day (always at least 1). */
                                 samples: number;
+                                /**
+                                 * @deprecated
+                                 * @description Deprecated alias of `ok_share`; same value, kept for one release cycle. Despite the name it is not uptime: read `ok_share`.
+                                 */
+                                uptime: number;
                             }[];
                         };
                     };
@@ -13651,6 +13686,8 @@ export interface paths {
          *
          *     Scoped to the credential's organization with no way to widen it, and there is no cross-org refusal to handle because there is no organization segment in the path to disagree with.
          *
+         *     A KEY READS ITS OWN PROJECT ONLY. An API key or an OAuth token gets the entries whose payload names the credential's project, plus the organization-level entries, which name no project; a `policy_evaluation` recorded without a project is the exception and is not returned to a key. Naming another project in `project_id` is refused with 403 `audit_project_out_of_scope`. Service auth reads the whole organization and the `x-codespar-project` header does not narrow it. A key's page is therefore NOT contiguous in the chain: `sequence_number` skips the entries of other projects.
+         *
          *     `event_type` IS AN EXACT MATCH UNLESS IT ENDS IN A DOT, in which case it is a prefix match — so `tool_call.` returns the succeeded and the failed variants in one pass without two queries. The default window is the last seven days.
          *
          *     PAGINATION WALKS BACKWARDS. Pass the previous response's `next_before_sequence` as `before_sequence`. The cursor is null only when the page came back SHORTER than `limit`, so a full page that happens to end at the chain's floor still hands you a non-null cursor and the last call is the one that returns fewer rows. An out-of-range `limit` is clamped rather than refused.
@@ -13672,7 +13709,7 @@ export interface paths {
                     before_sequence?: number;
                     /** @description `person`: only entries that name a member of the organization as their actor (see `actor_person_id`). Any other value is refused with `invalid_actor_kind`. */
                     actor_kind?: "person";
-                    /** @description Only entries whose payload names this project (`project_id`, else `projectId`). The chain has no project column, so an organization-level entry, which names no project, is not returned under this filter. A malformed id is refused with `invalid_project_id`. */
+                    /** @description Only entries whose payload names this project (`project_id`, else `projectId`). The chain has no project column, so an organization-level entry, which names no project, is not returned under this filter. A malformed id is refused with `invalid_project_id`. An API key or an OAuth token may name its own project only: any other is refused with 403 `audit_project_out_of_scope`. */
                     project_id?: string;
                 };
                 header?: never;
@@ -13717,6 +13754,18 @@ export interface paths {
                         "application/json": {
                             /** @enum {string} */
                             error: "invalid_before_sequence" | "invalid_iso_8601" | "from_after_to" | "invalid_actor_kind" | "invalid_project_id";
+                        };
+                    };
+                };
+                /** @description Forbidden, in a BARE body. `audit_project_out_of_scope` when an API key or an OAuth token names in `project_id` a project that is not its own. Service auth is never refused here. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "audit_project_out_of_scope";
                         };
                     };
                 };
@@ -25348,10 +25397,36 @@ export interface paths {
                         amount_minor: number;
                         /** @description The consumer's own sandbox account. Accepted only when it is the consumer's active `pix-celcoin` account in this project (otherwise 403 `funding_account_not_owned`); the default is that same account. */
                         account?: string;
+                        /** @description Retry key. In a project of the controlled or the restricted integrated proof, the same key answers the credit it already made (200, `idempotent_replay: true`) instead of crediting again. */
+                        idempotency_key?: string;
                     };
                 };
             };
             responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            attempt_id: string;
+                            deposit_id: string;
+                            status: string;
+                            account: string;
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /** @enum {boolean} */
+                            money_credited: true;
+                            /**
+                             * @description Present on a rerun answered from the credit already made.
+                             * @enum {boolean}
+                             */
+                            idempotent_replay?: true;
+                        };
+                    };
+                };
                 /** @description OK */
                 201: {
                     headers: {
@@ -25368,6 +25443,11 @@ export interface paths {
                             currency: "BRL";
                             /** @enum {boolean} */
                             money_credited: true;
+                            /**
+                             * @description Present on a rerun answered from the credit already made.
+                             * @enum {boolean}
+                             */
+                            idempotent_replay?: true;
                         };
                     };
                 };
@@ -25473,10 +25553,36 @@ export interface paths {
                         amount_minor: number;
                         /** @description The consumer's own sandbox account. Accepted only when it is the consumer's active `pix-celcoin` account in this project (otherwise 403 `funding_account_not_owned`); the default is that same account. */
                         account?: string;
+                        /** @description Retry key. In a project of the controlled or the restricted integrated proof, the same key answers the credit it already made (200, `idempotent_replay: true`) instead of crediting again. */
+                        idempotency_key?: string;
                     };
                 };
             };
             responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            attempt_id: string;
+                            deposit_id: string;
+                            status: string;
+                            account: string;
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /** @enum {boolean} */
+                            money_credited: true;
+                            /**
+                             * @description Present on a rerun answered from the credit already made.
+                             * @enum {boolean}
+                             */
+                            idempotent_replay?: true;
+                        };
+                    };
+                };
                 /** @description OK */
                 201: {
                     headers: {
@@ -25493,6 +25599,11 @@ export interface paths {
                             currency: "BRL";
                             /** @enum {boolean} */
                             money_credited: true;
+                            /**
+                             * @description Present on a rerun answered from the credit already made.
+                             * @enum {boolean}
+                             */
+                            idempotent_replay?: true;
                         };
                     };
                 };
@@ -31018,6 +31129,8 @@ export interface paths {
          * @description DEPRECATED alias of `GET /v1/audit-events/export` (ent#979), kept for two releases. Same handler, same scope; an `{orgId}` that is not the credential's own is refused.
          *
          *     The response is STREAMED row by row, with the signed manifest at the end: the manifest covers the scope (including the narrowings applied), not just the content. Full detail on the canonical path.
+         *
+         *     An API key or an OAuth token is refused with 403 `audit_export_key_unavailable`: the export covers every project of the organization and answers service auth only until it can be narrowed to one project.
          */
         get: {
             parameters: {
@@ -31073,7 +31186,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The credential cannot export this organization's audit events. Bare body. */
+                /** @description `forbidden`: the credential cannot export this organization's audit events. `audit_export_key_unavailable`: the caller is an API key or an OAuth token. Bare body. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -31081,7 +31194,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "forbidden";
+                            error: "forbidden" | "audit_export_key_unavailable";
                         };
                     };
                 };
@@ -45289,7 +45402,7 @@ export interface components {
             id: string;
             name: string;
             /** @enum {string} */
-            type: "allow" | "deny" | "budget" | "rate-limit" | "time-window" | "approval-required";
+            type: "deny" | "budget" | "rate-limit" | "time-window" | "approval-required";
             config: {
                 [key: string]: unknown;
             };
@@ -45322,7 +45435,7 @@ export interface components {
         PolicyCreate: {
             name: string;
             /** @enum {string} */
-            type: "allow" | "deny" | "budget" | "rate-limit" | "time-window" | "approval-required";
+            type: "deny" | "budget" | "rate-limit" | "time-window" | "approval-required";
             /** @default [] */
             agents: string[];
             /** @default [] */
@@ -45334,7 +45447,7 @@ export interface components {
         PolicyUpdate: {
             name?: string;
             /** @enum {string} */
-            type?: "allow" | "deny" | "budget" | "rate-limit" | "time-window" | "approval-required";
+            type?: "deny" | "budget" | "rate-limit" | "time-window" | "approval-required";
             agents?: string[];
             tools?: string[];
             config?: unknown;
@@ -45582,11 +45695,11 @@ export interface components {
             secret: string;
         };
         Whoami: {
-            /** @description Display only. An API key is scoped to an org and a project, not to a user; this is a representative org member (owner first) for a 'logged in as' line, and it is absent when no member has an email. */
-            user?: {
+            /** @description Always `null` for an API key and for an OAuth token: a key is scoped to an org and a project, not to a user, so there is no person to name. Identify the credential by `organization`, `project` and `key`. A person appears only on the service path the dashboard uses, and is the member it is acting for. */
+            user: {
                 email: string;
                 name?: string;
-            };
+            } | null;
             organization: {
                 id: string;
                 name: string | null;
