@@ -57,6 +57,16 @@
   five scaffolds; the opt-in scaffold e2e caught it before any sync was
   committed, and the kits fixed the test.
 
+- **`codespar login` and `codespar whoami` no longer print "unknown user".**
+  `/v1/whoami` answers `user: null` for an API key: a key belongs to an
+  organization and a project, not to a person. `login` now says
+  `Logged in to <organization>` and then the project and the key (its id and
+  environment); `whoami` drops the `User` row and gains a `Key` row. When the
+  API does name a person, `login` says `Logged in as <email>` and `whoami`
+  shows `User` first. An organization or project with no name is shown by its
+  id, and a field the body does not carry is left out instead of printed as
+  `(unknown)` or `(none)`. `--json` is unchanged in both commands.
+
 ## 0.18.1 — 2026-09-29
 
 ### Added
