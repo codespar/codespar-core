@@ -11,6 +11,34 @@ interface LoginOptions {
   json?: boolean;
 }
 
+const fetchWhoami = (client: ApiClient) => client.get("/v1/whoami");
+type Whoami = Awaited<ReturnType<typeof fetchWhoami>>;
+
+/**
+ * `/v1/whoami` answers `user: null` for an API key: a key belongs to an org
+ * and a project, not to a person. So the credential is named by organization,
+ * project and key, and a person is shown only when the API names one. What
+ * the body does not carry is left out, never printed as a placeholder. The
+ * optional chaining is for a runtime that answers an older, thinner body.
+ */
+function identity(me: Whoami): {
+  email?: string;
+  organization?: string;
+  project?: string;
+  keyId?: string;
+  environment?: string;
+  scopes?: string[];
+} {
+  return {
+    email: me.user?.email,
+    organization: me.organization?.name ?? me.organization?.id,
+    project: me.project?.name ?? me.project?.id,
+    keyId: me.key?.id,
+    environment: me.key?.environment,
+    scopes: me.key?.scopes,
+  };
+}
+
 /**
  * Read a secret from the TTY without echoing it. The API key is a
  * credential — echoing it leaves the key in terminal scrollback and any
@@ -78,13 +106,22 @@ export async function loginCommand(opts: LoginOptions): Promise<void> {
 
   // Validate before saving so we don't persist a typo.
   const client = new ApiClient({ apiKey, baseUrl });
-  const me = await client.get("/v1/whoami");
+  const me = await fetchWhoami(client);
 
   await saveConfig({ apiKey, baseUrl });
 
-  success(`Logged in as ${me.user?.email ?? "unknown user"}`);
-  if (me.organization?.name) {
-    info(`Organization: ${me.organization.name}`);
+  const who = identity(me);
+  if (who.email) {
+    success(`Logged in as ${who.email}`);
+    if (who.organization) info(`Organization: ${who.organization}`);
+  } else {
+    success(who.organization ? `Logged in to ${who.organization}` : "Logged in");
+  }
+  if (who.project) info(`Project: ${who.project}`);
+  if (who.keyId) {
+    info(`Key: ${who.environment ? `${who.keyId} (${who.environment})` : who.keyId}`);
+  } else if (who.environment) {
+    info(`Key: (${who.environment} key)`);
   }
   // Com `--json` o script recebe o mesmo documento que `whoami` devolve, mais
   // a base URL que ficou gravada. Antes recebia zero byte no stdout e tinha de
@@ -93,7 +130,7 @@ export async function loginCommand(opts: LoginOptions): Promise<void> {
 }
 
 export async function whoamiCommand(client: ApiClient, asJson: boolean): Promise<void> {
-  const me = await client.get("/v1/whoami");
+  const me = await fetchWhoami(client);
 
   if (asJson) {
     const { json } = await import("../output.js");
@@ -102,11 +139,13 @@ export async function whoamiCommand(client: ApiClient, asJson: boolean): Promise
   }
 
   const { kv } = await import("../output.js");
-  kv([
-    ["User", me.user?.email ?? "(unknown)"],
-    ["Organization", me.organization.name ?? "(none)"],
-    ["Project", me.project.name ?? me.project.id],
-    ["Key env", me.key.environment ?? "(unknown)"],
-    ["Scopes", me.key.scopes.join(", ") || "(all)"],
-  ]);
+  const who = identity(me);
+  const rows: Array<[string, string]> = [];
+  if (who.email) rows.push(["User", who.email]);
+  if (who.organization) rows.push(["Organization", who.organization]);
+  if (who.project) rows.push(["Project", who.project]);
+  if (who.keyId) rows.push(["Key", who.keyId]);
+  if (who.environment) rows.push(["Key env", who.environment]);
+  if (who.scopes) rows.push(["Scopes", who.scopes.join(", ") || "(all)"]);
+  kv(rows);
 }

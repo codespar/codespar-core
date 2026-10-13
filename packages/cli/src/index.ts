@@ -104,7 +104,7 @@ program
 
 program
   .command("whoami")
-  .description("Show the authenticated user, org, project, and key scopes")
+  .description("Show the organization, project and key the credential resolves to")
   .action(async () => {
     const client = await authedClient();
     await whoamiCommand(client, rootJsonFlag());
