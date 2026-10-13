@@ -34,6 +34,13 @@ const SEM_PESSOA = {
   key: { id: "key_abc123", environment: "test", scopes: ["sessions:read", "tools:execute"] },
 };
 const COM_PESSOA = { ...SEM_PESSOA, user: { email: "quem@exemplo.dev", name: "Quem" } };
+// O schema declara `name` como `string | null`, e "" é uma string: sem nome
+// para quem lê, mas não para um `??`.
+const NOME_VAZIO = {
+  ...SEM_PESSOA,
+  organization: { id: "org_1", name: "" },
+  project: { id: "prj_0123456789abcdef", name: "" },
+};
 
 let servidor: Server | undefined;
 
@@ -125,6 +132,15 @@ describe("login", () => {
     expect(r.stderr).toContain("ℹ Key: (test key)\n");
   }, 40_000);
 
+  it("com nome vazio, cai nos ids como se o nome faltasse", async () => {
+    const r = await login(await sobeServidor(NOME_VAZIO));
+
+    expect(r.status).toBe(0);
+    expect(r.stderr).toContain("✓ Logged in to org_1\n");
+    expect(r.stderr).toContain("ℹ Project: prj_0123456789abcdef\n");
+    expect(r.stderr).toContain("ℹ Key: key_abc123 (test)\n");
+  }, 40_000);
+
   it("com `--json`, o documento leva `user: null` como a API devolveu", async () => {
     const url = await sobeServidor(SEM_PESSOA);
     const r = await login(url, ["--json"]);
@@ -178,6 +194,19 @@ describe("whoami", () => {
       "Project       prj_0123456789abcdef",
       "Key           key_abc123",
       "Scopes        (all)",
+    ]);
+  }, 40_000);
+
+  it("com nome vazio, cai nos ids como se o nome faltasse", async () => {
+    const r = await whoami(await sobeServidor(NOME_VAZIO));
+
+    expect(r.status).toBe(0);
+    expect(r.stdout.split("\n").filter(Boolean)).toEqual([
+      "Organization  org_1",
+      "Project       prj_0123456789abcdef",
+      "Key           key_abc123",
+      "Key env       test",
+      "Scopes        sessions:read, tools:execute",
     ]);
   }, 40_000);
 
