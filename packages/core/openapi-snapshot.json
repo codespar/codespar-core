@@ -1,8 +1,8 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-10-07T17:37:10.947Z",
-    "sha256": "942e7981a973aa71e2014b0b5bbb2c653ee81b6d43cca3a4202300347aa4c3fc",
+    "fetched_at": "2026-10-13T14:21:41.388Z",
+    "sha256": "7fa10f86b0a2281bff5edec1be2113eb589315fa1d7ea55e5775f0e92b503b0d",
     "etag": null,
     "last_modified": null,
     "info": {
@@ -56,7 +56,6 @@
             "type": {
               "type": "string",
               "enum": [
-                "allow",
                 "deny",
                 "budget",
                 "rate-limit",
@@ -202,7 +201,6 @@
             "type": {
               "type": "string",
               "enum": [
-                "allow",
                 "deny",
                 "budget",
                 "rate-limit",
@@ -249,7 +247,6 @@
             "type": {
               "type": "string",
               "enum": [
-                "allow",
                 "deny",
                 "budget",
                 "rate-limit",
@@ -1289,7 +1286,10 @@
           "type": "object",
           "properties": {
             "user": {
-              "type": "object",
+              "type": [
+                "object",
+                "null"
+              ],
               "properties": {
                 "email": {
                   "type": "string"
@@ -1301,7 +1301,7 @@
               "required": [
                 "email"
               ],
-              "description": "Display only. An API key is scoped to an org and a project, not to a user; this is a representative org member (owner first) for a 'logged in as' line, and it is absent when no member has an email."
+              "description": "Always `null` for an API key and for an OAuth token: a key is scoped to an org and a project, not to a user, so there is no person to name. Identify the credential by `organization`, `project` and `key`. A person appears only on the service path the dashboard uses, and is the member it is acting for."
             },
             "organization": {
               "type": "object",
@@ -1361,6 +1361,7 @@
             }
           },
           "required": [
+            "user",
             "organization",
             "project",
             "key"
@@ -4945,7 +4946,7 @@
       "/v1/whoami": {
         "get": {
           "summary": "What this credential is",
-          "description": "The cheapest way to prove a key works and to see which org, project and environment it resolves to. `key.scopes` is what the key holds, which is not the same as what each route requires.",
+          "description": "The cheapest way to prove a key works and to see which org, project and environment it resolves to. `key.scopes` is what the key holds, which is not the same as what each route requires. It names no person: `user` is `null` for an API key.",
           "responses": {
             "200": {
               "description": "OK",
@@ -4989,7 +4990,7 @@
           ]
         },
         "post": {
-          "description": "Create a new policy rule. A `budget` rule counts DECLARED intent, not money that left: the cost is added to the agent's daily and monthly counters when the call is evaluated, before anything is sent (the payment amount on consumer payments, the caller's `estimatedCost` on session execute). A payment that provably moved nothing (refused before dispatch, or refused by the provider) gives its cost back; one whose outcome is uncertain stays counted.",
+          "description": "Create a new policy rule. A `budget` rule counts DECLARED intent, not money that left: the cost is added to the agent's daily and monthly counters when the call is evaluated, before anything is sent (the payment amount on consumer payments; for an agent's `codespar_pay`, the amount of the call; for any other tool on session execute, the caller's `estimatedCost`). The counters are kept in major units of BRL: a `codespar_pay` of amount 2500 in BRL counts 25, and the `estimatedCost` a caller declares beside a `codespar_pay` is not counted. A `codespar_pay` in another currency, or with no amount, is allowed and counts nothing, and so does every other outbound meta-tool; the API logs `budget rule matched without derivable cost` each time a budget rule lets one through. A consumer payment that provably moved nothing (refused before dispatch, or refused by the provider) gives its cost back; one whose outcome is uncertain stays counted. A `codespar_pay` counted through the meta-tool path is not given back when it fails.",
           "requestBody": {
             "content": {
               "application/json": {
@@ -7366,9 +7367,10 @@
                                 "null"
                               ],
                               "enum": [
-                                "codespar_simulator"
+                                "codespar_simulator",
+                                "celcoin_sandbox"
                               ],
-                              "description": "\"codespar_simulator\" on the hold and the debit of a demonstration payment, settled on the CodeSpar simulator (\"Simulado pela CodeSpar\"); null on every other entry."
+                              "description": "\"codespar_simulator\" on the hold and the debit of a demonstration payment, settled on the CodeSpar simulator (\"Simulado pela CodeSpar\"); \"celcoin_sandbox\" on those of a payment of the restricted integrated proof, made at the Celcoin sandbox (\"Integrado (sandbox Celcoin)\"); null on every other entry."
                             },
                             "balance_after_minor": {
                               "type": "string",
@@ -7479,7 +7481,7 @@
       "/v1/account/summary": {
         "get": {
           "summary": "BRL money in, agent spend, tool calls and sessions over a window",
-          "description": "BRL only. `received_minor` sums the funding entries stamped as money received (category `recebivel`): test funding and the fund legs that mirror a payment on its way out are not received. `spent_by_agents_minor` sums debits attributed to an agent. The window is N whole buckets ending with the current, partial one: 24 hours for `24h`, 7 or 30 São Paulo calendar days for `7d` and `30d`. `series` has exactly those N buckets, oldest first, and sums to the two totals; `previous` covers the N buckets immediately before. `received_by_rail` groups that received funding by `metadata.rail`, null where the writer recorded none. `tool_calls` and `sessions` are counts over the same window and scope (tool calls by `called_at`, sessions by creation); `sessions.active_now` counts the sessions open at the time of the read that were created or made a tool call in the last 15 minutes, whatever the window: nothing closes an idle session, so an open session idle for longer is not counted. `sessions.active_idle_ms` states that threshold (900000). `window` defaults to `7d`.",
+          "description": "BRL only. `received_minor` sums the funding entries stamped as money received (category `recebivel`): test funding and the fund legs that mirror a payment on its way out are not received. A TEST project's body also carries, apart, the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets): `test_funding_minor` in the totals, in `previous` and in each `series` bucket; it is not a receipt rail and never appears in `received_by_rail`. A live project's body has no such field. `spent_by_agents_minor` sums debits attributed to an agent. The window is N whole buckets ending with the current, partial one: 24 hours for `24h`, 7 or 30 São Paulo calendar days for `7d` and `30d`. `series` has exactly those N buckets, oldest first, and sums to the two totals; `previous` covers the N buckets immediately before. `received_by_rail` groups that received funding by `metadata.rail`, null where the writer recorded none. `tool_calls` and `sessions` are counts over the same window and scope (tool calls by `called_at`, sessions by creation); `sessions.active_now` counts the sessions open at the time of the read that were created or made a tool call in the last 15 minutes, whatever the window: nothing closes an idle session, so an open session idle for longer is not counted. `sessions.active_idle_ms` states that threshold (900000). `window` defaults to `7d`.",
           "parameters": [
             {
               "schema": {
@@ -7526,6 +7528,11 @@
                         "type": "string",
                         "pattern": "^-?\\d+$"
                       },
+                      "test_funding_minor": {
+                        "type": "string",
+                        "pattern": "^-?\\d+$",
+                        "description": "TEST projects only: the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets). Never part of `received_minor`. Absent in a live project."
+                      },
                       "previous": {
                         "type": "object",
                         "properties": {
@@ -7536,6 +7543,11 @@
                           "spent_by_agents_minor": {
                             "type": "string",
                             "pattern": "^-?\\d+$"
+                          },
+                          "test_funding_minor": {
+                            "type": "string",
+                            "pattern": "^-?\\d+$",
+                            "description": "TEST projects only: the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets). Never part of `received_minor`. Absent in a live project."
                           }
                         },
                         "required": [
@@ -7559,6 +7571,11 @@
                             "spent_by_agents_minor": {
                               "type": "string",
                               "pattern": "^-?\\d+$"
+                            },
+                            "test_funding_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$",
+                              "description": "TEST projects only: the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets). Never part of `received_minor`. Absent in a live project."
                             }
                           },
                           "required": [
@@ -7588,7 +7605,8 @@
                             "rail",
                             "received_minor"
                           ]
-                        }
+                        },
+                        "description": "Received funding by metadata.rail, null where none was recorded: money received only. Test funding is not a receipt rail and never appears here; a TEST project carries it in `test_funding_minor`."
                       },
                       "tool_calls": {
                         "type": "object",
@@ -8003,9 +8021,10 @@
                                 "null"
                               ],
                               "enum": [
-                                "codespar_simulator"
+                                "codespar_simulator",
+                                "celcoin_sandbox"
                               ],
-                              "description": "\"codespar_simulator\" when the payment was a demonstration settled on the CodeSpar simulator (\"Simulado pela CodeSpar\"); null for every other payment."
+                              "description": "\"codespar_simulator\" when the payment was a demonstration settled on the CodeSpar simulator (\"Simulado pela CodeSpar\"); \"celcoin_sandbox\" when it ran in the restricted integrated proof, at the Celcoin sandbox (\"Integrado (sandbox Celcoin)\"); null for every other payment. What the payment recorded when it ran."
                             },
                             "created_at": {
                               "type": "string",
@@ -9112,9 +9131,10 @@
                                 "null"
                               ],
                               "enum": [
-                                "codespar_simulator"
+                                "codespar_simulator",
+                                "celcoin_sandbox"
                               ],
-                              "description": "\"codespar_simulator\" when this session's payments were demonstrations settled on the CodeSpar simulator (\"Simulado pela CodeSpar\"); null otherwise."
+                              "description": "\"codespar_simulator\" when this session's payments were demonstrations settled on the CodeSpar simulator (\"Simulado pela CodeSpar\"); \"celcoin_sandbox\" when they ran in the restricted integrated proof, at the Celcoin sandbox (\"Integrado (sandbox Celcoin)\"); null otherwise."
                             }
                           },
                           "required": [
@@ -9485,7 +9505,7 @@
                         "properties": {
                           "total_minor": {
                             "type": "string",
-                            "description": "Available + held, every wallet of the project, BRL: what a refill compares to the target."
+                            "description": "Available + held in BRL of the test balance, what a refill compares to the target: in test_balance_mode \"account\" the project's account wallet plus what the other wallets HOLD for payments in flight; in sandbox_float every wallet of the project."
                           },
                           "available_minor": {
                             "type": "string"
@@ -9633,7 +9653,7 @@
                         "properties": {
                           "total_minor": {
                             "type": "string",
-                            "description": "Available + held, every wallet of the project, BRL: what a refill compares to the target."
+                            "description": "Available + held in BRL of the test balance, what a refill compares to the target: in test_balance_mode \"account\" the project's account wallet plus what the other wallets HOLD for payments in flight; in sandbox_float every wallet of the project."
                           },
                           "available_minor": {
                             "type": "string"
@@ -9779,7 +9799,7 @@
                         "properties": {
                           "total_minor": {
                             "type": "string",
-                            "description": "Available + held, every wallet of the project, BRL: what a refill compares to the target."
+                            "description": "Available + held in BRL of the test balance, what a refill compares to the target: in test_balance_mode \"account\" the project's account wallet plus what the other wallets HOLD for payments in flight; in sandbox_float every wallet of the project."
                           },
                           "available_minor": {
                             "type": "string"
@@ -12457,7 +12477,7 @@
       "/v1/audit-events/export": {
         "get": {
           "summary": "Export audit events, with a signed manifest",
-          "description": "Exports the audit events in the requested window, as JSON, with a SIGNED manifest at the end.\n\n**The response is streamed, not assembled.** The body opens with `{\"export_id\", \"org_id\", \"rows\": [` and then writes row by row straight from the cursor, so a consumer that expects a complete document in memory works against the design. The `x-export-row-count` header arrives before the first row.\n\n**The manifest signs the SCOPE, not just the content.** Besides `final_hash` and `row_count`, it carries the `filters` applied: without this, an export narrowed to one agent was presented, honestly signed and intact, as if it were the whole day. The `rows_digest` covers the numbering, so a renumbering does not get past a `final_hash` that would still match.\n\nA window that is too large is refused BEFORE the stream opens, with the count and the ceiling in the body.",
+          "description": "Exports the audit events in the requested window, as JSON, with a SIGNED manifest at the end.\n\n**The response is streamed, not assembled.** The body opens with `{\"export_id\", \"org_id\", \"rows\": [` and then writes row by row straight from the cursor, so a consumer that expects a complete document in memory works against the design. The `x-export-row-count` header arrives before the first row.\n\n**The manifest signs the SCOPE, not just the content.** Besides `final_hash` and `row_count`, it carries the `filters` applied: without this, an export narrowed to one agent was presented, honestly signed and intact, as if it were the whole day. The `rows_digest` covers the numbering, so a renumbering does not get past a `final_hash` that would still match.\n\n**An API key or an OAuth token cannot export, for now.** The export covers every project of the organization, and a key reads its own project only (see `GET /v1/audit-events`). Narrowing the export to one project has to be stated in the signed scope, which is a change to the manifest; until it ships, a key or a token is refused with 403 `audit_export_key_unavailable` and the export answers service auth (the dashboard) only.\n\nA window that is too large is refused BEFORE the stream opens, with the count and the ceiling in the body.",
           "parameters": [
             {
               "schema": {
@@ -12621,7 +12641,7 @@
               }
             },
             "403": {
-              "description": "The credential cannot export audit data for this organization. Bare body.",
+              "description": "`forbidden`: the credential cannot export audit data for this organization. `audit_export_key_unavailable`: the caller is an API key or an OAuth token, and the export answers service auth only until it can be narrowed to one project. Bare body.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -12630,7 +12650,8 @@
                       "error": {
                         "type": "string",
                         "enum": [
-                          "forbidden"
+                          "forbidden",
+                          "audit_export_key_unavailable"
                         ]
                       }
                     },
@@ -12684,7 +12705,7 @@
       "/v1/audit-events": {
         "get": {
           "summary": "Browse the audit chain",
-          "description": "A read-only page of the caller's own chain, newest first. This is the browse endpoint, not the export one: it emits no manifest, no signature and no `audit_export` chain entry, so paging through it leaves no trace and proves nothing offline.\n\nScoped to the credential's org with no way to widen it. `event_type` is an exact match unless it ends with a dot, in which case it is a prefix match, so `tool_call.` returns the succeeded and the failed variants in one pass. The default window is the last seven days.\n\n`actor_kind=person` keeps the entries that name a member of the organization as their actor, and `project_id` the entries whose payload names that project; `actor_person_id` is that member on every entry, null when it names none.\n\nPagination walks backwards: pass the previous response's `next_before_sequence` as `before_sequence`. It is null on the last page, and a full page whose `sequence_number` values happen to end at the chain floor still returns a non-null cursor, so the last call is the one that returns fewer rows than `limit`.",
+          "description": "A read-only page of the caller's own chain, newest first. This is the browse endpoint, not the export one: it emits no manifest, no signature and no `audit_export` chain entry, so paging through it leaves no trace and proves nothing offline.\n\nScoped to the credential's org with no way to widen it. `event_type` is an exact match unless it ends with a dot, in which case it is a prefix match, so `tool_call.` returns the succeeded and the failed variants in one pass. The default window is the last seven days.\n\n`actor_kind=person` keeps the entries that name a member of the organization as their actor, and `project_id` the entries whose payload names that project; `actor_person_id` is that member on every entry, null when it names none.\n\nAn API key or an OAuth token reads its own project only: the entries whose payload names the credential's project, plus the organization-level entries, which name no project. A `policy_evaluation` recorded without a project is the exception and is not returned to a key, the same line `GET /v1/policy-evaluations` draws. Naming another project in `project_id` is refused with 403 `audit_project_out_of_scope`. The dashboard (service auth) reads the whole organization, and the `x-codespar-project` header does not narrow it. A key's page is therefore NOT contiguous in the chain: `sequence_number` skips the entries of other projects, and `prev_hash` of one entry is not the `entry_hash` of the one listed before it.\n\nPagination walks backwards: pass the previous response's `next_before_sequence` as `before_sequence`. It is null on the last page, and a full page whose `sequence_number` values happen to end at the chain floor still returns a non-null cursor, so the last call is the one that returns fewer rows than `limit`.",
           "parameters": [
             {
               "schema": {
@@ -12755,10 +12776,10 @@
               "schema": {
                 "type": "string",
                 "pattern": "^[A-Za-z0-9_-]{1,200}$",
-                "description": "Only entries whose payload names this project (`project_id`, else `projectId`). The chain has no project column, so an organization-level entry, which names no project, is not returned under this filter. A malformed id is refused with `invalid_project_id`."
+                "description": "Only entries whose payload names this project (`project_id`, else `projectId`). The chain has no project column, so an organization-level entry, which names no project, is not returned under this filter. A malformed id is refused with `invalid_project_id`. An API key or an OAuth token may name its own project only: any other is refused with 403 `audit_project_out_of_scope`."
               },
               "required": false,
-              "description": "Only entries whose payload names this project (`project_id`, else `projectId`). The chain has no project column, so an organization-level entry, which names no project, is not returned under this filter. A malformed id is refused with `invalid_project_id`.",
+              "description": "Only entries whose payload names this project (`project_id`, else `projectId`). The chain has no project column, so an organization-level entry, which names no project, is not returned under this filter. A malformed id is refused with `invalid_project_id`. An API key or an OAuth token may name its own project only: any other is refused with 403 `audit_project_out_of_scope`.",
               "name": "project_id",
               "in": "query"
             }
@@ -12848,6 +12869,27 @@
                           "from_after_to",
                           "invalid_actor_kind",
                           "invalid_project_id"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "error"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "Forbidden, in a bare body. `audit_project_out_of_scope` when an API key or an OAuth token names in `project_id` a project that is not its own. Service auth is never refused here.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "audit_project_out_of_scope"
                         ]
                       }
                     },
@@ -24025,7 +24067,7 @@
       "/v1/health": {
         "get": {
           "summary": "Read graded dependency health, as this credential's tenant sees it",
-          "description": "Dependency checks and the schema version, graded into one `status`. The checks run in parallel behind a three-second budget each; one that throws or times out is reported in its own failed shape with `message` carrying the reason, and the response still carries the others. So the operation is expected back in under four seconds however badly the database is behaving.\n\nEVERY CHECK SAYS WHAT IT MEASURED AND WHAT THAT MEANS HERE. Its own `status` keeps its vocabulary; beside it, `state` separates a real failure from pending configuration, from no activity, and from a feature not in use, with `required`, a `reason` code and, where something has to be set up, an `action`. A new account with no integration, no provider call and no FX quote reads `healthy`, with `connections` pending configuration.\n\nGRADE ON `status`, AND READ THE RULE BEFORE WRITING THE ALERT. Only `state: failure` grades. `down` means `db` or `vault` fails. `degraded` means any other check fails, which today is one of: the tool catalog is not loaded (`tool_catalog`), a USD/BRL quote the router needs is missing, stale or unreadable (`fx_rates`; no deployment needs one until the router normalizes cost across currencies, and until then the quote is `not_in_use` whatever its age), a live Celcoin connection lacks a webhook subscription (`celcoin_webhook_subscriptions`), or a Pix Automático worker with work to do is stale, failing or never ran (`recurrence_holds`, `recurrence_scheduler`, including a hold past its time), or a BolePix paid twice has had its refund owed for longer than 3 days (`bolepix_refunds`). Everything else grades `healthy`. `attention` lists the failing checks and the ones pending configuration by name.\n\n`metrics` IS READ, NEVER GRADED. `metrics.recurrence_instruction_alarms` counts the Pix Automático instruction alarms still open on a cycle still ahead, per kind and reason, for the calling org: a cycle not announced, an instruction refused, held back by a ceiling, or queued and expired. Each alarm already reached its tenant as an event in the recurrence's project; this is the standing number, and it never moves `status`.\n\nNON-NOMINAL MEASUREMENTS THAT DO NOT MOVE THE GRADE, and an alert that wants them has to read the field rather than the grade: `embeddings.status` `low` or `empty` (discovery answers from its keyword fallback), `connections.status` `partial` or `none`, `telemetry.status` `idle` or `stale` (no provider call is no activity, not a fault), and `fx_rates.status` `stale` or `missing` while no quote is needed. None of them stops a call from being served.\n\nONLY HALF OF ONE CHECK IS PER TENANT. `connections.connected` counts connections in the calling credential's own org and project. `connections.total_servers` counts every active provider in the catalog and is the same number for every reader, so the ratio between them is not a tenant completion percentage.\n\nTHIS READ WRITES, and the write is observable. Each call stores a snapshot of its own result against the calling org, and when the grade differs from the previous snapshot's it publishes `system.health.degraded` or `system.health.recovered` into the calling project, carrying a field-by-field diff of what moved. Anything subscribed to those event types in that project fires. Polling this endpoint therefore has side effects, and two monitors polling the same org write into one shared snapshot history — a transition either of them causes is seen once, by whoever's call crossed it.\n\nTHE HANDLER ANSWERS 200 FOR EVERY STATE IT GRADES, `down` included: a dead dependency is reported in the body and never mapped onto an HTTP status. That is why the map below has one entry. It is not a promise that nothing else can come back. Three things produce a non-200 here and none of them is a grade: a credential that does not authenticate, a credential whose grants do not cover this read — both refused before the handler runs, and neither described in the map below, because the answer to them is the same on every operation the same door guards — and a refusal of the snapshot write above, which is a defect on our side rather than a dependency being down. Alert on `status`. A non-200 is a bug report, and which of the three it is decides who should be reading it.",
+          "description": "Dependency checks and the schema version, graded into one `status`. The checks run in parallel behind a three-second budget each; one that throws or times out is reported in its own failed shape with `message` carrying the reason, and the response still carries the others. So the operation is expected back in under four seconds however badly the database is behaving.\n\nEVERY CHECK SAYS WHAT IT MEASURED AND WHAT THAT MEANS HERE. Its own `status` keeps its vocabulary; beside it, `state` separates a real failure from pending configuration, from no activity, and from a feature not in use, with `required`, a `reason` code and, where something has to be set up, an `action`. A new account with no integration, no provider call and no FX quote reads `healthy`, with `connections` pending configuration.\n\nGRADE ON `status`, AND READ THE RULE BEFORE WRITING THE ALERT. Only `state: failure` grades. `down` means `db` or `vault` fails. `degraded` means any other check fails, which today is one of: the tool catalog is not loaded (`tool_catalog`), a USD/BRL quote the router needs is missing, stale or unreadable (`fx_rates`; no deployment needs one until the router normalizes cost across currencies, and until then the quote is `not_in_use` whatever its age), a live Celcoin connection lacks a webhook subscription (`celcoin_webhook_subscriptions`), or a Pix Automático worker with work to do is stale, failing or never ran (`recurrence_holds`, `recurrence_scheduler`, including a hold past its time), or a BolePix paid twice has had its refund owed for longer than 3 days (`bolepix_refunds`). Everything else grades `healthy`. `attention` lists the failing checks and the ones pending configuration by name.\n\n`metrics` IS READ, NEVER GRADED. `metrics.recurrence_instruction_alarms` counts the Pix Automático instruction alarms still open on a cycle still ahead, per kind and reason, for the calling org: a cycle not announced, an instruction refused, held back by a ceiling, or queued and expired. Each alarm already reached its tenant as an event in the recurrence's project; this is the standing number, and it never moves `status`.\n\nNON-NOMINAL MEASUREMENTS THAT DO NOT MOVE THE GRADE, and an alert that wants them has to read the field rather than the grade: `embeddings.status` `low` or `empty` (discovery answers from its keyword fallback), `connections.status` `partial` or `none`, `telemetry.status` `idle` or `stale` (no provider call is no activity, not a fault), and `fx_rates.status` `stale` or `missing` while no quote is needed. None of them stops a call from being served.\n\nONLY HALF OF ONE CHECK IS PER TENANT. `connections.connected` counts connections in the calling credential's own org and project. `connections.total_servers` counts every active provider in the catalog and is the same number for every reader, so the ratio between them is not a tenant completion percentage.\n\nTHIS READ WRITES, and the write is observable. Each call stores a snapshot of its own result against the calling org, and when the grade differs from the previous snapshot's it publishes `system.health.degraded` or `system.health.recovered` into the calling project, carrying a field-by-field diff of what moved. Anything subscribed to those event types in that project fires. Polling this endpoint therefore has side effects, and two monitors polling the same org write into one shared snapshot history — a transition either of them causes is seen once, by whoever's call crossed it. Where the 30-day history is switched on, each call also counts one observation in `GET /v1/health/history` for the calling org, so a monitor polling this endpoint moves that history too.\n\nTHE HANDLER ANSWERS 200 FOR EVERY STATE IT GRADES, `down` included: a dead dependency is reported in the body and never mapped onto an HTTP status. That is why the map below has one entry. It is not a promise that nothing else can come back. Three things produce a non-200 here and none of them is a grade: a credential that does not authenticate, a credential whose grants do not cover this read — both refused before the handler runs, and neither described in the map below, because the answer to them is the same on every operation the same door guards — and a refusal of the snapshot write above, which is a defect on our side rather than a dependency being down. Alert on `status`. A non-200 is a bug report, and which of the three it is decides who should be reading it.",
           "responses": {
             "200": {
               "description": "OK",
@@ -24705,8 +24747,8 @@
       },
       "/v1/health/history": {
         "get": {
-          "summary": "Read the per-day uptime of each health check, for the caller's organization",
-          "description": "One point per Sao Paulo calendar day for every check of `GET /v1/health` and for its grade (`overall`), over the last `days` days (1 to 30, default 30) ending today. A point is `uptime`, the share of that day's health observations in which the check was not in `state: failure` (for `overall`, in which `status` was `healthy`), and `samples`, how many observations there were.\n\nAN OBSERVATION IS A STORED SNAPSHOT: each `GET /v1/health` call and each pass of the server-side health scraper for the org. So uptime is a share of observations, not of time, and a day with a dashboard open weighs its hours unevenly; read `samples` beside it. A day with no observation is ABSENT from the series, never reported as 100%. Configuration pending, no activity and a feature not in use count as up, as they do not move the grade.\n\nOrganization-wide, like the snapshots it is built from: the two per-tenant checks were measured for the project of each observation. Same credential and grant as `GET /v1/health`.",
+          "summary": "Read the per-day share of ok health observations of each check, for the caller's organization",
+          "description": "One point per Sao Paulo calendar day for every check of `GET /v1/health` and for its grade (`overall`), over the last `days` days (1 to 30, default 30) ending today. A point is `ok_share`, the share of that day's health observations in which the check was not in `state: failure` (for `overall`, in which `status` was `healthy`), and `samples`, how many observations there were. `uptime` is a deprecated alias of `ok_share` with the same value, served for one release cycle; read `ok_share`. `first_sampled_day` is the earliest day of the window with an observation.\n\nAN OBSERVATION IS A STORED SNAPSHOT: each authenticated `GET /v1/health` call (so `GET /v1/health` writes, it is not read-only, and an open dashboard tab polls it every 30 seconds) and each pass of the server-side health scraper for the org (every 5 minutes). So `ok_share` is a share of observations, not of time: it is not uptime or availability, and a day with a dashboard open weighs its hours unevenly; read `samples` beside it. A day with no observation is ABSENT from the series, never reported as 100% or 0%. Configuration pending, no activity and a feature not in use count as ok, as they do not move the grade.\n\nOrganization-wide, like the snapshots it is built from: the two per-tenant checks were measured for the project of each observation. Same credential and grant as `GET /v1/health`.",
           "parameters": [
             {
               "schema": {
@@ -24739,6 +24781,13 @@
                         "type": "string",
                         "description": "Today in Sao Paulo, YYYY-MM-DD."
                       },
+                      "first_sampled_day": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "The earliest day of this window with at least one observation, YYYY-MM-DD, or null when the window has none. Observation of this organization started on this day, unless it equals `from`, in which case it may have started before the window."
+                      },
                       "checks": {
                         "type": "object",
                         "additionalProperties": {
@@ -24750,19 +24799,25 @@
                                 "type": "string",
                                 "description": "Sao Paulo calendar day, YYYY-MM-DD."
                               },
-                              "uptime": {
+                              "ok_share": {
                                 "type": "number",
-                                "description": "ok_samples / samples for the day, 0 to 1, rounded to four decimals. A share of observations, not of time."
+                                "description": "Share of that day's health observations in which the check was not in `state: failure` (for `overall`, in which `status` was `healthy`): ok observations / `samples`, 0 to 1, rounded to four decimals. A share of observations, not of time: it is not uptime or availability."
                               },
                               "samples": {
                                 "type": "integer",
-                                "description": "Health observations persisted that day."
+                                "description": "Health observations persisted that day (always at least 1)."
+                              },
+                              "uptime": {
+                                "type": "number",
+                                "description": "Deprecated alias of `ok_share`; same value, kept for one release cycle. Despite the name it is not uptime: read `ok_share`.",
+                                "deprecated": true
                               }
                             },
                             "required": [
                               "day",
-                              "uptime",
-                              "samples"
+                              "ok_share",
+                              "samples",
+                              "uptime"
                             ]
                           }
                         },
@@ -24777,19 +24832,25 @@
                               "type": "string",
                               "description": "Sao Paulo calendar day, YYYY-MM-DD."
                             },
-                            "uptime": {
+                            "ok_share": {
                               "type": "number",
-                              "description": "ok_samples / samples for the day, 0 to 1, rounded to four decimals. A share of observations, not of time."
+                              "description": "Share of that day's health observations in which the check was not in `state: failure` (for `overall`, in which `status` was `healthy`): ok observations / `samples`, 0 to 1, rounded to four decimals. A share of observations, not of time: it is not uptime or availability."
                             },
                             "samples": {
                               "type": "integer",
-                              "description": "Health observations persisted that day."
+                              "description": "Health observations persisted that day (always at least 1)."
+                            },
+                            "uptime": {
+                              "type": "number",
+                              "description": "Deprecated alias of `ok_share`; same value, kept for one release cycle. Despite the name it is not uptime: read `ok_share`.",
+                              "deprecated": true
                             }
                           },
                           "required": [
                             "day",
-                            "uptime",
-                            "samples"
+                            "ok_share",
+                            "samples",
+                            "uptime"
                           ]
                         },
                         "description": "The response's grade per day: a sample is ok when `status` was `healthy`. Days with no observation are absent."
@@ -24799,6 +24860,7 @@
                       "days",
                       "from",
                       "to",
+                      "first_sampled_day",
                       "checks",
                       "overall"
                     ]
@@ -27703,7 +27765,7 @@
         "get": {
           "deprecated": true,
           "summary": "Browse the audit chain (alias path)",
-          "description": "A read-only page of the caller's own tamper-evident chain, newest first.\n\nTHIS IS AN ALIAS OF `GET /v1/audit-events`, NOT A SECOND RESOURCE. One handler serves both paths, so the query, the body and every refusal are identical and there is nothing to choose between them. It is described separately only because a generated client sees two operations; pick one spelling and stay on it. Note that the OTHER audit operations — the chain's health report, its incidents, its configuration — have no twin under this prefix and live only under `/v1/audit-events`.\n\nBROWSE, NOT EXPORT. This emits no manifest, no signature and no chain entry of its own, so paging through it leaves no trace and proves nothing offline. It is for showing an operator what happened, not for handing an auditor evidence.\n\nScoped to the credential's organization with no way to widen it, and there is no cross-org refusal to handle because there is no organization segment in the path to disagree with.\n\n`event_type` IS AN EXACT MATCH UNLESS IT ENDS IN A DOT, in which case it is a prefix match — so `tool_call.` returns the succeeded and the failed variants in one pass without two queries. The default window is the last seven days.\n\nPAGINATION WALKS BACKWARDS. Pass the previous response's `next_before_sequence` as `before_sequence`. The cursor is null only when the page came back SHORTER than `limit`, so a full page that happens to end at the chain's floor still hands you a non-null cursor and the last call is the one that returns fewer rows. An out-of-range `limit` is clamped rather than refused.\n\nScope: `audit:read`.",
+          "description": "A read-only page of the caller's own tamper-evident chain, newest first.\n\nTHIS IS AN ALIAS OF `GET /v1/audit-events`, NOT A SECOND RESOURCE. One handler serves both paths, so the query, the body and every refusal are identical and there is nothing to choose between them. It is described separately only because a generated client sees two operations; pick one spelling and stay on it. Note that the OTHER audit operations — the chain's health report, its incidents, its configuration — have no twin under this prefix and live only under `/v1/audit-events`.\n\nBROWSE, NOT EXPORT. This emits no manifest, no signature and no chain entry of its own, so paging through it leaves no trace and proves nothing offline. It is for showing an operator what happened, not for handing an auditor evidence.\n\nScoped to the credential's organization with no way to widen it, and there is no cross-org refusal to handle because there is no organization segment in the path to disagree with.\n\nA KEY READS ITS OWN PROJECT ONLY. An API key or an OAuth token gets the entries whose payload names the credential's project, plus the organization-level entries, which name no project; a `policy_evaluation` recorded without a project is the exception and is not returned to a key. Naming another project in `project_id` is refused with 403 `audit_project_out_of_scope`. Service auth reads the whole organization and the `x-codespar-project` header does not narrow it. A key's page is therefore NOT contiguous in the chain: `sequence_number` skips the entries of other projects.\n\n`event_type` IS AN EXACT MATCH UNLESS IT ENDS IN A DOT, in which case it is a prefix match — so `tool_call.` returns the succeeded and the failed variants in one pass without two queries. The default window is the last seven days.\n\nPAGINATION WALKS BACKWARDS. Pass the previous response's `next_before_sequence` as `before_sequence`. The cursor is null only when the page came back SHORTER than `limit`, so a full page that happens to end at the chain's floor still hands you a non-null cursor and the last call is the one that returns fewer rows. An out-of-range `limit` is clamped rather than refused.\n\nScope: `audit:read`.",
           "parameters": [
             {
               "schema": {
@@ -27774,10 +27836,10 @@
               "schema": {
                 "type": "string",
                 "pattern": "^[A-Za-z0-9_-]{1,200}$",
-                "description": "Only entries whose payload names this project (`project_id`, else `projectId`). The chain has no project column, so an organization-level entry, which names no project, is not returned under this filter. A malformed id is refused with `invalid_project_id`."
+                "description": "Only entries whose payload names this project (`project_id`, else `projectId`). The chain has no project column, so an organization-level entry, which names no project, is not returned under this filter. A malformed id is refused with `invalid_project_id`. An API key or an OAuth token may name its own project only: any other is refused with 403 `audit_project_out_of_scope`."
               },
               "required": false,
-              "description": "Only entries whose payload names this project (`project_id`, else `projectId`). The chain has no project column, so an organization-level entry, which names no project, is not returned under this filter. A malformed id is refused with `invalid_project_id`.",
+              "description": "Only entries whose payload names this project (`project_id`, else `projectId`). The chain has no project column, so an organization-level entry, which names no project, is not returned under this filter. A malformed id is refused with `invalid_project_id`. An API key or an OAuth token may name its own project only: any other is refused with 403 `audit_project_out_of_scope`.",
               "name": "project_id",
               "in": "query"
             }
@@ -27867,6 +27929,27 @@
                           "from_after_to",
                           "invalid_actor_kind",
                           "invalid_project_id"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "error"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "Forbidden, in a BARE body. `audit_project_out_of_scope` when an API key or an OAuth token names in `project_id` a project that is not its own. Service auth is never refused here.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "audit_project_out_of_scope"
                         ]
                       }
                     },
@@ -54724,6 +54807,11 @@
                     "account": {
                       "type": "string",
                       "description": "The consumer's own sandbox account. Accepted only when it is the consumer's active `pix-celcoin` account in this project (otherwise 403 `funding_account_not_owned`); the default is that same account."
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{8,64}$",
+                      "description": "Retry key. In a project of the controlled or the restricted integrated proof, the same key answers the credit it already made (200, `idempotent_replay: true`) instead of crediting again."
                     }
                   },
                   "required": [
@@ -54734,6 +54822,61 @@
             }
           },
           "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "attempt_id": {
+                        "type": "string"
+                      },
+                      "deposit_id": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "account": {
+                        "type": "string"
+                      },
+                      "amount_minor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "enum": [
+                          "BRL"
+                        ]
+                      },
+                      "money_credited": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
+                      },
+                      "idempotent_replay": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ],
+                        "description": "Present on a rerun answered from the credit already made."
+                      }
+                    },
+                    "required": [
+                      "attempt_id",
+                      "deposit_id",
+                      "status",
+                      "account",
+                      "amount_minor",
+                      "currency",
+                      "money_credited"
+                    ]
+                  }
+                }
+              }
+            },
             "201": {
               "description": "OK",
               "content": {
@@ -54767,6 +54910,13 @@
                         "enum": [
                           true
                         ]
+                      },
+                      "idempotent_replay": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ],
+                        "description": "Present on a rerun answered from the credit already made."
                       }
                     },
                     "required": [
@@ -54966,6 +55116,11 @@
                     "account": {
                       "type": "string",
                       "description": "The consumer's own sandbox account. Accepted only when it is the consumer's active `pix-celcoin` account in this project (otherwise 403 `funding_account_not_owned`); the default is that same account."
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{8,64}$",
+                      "description": "Retry key. In a project of the controlled or the restricted integrated proof, the same key answers the credit it already made (200, `idempotent_replay: true`) instead of crediting again."
                     }
                   },
                   "required": [
@@ -54976,6 +55131,61 @@
             }
           },
           "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "attempt_id": {
+                        "type": "string"
+                      },
+                      "deposit_id": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "account": {
+                        "type": "string"
+                      },
+                      "amount_minor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "enum": [
+                          "BRL"
+                        ]
+                      },
+                      "money_credited": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
+                      },
+                      "idempotent_replay": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ],
+                        "description": "Present on a rerun answered from the credit already made."
+                      }
+                    },
+                    "required": [
+                      "attempt_id",
+                      "deposit_id",
+                      "status",
+                      "account",
+                      "amount_minor",
+                      "currency",
+                      "money_credited"
+                    ]
+                  }
+                }
+              }
+            },
             "201": {
               "description": "OK",
               "content": {
@@ -55009,6 +55219,13 @@
                         "enum": [
                           true
                         ]
+                      },
+                      "idempotent_replay": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ],
+                        "description": "Present on a rerun answered from the credit already made."
                       }
                     },
                     "required": [
@@ -66140,7 +66357,7 @@
         "get": {
           "deprecated": true,
           "summary": "Export audit events, with a signed manifest (deprecated path)",
-          "description": "DEPRECATED alias of `GET /v1/audit-events/export` (ent#979), kept for two releases. Same handler, same scope; an `{orgId}` that is not the credential's own is refused.\n\nThe response is STREAMED row by row, with the signed manifest at the end: the manifest covers the scope (including the narrowings applied), not just the content. Full detail on the canonical path.",
+          "description": "DEPRECATED alias of `GET /v1/audit-events/export` (ent#979), kept for two releases. Same handler, same scope; an `{orgId}` that is not the credential's own is refused.\n\nThe response is STREAMED row by row, with the signed manifest at the end: the manifest covers the scope (including the narrowings applied), not just the content. Full detail on the canonical path.\n\nAn API key or an OAuth token is refused with 403 `audit_export_key_unavailable`: the export covers every project of the organization and answers service auth only until it can be narrowed to one project.",
           "parameters": [
             {
               "schema": {
@@ -66258,7 +66475,7 @@
               }
             },
             "403": {
-              "description": "The credential cannot export this organization's audit events. Bare body.",
+              "description": "`forbidden`: the credential cannot export this organization's audit events. `audit_export_key_unavailable`: the caller is an API key or an OAuth token. Bare body.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -66267,7 +66484,8 @@
                       "error": {
                         "type": "string",
                         "enum": [
-                          "forbidden"
+                          "forbidden",
+                          "audit_export_key_unavailable"
                         ]
                       }
                     },
