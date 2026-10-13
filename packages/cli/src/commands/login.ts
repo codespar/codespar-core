@@ -31,8 +31,9 @@ function identity(me: Whoami): {
 } {
   return {
     email: me.user?.email,
-    organization: me.organization?.name ?? me.organization?.id,
-    project: me.project?.name ?? me.project?.id,
+    // `||`, not `??`: an empty name is no name, and the id still identifies.
+    organization: me.organization?.name || me.organization?.id,
+    project: me.project?.name || me.project?.id,
     keyId: me.key?.id,
     environment: me.key?.environment,
     scopes: me.key?.scopes,

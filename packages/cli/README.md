@@ -68,7 +68,7 @@ codespar init my-agent
 |---------|-------------|
 | `login` | Save API key to `~/.codespar/config.json` |
 | `logout` | Clear the stored API key |
-| `whoami` | Show authenticated user, org, project, and scopes |
+| `whoami` | Show the organization, project and key the credential resolves to |
 | `servers list` | List servers (filter by `--category`, `--region`) |
 | `servers show <id>` | Show a server's details and tools |
 | `tools list` | List tools (filter by `--server`) |
