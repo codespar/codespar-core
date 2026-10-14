@@ -20,7 +20,9 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { CliError } from "../config.js";
+import { printBanner } from "../banner.js";
 import { c, info, json } from "../output.js";
+import { VERSION } from "../version.js";
 
 /** `agent.yaml` schema this CLI knows how to run. */
 export const SUPPORTED_MANIFEST_SCHEMA = 1;
@@ -194,7 +196,10 @@ export async function agentRunCommand(dir: string, opts: AgentRunOptions): Promi
   requireScript(agent, "start");
   const args = agentRunArgs(opts);
   if (!opts.json) {
-    info(`${agent.name ?? "agent"}${agent.version ? `@${agent.version}` : ""} — npm start${args.length ? ` -- ${args.join(" ")}` : ""}`);
+    // The interactive terminal is a session a person sits in: it opens as the CodeSpar CLI does, with the banner
+    // (silent off a TTY or with NO_BANNER=1), and names the agent instead of the npm plumbing underneath it.
+    if (opts.input === undefined) printBanner(VERSION);
+    info(`agent run · ${agent.name ?? "agent"}${agent.version ? ` ${agent.version}` : ""}${args.length ? ` · ${args.join(" ")}` : ""}`);
   }
   const result = await spawnScript(agent, "start", args, "inherit");
   if (result.status === null) {
