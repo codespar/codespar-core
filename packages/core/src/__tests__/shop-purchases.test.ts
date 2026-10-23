@@ -39,14 +39,15 @@ const PURCHASE = {
 
 async function sessionWith(answer: (seen: Seen) => { status: number; body: unknown }) {
   const seen: Seen[] = [];
-  globalThis.fetch = vi.fn(async (url: string, init?: { method?: string; body?: string; headers?: Record<string, string> }) => {
+  globalThis.fetch = vi.fn(async (url: string, init?: { method?: string; body?: string; headers?: Record<string, string> }): Promise<Response> => {
+    const json = (status: number, body: unknown): Response => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
     if (url.endsWith("/v1/sessions")) {
-      return { ok: true, status: 201, text: async () => "", json: async () => ({ id: "ses_k1", org_id: "org_t", user_id: "u", servers: [], status: "active", created_at: new Date().toISOString(), closed_at: null }) };
+      return json(201, { id: "ses_k1", org_id: "org_t", user_id: "u", servers: [], status: "active", created_at: new Date().toISOString(), closed_at: null });
     }
     const s: Seen = { url, method: init?.method ?? "GET", body: init?.body ? JSON.parse(init.body) : null, auth: init?.headers?.Authorization };
     seen.push(s);
     const a = answer(s);
-    return { ok: a.status < 400, status: a.status, headers: new Headers({ "content-type": "application/json" }), text: async () => JSON.stringify(a.body), json: async () => a.body };
+    return json(a.status, a.body);
   }) as unknown as typeof fetch;
   const session = await createSession("u", { servers: [] }, { baseUrl: "https://api.example.com", apiKey: "csk_test_k1", timeout: 10_000 });
   return { session, seen };

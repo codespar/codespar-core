@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 7fa10f86b0a2281bff5edec1be2113eb589315fa1d7ea55e5775f0e92b503b0d, fetched 2026-10-13T14:21:41.388Z
+// Source: openapi-snapshot.json (sha256 86aa48bb2b5e91b85a9b0d2efcf8463b8609bbd9fdd8e89bef08c293d47678b6, fetched 2026-10-23T07:59:16.515Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -186,6 +186,8 @@ export const API_OPERATIONS = [
   { method: "post", path: "/v1/test/charges/{chargeId}/scenarios", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/collect/links", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/collect/links", body: "application/json", accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/collect/receivers/default", body: null, accept: "application/json", deprecated: false },
+  { method: "put", path: "/v1/collect/receivers/default", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/collect/receivers", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/collect/links/stats", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/collect/links/{linkId}", body: null, accept: "application/json", deprecated: false },
@@ -196,6 +198,7 @@ export const API_OPERATIONS = [
   { method: "post", path: "/v1/collect/links/{linkId}/resume", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/collect/links/{linkId}/attempts", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/collect/links/{linkId}/attempts", body: "application/json", accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/collect/attempts", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/collect/links/{linkId}/payments", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/collect/links/{linkId}/archive", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/collect/attempts/{attemptId}/test-pay", body: null, accept: "application/json", deprecated: false },
@@ -203,6 +206,7 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/collect/{linkId}", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/collect/{linkId}/attempts", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/collect/links/{linkId}/refunds", body: null, accept: "application/json", deprecated: false },
+  { method: "post", path: "/v1/collect/payments/{paymentId}/refund", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/collect/payments/{paymentId}/honor", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/meters", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/meters", body: "application/json", accept: "application/json", deprecated: false },
@@ -211,6 +215,9 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/meters/{meterId}/usage", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/meters/{meterId}/events", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/meter-events", body: "application/json", accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/meters/statements", body: null, accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/meters/statements/{statementId}", body: null, accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/meters/adjustments", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/consumers/consents", body: null, accept: "application/json", deprecated: true },
   { method: "get", path: "/v1/consumers/funding-sources", body: null, accept: "application/json", deprecated: true },
   { method: "get", path: "/v1/consumers/{consumerId}/dda/subscriptions/{document}", body: null, accept: "application/json", deprecated: false },
@@ -298,11 +305,16 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/payables/{payableId}", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/payables/{payableId}/review", body: "application/json", accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/payables/{payableId}/pay", body: "application/json", accept: "application/json", deprecated: false },
+  { method: "post", path: "/v1/shop/agent/purchases", body: "application/json", accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/shop/agent/purchases/{purchaseId}", body: null, accept: "application/json", deprecated: false },
+  { method: "get", path: "/v1/shop/agent/instruments", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/projects", body: null, accept: "application/json", deprecated: false },
   { method: "post", path: "/v1/projects", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/projects/{id}", body: null, accept: "application/json", deprecated: false },
   { method: "delete", path: "/v1/projects/{id}", body: null, accept: null, deprecated: false },
   { method: "patch", path: "/v1/projects/{id}", body: "application/json", accept: "application/json", deprecated: false },
+  { method: "post", path: "/v1/projects/{id}/archive", body: null, accept: "application/json", deprecated: false },
+  { method: "post", path: "/v1/projects/{id}/unarchive", body: null, accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/projects/{id}/settings", body: null, accept: "application/json", deprecated: false },
   { method: "patch", path: "/v1/projects/{id}/settings", body: "application/json", accept: "application/json", deprecated: false },
   { method: "get", path: "/v1/projects/{id}/settings/history", body: null, accept: "application/json", deprecated: false },

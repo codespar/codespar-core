@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 7fa10f86b0a2281bff5edec1be2113eb589315fa1d7ea55e5775f0e92b503b0d, fetched 2026-10-13T14:21:41.388Z
+// Source: openapi-snapshot.json (sha256 86aa48bb2b5e91b85a9b0d2efcf8463b8609bbd9fdd8e89bef08c293d47678b6, fetched 2026-10-23T07:59:16.515Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -1607,7 +1607,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.rejected, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
                         event: string;
                         server_id?: string;
                         /**
@@ -1761,7 +1761,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: approval.decided, approval.pending, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.rejected, proxy_call.failed, proxy_call.succeeded, session.closed, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
                         event: string;
                         server_id?: string;
                         /**
@@ -3252,7 +3252,7 @@ export interface paths {
                             project_id: string;
                             currencies: {
                                 currency: string;
-                                /** @description Σ wallet_balances.balance_minor over the project's non-closed wallets. */
+                                /** @description Σ wallet_balances.balance_minor over the project's non-closed wallets; for a Test project with its own bound account, over that account's wallet only (the simulator's legacy balance stays in the ledger, out of the sum). */
                                 balance_minor: string;
                                 /** @description Σ wallet_balances.available_minor over the same wallets. */
                                 available_minor: string;
@@ -3708,6 +3708,8 @@ export interface paths {
          *     `target` picks the wallet. `account` (the default) is the project's account wallet, created on first use: the account Wallet shows it, but no agent spends from it. `consumer` is the consumer wallet a mandate spend reserves and debits: `mandate_id`'s consumer, else `consumer_id`, else the one consumer the organization's active BRL mandates name; none or several answer `test_funding_target_required` with the candidates. Naming `mandate_id` or `consumer_id` implies `consumer`. A consumer wallet created here starts with exactly the amount funded.
          *
          *     At most 1000000 centavos per call. `idempotency_key` is required: the same key with the same amount and wallet answers the first entry with 200 and `idempotent_replay: true`; with another amount or wallet, `idempotency_key_conflict`. Requires an admin or owner (`x-codespar-user` on the dashboard path).
+         *
+         *     A Test project with its own bound provider account (`payments` active) is credited THERE instead: the amount goes to the bound account, claimed before it is sent and copied into the binding consumer's wallet ledger (`consumer_id` names it), with no platform total. An earlier credit still in flight or whose result is unknown blocks the next (`sandbox_funding_open_claim`); a platform guard's refusal before the send answers `sandbox_funding_refused` (422), a provider refusal `sandbox_funding_failed`.
          */
         post: {
             parameters: {
@@ -3841,7 +3843,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `fund_requires_test_project`: the project is live, nothing is written. `test_funding_target_required`: no target and not exactly one candidate (`details.candidates`). `idempotency_key_conflict`: the key already funded another amount or another wallet. */
+                /** @description `fund_requires_test_project`: the project is live, nothing is written. `test_funding_target_required`: no target and not exactly one candidate (`details.candidates`). `idempotency_key_conflict`: the key already funded another amount or another wallet. `sandbox_funding_open_claim`: a bound project's earlier credit is still open; nothing was sent. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -3850,7 +3852,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "fund_requires_test_project" | "test_funding_target_required" | "idempotency_key_conflict";
+                                code: "fund_requires_test_project" | "test_funding_target_required" | "idempotency_key_conflict" | "sandbox_funding_open_claim";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -3861,7 +3863,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Above the per-call cap; `details.cap_minor` says how much. */
+                /** @description `test_funding_amount_over_cap`: above the per-call cap; `details.cap_minor` says how much. `sandbox_funding_refused`: a bound project's credit was refused by a platform guard before it was sent (`details.reason`); nothing was sent. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -3870,7 +3872,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "test_funding_amount_over_cap";
+                                code: "test_funding_amount_over_cap" | "sandbox_funding_refused";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -3881,7 +3883,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The credit did not land; nothing was written. */
+                /** @description The credit did not land; nothing was written. On a bound project, `wallet_credit_failed`: the account was credited and its ledger copy failed. */
                 500: {
                     headers: {
                         [name: string]: unknown;
@@ -3890,7 +3892,27 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "test_funding_failed";
+                                code: "test_funding_failed" | "wallet_credit_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A bound project's credit could not be executed at the provider. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_funding_failed";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -3921,6 +3943,8 @@ export interface paths {
         /**
          * Grant the initial test balance (test projects only, once)
          * @description Credits 10000 centavos of test money to the project's account wallet, once per project: the first call answers 201 with `granted: true`, every later call, and the loser of two concurrent calls, answers 200 with `granted: false` and the same entry. The amount, the wallet and the idempotency reference are the server's, so the route takes no body (send none, or `{}`). The entry is a FUND with `test_funding_kind: initial_balance` on GET /v1/account/ledger and is never counted as money received. No agent spends from the account wallet. To add more, POST /v1/account/fund/sandbox.
+         *
+         *     A Test project with its own bound provider account (`payments` active) is credited nothing here: the account's initial balance is credited once by its provisioning, and this route reads it. Confirmed: 200, `granted: false`, the credit's entry and amount, and `initial_credit`. Still on its way: 409 `sandbox_funding_open_claim` with `details.initial_credit`. Off: 200 with `entry_id` null and `amount_minor` "0". A Test project the provisioning reaches and not yet bound gets no simulated balance meanwhile: 409 `sandbox_funding_open_claim`, `initial_credit.state` `preparing_account`.
          */
         post: {
             parameters: {
@@ -3938,8 +3962,9 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            entry_id: string;
-                            wallet_id: string;
+                            /** @description Null only for a bound project whose initial credit is off. */
+                            entry_id: string | null;
+                            wallet_id: string | null;
                             /** @enum {string} */
                             target: "account";
                             amount_minor: string;
@@ -3947,11 +3972,32 @@ export interface paths {
                             currency: "BRL";
                             /** @enum {boolean} */
                             test_funding: true;
-                            /** @description True on the call that credited it; false when it already had been. */
+                            /** @description True on the call that credited it; false when it already had been, and always for a bound project. */
                             granted: boolean;
                             balance: {
                                 balance_minor: string;
                                 available_minor: string;
+                            };
+                            /** @description A bound project's: the provisioning's initial credit of its account. */
+                            initial_credit?: {
+                                /** @enum {string} */
+                                state: "preparing_account" | "adding_test_balance" | "topup_pending" | "test_balance_confirmed" | "off";
+                                /** @enum {string} */
+                                step?: "waiting" | "sending" | "retrying" | "reconciling" | "topping_up";
+                                /** @description topup_pending: why the history cannot be read yet. */
+                                reason?: string;
+                                amount_minor?: string;
+                                /** @enum {string} */
+                                origin?: "provisioning" | "earlier_initial_credit";
+                                /** @description test_balance_confirmed: each confirmed initial credit; amount_minor is their total. */
+                                parts?: {
+                                    /** @enum {string} */
+                                    origin: "provisioning" | "earlier_initial_credit" | "topup";
+                                    amount_minor: string;
+                                    entry_id: string | null;
+                                }[];
+                                entry_id?: string | null;
+                                confirmed_at?: string | null;
                             };
                         };
                     };
@@ -3963,8 +4009,9 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            entry_id: string;
-                            wallet_id: string;
+                            /** @description Null only for a bound project whose initial credit is off. */
+                            entry_id: string | null;
+                            wallet_id: string | null;
                             /** @enum {string} */
                             target: "account";
                             amount_minor: string;
@@ -3972,11 +4019,32 @@ export interface paths {
                             currency: "BRL";
                             /** @enum {boolean} */
                             test_funding: true;
-                            /** @description True on the call that credited it; false when it already had been. */
+                            /** @description True on the call that credited it; false when it already had been, and always for a bound project. */
                             granted: boolean;
                             balance: {
                                 balance_minor: string;
                                 available_minor: string;
+                            };
+                            /** @description A bound project's: the provisioning's initial credit of its account. */
+                            initial_credit?: {
+                                /** @enum {string} */
+                                state: "preparing_account" | "adding_test_balance" | "topup_pending" | "test_balance_confirmed" | "off";
+                                /** @enum {string} */
+                                step?: "waiting" | "sending" | "retrying" | "reconciling" | "topping_up";
+                                /** @description topup_pending: why the history cannot be read yet. */
+                                reason?: string;
+                                amount_minor?: string;
+                                /** @enum {string} */
+                                origin?: "provisioning" | "earlier_initial_credit";
+                                /** @description test_balance_confirmed: each confirmed initial credit; amount_minor is their total. */
+                                parts?: {
+                                    /** @enum {string} */
+                                    origin: "provisioning" | "earlier_initial_credit" | "topup";
+                                    amount_minor: string;
+                                    entry_id: string | null;
+                                }[];
+                                entry_id?: string | null;
+                                confirmed_at?: string | null;
                             };
                         };
                     };
@@ -4014,7 +4082,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The project is live; nothing is written. */
+                /** @description `fund_requires_test_project`: the project is live, nothing is written. `sandbox_funding_open_claim`: the project's initial balance is still being prepared or added by its provisioning (`details.initial_credit`); nothing was written. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -4023,7 +4091,27 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "fund_requires_test_project";
+                                code: "fund_requires_test_project" | "sandbox_funding_open_claim";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A bound project's credit was refused by a platform guard before it was sent (`details.reason`); nothing was sent. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_funding_refused";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -4043,7 +4131,27 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "test_funding_failed";
+                                code: "test_funding_failed" | "wallet_credit_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A bound project's credit could not be executed at the provider. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_funding_failed";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -4124,6 +4232,8 @@ export interface paths {
                                 };
                                 title: string | null;
                                 scene: string | null;
+                                /** @description The dashboard assistant conversation this session belongs to (the Shop's or the Playground chat's); null otherwise. */
+                                conversation_id: string | null;
                                 /**
                                  * @description "codespar_simulator" when this session's payments were demonstrations settled on the CodeSpar simulator ("Simulado pela CodeSpar"); "celcoin_sandbox" when they ran in the restricted integrated proof, at the Celcoin sandbox ("Integrado (sandbox Celcoin)"); null otherwise.
                                  * @enum {string|null}
@@ -4291,7 +4401,7 @@ export interface paths {
         };
         /**
          * The test balance, the refill quota and the Adicionar fundos cap
-         * @description One read for both test-credit actions. `balance.total_minor` is available + held over every wallet of the project, the number a refill compares to its target; `refill` is the day's quota (São Paulo calendar day) and the room a refill would credit now; `add_funds` is the separate per-call cap, which has no cumulative cap and never counts toward the refills.
+         * @description One read for both test-credit actions. `balance.total_minor` is available + held over every wallet of the project, the number a refill compares to its target; `refill` is the day's quota (São Paulo calendar day) and the room a refill would credit now; `add_funds` is the separate per-call cap, which has no cumulative cap and never counts toward the refills. A Test project with its own bound provider account has no refill quota: `refill.daily_limit` and `refill.left_today` are null.
          */
         get: {
             parameters: {
@@ -4324,9 +4434,11 @@ export interface paths {
                             };
                             refill: {
                                 target_minor: string;
-                                daily_limit: number;
+                                /** @description null: no daily refill quota (a Test project with its own bound account). */
+                                daily_limit: number | null;
                                 used_today: number;
-                                left_today: number;
+                                /** @description null: no daily refill quota. */
+                                left_today: number | null;
                                 /** Format: date-time */
                                 resets_at: string;
                                 /** @description What a refill would credit now: the target less total_minor, never below 0. */
@@ -4364,6 +4476,8 @@ export interface paths {
         /**
          * Refill the test balance (test projects only, confirmed)
          * @description Brings the project's test balance (available + held, every wallet) back up to 10000 centavos, crediting only the difference to the account wallet; a balance already there answers 200 with `refilled: false` and credits nothing. At most 3 refills per São Paulo calendar day per project; the credit and the quota use are one row in one transaction, and a refill that credits nothing uses no quota. Adicionar fundos is a separate action and never counts. An explicit, confirmed act of a person: the body must be `{ "confirm": true }`. The entry is test funding (`test_funding_kind: refill`) and never money received. Admin or owner.
+         *
+         *     A Test project with its own bound provider account (`payments` active) refills THAT account: its balance is read at the provider and only the difference to the target is credited there, claimed before it is sent, with NO daily quota (`refill.daily_limit` and `left_today` null). An unreadable balance credits nothing (502 `test_funding_failed`).
          */
         post: {
             parameters: {
@@ -4406,9 +4520,11 @@ export interface paths {
                             };
                             refill: {
                                 target_minor: string;
-                                daily_limit: number;
+                                /** @description null: no daily refill quota (a Test project with its own bound account). */
+                                daily_limit: number | null;
                                 used_today: number;
-                                left_today: number;
+                                /** @description null: no daily refill quota. */
+                                left_today: number | null;
                                 /** Format: date-time */
                                 resets_at: string;
                                 /** @description What a refill would credit now: the target less total_minor, never below 0. */
@@ -4456,9 +4572,11 @@ export interface paths {
                             };
                             refill: {
                                 target_minor: string;
-                                daily_limit: number;
+                                /** @description null: no daily refill quota (a Test project with its own bound account). */
+                                daily_limit: number | null;
                                 used_today: number;
-                                left_today: number;
+                                /** @description null: no daily refill quota. */
+                                left_today: number | null;
                                 /** Format: date-time */
                                 resets_at: string;
                                 /** @description What a refill would credit now: the target less total_minor, never below 0. */
@@ -4517,7 +4635,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The project is live; nothing is written. */
+                /** @description `fund_requires_test_project`: the project is live, nothing is written. `sandbox_funding_open_claim`: a bound project's earlier credit is still open; nothing was sent. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -4526,7 +4644,27 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "fund_requires_test_project";
+                                code: "fund_requires_test_project" | "sandbox_funding_open_claim";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A bound project's credit was refused by a platform guard before it was sent (`details.reason`); nothing was sent. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sandbox_funding_refused";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -4566,7 +4704,27 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "test_funding_failed";
+                                code: "test_funding_failed" | "wallet_credit_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A bound project's refill: the account's balance could not be read (`test_funding_failed`), or the credit could not be executed at the provider (`sandbox_funding_failed`). */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "test_funding_failed" | "sandbox_funding_failed";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -9304,7 +9462,7 @@ export interface paths {
          *
          *     NO LIVE BALANCE, and no query parameter asks for one. `balance_minor` is always null; the balance lives in the ledger.
          *
-         *     No debit credential leaves. The row's provider token is an opaque vault pointer and is not in the response — but `metadata` is echoed raw and can carry the consumer's document number, so read its own note before logging the body.
+         *     No debit credential leaves. The row's provider token is an opaque vault pointer and is not in the response, and `metadata` is always `{}`: the account number and the holder's document stay on the row.
          */
         get: {
             parameters: {
@@ -9346,11 +9504,13 @@ export interface paths {
                             provider: string;
                             /** @description Caller-supplied label, or null. */
                             display_label: string | null;
+                            /** @description The account's branch (agência), lifted out of the row's `metadata.branch` when it holds a string, else null. Present on every row this group returns. */
+                            branch: string | null;
                             /**
-                             * @description Closed by `consumer_funding_sources_status_check`, whose name likewise appears in exactly one migration file. Read usability from `status` being `active`. A companion constraint keeps `revoked_at` and `status = 'revoked'` in step, so they cannot disagree.
+                             * @description Closed by `consumer_funding_sources_status_check` (0040, widened by 0356 to add `held`). Read usability from `status` being `active`. `held` is the account opened for a Test project: bound to the project and readable here, and no payment, receiving or consent uses it. A companion constraint keeps `revoked_at` and `status = 'revoked'` in step, so they cannot disagree.
                              * @enum {string}
                              */
-                            status: "active" | "revoked" | "expired";
+                            status: "active" | "held" | "revoked" | "expired";
                             /** @description Lifted out of `metadata.pixKey` when that key holds a string, else null. It is the DICT entry registered for the account, not a credential. */
                             pix_key: string | null;
                             /** @description Lifted out of `metadata.pixKeyType`, else null. */
@@ -9369,11 +9529,7 @@ export interface paths {
                              * @description Non-null exactly when `status` is `revoked`; the table enforces the pair.
                              */
                             revoked_at: string | null;
-                            /**
-                             * @description The raw column, echoed with nothing stripped — plan for personal data in it. `provisionCelcoinFundingSource` writes `account`, `branch`, `provider` and, when the onboarding carried one, `documentNumber`, which is the consumer's CPF or CNPJ. Treat this object as regulated personal data at rest and in logs, and do not echo it to an end user.
-                             *
-                             *     What is NOT in it is the debit credential: that lives in the vault, and the row holds only an opaque `provider_token_ref` pointer, which this response does not carry.
-                             */
+                            /** @description Always `{}`. The row's metadata holds the account number, the branch and, when the onboarding carried one, the holder's CPF or CNPJ; none of it is returned. What a caller uses is projected into fields of its own: `branch`, `pix_key` and `pix_key_type` (and `account_masked` on the listing). The key stays an object so a parser that requires it keeps working. */
                             metadata: {
                                 [key: string]: unknown;
                             };
@@ -9427,7 +9583,7 @@ export interface paths {
          *
          *     NO SIGNATURE MATERIAL LEAVES. The row carries `payload_hash` and `hmac_signature`; both are dropped before the body is built. What crosses the wire is `hmac_secret_version` — the stamp that says which secret signed it — and its note explains why that stamp is what makes secret rotation safe rather than destructive.
          *
-         *     PERSONAL DATA. `ip_address` is the consumer's, recorded because a consent event has to be replayable with its origin.
+         *     PERSONAL DATA, TRUNCATED. `ip_address` is the network of the consumer's address (/24 for IPv4, /64 for IPv6); the full address stays on the row, recorded because a consent event has to be replayable with its origin.
          */
         get: {
             parameters: {
@@ -9477,7 +9633,7 @@ export interface paths {
                             currency: "BRL" | "USD" | "MXN" | "COP" | "ARS" | "USDC" | "BRLA" | null;
                             /** @description The purpose the consumer signed. Non-null on `grant` rows. */
                             purpose: string | null;
-                            /** @description The consumer's IP at signing time, from an `inet` column — personal data, held because a consent event has to be replayable with timestamp and origin. `user_agent` is recorded alongside it and is NOT returned. */
+                            /** @description The network of the consumer's IP at signing time: an IPv4 address truncated to its /24 (`203.0.113.0`), an IPv6 address to its /64 (`2001:db8:85a3:8d3::`), null when none was recorded or the stored value does not parse. The `inet` column keeps the full address, because a consent event has to be replayable with timestamp and origin; only the response is truncated. `user_agent` is recorded alongside it and is NOT returned. */
                             ip_address: string | null;
                             /**
                              * Format: date-time
@@ -9586,7 +9742,7 @@ export interface paths {
                                 currency: "BRL" | "USD" | "MXN" | "COP" | "ARS" | "USDC" | "BRLA" | null;
                                 /** @description The purpose the consumer signed. Non-null on `grant` rows. */
                                 purpose: string | null;
-                                /** @description The consumer's IP at signing time, from an `inet` column — personal data, held because a consent event has to be replayable with timestamp and origin. `user_agent` is recorded alongside it and is NOT returned. */
+                                /** @description The network of the consumer's IP at signing time: an IPv4 address truncated to its /24 (`203.0.113.0`), an IPv6 address to its /64 (`2001:db8:85a3:8d3::`), null when none was recorded or the stored value does not parse. The `inet` column keeps the full address, because a consent event has to be replayable with timestamp and origin; only the response is truncated. `user_agent` is recorded alongside it and is NOT returned. */
                                 ip_address: string | null;
                                 /**
                                  * Format: date-time
@@ -9690,11 +9846,13 @@ export interface paths {
                                 provider: string;
                                 /** @description Caller-supplied label, or null. */
                                 display_label: string | null;
+                                /** @description The account's branch (agência), lifted out of the row's `metadata.branch` when it holds a string, else null. Present on every row this group returns. */
+                                branch: string | null;
                                 /**
-                                 * @description Closed by `consumer_funding_sources_status_check`, whose name likewise appears in exactly one migration file. Read usability from `status` being `active`. A companion constraint keeps `revoked_at` and `status = 'revoked'` in step, so they cannot disagree.
+                                 * @description Closed by `consumer_funding_sources_status_check` (0040, widened by 0356 to add `held`). Read usability from `status` being `active`. `held` is the account opened for a Test project: bound to the project and readable here, and no payment, receiving or consent uses it. A companion constraint keeps `revoked_at` and `status = 'revoked'` in step, so they cannot disagree.
                                  * @enum {string}
                                  */
-                                status: "active" | "revoked" | "expired";
+                                status: "active" | "held" | "revoked" | "expired";
                                 /** @description Lifted out of `metadata.pixKey` when that key holds a string, else null. It is the DICT entry registered for the account, not a credential. */
                                 pix_key: string | null;
                                 /** @description Lifted out of `metadata.pixKeyType`, else null. */
@@ -9713,11 +9871,7 @@ export interface paths {
                                  * @description Non-null exactly when `status` is `revoked`; the table enforces the pair.
                                  */
                                 revoked_at: string | null;
-                                /**
-                                 * @description The raw column, echoed with nothing stripped — plan for personal data in it. `provisionCelcoinFundingSource` writes `account`, `branch`, `provider` and, when the onboarding carried one, `documentNumber`, which is the consumer's CPF or CNPJ. Treat this object as regulated personal data at rest and in logs, and do not echo it to an end user.
-                                 *
-                                 *     What is NOT in it is the debit credential: that lives in the vault, and the row holds only an opaque `provider_token_ref` pointer, which this response does not carry.
-                                 */
+                                /** @description Always `{}`. The row's metadata holds the account number, the branch and, when the onboarding carried one, the holder's CPF or CNPJ; none of it is returned. What a caller uses is projected into fields of its own: `branch`, `pix_key` and `pix_key_type` (and `account_masked` on the listing). The key stays an object so a parser that requires it keeps working. */
                                 metadata: {
                                     [key: string]: unknown;
                                 };
@@ -9771,7 +9925,7 @@ export interface paths {
          *
          *     **The response is not the account, it is the application.** What comes back is `verification_id` and a `status` from the provider; the account and the funding source appear when `GET /v1/account-applications/{id}` is read after the approval: that read is what provisions. A flow that expects an account here keeps waiting.
          *
-         *     **The `disclosure` is there to be rendered.** It names the institution that holds the account and CodeSpar's role as correspondente; the text comes in pt-BR to appear as it is, not to be rewritten.
+         *     **The `disclosure` is there to be rendered.** It names the institution that holds the account and CodeSpar's role as BaaS tomadora; the text comes in pt-BR to appear as it is, not to be rewritten.
          */
         post: {
             parameters: {
@@ -9783,7 +9937,11 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. Passed through as an object: the handler does not validate it field by field here, and whatever the provider refuses comes back in the provider's own refusal. Two exceptions are checked before anything is sent: the document's check digits, and, for a natural person (CPF) in a live project, `financialDetails` = `{ declaredIncome, occupation, netWorth }` in the provider's codes. That is the titular's own declaration, and CodeSpar never fills it in for them. */
+                        /**
+                         * @description The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. Passed through as an object: the handler does not validate it field by field here, and whatever the provider refuses comes back in the provider's own refusal. Two exceptions are checked before anything is sent: the document's check digits, and, for a natural person (CPF) in a live project, `financialDetails` = `{ declaredIncome, occupation, netWorth }` in the provider's codes. That is the titular's own declaration, and CodeSpar never fills it in for them.
+                         *
+                         *     `files` (A5b): the documents, `[{ type, data }]`, `data` a URL the provider downloads, valid for at least one hour, PDF/PNG/JPEG (CONTRATO_SOCIAL is PDF). Natural person: RG/CNH/RNE and SELFIE; legal person: also CONTRATO_SOCIAL, and PROCURACAO_PODERES when an owner is a REPRESENTANTE. Checked before anything is sent. A test project that sends none gets the Test sample documents; a live project never does, and a live request naming a sample document is refused.
+                         */
                         buyer: {
                             [key: string]: unknown;
                         };
@@ -9815,13 +9973,31 @@ export interface paths {
                                 /** @description Its CNPJ, or null while there is none confirmed against the signed contract. Rendering the wrong CNPJ is worse than rendering none. */
                                 institution_document: string | null;
                                 /**
-                                 * @description CodeSpar's role in the arrangement, under Res. CMN 4.935/2021.
+                                 * @description CodeSpar's role in the arrangement: BaaS tomadora under Res. Conjunta CMN/BCB 16/2025.
                                  * @enum {string}
                                  */
-                                codespar_role: "correspondente";
+                                codespar_role: "tomadora";
                                 /** @description pt-BR, written to be rendered VERBATIM, with no rewriting. */
                                 text: string;
                             } | null;
+                            /** @description What to do next: read `GET /v1/account-applications/{id}` later. There is no account until the proposal reaches RESOURCE_CREATED. */
+                            next_step: {
+                                /** @enum {string} */
+                                code: "in_review_check_later";
+                                verification_id: string;
+                                message: string;
+                                retry_after_seconds: number;
+                            } | null;
+                            /**
+                             * @description Present in a test project that sent no `files`: the Test sample documents were sent.
+                             * @enum {boolean}
+                             */
+                            sample_files?: true;
+                            /**
+                             * @description Present when the create's own answer was lost (or the provider said the proposal exists) and the proposal was found by this request's clientCode instead of being sent again.
+                             * @enum {boolean}
+                             */
+                            already_submitted?: true;
                             /** @description Present only when `opt_ins` asked for `dda`. `pending` is the normal path: the registration is asynchronous and turns `active` when the provider's confirmation arrives, so treat pending as in progress and not as a failure. */
                             dda_opt_in?: {
                                 /** @enum {string} */
@@ -9831,7 +10007,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The body did not match the schema, the document did not pass the check, or a natural person's onboarding in a live project came without `buyer.financialDetails` (one issue per missing code, its `path` naming it). BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`. */
+                /** @description The body did not match the schema, the document did not pass the check, or a natural person's onboarding in a live project came without `buyer.financialDetails` (one issue per missing code, its `path` naming it) — `invalid_body`. Or the documents were refused before sending (A5b): `onboarding_sample_file_in_live` for a live request naming a Test sample document or a public specimen, `onboarding_files_invalid` for a malformed `files` list, a format the provider does not take, or a missing required document. BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -9844,10 +10020,16 @@ export interface paths {
                             issues: {
                                 [key: string]: unknown;
                             }[];
+                        } | {
+                            /** @enum {string} */
+                            error: "onboarding_sample_file_in_live" | "onboarding_files_invalid";
+                            message: string;
+                            /** @description One line per refused field. */
+                            issues: string[];
                         };
                     };
                 };
-                /** @description The organization's policy decided, and nothing was dispatched. `approval_required`: a rule holds the call for a person; `approval_id` is the row in the approvals queue and `expires_at` when it lapses. Approving it runs the call then, through the approvals lane, not this request. `policy_denied`: a deny rule (or the non-overridable deny-list) refused it; `rule_id` names the rule. Bare body. */
+                /** @description Two answers. `onboarding_capability_inactive` (E2): this test project's `onboarding` capability is not active, so no proposal is opened; an owner or admin of the project asks for its onboarding access in the dashboard. Nothing was sent. And the organization's policy: The organization's policy decided, and nothing was dispatched. `approval_required`: a rule holds the call for a person; `approval_id` is the row in the approvals queue and `expires_at` when it lapses. Approving it runs the call then, through the approvals lane, not this request. `policy_denied`: a deny rule (or the non-overridable deny-list) refused it; `rule_id` names the rule. Bare body. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -9869,10 +10051,17 @@ export interface paths {
                             code: "policy_denied";
                             rule_id: string;
                             message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "onboarding_capability_inactive";
+                            /** @enum {string} */
+                            capability: "onboarding";
+                            state: string | null;
+                            message: string;
                         };
                     };
                 };
-                /** @description ONBOARDING COLLISION, and it is caller state and not a provider failure, which is why 409 and not 502. `provider_code` carries the provider's code (OBE064 proposal already open, CBE022 account already exists, OBE062 clientCode already linked) so the audit trail records the ground for the refusal. Bare body. */
+                /** @description ONBOARDING COLLISION, and it is caller state and not a provider failure, which is why 409 and not 502. `provider_code` carries the provider's code (OBE064 proposal already open, CBE022 account already exists, OBE062 clientCode already linked) so the audit trail records the ground for the refusal. CBE022 is attributed only on this organization's own evidence: `onboarding_account_exists_in_project`, `onboarding_account_exists_elsewhere` (another project of the organization) or `onboarding_account_exists_unattributed` (no evidence; not concluded to be anyone's). E2 also answers here `onboarding_attempt_in_progress` (another request holds this clientCode's reservation; repeat later), `onboarding_client_code_conflict` for a clientCode this project used for another document, and `onboarding_unreserved`. Bare body. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -9880,13 +10069,56 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_client_code_conflict";
-                            provider_code: string;
+                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_account_exists_in_project" | "onboarding_account_exists_unattributed" | "onboarding_client_code_conflict" | "onboarding_attempt_in_progress" | "onboarding_unreserved";
+                            provider_code?: string;
+                            retriable?: boolean;
                             message: string;
                         };
                     };
                 };
-                /** @description The provider call failed, or the router landed on an institution that is not the expected one. Bare body; `message` carries the underlying sentence and is what separates a provider outage from a refusal by the provider. */
+                /** @description The provider refused the proposal itself (e.g. CBE007 fullName not complete, OBE166 contrato social not a PDF). No proposal exists. Bare body. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "onboarding_proposal_refused";
+                            provider_code: string | null;
+                            reason: string | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description E2: the sandbox proposal quota is used up, 2 per test project in 30 days (`window: project_30d`) or 30 per São Paulo day across every organization (`window: global_day`). Nothing was reserved or sent. A refused or locally invalid proposal never counts. Or `project_access_call_cap`: the sandbox call caps (60 per clock hour and 300 per São Paulo day per project, 3,000 per day globally) refused the call before it was sent; `Retry-After` is the seconds until that fixed window turns (the next clock hour, or São Paulo midnight). Bare body. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "onboarding_quota_exceeded";
+                            /** @enum {string} */
+                            window: "project_30d" | "global_day";
+                            max: number;
+                            message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "project_access_call_cap";
+                            /** @enum {string} */
+                            window: "hour" | "day";
+                            /** @enum {string} */
+                            scope: "project" | "global";
+                            max: number;
+                            /** @description Seconds until the fixed window turns: the next clock hour, or São Paulo midnight. The same value as `Retry-After`. */
+                            retry_after_seconds: number | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description The provider call failed, or the router landed on an institution that is not the expected one. Bare body; `message` carries the underlying sentence and is what separates a provider outage from a refusal by the provider. E2: `onboarding_provider_failure` is the provider refusing for a reason that is not the titular's data (its credential, product, our payload, "try later", or a code not in the evidence table), with `provider_code`; no proposal exists, and it is retriable. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -9898,7 +10130,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The policy engine could not answer, so the call was refused fail-closed and nothing was dispatched. Infrastructure, not a rule: retry. Bare body. */
+                /** @description Two answers. `onboarding_outcome_unknown`: the proposal may have reached the provider and its answer was lost, and a query by this request's clientCode found nothing yet. Nothing was sent again. Repeat the SAME request after `Retry-After`: the same consumer and document reuse the clientCode, so no second proposal can be opened. E2: `onboarding_paused`, the server paused opening sandbox accounts (an operational switch); no proposal is opened, one already opened can still be read; `Retry-After` 3600. `onboarding_calls_unavailable`, the register of onboarding calls could not be written; `Retry-After` 30. `policy_denied`: The policy engine could not answer, so the call was refused fail-closed and nothing was dispatched. Infrastructure, not a rule: retry. Bare body. Bare body. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -9911,6 +10143,28 @@ export interface paths {
                             code: "policy_denied";
                             rule_id: string;
                             message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "onboarding_paused";
+                            /** @enum {boolean} */
+                            retriable: true;
+                            message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "onboarding_calls_unavailable";
+                            /** @enum {boolean} */
+                            retriable: true;
+                            message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "onboarding_outcome_unknown";
+                            message: string;
+                            next_step: {
+                                /** @enum {string} */
+                                code: "in_review_check_later";
+                                message: string;
+                                retry_after_seconds: number;
+                            };
                         };
                     };
                 };
@@ -9937,7 +10191,7 @@ export interface paths {
          *
          *     `document_number` IS REQUIRED, and the reason is ownership. It is never used to address the provider: the handler loads the proposal recorded under this id and compares. A mismatch, or an id with no recorded proposal, is refused before any provider call and provisions nothing — the attack it closes is an attacker's own approved proposal presented with a victim's document.
          *
-         *     THOSE OWNERSHIP REFUSALS ARRIVE AS 502, not 403. The handler's catch is blanket, so a typed ownership refusal is relabelled `kyc_status_failed` with the refusal's own sentence in `message`. Read the message, not just the code, before treating a 502 here as a provider outage.
+         *     THOSE OWNERSHIP REFUSALS ARRIVE AS 409 with their own code (`document_ownership_unproven`, `onboarding_document_mismatch`), and so does a proposal recorded under ANOTHER project of the organization, in the same words as an unknown id. Only RESOURCE_CREATED binds an account; the proposal is read a bounded number of times when it is not visible yet, and an inconclusive read answers `pending` with `next_step`, never a new proposal.
          *
          *     The query is NOT schema-validated. The handler reads `request.query` directly and checks only that `document_number` is present; any other parameter is ignored rather than rejected.
          */
@@ -9968,20 +10222,38 @@ export interface paths {
                             /**
                              * @description FOUR values, and the exported `CelcoinOnboardingStatus` union has five. `unknown` is in the type and is not in this enum because `resolveCelcoinOnboarding` — the only producer this route has — never returns it: its four `return` statements carry `rejected`, `documentscopy_pending`, `pending` (twice) and `approved`. The only other `"unknown"` in that file is a `conflict_case`, which is a different field on a different shape.
                              *
-                             *     `pending` is also the answer when the proposal is past the known pending states but no account number could be parsed from the provider's fetch response. That case is logged with the raw body truncated, so a genuine not-minted-yet and a parse that is wrong look the same to the caller and different in the log.
+                             *     `approved` means an account EXISTS: the proposal reached RESOURCE_CREATED, the account was read and bound. A proposal the provider reports as APPROVED has no account yet and answers `pending` (A5b), as does any status outside the provider's published vocabulary, a proposal not visible yet after the bounded reads (`proposal_status` NOT_VISIBLE_YET), and a RESOURCE_CREATED proposal whose account number could not be parsed from the provider's fetch response. That last case is logged with the raw body truncated, so a genuine not-minted-yet and a parse that is wrong look the same to the caller and different in the log.
                              * @enum {string}
                              */
                             status: "pending" | "documentscopy_pending" | "approved" | "rejected";
+                            /** @description The provider's own status for the proposal (RESOURCE_CREATED, APPROVED, PENDING, ...), or NOT_VISIBLE_YET. */
+                            proposal_status: string;
+                            /** @description Present while the application has not concluded: read it again later with the same id. Never open a new application for the document; the provider allows one proposal per document every 24 hours. Null on `approved` and `rejected`. */
+                            next_step: {
+                                /** @enum {string} */
+                                code: "in_review_check_later";
+                                verification_id: string;
+                                /** @description pt-BR first: "Em análise, consulte depois", with the proposal id. */
+                                message: string;
+                                retry_after_seconds: number;
+                            } | null;
+                            /** @description On `rejected`, the provider's reason when it gives one, as "CODE: message". */
+                            rejected_reason?: string;
                             /** @description The documentoscopia webview the consumer opens, taken from the proposal's first `documentscopys` entry. Null on `rejected` and on `approved`. */
                             hosted_url: string | null;
                             /**
                              * @description The provisioned account number once one exists, else null. Stringified: the provider returns it as either a string or a number.
                              *
-                             *     The branch is resolved in the same fetch and is NOT returned by this operation; it is written into the funding source's `metadata.branch`.
+                             *     The branch is resolved in the same fetch and is NOT returned by this operation; it is returned as the funding source's `branch`.
                              */
                             account: string | null;
                             /** @description The `pix-celcoin` funding source, or null before one exists. Deterministic — `fs_celcoin_` followed by the consumer id, one account per consumer — so a repeat call resolves the same row instead of opening a second one. */
                             funding_source_id: string | null;
+                            /**
+                             * @description The funding source's status, or null before one exists. `held` for an account opened for a Test project: the account is bound to the project and no payment, receiving or consent uses it, and it has no Pix key yet. `active` in Live, or for an account that was already active.
+                             * @enum {string|null}
+                             */
+                            funding_source_status: "active" | "held" | null;
                             /** @description The DICT entry registered for the account, once registration has succeeded. Null before that. */
                             pix_key: string | null;
                             pix_key_type: string | null;
@@ -10002,7 +10274,54 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Bad Gateway. The provider call failed — and ALSO where the typed ownership refusals land, because the handler's catch is blanket. `message` carries the underlying sentence and is the only thing that separates a provider outage from a refusal to bind a document the proposal did not verify. Bare body, no `request_id`. */
+                /** @description E2: this test project's `onboarding` capability is not active, so the proposal is not read. Nothing was sent. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "onboarding_capability_inactive";
+                            /** @enum {string} */
+                            capability: "onboarding";
+                            message: string;
+                        };
+                    };
+                };
+                /** @description E2 adds the binding refusals: `account_bound_elsewhere` (the account is, or was, bound to another project), `account_binding_closed` (this project closed its binding; never reopened automatically), `consumer_holds_other_binding`. A refusal decided before anything is bound: the id has no proposal recorded for this project (`document_ownership_unproven`), the document does not match the one the proposal verified, or the account the provider returned names another document (`onboarding_document_mismatch`), or the funding source written did not confirm as this consumer's in this project (`funding_source_binding_unconfirmed`). Bare body. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "document_ownership_unproven" | "onboarding_document_mismatch" | "consumer_bound_to_other_document" | "funding_source_binding_unconfirmed" | "account_bound_elsewhere" | "account_binding_closed" | "consumer_holds_other_binding";
+                            message: string;
+                        };
+                    };
+                };
+                /** @description E2: the sandbox call caps (60 per clock hour and 300 per São Paulo day per project, 3,000 per day globally) refused the status read before it was sent. `Retry-After` is the seconds until that fixed window turns (the next clock hour, or São Paulo midnight). Bare body. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "project_access_call_cap";
+                            /** @enum {string|null} */
+                            window: "hour" | "day" | null;
+                            /** @enum {string|null} */
+                            scope: "project" | "global" | null;
+                            max: number | null;
+                            retry_after_seconds: number | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Bad Gateway. The provider call failed. `message` carries the underlying sentence. Bare body, no `request_id`. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -10011,6 +10330,19 @@ export interface paths {
                         "application/json": {
                             /** @enum {string} */
                             error: "kyc_status_failed";
+                            message: string;
+                        };
+                    };
+                };
+                /** @description E2: the register of onboarding calls could not be written, so the status was not read (fails closed). `Retry-After: 30`. Bare body. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "onboarding_calls_unavailable";
                             message: string;
                         };
                     };
@@ -10874,11 +11206,22 @@ export interface paths {
                             verification_id: string;
                             status: string;
                             hosted_url: string | null;
+                            next_step: {
+                                /** @enum {string} */
+                                code: "in_review_check_later";
+                                verification_id: string;
+                                message: string;
+                                retry_after_seconds: number;
+                            } | null;
+                            /** @enum {boolean} */
+                            sample_files?: true;
+                            /** @enum {boolean} */
+                            already_submitted?: true;
                             disclosure: {
                                 institution: string;
                                 institution_document: string | null;
                                 /** @enum {string} */
-                                codespar_role: "correspondente";
+                                codespar_role: "tomadora";
                                 text: string;
                             } | null;
                             dda_opt_in?: {
@@ -10889,7 +11232,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Body outside the schema, or a document rejected at the check. RAW BODY, not the `{ error: { code, message } }` envelope. */
+                /** @description Body outside the schema, a document rejected at the check, or `buyer.files` refused before sending (`onboarding_sample_file_in_live`, `onboarding_files_invalid`). RAW BODY, not the `{ error: { code, message } }` envelope. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -10901,10 +11244,15 @@ export interface paths {
                             issues: {
                                 [key: string]: unknown;
                             }[];
+                        } | {
+                            /** @enum {string} */
+                            error: "onboarding_sample_file_in_live" | "onboarding_files_invalid";
+                            message: string;
+                            issues: string[];
                         };
                     };
                 };
-                /** @description The organization's policy decided, and nothing was dispatched. `approval_required`: a rule holds the call for a person; `approval_id` is the row in the approvals queue and `expires_at` when it lapses. Approving it runs the call then, through the approvals lane, not this request. `policy_denied`: a deny rule (or the non-overridable deny-list) refused it; `rule_id` names the rule. Bare body. */
+                /** @description `onboarding_capability_inactive` (E2): this test project's onboarding capability is not active; nothing was sent. Or the organization's policy: The organization's policy decided, and nothing was dispatched. `approval_required`: a rule holds the call for a person; `approval_id` is the row in the approvals queue and `expires_at` when it lapses. Approving it runs the call then, through the approvals lane, not this request. `policy_denied`: a deny rule (or the non-overridable deny-list) refused it; `rule_id` names the rule. Bare body. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -10926,10 +11274,17 @@ export interface paths {
                             code: "policy_denied";
                             rule_id: string;
                             message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "onboarding_capability_inactive";
+                            /** @enum {string} */
+                            capability: "onboarding";
+                            state: string | null;
+                            message: string;
                         };
                     };
                 };
-                /** @description Onboarding collision: caller state, not a provider failure. `provider_code` carries OBE064, CBE022 or OBE062. Raw body. */
+                /** @description Onboarding collision: caller state, not a provider failure. `provider_code` carries OBE064, CBE022 or OBE062; CBE022 is attributed only on this organization's evidence. E2 adds `onboarding_attempt_in_progress`, `onboarding_client_code_conflict` and `onboarding_unreserved`. Raw body. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -10937,13 +11292,56 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_client_code_conflict";
-                            provider_code: string;
+                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_account_exists_in_project" | "onboarding_account_exists_unattributed" | "onboarding_client_code_conflict" | "onboarding_attempt_in_progress" | "onboarding_unreserved";
+                            provider_code?: string;
+                            retriable?: boolean;
                             message: string;
                         };
                     };
                 };
-                /** @description The provider call failed. Raw body; read `message` before treating it as an outage. */
+                /** @description The provider refused the proposal (e.g. CBE007, OBE166). No proposal exists. Raw body. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "onboarding_proposal_refused";
+                            provider_code: string | null;
+                            reason: string | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description E2: the sandbox proposal quota is used up (2 per test project in 30 days, or 10 per São Paulo day across every organization), or the sandbox call caps were reached (`project_access_call_cap`, with `Retry-After` until the fixed window turns: the next clock hour, or São Paulo midnight). Nothing was reserved or sent. Raw body. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "onboarding_quota_exceeded";
+                            /** @enum {string} */
+                            window: "project_30d" | "global_day";
+                            max: number;
+                            message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "project_access_call_cap";
+                            /** @enum {string} */
+                            window: "hour" | "day";
+                            /** @enum {string} */
+                            scope: "project" | "global";
+                            max: number;
+                            /** @description Seconds until the fixed window turns: the next clock hour, or São Paulo midnight. The same value as `Retry-After`. */
+                            retry_after_seconds: number | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description The provider call failed. Raw body; read `message` before treating it as an outage. `onboarding_provider_failure` (E2) is a provider refusal that is not about the titular's data, with `provider_code`; retriable. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -10955,7 +11353,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The policy engine could not answer, so the call was refused fail-closed and nothing was dispatched. Infrastructure, not a rule: retry. Bare body. */
+                /** @description `onboarding_outcome_unknown`: the proposal's answer was lost and nothing was found by its clientCode yet; nothing was sent again. Repeat the same request after `Retry-After`. E2: `onboarding_paused` (opening sandbox accounts is paused on this server; reading an opened proposal still works; `Retry-After` 3600) and `onboarding_calls_unavailable` (`Retry-After` 30). `policy_denied`: The policy engine could not answer, so the call was refused fail-closed and nothing was dispatched. Infrastructure, not a rule: retry. Bare body. Raw body. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -10968,6 +11366,28 @@ export interface paths {
                             code: "policy_denied";
                             rule_id: string;
                             message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "onboarding_paused";
+                            /** @enum {boolean} */
+                            retriable: true;
+                            message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "onboarding_calls_unavailable";
+                            /** @enum {boolean} */
+                            retriable: true;
+                            message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "onboarding_outcome_unknown";
+                            message: string;
+                            next_step: {
+                                /** @enum {string} */
+                                code: "in_review_check_later";
+                                message: string;
+                                retry_after_seconds: number;
+                            };
                         };
                     };
                 };
@@ -11024,16 +11444,33 @@ export interface paths {
                             /**
                              * @description Four values, and the fourth is not the type's fifth. The resolver that serves this route is the only producer, and enumerating every one of its returns gives exactly these four; `unknown` exists in the shared union and is returned by nothing on this path.
                              *
-                             *     `documentscopy_pending` means the holder still has to finish the document check, and `hosted_url` is where they finish it. `pending` is the widest of the four: it covers the provider's own PENDING and PROCESSING, the case where it reported no status at all, and a proposal that is past those states but whose account could not yet be read back. Poll again for all three.
+                             *     `documentscopy_pending` means the holder still has to finish the document check, and `hosted_url` is where they finish it. `pending` is the widest of the four: it covers the provider's own PENDING and PROCESSING, APPROVED (adjudicated, no account yet), a status outside the provider's vocabulary, a proposal not visible yet after the bounded reads, and a RESOURCE_CREATED proposal whose account could not yet be read back. Poll again for all of them; `next_step` says so. Only RESOURCE_CREATED binds an account.
                              * @enum {string}
                              */
                             status: "pending" | "documentscopy_pending" | "approved" | "rejected";
+                            /** @description The provider's own status for the proposal, or NOT_VISIBLE_YET. */
+                            proposal_status: string;
+                            /** @description While the application has not concluded: read it again later; never open a new one. */
+                            next_step: {
+                                /** @enum {string} */
+                                code: "in_review_check_later";
+                                verification_id: string;
+                                message: string;
+                                retry_after_seconds: number;
+                            } | null;
+                            /** @description On `rejected`, the provider's reason when it gives one. */
+                            rejected_reason?: string;
                             /** @description The document-check webview link while it is outstanding; null otherwise. */
                             hosted_url: string | null;
                             /** @description The provisioned account number, once one exists. */
                             account: string | null;
                             /** @description The consumer's funding source, written when the application is approved. Provisioning is idempotent on a key derived from the consumer, so polling this endpoint repeatedly after approval returns the same id and creates nothing new. */
                             funding_source_id: string | null;
+                            /**
+                             * @description The funding source's status, or null before one exists. `held` for an account opened for a Test project: the account is bound to the project and no payment, receiving or consent uses it, and it has no Pix key yet. `active` in Live, or for an account that was already active.
+                             * @enum {string|null}
+                             */
+                            funding_source_status: "active" | "held" | null;
                             /** @description The Pix key registered for the account, either just now or previously — registration returns early when the key already exists, so a repeated poll does not re-register. */
                             pix_key: string | null;
                             pix_key_type: string | null;
@@ -11054,7 +11491,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden — the provisioning write named a resource outside the organization and project these credentials authenticate for. The body is the tenant control's own two keys and carries nothing from the database's message. */
+                /** @description Forbidden — the provisioning write named a resource outside the organization and project these credentials authenticate for (`write_scope_refused`; the body is the tenant control's own two keys and carries nothing from the database's message). Or, E2, this test project's onboarding capability is not active, so the proposal is not read (`onboarding_capability_inactive`). */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -11065,10 +11502,48 @@ export interface paths {
                             error: "write_scope_refused";
                             /** @description What to change. Fixed text per code; never derived from the request. */
                             remediation: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "onboarding_capability_inactive";
+                            /** @enum {string} */
+                            capability: "onboarding";
+                            message: string;
                         };
                     };
                 };
-                /** @description Bad Gateway — the provider lookup or the provisioning that follows it failed. Also the status for a refused ownership proof (no recorded proposal, or a `document_number` that does not match the one the proposal verified): `message` distinguishes them, the code does not. */
+                /** @description Conflict — E2's binding refusals (`account_bound_elsewhere`, `account_binding_closed`, `consumer_holds_other_binding`), or a refusal decided before anything is bound: no proposal recorded for this project under this id, a `document_number` (or an account read) that does not match the document the proposal verified, or a funding source that did not confirm as this consumer's in this project. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "document_ownership_unproven" | "onboarding_document_mismatch" | "consumer_bound_to_other_document" | "funding_source_binding_unconfirmed" | "account_bound_elsewhere" | "account_binding_closed" | "consumer_holds_other_binding";
+                            message: string;
+                        };
+                    };
+                };
+                /** @description E2: the sandbox call caps (60 per clock hour and 300 per São Paulo day per project, 3,000 per day globally) refused the status read before it was sent. `Retry-After` is the seconds until that fixed window turns (the next clock hour, or São Paulo midnight). Bare body. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "project_access_call_cap";
+                            /** @enum {string|null} */
+                            window: "hour" | "day" | null;
+                            /** @enum {string|null} */
+                            scope: "project" | "global" | null;
+                            max: number | null;
+                            retry_after_seconds: number | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Bad Gateway — the provider lookup or the provisioning that follows it failed. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -11077,6 +11552,19 @@ export interface paths {
                         "application/json": {
                             /** @enum {string} */
                             error: "kyc_status_failed";
+                            message: string;
+                        };
+                    };
+                };
+                /** @description E2: the register of onboarding calls could not be written, so the status was not read (fails closed). `Retry-After: 30`. Bare body. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "onboarding_calls_unavailable";
                             message: string;
                         };
                     };
@@ -12984,6 +13472,8 @@ export interface paths {
          *
          *     USDC RETURNS A REAL ON-CHAIN ADDRESS and is the only currency that does. The address is resolved live from the custody provider for the consumer this wallet belongs to, so it is the same address the onramp delivers to and the same one the custody comparison is measured against. `network` follows the CREDENTIAL's environment, not a parameter: a live key gets `base`, a test key gets `base-sepolia`. Sending Base USDC to the address a test key returned is a transfer to a testnet address and the money does not exist on mainnet.
          *
+         *     IN A TEST PROJECT, BRL ON A CONSUMER WALLET WHOSE ACCOUNT IS BOUND TO THE CONSUMER RETURNS THAT ACCOUNT'S PIX KEY as `address` (`rail: "pix"`, `network` and `asset_contract` null), and `note` names the same key: the account bound by the project's open account binding while its `collect` capability is active. It is read from the database; nothing is asked of the provider and no key is registered here. A live key, or a Test project with no bound account or no registered key, gets the BRL guidance below.
+         *
          *     EVERY OTHER CURRENCY RETURNS GUIDANCE, NOT AN ADDRESS. `address`, `network` and `asset_contract` are all null and `note` is a sentence for a human, because the deposit path on those rails is a funding source rather than a destination you can hand out. BRL reads `pix`, USD reads `wire`, and anything else reads `unknown` — including a currency this deployment does not support at all, which is answered 200 with `unknown` rather than refused. `rail: "unknown"` is the signal that there is nothing to act on.
          *
          *     THE FIAT PATH TOUCHES NO EXTERNAL SERVICE, so it cannot produce the 409 or the 502 below. Those two are reachable only on USDC.
@@ -13025,7 +13515,7 @@ export interface paths {
                              * @enum {string|null}
                              */
                             network: "base" | "base-sepolia" | null;
-                            /** @description The Base address to send USDC to. Null on every fiat rail. */
+                            /** @description The Base address to send USDC to, or, on BRL in a Test project, the Pix key of the account bound to the consumer. Null on every other fiat answer. */
                             address: string | null;
                             /** @description The USDC ERC-20 contract on `network`. Check it before sending: it is what distinguishes real USDC from a token that merely calls itself that. */
                             asset_contract: string | null;
@@ -17783,6 +18273,8 @@ export interface paths {
          *
          *     **`consumer_id` is REQUIRED for a `boleto` too**: it names the merchant-side consumer the receivable settles into, and its wallet is what the payment credits. Without it there is nothing to settle into and the call is refused with `consumer_id_required` before anything is sent. In a test project any stable id of your own works: the project's shared-sandbox receiver stands in for the consumer's account at the issuer (the consumer is never onboarded there), and `POST /v1/test/charges/{chargeId}/pay` settles the charge into that consumer's wallet.
          *
+         *     **A test project with its own sandbox account** (prepared by the platform, its receiving capability active) receives every charge, `boleto` and immediate `pix` alike, into that account, on the Pix key registered for it, and nowhere else. `consumer_id` may then be omitted when the project has exactly one consumer with such an account. A consumer whose account is not ready yet is refused with `receiving_identity_missing` and `details.not_ready` (`receiver_not_bound` or `pix_key_pending`), before anything is sent.
+         *
          *     An agreement in N instalments is N cobranças, one per parcela, each with its own `due_date` and its own key. There is no single instalment charge.
          *
          *     **Each refusal names a `reason`, and the reason is what to branch on.** The two error `code` values (`invalid_args`, `provider_error`) are too coarse: they cover six different situations, and reading them as one would turn `not found` into `bad request`.
@@ -17799,6 +18291,8 @@ export interface paths {
          *     | `not_cancellable_in_this_state` | 409 | the issuer accepts a cancellation only in some states |
          *     | `provider_status_unreadable` | 502 | the issuer did not answer the read |
          *     | `provider_cancel_failed` | 502 | the issuer refused the withdrawal |
+         *     | `project_access_call_cap` | 429 | a test project with its own sandbox account reached its limit of sandbox calls (60 a clock hour, 300 a day, shared with every other call of the project); nothing was sent, retry after `Retry-After` seconds |
+         *     | `project_access_calls_unavailable` | 503 | that project's register of sandbox calls could not be written; nothing was sent, retry after `Retry-After` seconds |
          *
          *     `charge_not_found` is deliberately the SAME answer for an id that belongs to another project and for an id that exists nowhere. Telling those apart would be an oracle about another tenant over a string anyone can guess.
          */
@@ -17817,7 +18311,7 @@ export interface paths {
                         currency: string;
                         /** @description `pix`, `boleto`, `card` or `wallet`. */
                         method: string;
-                        /** @description The merchant-side consumer the charge settles into: its wallet is credited when the debtor pays. REQUIRED for `boleto` (refused with `consumer_id_required` otherwise); optional for the other methods, where an absent value falls back to the session's user when there is one. */
+                        /** @description The merchant-side consumer the charge settles into: its wallet is credited when the debtor pays. REQUIRED for `boleto` (refused with `consumer_id_required` otherwise); optional for the other methods, where an absent value falls back to the session's user when there is one. In a test project with its own sandbox account and one consumer holding it, an absent value names that consumer, for every method. */
                         consumer_id?: string;
                         description?: string;
                         buyer?: {
@@ -17982,6 +18476,8 @@ export interface paths {
          *     | `not_cancellable_in_this_state` | 409 | the issuer accepts a cancellation only in some states |
          *     | `provider_status_unreadable` | 502 | the issuer did not answer the read |
          *     | `provider_cancel_failed` | 502 | the issuer refused the withdrawal |
+         *     | `project_access_call_cap` | 429 | a test project with its own sandbox account reached its limit of sandbox calls (60 a clock hour, 300 a day, shared with every other call of the project); nothing was sent, retry after `Retry-After` seconds |
+         *     | `project_access_calls_unavailable` | 503 | that project's register of sandbox calls could not be written; nothing was sent, retry after `Retry-After` seconds |
          *
          *     `charge_not_found` is deliberately the SAME answer for an id that belongs to another project and for an id that exists nowhere. Telling those apart would be an oracle about another tenant over a string anyone can guess.
          */
@@ -18165,6 +18661,8 @@ export interface paths {
          *     | `not_cancellable_in_this_state` | 409 | the issuer accepts a cancellation only in some states |
          *     | `provider_status_unreadable` | 502 | the issuer did not answer the read |
          *     | `provider_cancel_failed` | 502 | the issuer refused the withdrawal |
+         *     | `project_access_call_cap` | 429 | a test project with its own sandbox account reached its limit of sandbox calls (60 a clock hour, 300 a day, shared with every other call of the project); nothing was sent, retry after `Retry-After` seconds |
+         *     | `project_access_calls_unavailable` | 503 | that project's register of sandbox calls could not be written; nothing was sent, retry after `Retry-After` seconds |
          *
          *     `charge_not_found` is deliberately the SAME answer for an id that belongs to another project and for an id that exists nowhere. Telling those apart would be an oracle about another tenant over a string anyone can guess.
          */
@@ -18852,12 +19350,13 @@ export interface paths {
         };
         /**
          * List this project's Collect links
-         * @description Newest first. `next_cursor` is the `created_at` of the last row, to pass as `before`.
+         * @description Newest first. `next_cursor` is the `created_at` of the last row, to pass as `before`. `reference` lists every version of one obligation (D-C), archived ones included.
          */
         get: {
             parameters: {
                 query?: {
                     state?: "draft" | "published" | "paused" | "archived";
+                    reference?: string;
                     limit?: number;
                     before?: string;
                 };
@@ -18925,6 +19424,8 @@ export interface paths {
                                     surfaces: ("page" | "whatsapp" | "agent")[];
                                     /** @description Days from issuance to the charge's due date (Pix with due date). */
                                     due_in_days: number;
+                                    /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                    due_on: string | null;
                                     payer_fields: {
                                         /** @enum {string} */
                                         name: "required";
@@ -18966,6 +19467,8 @@ export interface paths {
                                     surfaces: ("page" | "whatsapp" | "agent")[];
                                     /** @description Days from issuance to the charge's due date (Pix with due date). */
                                     due_in_days: number;
+                                    /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                    due_on: string | null;
                                     payer_fields: {
                                         /** @enum {string} */
                                         name: "required";
@@ -18988,6 +19491,15 @@ export interface paths {
                                 published_at: string | null;
                                 paused_at: string | null;
                                 archived_at: string | null;
+                                /** @description D-C: the caller's obligation this link charges (e.g. `bill:<period>:<customer>`); null without one. */
+                                reference: string | null;
+                                /** @description D-C: the version of the obligation this link was created for. */
+                                reference_version: string | null;
+                                /**
+                                 * @description D-B: how `consumer_id` was chosen: named by the caller, the project's configured default receiver, or the project's only consumer with its own Celcoin receiving identity. Fixed at create: a default changed later moves no link.
+                                 * @enum {string}
+                                 */
+                                receiver_resolution: "explicit" | "project_default" | "only_eligible";
                                 /** @description The agent surface (402), on the single-link read: null when the version in force does not enable it. */
                                 agent?: {
                                     /** @description The gateway URL an agent calls; null where this deployment serves no gateway. */
@@ -19055,11 +19567,13 @@ export interface paths {
          * Create a Collect link with its first draft
          * @description Creates a single-use link (one link, one charge, one valid payment) in `draft`, with version 1 as its draft. Nothing is shown to payers until it is published.
          *
-         *     `consumer_id` is the RECEIVING consumer: the Pix the link issues settles into that consumer's wallet. No Pix key or account is accepted on the link.
+         *     `consumer_id` is the RECEIVING consumer: the Pix the link issues settles into that consumer's wallet. No Pix key or account is accepted on the link. Omitted, Collect chooses it (D-B): the project's default receiver (`PUT /v1/collect/receivers/default`), else the project's only consumer with its own Celcoin receiving identity, else 409 `collect_receiver_unresolved` with `details.next_action`. A receiver Collect chose never falls back to a shared account: publishing or issuing into one is refused (`collect_receiver_not_own`).
+         *
+         *     `reference` + `reference_version` (both or neither) name the caller's obligation and the version asked for (D-C), inside this org and project. The same pair answers the SAME link, forever, archived or not (200, `replay: true`); the same pair with different content is 409 `collect_reference_conflict`. A new version is created only when no earlier version can still be paid: 409 `collect_reference_paid` (the obligation was paid, or a late payment of it was kept; it is not reissued), `collect_reference_active` (an earlier version is not archived), `collect_reference_late_undecided` (a late payment of an earlier version, recorded before any newer version existed, waits for the collector's decision: keep it or refund it; pending Fabiano's decision, implemented closed), `collect_reference_not_cancelled` (no POSITIVE proof that nothing earlier can still be paid, from the archive's evaluator; `details.reasons`: `link_not_archived`, `attempt_live`, `attempt_state_unrecognized`, `issuance_unresolved`, `charge_unknown`, `charge_payable`, `charge_state_unrecognized`, `payment_notified`, `payment_contradiction`, `payment_unrecorded`, `cancel_unresolved`, `obligation_paid`, `late_undecided`, `paid_before_cancel`, `payment_vs_cancel_unproven`).
          *
          *     `payer` optionally prefills the payer. `document` (CPF/CNPJ, check digits verified) and `address` are the regulated fields a Pix with due date requires; when they are not prefilled, the hosted page collects them. All payer data is stored encrypted and is never returned: the response names which fields are prefilled and shows the document masked.
          *
-         *     Collect is off unless the deployment sets `COLLECT_ENABLED=true`. Off, every `/v1/collect` path (owner and payer) answers 404 `{"error": "collect_disabled", "message": "Collect não está disponível nesta versão. ..."}`, never the router's generic 404.
+         *     Collect is off unless the deployment sets `COLLECT_ENABLED=true`. Off, every `/v1/collect` path (owner and payer) answers 404 `{"error": "collect_disabled", "message": "Collect não está disponível nesta versão. ...", "details": {"reason": "switch_off"}}`, never the router's generic 404. On, a project that may not start a Collect operation gets the same code with `details.reason`: `live` (Collect runs only in test projects in this phase), `project_not_listed` (a test project the deployment has not enabled) or `capability_inactive` (a test project whose `collect` capability was requested but is not active: suspended, revoked, expired or still requested). An unlisted test project whose `collect` capability is active reaches Collect; whether a given receiver is ready to issue is decided at publish.
          */
         post: {
             parameters: {
@@ -19071,7 +19585,7 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        consumer_id: string;
+                        consumer_id?: string;
                         /** Format: date-time */
                         valid_until?: string;
                         version: {
@@ -19123,10 +19637,185 @@ export interface paths {
                                 postalCode: string;
                             };
                         };
+                        reference?: string;
+                        reference_version?: string;
                     };
                 };
             };
             responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `cl_` + 128 random bits. Minted by the server; never chosen by the caller. */
+                            id: string;
+                            /** @enum {string} */
+                            object: "collect_link";
+                            /** @enum {string} */
+                            state: "draft" | "published" | "paused" | "archived";
+                            /** @enum {string} */
+                            environment: "live" | "test";
+                            /** @description The receiving consumer: the charge settles into its wallet. */
+                            consumer_id: string;
+                            /** @description The name the payer sees on the hosted page: the consumer's display name, else the organization's name. The same text the public read answers. */
+                            receiver: {
+                                name: string;
+                            };
+                            /** @description Whether the link has its paid payment, whenever it settled (not bound to any stats window). A late or duplicate payment is not the link's payment and does not make it paid. */
+                            paid: boolean;
+                            /** @description When the paid payment settled; null while unpaid. */
+                            paid_at: string | null;
+                            current_version: number | null;
+                            valid_until: string | null;
+                            /** @description The hosted page for this link. */
+                            url: string;
+                            /** @description Which payer fields were prefilled at create. Their values are never returned. */
+                            payer_prefilled: ("name" | "contact" | "external_reference" | "document" | "address")[];
+                            /** @description The prefilled CPF/CNPJ, last four characters only. */
+                            payer_document_masked: string | null;
+                            /** @description The published version in force. */
+                            version: {
+                                version: number;
+                                /** @enum {string} */
+                                status: "draft" | "published";
+                                title: string;
+                                description: string | null;
+                                success_message: string | null;
+                                items: {
+                                    name: string;
+                                    quantity: number;
+                                    unit_amount_minor: number;
+                                }[];
+                                /** @description Computed by the server from the items. No request field sets it. */
+                                total_minor: number;
+                                /** @enum {string} */
+                                currency: "BRL";
+                                brand: {
+                                    [key: string]: unknown;
+                                };
+                                /** @description Where the link is paid: the hosted page, the Pix QR on WhatsApp, and `agent`, the 402 at the gateway (SS-2609-D2). */
+                                surfaces: ("page" | "whatsapp" | "agent")[];
+                                /** @description Days from issuance to the charge's due date (Pix with due date). */
+                                due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
+                                payer_fields: {
+                                    /** @enum {string} */
+                                    name: "required";
+                                    /** @enum {string} */
+                                    contact: "required" | "optional" | "off";
+                                    /** @enum {string} */
+                                    external_reference: "required" | "optional" | "off";
+                                };
+                                /** @description N12: the fixed USDC price for paying this link through its 402, set by the tenant. Not a conversion of the BRL total and not tied to any exchange rate. Null when the version has none. */
+                                usdc_price: string | null;
+                                /** @description The same price in USDC atomic units (6 decimals). */
+                                usdc_price_atomic: string | null;
+                                /** @description When the publish that froze this version carried the tenant's confirmation of that exact price; null on a draft. */
+                                usdc_price_confirmed_at: string | null;
+                                created_at: string;
+                                published_at: string | null;
+                            } | null;
+                            /** @description The open draft, if any. */
+                            draft: {
+                                version: number;
+                                /** @enum {string} */
+                                status: "draft" | "published";
+                                title: string;
+                                description: string | null;
+                                success_message: string | null;
+                                items: {
+                                    name: string;
+                                    quantity: number;
+                                    unit_amount_minor: number;
+                                }[];
+                                /** @description Computed by the server from the items. No request field sets it. */
+                                total_minor: number;
+                                /** @enum {string} */
+                                currency: "BRL";
+                                brand: {
+                                    [key: string]: unknown;
+                                };
+                                /** @description Where the link is paid: the hosted page, the Pix QR on WhatsApp, and `agent`, the 402 at the gateway (SS-2609-D2). */
+                                surfaces: ("page" | "whatsapp" | "agent")[];
+                                /** @description Days from issuance to the charge's due date (Pix with due date). */
+                                due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
+                                payer_fields: {
+                                    /** @enum {string} */
+                                    name: "required";
+                                    /** @enum {string} */
+                                    contact: "required" | "optional" | "off";
+                                    /** @enum {string} */
+                                    external_reference: "required" | "optional" | "off";
+                                };
+                                /** @description N12: the fixed USDC price for paying this link through its 402, set by the tenant. Not a conversion of the BRL total and not tied to any exchange rate. Null when the version has none. */
+                                usdc_price: string | null;
+                                /** @description The same price in USDC atomic units (6 decimals). */
+                                usdc_price_atomic: string | null;
+                                /** @description When the publish that froze this version carried the tenant's confirmation of that exact price; null on a draft. */
+                                usdc_price_confirmed_at: string | null;
+                                created_at: string;
+                                published_at: string | null;
+                            } | null;
+                            created_at: string;
+                            updated_at: string;
+                            published_at: string | null;
+                            paused_at: string | null;
+                            archived_at: string | null;
+                            /** @description D-C: the caller's obligation this link charges (e.g. `bill:<period>:<customer>`); null without one. */
+                            reference: string | null;
+                            /** @description D-C: the version of the obligation this link was created for. */
+                            reference_version: string | null;
+                            /**
+                             * @description D-B: how `consumer_id` was chosen: named by the caller, the project's configured default receiver, or the project's only consumer with its own Celcoin receiving identity. Fixed at create: a default changed later moves no link.
+                             * @enum {string}
+                             */
+                            receiver_resolution: "explicit" | "project_default" | "only_eligible";
+                            /** @description The agent surface (402), on the single-link read: null when the version in force does not enable it. */
+                            agent?: {
+                                /** @description The gateway URL an agent calls; null where this deployment serves no gateway. */
+                                url: string | null;
+                                /** @enum {string} */
+                                status: "ready" | "refused" | "gateway_unavailable";
+                                /** @description Why the gateway is unavailable here, with `gateway_unavailable`. */
+                                reason: string | null;
+                                /** @description The 402 body the gateway answers right now, with `ready`: x402Version 2, one `pix` (BRL) method at the link's total. */
+                                challenge: {
+                                    [key: string]: unknown;
+                                } | null;
+                                /** @description What the gateway answers instead of a 402, with `refused` (paused, expired, paid, receiver key missing). */
+                                refusal: {
+                                    code: string;
+                                    message: string;
+                                    http_status: number;
+                                } | null;
+                                /** @description The version's USDC price, whatever the gateway answers; null without one. */
+                                usdc: {
+                                    price: string;
+                                    /** @description USDC atomic units. */
+                                    amount: string;
+                                    /** @enum {string} */
+                                    currency: "USDC";
+                                    network: string;
+                                    asset: string;
+                                    /** @enum {boolean} */
+                                    payable: false;
+                                    /** @enum {string} */
+                                    reason: "usdc_pay_to_unavailable";
+                                    message: string;
+                                    statement: string;
+                                } | null;
+                            } | null;
+                            /** @enum {boolean} */
+                            replay: true;
+                        };
+                    };
+                };
                 /** @description OK */
                 201: {
                     headers: {
@@ -19184,6 +19873,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -19225,6 +19916,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -19247,6 +19940,15 @@ export interface paths {
                             published_at: string | null;
                             paused_at: string | null;
                             archived_at: string | null;
+                            /** @description D-C: the caller's obligation this link charges (e.g. `bill:<period>:<customer>`); null without one. */
+                            reference: string | null;
+                            /** @description D-C: the version of the obligation this link was created for. */
+                            reference_version: string | null;
+                            /**
+                             * @description D-B: how `consumer_id` was chosen: named by the caller, the project's configured default receiver, or the project's only consumer with its own Celcoin receiving identity. Fixed at create: a default changed later moves no link.
+                             * @enum {string}
+                             */
+                            receiver_resolution: "explicit" | "project_default" | "only_eligible";
                             /** @description The agent surface (402), on the single-link read: null when the version in force does not enable it. */
                             agent?: {
                                 /** @description The gateway URL an agent calls; null where this deployment serves no gateway. */
@@ -19282,6 +19984,8 @@ export interface paths {
                                     statement: string;
                                 } | null;
                             } | null;
+                            /** @enum {boolean} */
+                            replay?: false;
                         };
                     };
                 };
@@ -19305,8 +20009,170 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Conflict. The obligation or the receiver refuses a new link; `details` says why and what to do. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "collect_reference_conflict" | "collect_reference_paid" | "collect_reference_active" | "collect_reference_not_cancelled" | "collect_reference_late_undecided" | "collect_receiver_unresolved" | "collect_receiver_default_ineligible";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/collect/receivers/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The project's default receiver for links that name none
+         * @description D-B: the consumer Collect gives a link created without `consumer_id`. Null when the project has none; then the project's only consumer with its own Celcoin receiving identity is used, and with zero or several the create is refused with what to configure.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            object: "collect_receiver_default";
+                            /** @description The project's default receiving consumer; null when none is configured. */
+                            consumer_id: string | null;
+                            set_by: string | null;
+                            updated_at: string | null;
+                        };
+                    };
+                };
+                /** @description Bad Request. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Configure (or clear) the project's default receiver
+         * @description D-B. `consumer_id` must have its own active Celcoin receiving identity in THIS project (a `pix-celcoin` funding source with account and document); the shared-sandbox receiver and other projects' consumers never qualify. `null` clears it. Requires `collect:write`, the permission that already names a link's receiver. Changing it moves no existing link.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        consumer_id: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            object: "collect_receiver_default";
+                            /** @description The project's default receiving consumer; null when none is configured. */
+                            consumer_id: string | null;
+                            set_by: string | null;
+                            updated_at: string | null;
+                        };
+                    };
+                };
+                /** @description Bad Request. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "project_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The consumer cannot receive here. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "collect_receiver_ineligible";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -19325,6 +20191,8 @@ export interface paths {
          * @description The accounts a link may name as `consumer_id`, each decided by the publish gate's own rule in this project's environment: the consumer's own active Celcoin receiving identity (`identity: own`), or, in a test project only, the deployment's shared-sandbox receiver (`identity: shared_sandbox`). An ineligible consumer carries `reason: receiving_identity_missing`, the code a publish would answer.
          *
          *     The candidates are the consumers this project already knows: an active directed-pay wallet in the project, a Pix (Celcoin) funding source attached to it, or one of its Collect links. At most 200, by consumer id.
+         *
+         *     A test project that reaches Collect by its `collect` capability instead of the deployment's list offers only its consumers with a sandbox account bound to the project (`identity: bound`), never the shared-sandbox receiver. One not ready yet names why in `not_ready` (`pix_key_pending`: the account exists and its Pix key is not registered yet). When exactly one is eligible it carries `default: true`; with several, the link's `consumer_id` is the explicit choice.
          */
         get: {
             parameters: {
@@ -19355,12 +20223,19 @@ export interface paths {
                                 label: string;
                                 eligible: boolean;
                                 /** @enum {string|null} */
-                                identity: "own" | "shared_sandbox" | null;
+                                identity: "own" | "shared_sandbox" | "bound" | null;
                                 /**
                                  * @description Null when eligible.
                                  * @enum {string|null}
                                  */
                                 reason: "receiving_identity_missing" | null;
+                                /**
+                                 * @description Capability projects only: why the bound account is not ready. Null when eligible.
+                                 * @enum {string|null}
+                                 */
+                                not_ready?: "receiver_not_bound" | "pix_key_pending" | "receiver_unreadable" | null;
+                                /** @description Capability projects only: the project's only eligible receiver. */
+                                default?: boolean;
                             }[];
                         };
                     };
@@ -19562,6 +20437,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -19603,6 +20480,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -19625,6 +20504,15 @@ export interface paths {
                             published_at: string | null;
                             paused_at: string | null;
                             archived_at: string | null;
+                            /** @description D-C: the caller's obligation this link charges (e.g. `bill:<period>:<customer>`); null without one. */
+                            reference: string | null;
+                            /** @description D-C: the version of the obligation this link was created for. */
+                            reference_version: string | null;
+                            /**
+                             * @description D-B: how `consumer_id` was chosen: named by the caller, the project's configured default receiver, or the project's only consumer with its own Celcoin receiving identity. Fixed at create: a default changed later moves no link.
+                             * @enum {string}
+                             */
+                            receiver_resolution: "explicit" | "project_default" | "only_eligible";
                             /** @description The agent surface (402), on the single-link read: null when the version in force does not enable it. */
                             agent?: {
                                 /** @description The gateway URL an agent calls; null where this deployment serves no gateway. */
@@ -19772,6 +20660,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -19813,6 +20703,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -19835,6 +20727,15 @@ export interface paths {
                             published_at: string | null;
                             paused_at: string | null;
                             archived_at: string | null;
+                            /** @description D-C: the caller's obligation this link charges (e.g. `bill:<period>:<customer>`); null without one. */
+                            reference: string | null;
+                            /** @description D-C: the version of the obligation this link was created for. */
+                            reference_version: string | null;
+                            /**
+                             * @description D-B: how `consumer_id` was chosen: named by the caller, the project's configured default receiver, or the project's only consumer with its own Celcoin receiving identity. Fixed at create: a default changed later moves no link.
+                             * @enum {string}
+                             */
+                            receiver_resolution: "explicit" | "project_default" | "only_eligible";
                             /** @description The agent surface (402), on the single-link read: null when the version in force does not enable it. */
                             agent?: {
                                 /** @description The gateway URL an agent calls; null where this deployment serves no gateway. */
@@ -20075,6 +20976,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -20116,6 +21019,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -20138,6 +21043,15 @@ export interface paths {
                             published_at: string | null;
                             paused_at: string | null;
                             archived_at: string | null;
+                            /** @description D-C: the caller's obligation this link charges (e.g. `bill:<period>:<customer>`); null without one. */
+                            reference: string | null;
+                            /** @description D-C: the version of the obligation this link was created for. */
+                            reference_version: string | null;
+                            /**
+                             * @description D-B: how `consumer_id` was chosen: named by the caller, the project's configured default receiver, or the project's only consumer with its own Celcoin receiving identity. Fixed at create: a default changed later moves no link.
+                             * @enum {string}
+                             */
+                            receiver_resolution: "explicit" | "project_default" | "only_eligible";
                             /** @description The agent surface (402), on the single-link read: null when the version in force does not enable it. */
                             agent?: {
                                 /** @description The gateway URL an agent calls; null where this deployment serves no gateway. */
@@ -20336,6 +21250,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -20377,6 +21293,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -20399,6 +21317,15 @@ export interface paths {
                             published_at: string | null;
                             paused_at: string | null;
                             archived_at: string | null;
+                            /** @description D-C: the caller's obligation this link charges (e.g. `bill:<period>:<customer>`); null without one. */
+                            reference: string | null;
+                            /** @description D-C: the version of the obligation this link was created for. */
+                            reference_version: string | null;
+                            /**
+                             * @description D-B: how `consumer_id` was chosen: named by the caller, the project's configured default receiver, or the project's only consumer with its own Celcoin receiving identity. Fixed at create: a default changed later moves no link.
+                             * @enum {string}
+                             */
+                            receiver_resolution: "explicit" | "project_default" | "only_eligible";
                             /** @description The agent surface (402), on the single-link read: null when the version in force does not enable it. */
                             agent?: {
                                 /** @description The gateway URL an agent calls; null where this deployment serves no gateway. */
@@ -20608,6 +21535,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -20649,6 +21578,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -20671,6 +21602,15 @@ export interface paths {
                             published_at: string | null;
                             paused_at: string | null;
                             archived_at: string | null;
+                            /** @description D-C: the caller's obligation this link charges (e.g. `bill:<period>:<customer>`); null without one. */
+                            reference: string | null;
+                            /** @description D-C: the version of the obligation this link was created for. */
+                            reference_version: string | null;
+                            /**
+                             * @description D-B: how `consumer_id` was chosen: named by the caller, the project's configured default receiver, or the project's only consumer with its own Celcoin receiving identity. Fixed at create: a default changed later moves no link.
+                             * @enum {string}
+                             */
+                            receiver_resolution: "explicit" | "project_default" | "only_eligible";
                             /** @description The agent surface (402), on the single-link read: null when the version in force does not enable it. */
                             agent?: {
                                 /** @description The gateway URL an agent calls; null where this deployment serves no gateway. */
@@ -20840,6 +21780,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -20881,6 +21823,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -20903,6 +21847,15 @@ export interface paths {
                             published_at: string | null;
                             paused_at: string | null;
                             archived_at: string | null;
+                            /** @description D-C: the caller's obligation this link charges (e.g. `bill:<period>:<customer>`); null without one. */
+                            reference: string | null;
+                            /** @description D-C: the version of the obligation this link was created for. */
+                            reference_version: string | null;
+                            /**
+                             * @description D-B: how `consumer_id` was chosen: named by the caller, the project's configured default receiver, or the project's only consumer with its own Celcoin receiving identity. Fixed at create: a default changed later moves no link.
+                             * @enum {string}
+                             */
+                            receiver_resolution: "explicit" | "project_default" | "only_eligible";
                             /** @description The agent surface (402), on the single-link read: null when the version in force does not enable it. */
                             agent?: {
                                 /** @description The gateway URL an agent calls; null where this deployment serves no gateway. */
@@ -21311,8 +22264,178 @@ export interface paths {
                         };
                     };
                 };
+                /** @description A test project that reaches Collect by capability: its sandbox calls reached their hourly or daily limit. Nothing was created or sent; `Retry-After` and `details.retry_after` give the wait. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "collect_call_budget_wait";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/collect/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the project's Collect charges with their payments
+         * @description Every attempt of the project whose link is in the credential's environment, newest first, each with its link, receiver, payer label and payment. Read-only. Cursor `before` = the previous page's `next_before`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    before?: string;
+                    state?: "issuing" | "open" | "superseded" | "expired" | "cancelled" | "paid" | "failed";
+                    link_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            object: "list";
+                            data: {
+                                /** @description The attempt (`cla_`). One entry per charge issued. */
+                                id: string;
+                                /** @enum {string} */
+                                object: "collect_attempt_activity";
+                                link: {
+                                    id: string;
+                                    /** @description The title of the version the charge was issued under. */
+                                    title: string | null;
+                                    /** @enum {string} */
+                                    state: "draft" | "published" | "paused" | "archived";
+                                    version: number;
+                                };
+                                /** @enum {string} */
+                                environment: "live" | "test";
+                                /** @enum {string} */
+                                surface: "page" | "whatsapp";
+                                /**
+                                 * @description `issuing` until the copia-e-cola exists (30 s to 60 min after the charge is created); `open` once it does; `failed` when it never did (`failure_code`).
+                                 * @enum {string}
+                                 */
+                                state: "issuing" | "open" | "superseded" | "expired" | "cancelled" | "paid" | "failed";
+                                amount_minor: number;
+                                /** @enum {string} */
+                                currency: "BRL";
+                                due_date: string;
+                                expires_at: string;
+                                failure_code: string | null;
+                                created_at: string;
+                                closed_at: string | null;
+                                /** @description Given name and last-name initial of the payer the charge was issued to ("Joana P."). Never the document, contact, address or external reference. Null without a readable name. */
+                                payer: {
+                                    label: string | null;
+                                };
+                                /** @description The name the payer page shows. */
+                                receiver: {
+                                    name: string;
+                                };
+                                /** @description The issuer answered the create with a charge id. False on `issuing` while the answer is outstanding, and on `failed` with `issuance_unconfirmed`, where the charge may exist at the issuer: an uncertain outcome. */
+                                charge_registered: boolean;
+                                /**
+                                 * @description Where the charge lives, from this project's charge row and the link's environment; null without a charge row.
+                                 * @enum {string|null}
+                                 */
+                                issuer: "celcoin_sandbox" | "celcoin_live" | null;
+                                /** @description The payer button's claim on the charge (POST /v1/collect/attempts/{attemptId}/test-pay). `sent`: the sandbox accepted the Pix; the charge is paid only once `payment` is present. */
+                                test_payment: {
+                                    /** @enum {string} */
+                                    stage: "claimed" | "decoded" | "sent" | "failed";
+                                    at: string;
+                                } | null;
+                                /** @description The payment of this charge; null while unpaid. */
+                                payment: {
+                                    id: string;
+                                    /** @enum {string} */
+                                    kind: "paid" | "exception";
+                                    /** @enum {string|null} */
+                                    exception: "late" | "duplicate" | null;
+                                    amount_minor: number;
+                                    /** @enum {string} */
+                                    currency: "BRL";
+                                    paid_at: string;
+                                    /** @enum {string} */
+                                    rail: "pix" | "boleto" | "unknown";
+                                    /** @description The settlement record (`clr_`) of this payment, the same id the link's payments read carries. Not a mandate receipt. Null until minted. */
+                                    receipt_id: string | null;
+                                    /** @description As the settlement recorded it. */
+                                    simulated: boolean;
+                                    /**
+                                     * @description `codespar_simulation` when the settlement is marked simulated; otherwise the charge's issuer.
+                                     * @enum {string|null}
+                                     */
+                                    executor: "celcoin_sandbox" | "celcoin_live" | "codespar_simulation" | null;
+                                    /**
+                                     * @description `test_payer`: the button's Pix was accepted by the sandbox. `unknown`: the button started and its outcome was never recorded. `payer` otherwise.
+                                     * @enum {string}
+                                     */
+                                    paid_by: "test_payer" | "payer" | "unknown";
+                                } | null;
+                                /** @description The conversation that issued this charge, named only through a persisted relation between the two. Always null in this version. */
+                                session_id: string | null;
+                            }[];
+                            next_before: string | null;
+                        };
+                    };
+                };
+                /** @description Bad Request. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query" | "project_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -21328,7 +22451,7 @@ export interface paths {
         };
         /**
          * List a Collect link's payments
-         * @description Every payment of the link's charges: the one `paid` (a single-use link has at most one) and any exceptions. Each is recorded in the same transaction as the wallet credit, keyed on the charge id, and carries its signed receipt once minted.
+         * @description Every payment of the link's charges: the one `paid` (a single-use link has at most one) and any exceptions. Each is recorded in the same transaction as the wallet credit, keyed on the charge id, and carries its signed receipt once minted, its `status` and the evidence behind it (`confirmation`, D-A).
          */
         get: {
             parameters: {
@@ -21412,6 +22535,39 @@ export interface paths {
                                         [key: string]: unknown;
                                     };
                                 } | null;
+                                /**
+                                 * @description What this payment may be called (D-A). `paid_confirmed` ("Pago · confirmado pela Celcoin"): the link's paid payment, recorded from AUTHENTICATED provider evidence (`confirmation.source` `provider_webhook` or `provider_read`) AND correlated on the records to this attempt's charge, its amount, its currency and its receiver (`confirmation.checks`). `paid_unconfirmed`: the link's paid payment without that whole evidence. An exception is never paid: `late_awaiting_decision` until `decide_by`, `late_honored` once kept, and `refund_due` / `refund_sent` / `refunded` for money owed back (`refunded` only once the devolution settled on the account statement). Nothing here is "reconciled": no state of this API says the credit was matched on the account statement.
+                                 * @enum {string}
+                                 */
+                                status: "paid_confirmed" | "paid_unconfirmed" | "late_awaiting_decision" | "late_honored" | "refund_due" | "refund_sent" | "refunded";
+                                /**
+                                 * @description Set only with `paid_confirmed`.
+                                 * @enum {string|null}
+                                 */
+                                label: "Pago · confirmado pela Celcoin" | null;
+                                confirmation: {
+                                    /**
+                                     * @description `provider_webhook`: Celcoin's `charge-in` (or `pix-payment-in`) on the connection's authenticated webhook route. `provider_read`: Celcoin's charge read with the project's credential, answering CONFIRMED. `simulation`: a sandbox settlement, never a confirmation. Null: no recorded evidence.
+                                     * @enum {string|null}
+                                     */
+                                    source: "provider_webhook" | "provider_read" | "simulation" | null;
+                                    /** @description When Collect recorded the provider's confirmation. */
+                                    confirmed_at: string | null;
+                                    checks: {
+                                        /** @description This attempt's charge is settled in this org and project (matched by the issuer's id). */
+                                        charge: boolean;
+                                        /** @description Paid amount = the attempt's amount = the charge's quoted amount. */
+                                        amount: boolean;
+                                        /** @description BRL on the payment, the attempt and the charge. */
+                                        currency: boolean;
+                                        /** @description The charge was issued for the link's receiver, and the credit landed on its wallet. */
+                                        receiver: boolean;
+                                    };
+                                    /** @description Authenticated source and every check true. */
+                                    confirmed: boolean;
+                                };
+                                /** @description A late payment's decision deadline (72 hours from when it was recorded). */
+                                decide_by: string | null;
                             }[];
                         };
                     };
@@ -21527,6 +22683,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -21568,6 +22726,8 @@ export interface paths {
                                 surfaces: ("page" | "whatsapp" | "agent")[];
                                 /** @description Days from issuance to the charge's due date (Pix with due date). */
                                 due_in_days: number;
+                                /** @description An absolute due date (YYYY-MM-DD) for every charge of this version, in place of `due_in_days`. Set only on the links of a Bill invoice; null otherwise. */
+                                due_on: string | null;
                                 payer_fields: {
                                     /** @enum {string} */
                                     name: "required";
@@ -21590,6 +22750,15 @@ export interface paths {
                             published_at: string | null;
                             paused_at: string | null;
                             archived_at: string | null;
+                            /** @description D-C: the caller's obligation this link charges (e.g. `bill:<period>:<customer>`); null without one. */
+                            reference: string | null;
+                            /** @description D-C: the version of the obligation this link was created for. */
+                            reference_version: string | null;
+                            /**
+                             * @description D-B: how `consumer_id` was chosen: named by the caller, the project's configured default receiver, or the project's only consumer with its own Celcoin receiving identity. Fixed at create: a default changed later moves no link.
+                             * @enum {string}
+                             */
+                            receiver_resolution: "explicit" | "project_default" | "only_eligible";
                             /** @description The agent surface (402), on the single-link read: null when the version in force does not enable it. */
                             agent?: {
                                 /** @description The gateway URL an agent calls; null where this deployment serves no gateway. */
@@ -21722,7 +22891,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Not a Test credential or project. */
+                /** @description Not a Test credential or project, or a project outside the proof's list (the shared Test payer is its own capability, D10). */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -22078,7 +23247,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Too Many Requests. Per client IP and per link, shared by every API replica; `Retry-After` and `details.retry_after` give the wait, `details.scope` names which bucket refused. */
+                /** @description Too Many Requests. Per client IP and per link, shared by every API replica; `Retry-After` and `details.retry_after` give the wait, `details.scope` names which bucket refused. In a test project that reaches Collect by capability, `collect_call_budget_wait` says the project's sandbox calls reached their hourly or daily limit: nothing was created or sent, and `Retry-After` gives the wait. */
                 429: {
                     headers: {
                         [name: string]: unknown;
@@ -22087,7 +23256,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "rate_limited";
+                                code: "rate_limited" | "collect_call_budget_wait";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -22311,7 +23480,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Too Many Requests. Per client IP and per link, shared by every API replica; `Retry-After` and `details.retry_after` give the wait, `details.scope` names which bucket refused. */
+                /** @description Too Many Requests. Per client IP and per link, shared by every API replica; `Retry-After` and `details.retry_after` give the wait, `details.scope` names which bucket refused. In a test project that reaches Collect by capability, `collect_call_budget_wait` says the project's sandbox calls reached their hourly or daily limit: nothing was created or sent, and `Retry-After` gives the wait. */
                 429: {
                     headers: {
                         [name: string]: unknown;
@@ -22320,7 +23489,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "rate_limited";
+                                code: "rate_limited" | "collect_call_budget_wait";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -22368,7 +23537,7 @@ export interface paths {
         };
         /**
          * The refund obligations of a link's exception payments
-         * @description A payment that is not the link's one valid payment (`late` or `duplicate`) is never kept as credit by default. Its refund obligation is recorded in the same transaction as the credit. A duplicate is due for refund at once. A late payment waits for the collector until `decide_by` (`COLLECT_LATE_REFUND_DECISION_DAYS`, 3 by default), and is due for refund if not honored. Events: `collect.refund.awaiting_decision`, `collect.refund.required` (with `refund_method` and `manual`), `collect.refund.honored`. No money moves yet: a Pix refund waits in `awaiting_pix_rail`, and a boleto one is `manual_refund_required`.
+         * @description A payment that is not the link's one valid payment (`late` or `duplicate`) is never kept as credit by default. Its refund obligation is recorded in the same transaction as the credit. A duplicate is due for refund at once. A late payment waits for the collector until `decide_by`, 72 hours from when Collect recorded it (D-D; a row recorded before keeps the deadline it was given), and is due for refund if not honored. A late payment of an obligation version that already has a newer version opens no window: it is due at once (`decided_by: rule:obligation_has_substitute`). Accepting and the lapse exclude each other. Events: `collect.refund.awaiting_decision`, `collect.refund.required` (with `refund_method` and `manual`), `collect.refund.honored`. No money moves yet: a Pix refund waits in `awaiting_pix_rail`, and a boleto one is `manual_refund_required`.
          */
         get: {
             parameters: {
@@ -22441,6 +23610,112 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/collect/payments/{paymentId}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refund a late payment instead of keeping it
+         * @description The collector decides, before `decide_by`, that a LATE payment is refunded rather than kept. The obligation moves to its due state at once (`awaiting_pix_rail`, or `manual_refund_required` without a Pix to return). Accepting, refunding and the lapse of the window exclude each other; asking again answers the decision recorded. For an obligation with a `reference`, this decision frees a new version of it (D-C, decision (1b)) without waiting for the refund to settle.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    paymentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @enum {string} */
+                            object: "collect_refund";
+                            payment_id: string;
+                            link_id: string;
+                            charge_id: string;
+                            /** @enum {string} */
+                            reason: "late" | "duplicate";
+                            /**
+                             * @description `pix` when the payment was a Pix; `manual` when it was a boleto or the channel is unknown.
+                             * @enum {string}
+                             */
+                            refund_method: "pix" | "manual";
+                            /**
+                             * @description `awaiting_collector`: a late payment the collector may honor until `decide_by`. `honored`: kept by the collector. `awaiting_pix_rail`: due for refund by Pix, waiting for the Pix refund of Collect charges, which is not wired yet; no money has moved. `manual_refund_required`: due for refund and there is no Pix to return, so a person refunds it outside CodeSpar.
+                             * @enum {string}
+                             */
+                            state: "awaiting_collector" | "honored" | "awaiting_pix_rail" | "manual_refund_required";
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            decide_by: string | null;
+                            decided_at: string | null;
+                            created_at: string;
+                        };
+                    };
+                };
+                /** @description No payment with a refund decision under that id in this project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The late payment was already kept. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "collect_refund_decision_closed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -22525,7 +23800,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Not honorable. */
+                /** @description Not honorable. `collect_refund_obligation_conflict`: another version of the same obligation is paid, in force, or not positively cancelled, so keeping this late payment could charge the payer twice (D-D). */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -22534,7 +23809,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "collect_refund_not_honorable" | "collect_refund_decision_closed";
+                                code: "collect_refund_not_honorable" | "collect_refund_decision_closed" | "collect_refund_obligation_conflict";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -23189,6 +24464,13 @@ export interface paths {
                                 /** @description The event's own time; decides its cycle. */
                                 occurred_at: string;
                                 received_at: string;
+                                /** @description Set when the event arrived after its own cycle was closed: the closed cycle (YYYY-MM) it belongs to. It stays out of that frozen cycle. */
+                                late_of_period: string | null;
+                                /**
+                                 * @description `none`: on time, charged by its own cycle. `next_cycle`: a late count/sum event, charged by the next closure as an adjustment that names its cycle of origin. `pending_review`: a late max/last event, recorded and never charged automatically.
+                                 * @enum {string}
+                                 */
+                                adjustment: "none" | "next_cycle" | "pending_review";
                             }[];
                         };
                     };
@@ -23254,7 +24536,7 @@ export interface paths {
         put?: never;
         /**
          * Record a usage event
-         * @description `event` names the meter (its `event_name`) in the caller's project; the meter must exist. `customer` is the tenant's customer id. `value` is required for sum, max and last meters (non-negative, up to six decimals) and must be omitted (or 1) for a count meter. `timestamp` is the event's own time, default now; it must fall in the previous or the current cycle and at most 5 minutes ahead.
+         * @description `event` names the meter (its `event_name`) in the caller's project; the meter must exist. `customer` is the tenant's customer id. `value` is required for sum, max and last meters (non-negative, up to six decimals) and must be omitted (or 1) for a count meter. `timestamp` is the event's own time, default now; it must fall in the previous or the current cycle and at most 5 minutes ahead. An event of the previous cycle that arrives after that cycle's closure (D+2, 06:00 Sao Paulo) is LATE: it is recorded, kept out of the closed cycle, and its `adjustment` says where it goes.
          *
          *     IDEMPOTENT ON `event_id`: an id already recorded with the same meter, customer and value (and the same timestamp, when one is given) answers 200 with `duplicate: true` and is counted once. A different payload under a known id is refused with 409.
          */
@@ -23297,6 +24579,13 @@ export interface paths {
                             /** @description The event's own time; decides its cycle. */
                             occurred_at: string;
                             received_at: string;
+                            /** @description Set when the event arrived after its own cycle was closed: the closed cycle (YYYY-MM) it belongs to. It stays out of that frozen cycle. */
+                            late_of_period: string | null;
+                            /**
+                             * @description `none`: on time, charged by its own cycle. `next_cycle`: a late count/sum event, charged by the next closure as an adjustment that names its cycle of origin. `pending_review`: a late max/last event, recorded and never charged automatically.
+                             * @enum {string}
+                             */
+                            adjustment: "none" | "next_cycle" | "pending_review";
                             event: string;
                             /** @enum {boolean} */
                             duplicate: true;
@@ -23322,6 +24611,13 @@ export interface paths {
                             /** @description The event's own time; decides its cycle. */
                             occurred_at: string;
                             received_at: string;
+                            /** @description Set when the event arrived after its own cycle was closed: the closed cycle (YYYY-MM) it belongs to. It stays out of that frozen cycle. */
+                            late_of_period: string | null;
+                            /**
+                             * @description `none`: on time, charged by its own cycle. `next_cycle`: a late count/sum event, charged by the next closure as an adjustment that names its cycle of origin. `pending_review`: a late max/last event, recorded and never charged automatically.
+                             * @enum {string}
+                             */
+                            adjustment: "none" | "next_cycle" | "pending_review";
                             event: string;
                             /** @enum {boolean} */
                             duplicate: false;
@@ -23396,6 +24692,397 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/meters/statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A closed cycle's statements
+         * @description A cycle closes on D+2 at 06:00 Sao Paulo, D being its last day. The closure freezes one statement per customer, channel and currency; it never publishes or sends a charge. `period` defaults to the previous cycle. Before the closure, `closure.state` is `open` with `closes_at`, and `data` is empty.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    period?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            object: "list";
+                            period: string;
+                            closure: {
+                                /** @enum {string} */
+                                state: "closed";
+                                closed_at: string;
+                                rule_version: string;
+                            } | {
+                                /** @enum {string} */
+                                state: "open";
+                                closes_at: string;
+                            };
+                            data: {
+                                /** @description `bst_` + 128 random bits. */
+                                id: string;
+                                /** @enum {string} */
+                                object: "bill_statement";
+                                /** @enum {string} */
+                                environment: "live" | "test";
+                                /** @description The closed cycle, YYYY-MM. */
+                                period: string;
+                                customer: string;
+                                /** @enum {string} */
+                                channel: "invoice" | "collect" | "gate";
+                                /** @enum {string} */
+                                currency: "BRL";
+                                /**
+                                 * @description The amount is frozen in every state; `state` is its eligibility for issuance. `eligible`: at or above the minimum the channel's contract states; whether and how it is charged belongs to the channel. `below_minimum`: under that minimum; carried to the next closure as a balance to charge. `eligibility_undetermined`: the channel states no minimum yet; an unknown minimum is not a zero minimum, so the statement is not treated as chargeable until the contract states one. `nothing_to_charge`: zero.
+                                 * @enum {string}
+                                 */
+                                state: "eligible" | "below_minimum" | "eligibility_undetermined" | "nothing_to_charge";
+                                /** @description Sum of the lines' centavos; each line rounded half up once. */
+                                total_minor: number;
+                                /** @description The unrounded total, BRL, exact to the micro-real. */
+                                exact_total: string;
+                                /** @description What the per-line rounding added (+) or removed (-), in micro-reais. */
+                                rounding_micros: number;
+                                /** @description The channel's minimum in centavos when its contract states one; null otherwise. */
+                                minimum_minor: number | null;
+                                /** @description For a below-minimum statement: the later statement that carries it. */
+                                carried_to_statement_id: string | null;
+                                /** @description True for a Test project's statement: it, its invoice and its charge are test documents, with no real charge. */
+                                test_document: boolean;
+                                /** @description The monthly invoice the PROJECT issues to its customer (the project is the issuer and creditor). Only on the `invoice` channel, once the charge is requested. */
+                                invoice: {
+                                    /** @description `F-AAMM-NNN`; `TESTE-F-AAMM-NNN` in Test. Unique in the project. */
+                                    number: string;
+                                    /** @description The due date, YYYY-MM-DD: day 5 of the month after the cycle. */
+                                    due_on: string;
+                                } | null;
+                                charge: {
+                                    /**
+                                     * @description What the Bill asked the channel. The `invoice` and `collect` channels are charged through Collect, one BolePix link per statement received into the project's account, and only where Collect can issue for the project now; the `gate` channel requests nothing.
+                                     * @enum {string}
+                                     */
+                                    status: "not_requested" | "requested" | "linked" | "refused";
+                                    reference: string | null;
+                                    version: number;
+                                    /** @description The channel's id for the charge: the Collect link's id. */
+                                    external_id: string | null;
+                                    refusal_code: string | null;
+                                    /** @description What the channel reports of a linked charge now; null before it is linked or when the channel cannot answer. */
+                                    display: {
+                                        /**
+                                         * @description `paid` only on Collect's valid settlement confirmation (authenticated, correlated); `registered` for a payment without it. Never `reconciled`.
+                                         * @enum {string|null}
+                                         */
+                                        payment: "paid" | "registered" | null;
+                                        /** @description The confirmation's source: `provider_webhook` or `provider_read`. */
+                                        payment_evidence: string | null;
+                                        payment_confirmed_at: string | null;
+                                        /** @description The page where the payer pays, while the charge can be paid. The project delivers it; CodeSpar sends nothing. */
+                                        url: string | null;
+                                        /** @description The Collect link's state, as Collect names it. */
+                                        channel_state: string | null;
+                                        /** @description Set when the channel's amount differs from the Bill's total; never absorbed. */
+                                        amount_divergence: {
+                                            bill_minor: number;
+                                            channel_minor: number;
+                                        } | null;
+                                    } | null;
+                                };
+                                created_at: string;
+                                updated_at: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Bad Request. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query" | "period_not_started" | "project_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meters/statements/{statementId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read one statement with its lines */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    statementId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `bst_` + 128 random bits. */
+                            id: string;
+                            /** @enum {string} */
+                            object: "bill_statement";
+                            /** @enum {string} */
+                            environment: "live" | "test";
+                            /** @description The closed cycle, YYYY-MM. */
+                            period: string;
+                            customer: string;
+                            /** @enum {string} */
+                            channel: "invoice" | "collect" | "gate";
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /**
+                             * @description The amount is frozen in every state; `state` is its eligibility for issuance. `eligible`: at or above the minimum the channel's contract states; whether and how it is charged belongs to the channel. `below_minimum`: under that minimum; carried to the next closure as a balance to charge. `eligibility_undetermined`: the channel states no minimum yet; an unknown minimum is not a zero minimum, so the statement is not treated as chargeable until the contract states one. `nothing_to_charge`: zero.
+                             * @enum {string}
+                             */
+                            state: "eligible" | "below_minimum" | "eligibility_undetermined" | "nothing_to_charge";
+                            /** @description Sum of the lines' centavos; each line rounded half up once. */
+                            total_minor: number;
+                            /** @description The unrounded total, BRL, exact to the micro-real. */
+                            exact_total: string;
+                            /** @description What the per-line rounding added (+) or removed (-), in micro-reais. */
+                            rounding_micros: number;
+                            /** @description The channel's minimum in centavos when its contract states one; null otherwise. */
+                            minimum_minor: number | null;
+                            /** @description For a below-minimum statement: the later statement that carries it. */
+                            carried_to_statement_id: string | null;
+                            /** @description True for a Test project's statement: it, its invoice and its charge are test documents, with no real charge. */
+                            test_document: boolean;
+                            /** @description The monthly invoice the PROJECT issues to its customer (the project is the issuer and creditor). Only on the `invoice` channel, once the charge is requested. */
+                            invoice: {
+                                /** @description `F-AAMM-NNN`; `TESTE-F-AAMM-NNN` in Test. Unique in the project. */
+                                number: string;
+                                /** @description The due date, YYYY-MM-DD: day 5 of the month after the cycle. */
+                                due_on: string;
+                            } | null;
+                            charge: {
+                                /**
+                                 * @description What the Bill asked the channel. The `invoice` and `collect` channels are charged through Collect, one BolePix link per statement received into the project's account, and only where Collect can issue for the project now; the `gate` channel requests nothing.
+                                 * @enum {string}
+                                 */
+                                status: "not_requested" | "requested" | "linked" | "refused";
+                                reference: string | null;
+                                version: number;
+                                /** @description The channel's id for the charge: the Collect link's id. */
+                                external_id: string | null;
+                                refusal_code: string | null;
+                                /** @description What the channel reports of a linked charge now; null before it is linked or when the channel cannot answer. */
+                                display: {
+                                    /**
+                                     * @description `paid` only on Collect's valid settlement confirmation (authenticated, correlated); `registered` for a payment without it. Never `reconciled`.
+                                     * @enum {string|null}
+                                     */
+                                    payment: "paid" | "registered" | null;
+                                    /** @description The confirmation's source: `provider_webhook` or `provider_read`. */
+                                    payment_evidence: string | null;
+                                    payment_confirmed_at: string | null;
+                                    /** @description The page where the payer pays, while the charge can be paid. The project delivers it; CodeSpar sends nothing. */
+                                    url: string | null;
+                                    /** @description The Collect link's state, as Collect names it. */
+                                    channel_state: string | null;
+                                    /** @description Set when the channel's amount differs from the Bill's total; never absorbed. */
+                                    amount_divergence: {
+                                        bill_minor: number;
+                                        channel_minor: number;
+                                    } | null;
+                                } | null;
+                            };
+                            created_at: string;
+                            updated_at: string;
+                            lines: {
+                                line_no: number;
+                                /** @enum {string} */
+                                kind: "usage" | "late_adjustment" | "carry_over";
+                                meter_id: string | null;
+                                event_name: string | null;
+                                /** @description The closed cycle a late adjustment or a carried balance comes from. */
+                                origin_period: string | null;
+                                /** @description The below-minimum statement a carry_over line carries. */
+                                origin_statement_id: string | null;
+                                usage: string | null;
+                                amount: string;
+                                amount_minor: number;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Bad Request. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No statement with that id in this project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meters/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Late max/last events pending adjustment
+         * @description Events of a max or last meter that arrived after their cycle's closure. They are recorded, kept out of the closed cycle, never charged automatically and never discarded. `period` filters by the closed cycle of origin. Newest first by arrival, at most `limit` (1 to 50, default 20).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    period?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            object: "list";
+                            data: {
+                                /** @enum {string} */
+                                object: "meter_pending_adjustment";
+                                event_id: string;
+                                meter_id: string;
+                                event_name: string;
+                                /** @enum {string} */
+                                aggregation: "count" | "sum" | "max" | "last";
+                                customer: string;
+                                value: string;
+                                late_of_period: string;
+                                occurred_at: string;
+                                received_at: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Bad Request. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query" | "project_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/consumers/consents": {
         parameters: {
             query?: never;
@@ -23438,6 +25125,7 @@ export interface paths {
                                 per_tx_cap_minor: number | null;
                                 currency: string | null;
                                 purpose: string | null;
+                                /** @description The network of the consumer's IP at signing time: an IPv4 address truncated to its /24 (`203.0.113.0`), an IPv6 address to its /64 (`2001:db8:85a3:8d3::`), null when none was recorded or the stored value does not parse. The `inet` column keeps the full address, because a consent event has to be replayable with timestamp and origin; only the response is truncated. */
                                 ip_address: string | null;
                                 /** Format: date-time */
                                 signed_at: string;
@@ -23531,10 +25219,13 @@ export interface paths {
                                 /** Format: date-time */
                                 revoked_at: string | null;
                                 account_masked: string | null;
+                                /** @description The account's branch (agência), lifted out of the row's `metadata.branch`, else null. */
+                                branch: string | null;
+                                /** @description Always `{}`: the account number, the branch and the holder's document stay on the row. Use `account_masked`, `branch`, `pix_key` and `pix_key_type`. */
                                 metadata: {
                                     [key: string]: unknown;
                                 } | null;
-                                /** @description Only populated with `?with_balance=1`, and only for `pix-celcoin` rows. Null when it was not requested, when the row is on another rail, or when the provider lookup did not answer. */
+                                /** @description Only populated with `?with_balance=1`, and only for `pix-celcoin` rows that are active, or, in a Test project, held by the project's open account binding with one of the project's capabilities active (that read is counted in the project's provider call budget first). Null when it was not requested, when the row is on another rail, when the budget refused the read, or when the provider lookup did not answer. */
                                 balance_minor: number | null;
                             }[];
                             unattributed_count: number;
@@ -23871,6 +25562,8 @@ export interface paths {
          * @description The account's live DICT inventory, read from the provider on every call. The account is always resolved server-side from the credential's organization and the consumer id, never taken from the caller, so this can only ever reach an account the caller's own organization holds.
          *
          *     A failed inventory read is an ERROR, never an empty list. `unanswered` is not `no keys`, and rendering it as an empty account is the mistake this route refuses to make: a caller that read zero keys would go on to register a key the account may already have, spending one of its limited DICT slots.
+         *
+         *     In a Test project, a consumer with no active Pix funding source is served from the account bound to it by the project's open account binding, while the project's `collect` capability is active. That read is counted in the project's provider call budget first.
          */
         get: {
             parameters: {
@@ -23921,6 +25614,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description `project_access_call_cap`: the project's provider call budget for the window is used up (Test bound account only). `details` names the window, the scope and the cap. Nothing was sent. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_access_call_cap";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
                 /** @description The listing could not be completed upstream. The outcome is unknown and the condition is transient; retry. `details.provider_code` still carries whatever code the body named, so a generic provider error is visible without being called terminal. */
                 502: {
                     headers: {
@@ -23931,6 +25644,26 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "pix_key_provider_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `project_access_calls_unavailable`: the project's provider call budget could not be read (Test bound account only). Nothing was sent; retry. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_access_calls_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -23957,6 +25690,8 @@ export interface paths {
          *     THE 409 `pix_key_registration_uncertain` IS THE CASE TO READ BEFORE INTEGRATING: the registration was accepted, the response was unreadable, and the account's key list could not settle whether the key landed. DO NOT REPEAT IT. Every repeated EVP mints ANOTHER key against the account's five-key allowance. List the keys with the GET on this same path and delete whatever should not be there.
          *
          *     422 AGAINST 502 IS ALSO DELIBERATE: 422 `pix_key_provider_refused` is the provider having ADJUDICATED and said no, and repeating the same input cannot succeed; 502 `pix_key_provider_unavailable` is transient and retriable. Their `details` differ, and the 502 block below says how — that field is not uniform across the three failures that produce it.
+         *
+         *     In a Test project, a consumer with no active Pix funding source is served from the account bound to it by the project's open account binding, while the project's `collect` capability is active. That account registers only a random key (`key_type` EVP): any other type answers 422 `pix_key_type_unavailable` before anything is sent, and the registration is counted in the project's provider call budget first.
          */
         post: {
             parameters: {
@@ -24061,7 +25796,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `no_provider_account`: the consumer has no active pix-celcoin funding source in this organization — or is not this organization's consumer at all; nothing reached the provider. `pix_key_provider_refused`: the provider adjudicated and refused, with `details.provider_status` and `details.provider_code` (null when the body named no code); repeating the same input will not pass. */
+                /** @description `no_provider_account`: the consumer has no active pix-celcoin funding source in this organization — or is not this organization's consumer at all; nothing reached the provider. `pix_key_provider_refused`: the provider adjudicated and refused, with `details.provider_status` and `details.provider_code` (null when the body named no code); repeating the same input will not pass. `pix_key_type_unavailable`: a Test project's bound account registers only an EVP key; nothing was sent. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -24070,7 +25805,27 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_provider_account" | "pix_key_provider_refused";
+                                code: "no_provider_account" | "pix_key_provider_refused" | "pix_key_type_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `project_access_call_cap`: the project's provider call budget for the window is used up (Test bound account only). `details` names the window, the scope and the cap. Nothing was sent. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_access_call_cap";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -24129,6 +25884,26 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "pix_key_provider_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `project_access_calls_unavailable`: the project's provider call budget could not be read (Test bound account only). Nothing was sent; retry. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_access_calls_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -25491,7 +27266,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The consumer has no Celcoin account to credit, or the sandbox provider refused. */
+                /** @description The consumer has no Celcoin account to credit, or the sandbox provider refused. `sandbox_funding_refused`: a bound account's credit was refused by a platform guard before it was sent (`details.reason`); nothing was sent. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -25500,7 +27275,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_provider_account" | "sandbox_funding_failed";
+                                code: "no_provider_account" | "sandbox_funding_failed" | "sandbox_funding_refused";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -25647,7 +27422,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The consumer has no Celcoin account to credit, or the sandbox provider refused. */
+                /** @description The consumer has no Celcoin account to credit, or the sandbox provider refused. `sandbox_funding_refused`: a bound account's credit was refused by a platform guard before it was sent (`details.reason`); nothing was sent. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -25656,7 +27431,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_provider_account" | "sandbox_funding_failed";
+                                code: "no_provider_account" | "sandbox_funding_failed" | "sandbox_funding_refused";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -25689,6 +27464,8 @@ export interface paths {
          * @description Mints a sandbox Pix charge and returns the copia-e-cola string. Nothing is credited here: this step produces the code, and settlement is the next step.
          *
          *     Keep the `transaction_id`: it is what settlement uses as the idempotency key.
+         *
+         *     A consumer whose account is bound to this Test project (the project's open account binding, its `collect` capability active) gets the charge on that account's OWN Pix key, through the default provider; the call is counted in the project's provider call budget first. The charge is recorded like any charge of the consumer's, so its settlement, its webhook and the reconciler credit it once.
          */
         post: {
             parameters: {
@@ -25779,6 +27556,46 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "pix_in_mint_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `project_access_call_cap`: the project's provider call budget for the window is used up (Test bound account only). `details` names the window, the scope and the cap. Nothing was sent. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_access_call_cap";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `project_access_calls_unavailable`: the project's provider call budget could not be read (Test bound account only). Nothing was sent; retry. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_access_calls_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -25814,6 +27631,8 @@ export interface paths {
          *     Mints a sandbox Pix charge and returns the copia-e-cola string. Nothing is credited here: this step produces the code, and settlement is the next step.
          *
          *     Keep the `transaction_id`: it is what settlement uses as the idempotency key.
+         *
+         *     A consumer whose account is bound to this Test project (the project's open account binding, its `collect` capability active) gets the charge on that account's OWN Pix key, through the default provider; the call is counted in the project's provider call budget first. The charge is recorded like any charge of the consumer's, so its settlement, its webhook and the reconciler credit it once.
          */
         post: {
             parameters: {
@@ -25916,6 +27735,46 @@ export interface paths {
                         };
                     };
                 };
+                /** @description `project_access_call_cap`: the project's provider call budget for the window is used up (Test bound account only). `details` names the window, the scope and the cap. Nothing was sent. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_access_call_cap";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `project_access_calls_unavailable`: the project's provider call budget could not be read (Test bound account only). Nothing was sent; retry. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_access_calls_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
             };
         };
         delete?: never;
@@ -25938,6 +27797,8 @@ export interface paths {
          * @description Settles the charge the mint produced and credits the consumer.
          *
          *     **The `transaction_id` is the idempotency key**: re-sending the same settlement does not credit twice.
+         *
+         *     For a consumer whose account is bound to this Test project, the settlement credits THAT account, for a charge the mint recorded for this consumer: `transaction_id` is required and must be the one the mint returned, and `amount_minor` must be the charge's amount. The credit is claimed before it is sent, so a retry answers from the claim (200, `idempotent_replay`), a charge already settled by its webhook or the reconciler answers the same way, and a credit whose outcome is unknown stays open (409 `sandbox_funding_open_claim`) and is never resent. It needs the project's `payments` capability, and it is counted in the provider call budget.
          */
         post: {
             parameters: {
@@ -25959,6 +27820,28 @@ export interface paths {
             };
             responses: {
                 /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            settled: true;
+                            transaction_id: string;
+                            /** @description The provider's credit. Null only on a replay of a charge its webhook or the reconciler settled. */
+                            deposit_id: string | null;
+                            /** @description True when this answer is a replay: nothing was sent again. */
+                            idempotent_replay?: boolean;
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /** @enum {boolean} */
+                            money_credited: true;
+                        };
+                    };
+                };
+                /** @description OK */
                 201: {
                     headers: {
                         [name: string]: unknown;
@@ -25968,7 +27851,10 @@ export interface paths {
                             /** @enum {boolean} */
                             settled: true;
                             transaction_id: string;
-                            deposit_id: string;
+                            /** @description The provider's credit. Null only on a replay of a charge its webhook or the reconciler settled. */
+                            deposit_id: string | null;
+                            /** @description True when this answer is a replay: nothing was sent again. */
+                            idempotent_replay?: boolean;
                             amount_minor: number;
                             /** @enum {string} */
                             currency: "BRL";
@@ -26017,7 +27903,47 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The sandbox provider refused the settlement. */
+                /** @description `charge_not_found`: no single charge minted for this consumer in this project carries this `transaction_id` (Test bound account only). Nothing was sent. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Test bound account only. `charge_not_pending`: the charge is no longer open. `capability_inactive`: the project's `payments` capability is not active. `sandbox_funding_open_claim`: an earlier credit of the project is still open (unanswered, or credited without its ledger copy); it is never resent. Nothing was sent. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_not_pending" | "capability_inactive" | "sandbox_funding_open_claim";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The sandbox provider refused the settlement (`sandbox_funding_failed`), or, for a Test bound account, `amount_minor` is not the charge's amount (`settle_amount_mismatch`). */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -26026,7 +27952,27 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "sandbox_funding_failed";
+                                code: "sandbox_funding_failed" | "settle_amount_mismatch";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `project_access_call_cap`: the project's provider call budget for the window is used up (Test bound account only). `details` names the window, the scope and the cap. Nothing was sent. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_access_call_cap";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -26047,6 +27993,26 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "wallet_credit_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `project_access_calls_unavailable`: the project's provider call budget could not be read (Test bound account only). Nothing was sent; retry. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_access_calls_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -26082,6 +28048,8 @@ export interface paths {
          *     Settles the charge the mint produced and credits the consumer.
          *
          *     **The `transaction_id` is the idempotency key**: re-sending the same settlement does not credit twice.
+         *
+         *     For a consumer whose account is bound to this Test project, the settlement credits THAT account, for a charge the mint recorded for this consumer: `transaction_id` is required and must be the one the mint returned, and `amount_minor` must be the charge's amount. The credit is claimed before it is sent, so a retry answers from the claim (200, `idempotent_replay`), a charge already settled by its webhook or the reconciler answers the same way, and a credit whose outcome is unknown stays open (409 `sandbox_funding_open_claim`) and is never resent. It needs the project's `payments` capability, and it is counted in the provider call budget.
          */
         post: {
             parameters: {
@@ -26105,6 +28073,28 @@ export interface paths {
             };
             responses: {
                 /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            settled: true;
+                            transaction_id: string;
+                            /** @description The provider's credit. Null only on a replay of a charge its webhook or the reconciler settled. */
+                            deposit_id: string | null;
+                            /** @description True when this answer is a replay: nothing was sent again. */
+                            idempotent_replay?: boolean;
+                            amount_minor: number;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            /** @enum {boolean} */
+                            money_credited: true;
+                        };
+                    };
+                };
+                /** @description OK */
                 201: {
                     headers: {
                         [name: string]: unknown;
@@ -26114,7 +28104,10 @@ export interface paths {
                             /** @enum {boolean} */
                             settled: true;
                             transaction_id: string;
-                            deposit_id: string;
+                            /** @description The provider's credit. Null only on a replay of a charge its webhook or the reconciler settled. */
+                            deposit_id: string | null;
+                            /** @description True when this answer is a replay: nothing was sent again. */
+                            idempotent_replay?: boolean;
                             amount_minor: number;
                             /** @enum {string} */
                             currency: "BRL";
@@ -26163,7 +28156,47 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The sandbox provider refused the settlement. */
+                /** @description `charge_not_found`: no single charge minted for this consumer in this project carries this `transaction_id` (Test bound account only). Nothing was sent. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Test bound account only. `charge_not_pending`: the charge is no longer open. `capability_inactive`: the project's `payments` capability is not active. `sandbox_funding_open_claim`: an earlier credit of the project is still open (unanswered, or credited without its ledger copy); it is never resent. Nothing was sent. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "charge_not_pending" | "capability_inactive" | "sandbox_funding_open_claim";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The sandbox provider refused the settlement (`sandbox_funding_failed`), or, for a Test bound account, `amount_minor` is not the charge's amount (`settle_amount_mismatch`). */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -26172,7 +28205,27 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "sandbox_funding_failed";
+                                code: "sandbox_funding_failed" | "settle_amount_mismatch";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `project_access_call_cap`: the project's provider call budget for the window is used up (Test bound account only). `details` names the window, the scope and the cap. Nothing was sent. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_access_call_cap";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -26193,6 +28246,26 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "wallet_credit_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `project_access_calls_unavailable`: the project's provider call budget could not be read (Test bound account only). Nothing was sent; retry. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "project_access_calls_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -39684,6 +41757,481 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/shop/agent/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Propose a purchase at a supported store (never an order)
+         * @description Scope `shop:purchases:write`. The store, its origin and its prices come from the server's registry and the store's own catalog, never from the request. The same `agent_id` and `idempotency_key` with the same intent answers the same purchase (`idempotent_replay: true`).
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        agent_id: string;
+                        merchant: string;
+                        items: {
+                            sku_id: string;
+                            quantity: number;
+                        }[];
+                        /**
+                         * @default card
+                         * @enum {string}
+                         */
+                        payment_method?: "card" | "store_on_file";
+                        idempotency_key: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            purchase: {
+                                /** @description The purchase proposal id (`prp_...`). */
+                                id: string;
+                                /** @enum {string} */
+                                kind: "purchase";
+                                /** @enum {string} */
+                                state: "drafted" | "awaiting_approval" | "executing" | "succeeded" | "failed" | "denied";
+                                /** @enum {string} */
+                                run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
+                                awaiting: {
+                                    /** @enum {string} */
+                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge";
+                                } | null;
+                                merchant: {
+                                    id: string;
+                                    name: string;
+                                };
+                                items: {
+                                    sku_id: string;
+                                    name: string;
+                                    quantity: number;
+                                    unit_price_minor: number;
+                                }[];
+                                total_minor: number;
+                                /** @enum {string} */
+                                currency: "BRL";
+                                /** @enum {string} */
+                                payment_method: "card" | "store_on_file";
+                                order: {
+                                    id: string | null;
+                                    status: string | null;
+                                    amount_minor: number | null;
+                                } | null;
+                                receipt: {
+                                    /** @enum {string} */
+                                    funding_origin: "external_card" | "store_on_file";
+                                    /** @enum {boolean} */
+                                    wallet_debit: false;
+                                } | null;
+                                failure: {
+                                    code: string;
+                                } | null;
+                                next_action: string | null;
+                            };
+                            /** @description The proposal card as the dashboard shows it. */
+                            proposal: {
+                                [key: string]: unknown;
+                            } | null;
+                            idempotent_replay: boolean;
+                        };
+                    };
+                };
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            purchase: {
+                                /** @description The purchase proposal id (`prp_...`). */
+                                id: string;
+                                /** @enum {string} */
+                                kind: "purchase";
+                                /** @enum {string} */
+                                state: "drafted" | "awaiting_approval" | "executing" | "succeeded" | "failed" | "denied";
+                                /** @enum {string} */
+                                run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
+                                awaiting: {
+                                    /** @enum {string} */
+                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge";
+                                } | null;
+                                merchant: {
+                                    id: string;
+                                    name: string;
+                                };
+                                items: {
+                                    sku_id: string;
+                                    name: string;
+                                    quantity: number;
+                                    unit_price_minor: number;
+                                }[];
+                                total_minor: number;
+                                /** @enum {string} */
+                                currency: "BRL";
+                                /** @enum {string} */
+                                payment_method: "card" | "store_on_file";
+                                order: {
+                                    id: string | null;
+                                    status: string | null;
+                                    amount_minor: number | null;
+                                } | null;
+                                receipt: {
+                                    /** @enum {string} */
+                                    funding_origin: "external_card" | "store_on_file";
+                                    /** @enum {boolean} */
+                                    wallet_debit: false;
+                                } | null;
+                                failure: {
+                                    code: string;
+                                } | null;
+                                next_action: string | null;
+                            };
+                            /** @description The proposal card as the dashboard shows it. */
+                            proposal: {
+                                [key: string]: unknown;
+                            } | null;
+                            idempotent_replay: boolean;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not hold `shop:purchases:write`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No mandate permits the store, or the project is not Test. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "proposal_no_mandate" | "purchase_merchant_unsupported";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The agent, the store, the rail or an item is not one that can be bought. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Shop purchases are off on this deployment. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "shop_purchases_disabled";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shop/agent/purchases/{purchaseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Where a purchase stands
+         * @description Scope `shop:purchases:read`. References and states only: the order the store answered, a receipt marked as external (no Wallet debit), what it waits for.
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            purchase: {
+                                /** @description The purchase proposal id (`prp_...`). */
+                                id: string;
+                                /** @enum {string} */
+                                kind: "purchase";
+                                /** @enum {string} */
+                                state: "drafted" | "awaiting_approval" | "executing" | "succeeded" | "failed" | "denied";
+                                /** @enum {string} */
+                                run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
+                                awaiting: {
+                                    /** @enum {string} */
+                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge";
+                                } | null;
+                                merchant: {
+                                    id: string;
+                                    name: string;
+                                };
+                                items: {
+                                    sku_id: string;
+                                    name: string;
+                                    quantity: number;
+                                    unit_price_minor: number;
+                                }[];
+                                total_minor: number;
+                                /** @enum {string} */
+                                currency: "BRL";
+                                /** @enum {string} */
+                                payment_method: "card" | "store_on_file";
+                                order: {
+                                    id: string | null;
+                                    status: string | null;
+                                    amount_minor: number | null;
+                                } | null;
+                                receipt: {
+                                    /** @enum {string} */
+                                    funding_origin: "external_card" | "store_on_file";
+                                    /** @enum {boolean} */
+                                    wallet_debit: false;
+                                } | null;
+                                failure: {
+                                    code: string;
+                                } | null;
+                                next_action: string | null;
+                            };
+                        };
+                    };
+                };
+                /** @description The key does not hold `shop:purchases:read`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shop/agent/instruments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A person's cards, masked
+         * @description Scope `shop:instruments:read`. Brand and last four of the person's active cards, as references an assistant can name; choosing one stays the person's act at Pagar.
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description The person whose masked cards the assistant may reference. */
+                    owner: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            instruments: {
+                                id: string;
+                                /** @enum {string} */
+                                kind: "byo_card";
+                                brand: string;
+                                last4: string;
+                                /** @enum {string} */
+                                status: "active";
+                            }[];
+                        };
+                    };
+                };
+                /** @description owner is missing or malformed. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not hold `shop:instruments:read`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/projects": {
         parameters: {
             query?: never;
@@ -39933,13 +42481,14 @@ export interface paths {
          *
          *     SCOPE. A key created with an explicit scope list needs `projects:write` and is answered with 403 without it. A wildcard key passes: the wildcard is what a key gets when it is created without an explicit list, which is every key by default.
          *
-         *     Three refusals, all 409 because the request is well formed and conflicts with an invariant the organization relies on:
+         *     Four refusals, all 409 because the request is well formed and conflicts with an invariant the organization relies on:
          *
          *     - `cannot_delete_default`: promote another project to default first.
          *     - `cannot_delete_last_project`: an organization always keeps at least one project for new resources to attach to.
          *     - `cannot_delete_with_consumer_records`: the project still owns consumer records, which are kept rather than dragged along by the delete.
+         *     - `cannot_delete_with_bill_records`: the project still holds Bill records (meters, usage events, closed cycles or statements), which are billing history and pending obligations and are kept. When consumer records also hold the project, `cannot_delete_with_consumer_records` answers first.
          *
-         *     All three carry `details.project_id`. The third also carries `details.blocked_by`, a list of `{ table, rows }`. A pre-flight probe names EVERY blocking table with its row count, so one refusal tells you everything to clear rather than making you rediscover the next blocker on each retry. A record inserted between that probe and the delete is caught by a backstop that can only name the one table that raised, and reports `rows: null` for it; an empty `blocked_by` means even that table was not identifiable. Nothing in this API deletes those records for you.
+         *     All four carry `details.project_id`. The last two also carry `details.blocked_by`, a list of `{ table, rows }`. A pre-flight probe names EVERY blocking table with its row count, so one refusal tells you everything to clear rather than making you rediscover the next blocker on each retry. A record inserted between that probe and the delete is caught by a backstop that can only name the one table that raised, and reports `rows: null` for it; an empty `blocked_by` means even that table was not identifiable. Nothing in this API deletes those records for you.
          *
          *     A cross-tenant id is 404, not 403.
          */
@@ -39981,7 +42530,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The delete conflicts with an invariant. `details.project_id` on all three; `details.blocked_by` lists `{ table, rows }` on the consumer-records refusal. */
+                /** @description The delete conflicts with an invariant. `details.project_id` on all four; `details.blocked_by` lists `{ table, rows }` on the consumer-records and Bill-records refusals. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -39990,7 +42539,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "cannot_delete_default" | "cannot_delete_last_project" | "cannot_delete_with_consumer_records";
+                                code: "cannot_delete_default" | "cannot_delete_last_project" | "cannot_delete_with_consumer_records" | "cannot_delete_with_bill_records";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -40108,6 +42657,174 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/v1/projects/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive a project
+         * @description The way out for a project that cannot be deleted because it holds records: nothing is deleted, moved or revoked. It is refused while the project has open money obligations (409 `project_has_open_operations`), so nothing recurring stops in silence. An archived project leaves `GET /v1/projects` (list it with `?include_archived=1`), its API keys and OAuth tokens are refused with 403 `project_archived`, the dashboard's writes in it too, and the workers start nothing for it; provider events of objects created before keep being recorded. The organization's default project is not archived (409 `cannot_archive_default`). Asking for the state the project is already in answers 200 with `changed: false`. Recorded in the organization's audit log.
+         *
+         *     ROLE. This is an administrative operation and it carries the `admin` role gate. On a credential of the kind this document describes — an API key or an OAuth access token — that gate does NOT refuse today. It resolves the user forwarded in the `x-codespar-user` header against this organization's members, records the outcome when no user was forwarded, the user is not a member of the organization, or the user ranks below `admin`, and then lets the request through. Refusal is behind a server-side rollout flag that is currently off. Forward an `admin` or `owner` user in `x-codespar-user` now: when the flag is turned on, a call that does not carry one starts being answered with 403 instead of being served.
+         *
+         *     SCOPE. A key created with an explicit scope list needs `projects:write` and is answered with 403 without it. A wildcard key passes: the wildcard is what a key gets when it is created without an explicit list, which is every key by default.
+         *
+         *     A cross-tenant id is 404, not 403.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Project id. An id from another organization reads as absent. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            project_id: string;
+                            archived: boolean;
+                            archived_at: string | null;
+                            archived_by: string | null;
+                            /** @description false when the project was already in the asked state; nothing was written */
+                            changed: boolean;
+                        };
+                    };
+                };
+                /** @description `not_found`. Also the answer for an id owned by another organization. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The default project is not archived (promote another first), or the project has open money obligations (`details.open`: `{ kind, count }`). `details.project_id`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "cannot_archive_default" | "project_has_open_operations";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/projects/{id}/unarchive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unarchive a project
+         * @description Restores an archived project as it was: listed again, its keys and operations accepted. Asking for the state the project is already in answers 200 with `changed: false`. Recorded in the organization's audit log.
+         *
+         *     ROLE. This is an administrative operation and it carries the `admin` role gate. On a credential of the kind this document describes — an API key or an OAuth access token — that gate does NOT refuse today. It resolves the user forwarded in the `x-codespar-user` header against this organization's members, records the outcome when no user was forwarded, the user is not a member of the organization, or the user ranks below `admin`, and then lets the request through. Refusal is behind a server-side rollout flag that is currently off. Forward an `admin` or `owner` user in `x-codespar-user` now: when the flag is turned on, a call that does not carry one starts being answered with 403 instead of being served.
+         *
+         *     SCOPE. A key created with an explicit scope list needs `projects:write` and is answered with 403 without it. A wildcard key passes: the wildcard is what a key gets when it is created without an explicit list, which is every key by default.
+         *
+         *     A cross-tenant id is 404, not 403.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Project id. An id from another organization reads as absent. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            project_id: string;
+                            archived: boolean;
+                            archived_at: string | null;
+                            archived_by: string | null;
+                            /** @description false when the project was already in the asked state; nothing was written */
+                            changed: boolean;
+                        };
+                    };
+                };
+                /** @description `not_found`. Also the answer for an id owned by another organization. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/projects/{id}/settings": {
@@ -42780,7 +45497,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Internal Server Error — the loop failed mid-flight. Carries the work that already completed, in the same fields as the 200. */
+                /** @description Internal Server Error — the loop failed mid-flight. Carries the work that already completed, in the same fields as the 200. `assistant_unavailable`: the model provider failed (any status, the connection included); `chat_loop_failed`: anything else. `message` is a fixed sentence, never the error's own text. */
                 500: {
                     headers: {
                         [name: string]: unknown;
@@ -42788,7 +45505,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "chat_loop_failed";
+                            error: "assistant_unavailable" | "chat_loop_failed";
                             message: string;
                             tool_calls: unknown[];
                             iterations: number;
@@ -45431,6 +48148,8 @@ export interface components {
             /** Format: date-time */
             decidedAt: string | null;
             decidedBy: string | null;
+            /** @description The cost the evaluation was judged on, for an evaluation answered by a budget rule: the number added to the agent's budget counter, or that would have passed the limit on a `budget_exceeded` denial. It is in the unit the rule's `dailyLimit` and `monthlyLimit` are written in, which for a payment is MAJOR units of BRL (a Pix of R$ 25,00 is `25`, not `2500`); it carries no currency. `null` for an evaluation that priced nothing (rate limits, approvals, denials by name) and for every evaluation recorded before this field existed. `0` is a cost of zero, not a missing one. */
+            estimatedCost: number | null;
         };
         PolicyCreate: {
             name: string;
