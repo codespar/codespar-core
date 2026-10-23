@@ -1,0 +1,38 @@
+# TEMPORARY (lane shop-a): regenerate the SDK's OpenAPI snapshot from the enterprise K1 document, typecheck and test. Never merged.
+name: ci-run shopa-k1gen (temporary)
+on:
+  push:
+    branches: [ci-run/shopa-k1gen]
+permissions:
+  contents: read
+jobs:
+  gen:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - name: Refresh the snapshot from the enterprise K1 document
+        run: |
+          (cd .ci-tmp && python3 -m http.server 18765 --bind 127.0.0.1 >/dev/null 2>&1 &) 
+          sleep 2
+          CODESPAR_OPENAPI_URL=http://127.0.0.1:18765/openapi.json npm run sdk:spec:refresh
+          git status --short
+      - uses: actions/upload-artifact@v4
+        with:
+          name: generated
+          path: |
+            packages/core/openapi-snapshot.json
+            packages/core/src/generated/
+      - name: Build, typecheck and test
+        run: |
+          npx turbo run build --filter=@codespar/sdk... --filter=@codespar/mcp... 2>&1 | tail -15
+          npx turbo run typecheck --filter=@codespar/sdk --filter=@codespar/mcp --filter=@codespar/types 2>&1 | grep -E "error TS|Tasks:|Failed" | head -40
+          (cd packages/core && npx vitest run 2>&1 | tail -15)
+          (cd packages/mcp && npx vitest run 2>&1 | tail -10)
+          (cd packages/types && npx vitest run 2>&1 | tail -10)
