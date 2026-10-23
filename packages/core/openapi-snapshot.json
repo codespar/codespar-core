@@ -1,10 +1,10 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-10-23T07:59:16.515Z",
-    "sha256": "86aa48bb2b5e91b85a9b0d2efcf8463b8609bbd9fdd8e89bef08c293d47678b6",
+    "fetched_at": "2026-10-23T08:26:33.095Z",
+    "sha256": "6c74e6f7bc3dc667199e184d4b57cc83769d9169a2ac20bf33ef4bb61fffabc3",
     "etag": null,
-    "last_modified": "Fri, 23 Oct 2026 07:59:01 GMT",
+    "last_modified": "Fri, 23 Oct 2026 08:26:18 GMT",
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
@@ -99917,7 +99917,7 @@
           ]
         }
       },
-      "/v1/shop/agent/purchases/{purchaseId}": {
+      "/v1/shop/agent/purchases/{id}": {
         "get": {
           "summary": "Where a purchase stands",
           "description": "Scope `shop:purchases:read`. References and states only: the order the store answered, a receipt marked as external (no Wallet debit), what it waits for.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
@@ -100207,7 +100207,15 @@
                 }
               }
             }
-          }
+          },
+          "x-codespar-scope": "shop:purchases:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "shop:purchases:read"
+              ]
+            }
+          ]
         }
       },
       "/v1/shop/agent/instruments": {
