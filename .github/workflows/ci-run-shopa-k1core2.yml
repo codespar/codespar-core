@@ -1,0 +1,24 @@
+# TEMPORARY (lane shop-a): build, typecheck, test and offline spec check of the K1 SDK branch. Never merged.
+name: ci-run shopa-k1core2 (temporary)
+on:
+  push:
+    branches: [ci-run/shopa-k1core2]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: cd packages/core && node scripts/openapi-spec.mjs check --offline
+      - run: npx turbo run build typecheck --filter=@codespar/sdk --filter=@codespar/mcp --filter=@codespar/types
+      - run: cd packages/core && npx vitest run
+      - run: cd packages/mcp && npx vitest run
+      - run: cd packages/types && npx vitest run
