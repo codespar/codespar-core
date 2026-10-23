@@ -25,6 +25,7 @@
  */
 
 import type { Session } from "@codespar/sdk";
+export { SHOP_PURCHASE_MCP_TOOLS, callShopPurchaseTool, isShopPurchaseTool, type McpToolDefinition } from "./shop-purchase-tools.js";
 
 export interface McpConfig {
   url: string;
