@@ -156,9 +156,15 @@ const PINNED_COMMANDS = [
   "meters get → GET /v1/meters/{meterId}",
   "meters usage → GET /v1/meters/{meterId}/usage",
   "meters events → GET /v1/meters/{meterId}/events",
+  "meters list-statements → GET /v1/meters/statements",
+  "meters get-statements → GET /v1/meters/statements/{statementId}",
+  "meters adjustments → GET /v1/meters/adjustments",
   "meter-events create → POST /v1/meter-events",
   "onboarding list → GET /v1/onboarding",
   "webhook-deliveries list → GET /v1/webhook-deliveries",
+  "shop create-purchases → POST /v1/shop/agent/purchases",
+  "shop get-purchases → GET /v1/shop/agent/purchases/{id}",
+  "shop instruments → GET /v1/shop/agent/instruments",
 ];
 
 
