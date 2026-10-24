@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-10-24T05:17:53.378Z",
-    "sha256": "536969f6b568f556e41be98c2fe1a1a9f27d5dbb70c5726d30e34d283a41fd41",
+    "fetched_at": "2026-10-24T16:37:05.128Z",
+    "sha256": "412c8d524dd0f425eb5797ce52c0cb292b5c08ee3552239f19b1fd17227c9c1a",
     "etag": null,
     "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 302,
-    "operations": 357,
+    "paths": 303,
+    "operations": 358,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -54385,6 +54385,399 @@
                             "type": "string",
                             "enum": [
                               "collect_call_budget_wait"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "collect:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "collect:write"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/collect/subscriptions/{subscriptionId}/test-pay": {
+        "post": {
+          "summary": "Pay a Test adhesion's first payment from the shared Test payer (Pagar (teste))",
+          "description": "The payer button for a recurring offer: pays the adhesion's journey 3 QR FOR REAL at the Celcoin sandbox, from the operator's Test payer account, the way a customer would pay it. Test projects only.\n\nNo body: the amount and the destination come from the stored adhesion and its recurrence. One payment per adhesion; a second call answers 409 `test_pay_already_used`. Capped per payment and per project per 24 hours, together with the charges' Test payments. Paying is not the authorization: the adhesion turns active only when the bank's journey 3 ACCEPTED arrives, and the payment counts only when its credit arrives, never from this answer.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string"
+              },
+              "required": true,
+              "name": "subscriptionId",
+              "in": "path"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "object": {
+                        "type": "string",
+                        "enum": [
+                          "collect_subscription_test_payment"
+                        ]
+                      },
+                      "subscription_id": {
+                        "type": "string"
+                      },
+                      "amount_minor": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "type": "string",
+                        "description": "Celcoin's answer to the Pix, usually PROCESSING; not a settlement."
+                      },
+                      "end_to_end_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "object",
+                      "subscription_id",
+                      "amount_minor",
+                      "status",
+                      "end_to_end_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "A body was sent, or the credential names no project.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body",
+                              "project_scope_missing"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "Not a Test credential or project, not an admin, or Collect is off.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "test_pay_not_permitted",
+                              "insufficient_role"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No adhesion with that id in this project.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "collect_subscription_not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "The adhesion is not awaiting its first payment (`details.reason`: not_test, not_issued, failed, cancelled, first_payment_received, recurrence_closed, qr_expired), already had its Test payment, or is above the cap.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "subscription_not_payable",
+                              "test_pay_already_used",
+                              "test_pay_amount_above_cap"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "429": {
+              "description": "The project used its Test payments for the last 24 hours.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "test_pay_daily_limit"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "502": {
+              "description": "A step at Celcoin failed; the adhesion keeps its claim.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "test_pay_decode_failed",
+                              "test_pay_decode_incomplete",
+                              "test_pay_amount_mismatch",
+                              "test_pay_txid_mismatch",
+                              "test_pay_dict_failed",
+                              "test_pay_dict_incomplete",
+                              "test_pay_payment_failed"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "503": {
+              "description": "No Test payer or Celcoin connection on this deployment.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "test_payer_unconfigured",
+                              "celcoin_credentials_unavailable"
                             ]
                           },
                           "message": {

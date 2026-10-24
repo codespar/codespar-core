@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 536969f6b568f556e41be98c2fe1a1a9f27d5dbb70c5726d30e34d283a41fd41, fetched 2026-10-24T05:17:53.378Z
+// Source: openapi-snapshot.json (sha256 412c8d524dd0f425eb5797ce52c0cb292b5c08ee3552239f19b1fd17227c9c1a, fetched 2026-10-24T16:37:05.128Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -24558,6 +24558,197 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "collect_call_budget_wait";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/collect/subscriptions/{subscriptionId}/test-pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pay a Test adhesion's first payment from the shared Test payer (Pagar (teste))
+         * @description The payer button for a recurring offer: pays the adhesion's journey 3 QR FOR REAL at the Celcoin sandbox, from the operator's Test payer account, the way a customer would pay it. Test projects only.
+         *
+         *     No body: the amount and the destination come from the stored adhesion and its recurrence. One payment per adhesion; a second call answers 409 `test_pay_already_used`. Capped per payment and per project per 24 hours, together with the charges' Test payments. Paying is not the authorization: the adhesion turns active only when the bank's journey 3 ACCEPTED arrives, and the payment counts only when its credit arrives, never from this answer.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    subscriptionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            object: "collect_subscription_test_payment";
+                            subscription_id: string;
+                            amount_minor: number;
+                            /** @description Celcoin's answer to the Pix, usually PROCESSING; not a settlement. */
+                            status: string;
+                            end_to_end_id: string | null;
+                        };
+                    };
+                };
+                /** @description A body was sent, or the credential names no project. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "project_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not a Test credential or project, not an admin, or Collect is off. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "test_pay_not_permitted" | "insufficient_role";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No adhesion with that id in this project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "collect_subscription_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The adhesion is not awaiting its first payment (`details.reason`: not_test, not_issued, failed, cancelled, first_payment_received, recurrence_closed, qr_expired), already had its Test payment, or is above the cap. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "subscription_not_payable" | "test_pay_already_used" | "test_pay_amount_above_cap";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The project used its Test payments for the last 24 hours. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "test_pay_daily_limit";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A step at Celcoin failed; the adhesion keeps its claim. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "test_pay_decode_failed" | "test_pay_decode_incomplete" | "test_pay_amount_mismatch" | "test_pay_txid_mismatch" | "test_pay_dict_failed" | "test_pay_dict_incomplete" | "test_pay_payment_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No Test payer or Celcoin connection on this deployment. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "test_payer_unconfigured" | "celcoin_credentials_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
