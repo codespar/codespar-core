@@ -1,5 +1,29 @@
 # @codespar/cli — changelog
 
+## 0.21.0 — 2026-10-24
+
+### Added
+
+- **`codespar payables files` and `codespar payables batches`**, hand-written
+  subgroups of the derived `payables` group, over the SDK's `cs.payables`
+  (needs `@codespar/sdk` 0.16.19):
+  - `payables files upload <path>`: one PDF, PNG, JPEG, WEBP, CSV or XLSX;
+    prints its `file_id` and how many charges it holds.
+  - `payables batches create [--file <path>]... [--file-id <id>]... [--item <spec>]... [--idempotency-key <key>]`:
+    uploads each `--file`, then creates the batch with `source: "cli"`. An
+    item is `pix_key=...,amount_minor=5000` (or `boleto_line=...`,
+    `br_code=...`) or the same keys as JSON; a Pix key without
+    `amount_minor` is refused.
+  - `payables batches get <batchId>`.
+  - `payables batches update-item <batchId> <itemId> --expected-version <n> [--amount <minor>] [--pix-key ...] [--boleto-line ...] [--br-code ...] [--description ...] [--exclude|--include]`.
+  - `payables batches pay <batchId> --batch-version <n> --list-hash <hash> [--mandate <id>] [--idempotency-key <key>]`.
+    The flag is `--batch-version`, not `--version`: commander reads the root's
+    `-v, --version` after a subcommand too, and would print the CLI version.
+    On a 409 the current list is printed with the version and hash to confirm.
+- A derived subcommand named like one of these subgroups is skipped
+  (`HAND_WRITTEN_SUBGROUPS`), so the snapshot refresh that brings
+  `/v1/payables/files` does not collide with `payables files`.
+
 ## 0.20.0 — 2026-10-24
 
 ### Added

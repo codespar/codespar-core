@@ -25,6 +25,15 @@
  */
 
 import type { Session } from "@codespar/sdk";
+export {
+  PAYABLES_TOOL_NAME,
+  callPayablesTool,
+  isPayablesTool,
+  payablesErrorText,
+  payablesToolDefinition,
+  projectBatch,
+  type PayablesToolOptions,
+} from "./payables-tools.js";
 export { SHOP_PURCHASE_MCP_TOOLS, callShopPurchaseTool, isShopPurchaseTool, type McpToolDefinition } from "./shop-purchase-tools.js";
 
 export interface McpConfig {

@@ -55,12 +55,25 @@ function parseErrorPayload(raw: string): {
     if (body && typeof body === "object" && !Array.isArray(body)) {
       const obj = body as Record<string, unknown>;
       const code = typeof obj.code === "string" ? obj.code : undefined;
+      // Newer routes answer `{ error: { code, message, details? } }`;
+      // read the code and message from inside it.
+      const nested =
+        obj.error && typeof obj.error === "object" && !Array.isArray(obj.error)
+          ? (obj.error as Record<string, unknown>)
+          : undefined;
       // Legacy fallback: pre-PRD envelopes used `error` as the
       // discriminant. `code` takes precedence; `error` honored only
       // when `code` is missing.
       const fallbackCode =
-        code ?? (typeof obj.error === "string" ? (obj.error as string) : undefined);
-      const message = typeof obj.message === "string" ? obj.message : undefined;
+        code ??
+        (typeof nested?.code === "string" ? nested.code : undefined) ??
+        (typeof obj.error === "string" ? (obj.error as string) : undefined);
+      const message =
+        typeof obj.message === "string"
+          ? obj.message
+          : typeof nested?.message === "string"
+            ? nested.message
+            : undefined;
       return {
         body,
         parsed: { code: fallbackCode, message },

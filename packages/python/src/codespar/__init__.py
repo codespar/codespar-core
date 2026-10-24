@@ -37,6 +37,23 @@ from .errors import (
     StreamError,
     TimeoutError,
 )
+from .payables import (
+    AsyncPayables,
+    PayableBatch,
+    PayableBatchConfirmation,
+    PayableBatchCreated,
+    PayableBatchItem,
+    PayableBatchItemCheck,
+    PayableBatchItemPayment,
+    PayableBatchItemState,
+    PayableBatchSource,
+    PayableBatchStatus,
+    PayableFile,
+    PayableItemInput,
+    Payables,
+    UploadFile,
+    payable_batch_from_error,
+)
 from .tool_result_codes import (
     APPROVAL_REQUIRED,
     MOCKS_ENGINE_ERROR,
@@ -141,7 +158,7 @@ from .types import (
     WizardAction,
 )
 
-__version__ = "0.12.0"
+__version__ = "0.13.0"
 
 __all__ = [
     "APPROVAL_REQUIRED",
@@ -156,6 +173,7 @@ __all__ = [
     "ApprovalRequiredOutput",
     "AssistantTextEvent",
     "AsyncCodeSpar",
+    "AsyncPayables",
     "AsyncSession",
     # Connect Links
     "AuthConfig",
@@ -203,6 +221,18 @@ __all__ = [
     "MocksEngineErrorOutput",
     "MocksExhaustedOutput",
     "NotConnectedError",
+    "PayableBatch",
+    "PayableBatchConfirmation",
+    "PayableBatchCreated",
+    "PayableBatchItem",
+    "PayableBatchItemCheck",
+    "PayableBatchItemPayment",
+    "PayableBatchItemState",
+    "PayableBatchSource",
+    "PayableBatchStatus",
+    "PayableFile",
+    "PayableItemInput",
+    "Payables",
     # Async settlement (codespar_pay etc.)
     "PaymentStatus",
     "PaymentStatusEvent",
@@ -260,6 +290,7 @@ __all__ = [
     "ToolResultEvent",
     "ToolResultOutcome",
     "ToolUseEvent",
+    "UploadFile",
     "UserMessageEvent",
     # Async KYC verification (codespar_kyc)
     "VerificationStatus",
@@ -274,4 +305,5 @@ __all__ = [
     "is_mocks_exhausted",
     "is_policy_denied",
     "is_tool_not_mocked",
+    "payable_batch_from_error",
 ]

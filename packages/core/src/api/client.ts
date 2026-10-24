@@ -24,6 +24,7 @@ import type {
   ApiSuccess,
 } from "./types.js";
 import { fetchWithTimeout, validateTimeout } from "../internal/fetch.js";
+import { toFormData } from "../internal/multipart.js";
 import {
   CodesparApiError,
   TimeoutError,
@@ -52,6 +53,7 @@ const OPERATION_INDEX: ReadonlyMap<string, OperationRow> = new Map(
 
 const SSE = "text/event-stream";
 const FORM = "application/x-www-form-urlencoded";
+const MULTIPART = "multipart/form-data";
 
 type Primitive = string | number | boolean;
 
@@ -94,8 +96,12 @@ function expandPath(template: string, params: unknown): string {
   return expanded;
 }
 
-function serialiseBody(contentType: string | null, body: unknown): BodyInit | undefined {
+async function serialiseBody(
+  contentType: string | null,
+  body: unknown,
+): Promise<BodyInit | undefined> {
   if (body === undefined) return undefined;
+  if (contentType === MULTIPART) return toFormData(body);
   if (contentType === FORM) {
     const form = new URLSearchParams();
     for (const [k, v] of Object.entries(body as Record<string, unknown>)) {
@@ -211,7 +217,12 @@ export class ApiClient {
 
     const headers: Record<string, string> = { ...this.headers };
     if (row.accept) headers.Accept = row.accept;
-    if (row.body && opts.body !== undefined) headers["Content-Type"] = row.body;
+    // multipart is left to fetch, which writes the boundary into the
+    // Content-Type; a hand-set "multipart/form-data" has none and the
+    // server cannot split the parts.
+    if (row.body && row.body !== MULTIPART && opts.body !== undefined) {
+      headers["Content-Type"] = row.body;
+    }
     for (const [k, v] of Object.entries((opts.header ?? {}) as Record<string, unknown>)) {
       if (v !== undefined && v !== null) headers[k] = String(v as Primitive);
     }
@@ -219,7 +230,7 @@ export class ApiClient {
     const init: Omit<RequestInit, "signal"> = {
       method: method.toUpperCase(),
       headers,
-      body: row.body ? serialiseBody(row.body, opts.body) : undefined,
+      body: row.body ? await serialiseBody(row.body, opts.body) : undefined,
     };
 
     if (row.accept === SSE) {

@@ -88,7 +88,11 @@ describe("coverage: every operation in the generated table is dispatchable", () 
       expect(headers.Authorization).toBe(`Bearer ${KEY}`);
       if (row.accept) expect(headers.Accept, `${row.method} ${row.path} Accept`).toBe(row.accept);
       else expect(headers.Accept).toBeUndefined();
-      if (row.body) {
+      if (row.body === "multipart/form-data") {
+        // fetch writes the Content-Type with the boundary from the FormData.
+        expect(headers["Content-Type"], `${row.method} ${row.path} Content-Type`).toBeUndefined();
+        expect(call.init.body).toBeInstanceOf(FormData);
+      } else if (row.body) {
         expect(headers["Content-Type"], `${row.method} ${row.path} Content-Type`).toBe(row.body);
         expect(call.init.body).toBeDefined();
       } else {
@@ -193,6 +197,61 @@ describe("request shaping", () => {
     const headers = calls[0]!.init.headers as Record<string, string>;
     expect(headers["Content-Type"]).toBe("application/x-www-form-urlencoded");
     expect(String(calls[0]!.init.body)).toBe("grant_type=authorization_code&code=code-value");
+  });
+
+  it("sends multipart bodies as FormData so fetch writes the boundary", async () => {
+    // Reading the body back through Request yields the boundary and the
+    // part bytes fetch would put on the wire.
+    const calls = stubFetch(() => json({ id: "doc_example" }, 201));
+    const api = client() as unknown as Loose;
+    const bytes = new TextEncoder().encode("%PDF-1.7 example");
+    await api.request("post", "/v1/payables/documents", {
+      body: {
+        document: new File([bytes], "conta.pdf", { type: "application/pdf" }),
+        actor: "user_example",
+      },
+    });
+    const init = calls[0]!.init;
+    expect((init.headers as Record<string, string>)["Content-Type"]).toBeUndefined();
+    const wire = new Request(calls[0]!.url, { method: "POST", body: init.body });
+    expect(wire.headers.get("content-type")).toMatch(/^multipart\/form-data; boundary=/);
+    const form = await wire.formData();
+    const part = form.get("document") as File;
+    expect(part.name).toBe("conta.pdf");
+    expect(part.type).toBe("application/pdf");
+    expect(new Uint8Array(await part.arrayBuffer())).toEqual(bytes);
+    expect(form.get("actor")).toBe("user_example");
+  });
+
+  it("turns Buffer, ArrayBuffer and stream parts into file parts", async () => {
+    const calls = stubFetch(() => json({}, 201));
+    const api = client() as unknown as Loose;
+    const { Readable } = await import("node:stream");
+    const sources: unknown[] = [
+      Buffer.from("buffer bytes"),
+      new TextEncoder().encode("buffer bytes").buffer,
+      Readable.from([Buffer.from("buffer "), Buffer.from("bytes")]),
+      new Blob(["buffer bytes"]).stream(),
+    ];
+    for (const document of sources) {
+      await api.request("post", "/v1/payables/documents", { body: { document } });
+    }
+    for (const call of calls) {
+      const form = await new Request(call.url, { method: "POST", body: call.init.body }).formData();
+      const part = form.get("document") as File;
+      expect(await part.text()).toBe("buffer bytes");
+      expect(part.name).toBe("document");
+    }
+    expect(calls).toHaveLength(4);
+  });
+
+  it("passes a caller-built FormData through untouched", async () => {
+    const calls = stubFetch(() => json({}, 201));
+    const api = client() as unknown as Loose;
+    const form = new FormData();
+    form.append("document", new Blob(["x"]), "x.png");
+    await api.request("post", "/v1/payables/documents", { body: form });
+    expect(calls[0]!.init.body).toBe(form);
   });
 
   it("carries the project scope and per-call header parameters", async () => {

@@ -83,6 +83,16 @@ describe("o programa sobe", () => {
     60_000,
   );
 
+  it("os subgrupos escritos à mão de `payables` sobem dentro do grupo derivado", () => {
+    const upload = roda("payables", "files", "upload", "--help");
+    expect(upload.status, `${upload.stdout}${upload.stderr}`).toBe(0);
+    const pay = roda("payables", "batches", "pay", "--help");
+    expect(pay.status, `${pay.stdout}${pay.stderr}`).toBe(0);
+    // `--version` seria lido pela raiz (imprime a versão da CLI e sai).
+    expect(pay.stdout).toContain("--batch-version");
+    expect(pay.stdout).toContain("--list-hash");
+  }, 30_000);
+
   it("CONTROLE: um comando que não existe sai não-zero", () => {
     const r = roda("comando-que-nao-existe-mesmo");
     expect(r.status, "o programa aceitou um comando inventado").not.toBe(0);

@@ -1,5 +1,34 @@
 # codespar (Python SDK) — CHANGELOG
 
+## 0.13.0
+
+`cs.payables`, in parity with `@codespar/sdk` 0.16.19.
+
+### Added
+
+- `cs.payables.files.upload(file, *, filename=None, content_type=None)` on
+  `CodeSpar` and `AsyncCodeSpar`: `file` is a path (`str`/`PathLike`), `bytes`
+  or a binary file object; posts multipart to `POST /v1/payables/files`.
+- `cs.payables.batches.create(*, file_ids=None, items=None, source=None, conversation_id=None, idempotency_key=None)`,
+  `get(batch_id)`, `update_item(batch_id, item_id, *, expected_version, ...)`,
+  `add_items(batch_id, *, expected_version, file_ids=None, items=None)` and
+  `pay(batch_id, *, version, list_hash, mandate_id=None, idempotency_key=None)`.
+  Responses are the wire shape as `TypedDict`s (`PayableFile`,
+  `PayableBatch`, `PayableBatchItem`). `create` sends a fresh
+  `Idempotency-Key` unless given one; `pay` derives it from the batch,
+  version and list hash. `payable_batch_from_error(err)` returns the current
+  batch a 409 carries in `error.details.batch`.
+- `_http.request_json` takes `files=` (multipart, boundary written by httpx)
+  and `extra_headers=`.
+- `__version__` says `0.13.0`.
+
+### Fixed
+
+- `ApiError.code` and the message read the nested envelope newer routes
+  answer, `{"error": {"code", "message", "details"}}`; `code` was `None`
+  for those. A top-level `code` still wins, then the nested one, then a
+  legacy `error` string.
+
 ## 0.12.0
 
 `codespar.mandate` is strict, in parity with `@codespar/sdk/mandate` 0.16.11
