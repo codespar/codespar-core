@@ -17,7 +17,9 @@
   `PayableBatch`, `PayableBatchItem`). `create` sends a fresh
   `Idempotency-Key` unless given one; `pay` derives it from the batch,
   version and list hash. `payable_batch_from_error(err)` returns the current
-  batch a 409 carries in `error.details.batch`.
+  batch a 409 carries in `error.details.batch`. `pay` repeats the same call
+  while the API answers `executing` with items still `ready` (up to 30
+  calls), as the TS SDK does.
 - `_http.request_json` takes `files=` (multipart, boundary written by httpx)
   and `extra_headers=`.
 - `__version__` says `0.13.0`.

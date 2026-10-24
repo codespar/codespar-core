@@ -19,6 +19,10 @@
   its key from the batch, version and list hash. `payableBatchFromError(err)`
   returns the current batch a 409 (`payable_batch_version_conflict`,
   `payable_batch_version_mismatch`) carries in `error.details.batch`.
+  `pay` repeats the same call (same key and body) while the API answers
+  `status: "executing"` with items still `ready` (its ~20 s budget per call;
+  nothing runs on the server between calls), up to 30 calls, and returns the
+  last answer.
   The routes are written by hand in the facade until the served document
   declares them; the OpenAPI snapshot is not refreshed in this version.
 

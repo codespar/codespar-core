@@ -189,6 +189,42 @@ async def test_get_update_add_and_pay_paths(httpx_mock: HTTPXMock) -> None:
     assert reqs[3].headers["idempotency-key"] == "pay:pbat_example:5:hash_v5"
 
 
+async def test_pay_repeats_while_executing_with_items_ready(httpx_mock: HTTPXMock) -> None:
+    item = BATCH["items"][0]
+    paid = {
+        "state": "executed",
+        "attempt_id": "att_1",
+        "receipt_id": "rcp_1",
+        "end_to_end_id": "E1",
+        "refusal": None,
+    }
+    second = {**item, "item_id": "pbl_ZyXwVuTsRqPoNmLk", "position": 1}
+    done = {**item, "state": "executed", "payment": paid}
+    httpx_mock.add_response(json={**BATCH, "status": "executing", "items": [done, second]})
+    httpx_mock.add_response(
+        json={
+            **BATCH,
+            "status": "completed",
+            "items": [done, {**second, "state": "executed", "payment": paid}],
+        }
+    )
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        batch = await cs.payables.batches.pay("pbat_example", version=3, list_hash="hash_v3")
+    reqs = httpx_mock.get_requests()
+    assert len(reqs) == 2
+    assert reqs[0].headers["idempotency-key"] == reqs[1].headers["idempotency-key"]
+    assert reqs[0].content == reqs[1].content
+    assert batch["status"] == "completed"
+
+
+async def test_pay_does_not_repeat_when_nothing_is_left_to_send(httpx_mock: HTTPXMock) -> None:
+    waiting = {**BATCH["items"][0], "state": "dispatching"}
+    httpx_mock.add_response(json={**BATCH, "status": "executing", "items": [waiting]})
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        await cs.payables.batches.pay("pbat_example", version=3, list_hash="hash_v3")
+    assert len(httpx_mock.get_requests()) == 1
+
+
 async def test_version_mismatch_carries_current_batch(httpx_mock: HTTPXMock) -> None:
     current = {**BATCH, "version": 4, "list_hash": "hash_v4"}
     httpx_mock.add_response(

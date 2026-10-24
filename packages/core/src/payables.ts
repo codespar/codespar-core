@@ -60,7 +60,9 @@ export interface PayablesBatches {
    * pay it. Each item carries its own `payment` result; a refused line
    * does not stop the others. The default idempotency key is derived from
    * the batch, version and hash, so a retry of the same confirmation is
-   * the same request.
+   * the same request. While the API answers `executing` with items still
+   * `ready` (its ~20 s budget per call), the same call is repeated, up to 30
+   * times; the batch returned is the last answer.
    */
   pay(batchId: string, input: PayableBatchPayInput, opts?: PayableIdempotentOptions): Promise<PayableBatch>;
 }
@@ -96,6 +98,14 @@ function itemToWire(item: PayableItemInput): Record<string, unknown> {
 
 function dropUndefined(obj: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+}
+
+/** How many pay calls one `pay()` makes at most while the batch continues (about 20 s each). */
+const PAY_MAX_ROUNDS = 30;
+
+/** A pay call stopped at its time budget with items never sent: the same call continues them. */
+function continuesOnRepeat(batch: PayableBatch): boolean {
+  return batch.status === "executing" && batch.items.some((i) => i.state === "ready");
 }
 
 export function createPayables(deps: PayablesDeps): Payables {
@@ -213,12 +223,15 @@ export function createPayables(deps: PayablesDeps): Payables {
           mandate_id: input.mandateId,
         });
         const key = opts?.idempotencyKey ?? `pay:${batchId}:${input.version}:${input.listHash}`;
-        return call<PayableBatch>(
-          "payables.batches.pay",
-          `${batchUrl(batchId)}/pay`,
-          json("POST", body, { "Idempotency-Key": key }),
-          opts,
-        );
+        const once = () =>
+          call<PayableBatch>("payables.batches.pay", `${batchUrl(batchId)}/pay`, json("POST", body, { "Idempotency-Key": key }), opts);
+        // The API executes for about 20 s, then answers `executing` with the
+        // items it did not reach still `ready`; nothing runs after the answer.
+        // The same call continues them: paid items come back as they are, an
+        // uncertain one is looked up, never resent.
+        let batch = await once();
+        for (let round = 1; round < PAY_MAX_ROUNDS && continuesOnRepeat(batch); round++) batch = await once();
+        return batch;
       },
     },
   };

@@ -203,6 +203,27 @@ describe("cs.payables.batches", () => {
     expect(seen[1]!.headers["Idempotency-Key"]).toBe(seen[0]!.headers["Idempotency-Key"]);
   });
 
+  it("pay repeats the same call while the API answers executing with items still ready, then returns the last answer", async () => {
+    const second = { ...BATCH.items[0]!, item_id: "pbl_ZyXwVuTsRqPoNmLk", position: 1 };
+    const paid = { state: "executed" as const, attempt_id: "att_1", receipt_id: "rcp_1", end_to_end_id: "E1", refusal: null };
+    const answers = [
+      { ...BATCH, status: "executing", items: [{ ...BATCH.items[0]!, state: "executed", payment: paid }, second] },
+      { ...BATCH, status: "completed", items: [{ ...BATCH.items[0]!, state: "executed", payment: paid }, { ...second, state: "executed", payment: { ...paid, attempt_id: "att_2" } }] },
+    ];
+    const { cs, seen } = client(() => json(200, answers.shift()));
+    const batch = await cs.payables.batches.pay("pbat_example", { version: 3, listHash: "hash_v3" });
+    expect(seen).toHaveLength(2);
+    expect(seen[1]!.headers["Idempotency-Key"]).toBe(seen[0]!.headers["Idempotency-Key"]);
+    expect(seen[1]!.body).toBe(seen[0]!.body);
+    expect(batch.status).toBe("completed");
+  });
+
+  it("pay does not repeat an executing batch with nothing left to send (an item waiting for approval)", async () => {
+    const { cs, seen } = client(() => json(200, { ...BATCH, status: "executing", items: [{ ...BATCH.items[0]!, state: "dispatching" }] }));
+    await cs.payables.batches.pay("pbat_example", { version: 3, listHash: "hash_v3" });
+    expect(seen).toHaveLength(1);
+  });
+
   it("a 409 version mismatch is an error that carries the current batch", async () => {
     const current = { ...BATCH, version: 4, list_hash: "hash_v4" };
     const { cs } = client(() =>

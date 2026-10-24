@@ -401,7 +401,9 @@ class AsyncPayablesBatches:
         Each item carries its own ``payment``; a refused line does not stop
         the others. The default idempotency key is derived from the batch,
         version and hash, so a retry of the same confirmation is the same
-        request.
+        request. While the API answers ``executing`` with items still
+        ``ready`` (its ~20 s budget per call), the same call is repeated, up
+        to 30 times; the batch returned is the last answer.
         """
         body = _drop_none({"version": version, "list_hash": list_hash, "mandate_id": mandate_id})
         key = idempotency_key or f"pay:{batch_id}:{version}:{list_hash}"
@@ -412,7 +414,29 @@ class AsyncPayablesBatches:
             headers={"Idempotency-Key": key},
             timeout=timeout,
         )
+        # Nothing runs on the server after an answer: items never sent wait
+        # for the next call, which returns paid items as they are and looks
+        # an uncertain one up, never resending it.
+        rounds = 1
+        while rounds < _PAY_MAX_ROUNDS and _continues_on_repeat(data):
+            data = await self._t.call(
+                "POST",
+                f"{_batch_path(batch_id)}/pay",
+                body=body,
+                headers={"Idempotency-Key": key},
+                timeout=timeout,
+            )
+            rounds += 1
         return data
+
+
+_PAY_MAX_ROUNDS = 30
+
+
+def _continues_on_repeat(batch: PayableBatch) -> bool:
+    """A pay call stopped at its time budget with items never sent."""
+    items = batch.get("items", [])
+    return batch.get("status") == "executing" and any(i.get("state") == "ready" for i in items)
 
 
 class AsyncPayables:
