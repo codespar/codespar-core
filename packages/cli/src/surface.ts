@@ -231,6 +231,13 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     prefix: "/v1/webhook-deliveries",
     description: "Webhook deliveries: every delivery attempt of the project, across endpoints",
   },
+  {
+    // Shop v0.2 K1: an assistant proposes a purchase and reads where it stands,
+    // under delegated scopes; paying stays the person's act on the dashboard.
+    name: "shop",
+    prefix: "/v1/shop/agent",
+    description: "Shop (delegated purchases): propose one, read where it stands, list a person's masked cards",
+  },
 ];
 
 /* ── Derivation ───────────────────────────────────────────────────── */

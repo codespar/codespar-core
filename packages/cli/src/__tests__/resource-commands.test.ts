@@ -143,6 +143,7 @@ const PINNED_COMMANDS = [
   "account ledger → GET /v1/account/ledger",
   "account summary → GET /v1/account/summary",
   "account agent-activity → GET /v1/account/agent-activity",
+  "account spenders → GET /v1/account/spenders",
   "account payments → GET /v1/account/payments",
   "account fund-sandbox → POST /v1/account/fund/sandbox",
   "account fund-sandbox-initial → POST /v1/account/fund/sandbox/initial",
@@ -156,9 +157,15 @@ const PINNED_COMMANDS = [
   "meters get → GET /v1/meters/{meterId}",
   "meters usage → GET /v1/meters/{meterId}/usage",
   "meters events → GET /v1/meters/{meterId}/events",
+  "meters list-statements → GET /v1/meters/statements",
+  "meters get-statements → GET /v1/meters/statements/{statementId}",
+  "meters adjustments → GET /v1/meters/adjustments",
   "meter-events create → POST /v1/meter-events",
   "onboarding list → GET /v1/onboarding",
   "webhook-deliveries list → GET /v1/webhook-deliveries",
+  "shop create-purchases → POST /v1/shop/agent/purchases",
+  "shop get-purchases → GET /v1/shop/agent/purchases/{id}",
+  "shop instruments → GET /v1/shop/agent/instruments",
 ];
 
 

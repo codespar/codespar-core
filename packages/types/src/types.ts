@@ -205,7 +205,70 @@ export interface Session extends SessionBase {
    * "Tool not registered".
    */
   shop(args: ShopArgs, opts?: CallOptions): Promise<ShopResult>;
+  /**
+   * Shop v0.2 delegated purchases (`/v1/shop/agent/*`). The assistant
+   * PROPOSES a purchase and reads where it stands; paying, saving a card and
+   * logging in at a store stay the verified person's acts on the dashboard.
+   * Each call needs its delegated scope on the key (`shop:purchases:write`,
+   * `shop:purchases:read`); a key without it gets 403 `forbidden`. Optional:
+   * a runtime without the Shop omits it.
+   */
+  purchases?: {
+    create(input: AgentPurchaseInput, opts?: CallOptions): Promise<AgentPurchaseCreated>;
+    get(purchaseId: string, opts?: CallOptions): Promise<AgentPurchase>;
+  };
+  /**
+   * A person's cards as masked references (`shop:instruments:read`): brand and
+   * last four, never a number. Choosing one stays the person's act at Pagar.
+   */
+  instruments?: {
+    list(opts: { owner: string } & CallOptions): Promise<AgentInstrument[]>;
+  };
   mcp?: { url: string; headers: Record<string, string> };
+}
+
+/* ── Shop v0.2 delegated purchases (wire shape, /v1/shop/agent) ──── */
+
+export interface AgentPurchaseInput {
+  agentId: string;
+  merchant: string;
+  items: { skuId: string; quantity: number }[];
+  paymentMethod?: "card" | "store_on_file";
+  /** The same key with the same intent answers the same purchase. */
+  idempotencyKey: string;
+}
+
+/** A purchase as an external assistant may read it: references and states only. */
+export interface AgentPurchase {
+  id: string;
+  kind: "purchase";
+  state: "drafted" | "awaiting_approval" | "executing" | "succeeded" | "failed" | "denied";
+  run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
+  awaiting: { reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" } | null;
+  merchant: { id: string; name: string };
+  items: { sku_id: string; name: string; quantity: number; unit_price_minor: number }[];
+  total_minor: number;
+  currency: "BRL";
+  payment_method: "card" | "store_on_file";
+  order: { id: string | null; status: string | null; amount_minor: number | null } | null;
+  /** External funding: the Wallet is never debited for a purchase. */
+  receipt: { funding_origin: "external_card" | "store_on_file"; wallet_debit: false } | null;
+  failure: { code: string } | null;
+  next_action: string | null;
+}
+
+export interface AgentPurchaseCreated {
+  purchase: AgentPurchase;
+  proposal: Record<string, unknown> | null;
+  idempotent_replay: boolean;
+}
+
+export interface AgentInstrument {
+  id: string;
+  kind: "byo_card";
+  brand: string;
+  last4: string;
+  status: "active";
 }
 
 /* ── codespar_charge wire shape ──────────────────────────────── */

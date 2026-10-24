@@ -2,6 +2,15 @@
 
 ## 0.16.17 — 2026-10-13
 
+### Added (2026-10-23)
+
+- `session.purchases.create/get` and `session.instruments.list` for Shop v0.2
+  delegated purchases (`/v1/shop/agent/*`, scopes `shop:purchases:write`,
+  `shop:purchases:read`, `shop:instruments:read`). A refusal throws
+  `CodesparApiError`. Snapshot refreshed from the enterprise K1 document
+  (297 paths, 352 operations): the three shop routes, three meters reads,
+  collect attempts, refunds and default receivers, and project archive.
+
 ### Changed
 
 - Snapshot do OpenAPI relido do documento servido: seguem 340 operacoes,
