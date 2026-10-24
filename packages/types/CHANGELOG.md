@@ -1,5 +1,15 @@
 # @codespar/types — CHANGELOG
 
+## 0.11.5 — 2026-10-23
+
+### Added
+
+- `Session.purchases?` and `Session.instruments?` (Shop v0.2 delegated
+  purchases, `/v1/shop/agent/*`), optional so a runtime without the Shop
+  omits them, and the wire types `AgentPurchaseInput`, `AgentPurchase`,
+  `AgentPurchaseCreated` and `AgentInstrument`. An assistant proposes and
+  reads; paying stays the person's act on the dashboard.
+
 ## 0.11.4 — 2026-09-26
 
 ### Added

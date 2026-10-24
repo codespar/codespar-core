@@ -23,6 +23,7 @@
  */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SHOP_PURCHASE_MCP_TOOLS, callShopPurchaseTool, isShopPurchaseTool } from "./shop-purchase-tools.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -134,21 +135,33 @@ async function main(): Promise<void> {
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: toolList.map((t) => ({
-      name: t.name,
-      description: t.description,
-      // CodeSpar tools carry a JSON Schema already; default to an open object
-      // so clients that require a schema still accept the tool.
-      inputSchema:
-        t.input_schema && Object.keys(t.input_schema).length > 0
-          ? t.input_schema
-          : { type: "object" },
-    })),
+    tools: [
+      ...toolList.map((t) => ({
+        name: t.name,
+        description: t.description,
+        // CodeSpar tools carry a JSON Schema already; default to an open object
+        // so clients that require a schema still accept the tool.
+        inputSchema:
+          t.input_schema && Object.keys(t.input_schema).length > 0
+            ? t.input_schema
+            : { type: "object" },
+      })),
+      // Shop v0.2 delegated purchases: propose and read only (shop-purchase-tools.ts).
+      ...(session.purchases ? SHOP_PURCHASE_MCP_TOOLS : []),
+    ],
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const name = req.params.name;
     const args = (req.params.arguments ?? {}) as Record<string, unknown>;
+    if (isShopPurchaseTool(name)) {
+      try {
+        const out = await callShopPurchaseTool(session, name, args);
+        return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], isError: false };
+      } catch (err) {
+        return { content: [{ type: "text", text: err instanceof Error ? err.message : String(err) }], isError: true };
+      }
+    }
     const result: ToolResult = await session.execute(name, args);
     const payload = result.success ? (result.data ?? result) : result.error;
     return {

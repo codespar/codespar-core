@@ -163,6 +163,9 @@ const PINNED_COMMANDS = [
   "meter-events create → POST /v1/meter-events",
   "onboarding list → GET /v1/onboarding",
   "webhook-deliveries list → GET /v1/webhook-deliveries",
+  "shop create-purchases → POST /v1/shop/agent/purchases",
+  "shop get-purchases → GET /v1/shop/agent/purchases/{id}",
+  "shop instruments → GET /v1/shop/agent/instruments",
   "collect list-links → GET /v1/collect/links",
   "collect create-links → POST /v1/collect/links",
   "collect list-receivers-default → GET /v1/collect/receivers/default",
@@ -205,9 +208,6 @@ const PINNED_COMMANDS = [
   "payment-links get → GET /v1/payment-links/{id}",
   "payment-links delete → DELETE /v1/payment-links/{id}",
   "payment-links update → PATCH /v1/payment-links/{id}",
-  "shop create-purchases → POST /v1/shop/agent/purchases",
-  "shop get-purchases → GET /v1/shop/agent/purchases/{id}",
-  "shop instruments → GET /v1/shop/agent/instruments",
 ];
 
 

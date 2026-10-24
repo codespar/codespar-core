@@ -64,8 +64,16 @@ jobs:
       # Gate blocks high/critical only. Moderates are still reported in
       # the log but don't block when the fix isn't actionable (e.g. fix
       # sits behind an upstream dependency pin).
+      #
+      # core#214: a HIGH whose only fix is a semver-major migration can be
+      # accepted for a bounded time in scripts/audit-exceptions.json, one
+      # advisory per package. CRITICAL, an unlisted HIGH, an expired entry,
+      # a HIGH npm can fix in range, and an unreadable audit all still fail.
+      - name: Security audit gate — self-test
+        run: node --test scripts/audit-gate.test.mjs
+
       - name: Security audit
-        run: npm audit --omit=dev --audit-level=high
+        run: node scripts/audit-gate.mjs
 
   kit-templates:
     runs-on: ubuntu-latest

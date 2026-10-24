@@ -231,6 +231,13 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     prefix: "/v1/webhook-deliveries",
     description: "Webhook deliveries: every delivery attempt of the project, across endpoints",
   },
+  {
+    // Shop v0.2 K1: an assistant proposes a purchase and reads where it stands,
+    // under delegated scopes; paying stays the person's act on the dashboard.
+    name: "shop",
+    prefix: "/v1/shop/agent",
+    description: "Shop (delegated purchases): propose one, read where it stands, list a person's masked cards",
+  },
   // The four families below are published at the refresh to 358 operations
   // (2026-10-24). Three of them were exceptions whose reason no longer held:
   // `collect` was excepted because the served API answered `collect_disabled`
@@ -254,16 +261,6 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     name: "payment-links",
     prefix: "/v1/payment-links",
     description: "Payment links: the shareable URL an agent pays over x402/USDC and a person pays via Pix; list, create, read, change, remove, payments, stats",
-  },
-  {
-    // /v1/shop/agent is the Shop for an external assistant (Shop v0.2 K1):
-    // propose a purchase, read where it stands, read a person's masked
-    // instruments. Test projects, behind SHOP_PURCHASES_ENABLED. Paying,
-    // approving, saving a card and logging in at a store stay the verified
-    // person's acts on the dashboard and have no route here.
-    name: "shop",
-    prefix: "/v1/shop/agent",
-    description: "Shop, for an external assistant: propose a purchase, read it, read a person's masked card instruments (Test projects)",
   },
 ];
 

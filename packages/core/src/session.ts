@@ -35,6 +35,10 @@ import type {
   IssueResult,
   ShopArgs,
   ShopResult,
+  AgentInstrument,
+  AgentPurchase,
+  AgentPurchaseCreated,
+  AgentPurchaseInput,
 } from "@codespar/types";
 
 interface SessionDeps {
@@ -421,6 +425,65 @@ export async function createSession(
         throw new Error(`shop failed: ${result.error ?? "unknown"}`);
       }
       return result.data as ShopResult;
+    },
+
+    /**
+     * Shop v0.2 delegated purchases (`/v1/shop/agent/*`): propose and read.
+     * Paying, saving a card and logging in at a store stay the verified
+     * person's acts on the dashboard. Each call needs its delegated scope.
+     */
+    purchases: {
+      async create(input: AgentPurchaseInput, opts?: CallOptions): Promise<AgentPurchaseCreated> {
+        return await safeFetch(
+          `${baseUrl}/v1/shop/agent/purchases`,
+          {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              agent_id: input.agentId,
+              merchant: input.merchant,
+              items: input.items.map((i) => ({ sku_id: i.skuId, quantity: i.quantity })),
+              payment_method: input.paymentMethod ?? "card",
+              idempotency_key: input.idempotencyKey,
+            }),
+          },
+          "purchases.create",
+          callOpts(opts),
+          async (r) => {
+            if (!r.ok) await throwFromResponse(r, "purchases.create");
+            return (await r.json()) as AgentPurchaseCreated;
+          },
+        );
+      },
+      async get(purchaseId: string, opts?: CallOptions): Promise<AgentPurchase> {
+        return await safeFetch(
+          `${baseUrl}/v1/shop/agent/purchases/${encodeURIComponent(purchaseId)}`,
+          { headers },
+          "purchases.get",
+          callOpts(opts),
+          async (r) => {
+            if (!r.ok) await throwFromResponse(r, "purchases.get");
+            return ((await r.json()) as { purchase: AgentPurchase }).purchase;
+          },
+        );
+      },
+    },
+
+    /** A person's cards as masked references (`shop:instruments:read`). */
+    instruments: {
+      async list(opts: { owner: string } & CallOptions): Promise<AgentInstrument[]> {
+        const { owner, ...rest } = opts;
+        return await safeFetch(
+          `${baseUrl}/v1/shop/agent/instruments?owner=${encodeURIComponent(owner)}`,
+          { headers },
+          "instruments.list",
+          callOpts(rest),
+          async (r) => {
+            if (!r.ok) await throwFromResponse(r, "instruments.list");
+            return ((await r.json()) as { instruments: AgentInstrument[] }).instruments;
+          },
+        );
+      },
     },
 
     async paymentStatus(toolCallId: string, opts?: CallOptions): Promise<PaymentStatusResult> {
