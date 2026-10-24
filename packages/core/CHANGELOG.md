@@ -5,9 +5,12 @@
 ### Changed
 
 - Snapshot do OpenAPI relido do documento servido: de 340 para 358 operacoes,
-  18 novas, nenhuma removida. 55 operacoes mudaram: 40 de forma e 15 so de
-  texto. `components.schemas` muda em `PolicyEvaluation`. Snapshot
-  `412c8d524dd0`, API 0.3.0.
+  18 novas, nenhuma removida, em relacao ao snapshot da 0.16.17 (`7fa10f86b0a2`,
+  13/10). 55 operacoes mudaram: 40 de forma e 15 so de texto.
+  `components.schemas` muda em `PolicyEvaluation`. Snapshot `412c8d524dd0`,
+  API 0.3.0. A 0.16.17 nunca foi ao npm; esta e a primeira versao publicada
+  com o que ela e o refresh de 23/10 (`536969f6b568`, 357 operacoes,
+  `session.purchases` e `session.instruments`) acrescentaram.
 
   Rotas novas, e o que cada uma faz:
 

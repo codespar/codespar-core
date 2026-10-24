@@ -23,7 +23,8 @@
     `payments`, `stats`.
   - `codespar shop`: `create-purchases`, `get-purchases`, `instruments`, the
     three `/v1/shop/agent` operations an external assistant may call in a Test
-    project. Paying, approving, saving a card and logging in at a store stay
+    project (the group row arrived with core#213, on 2026-10-24, unreleased
+    until now). Paying, approving, saving a card and logging in at a store stay
     the verified person's acts on the dashboard; there is no command for them
     because there is no route.
 - **Four commands in groups that already existed**: `meters list-statements`,
