@@ -1,5 +1,105 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.18 — 2026-10-24
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido: de 340 para 358 operacoes,
+  18 novas, nenhuma removida. 55 operacoes mudaram: 40 de forma e 15 so de
+  texto. `components.schemas` muda em `PolicyEvaluation`. Snapshot
+  `412c8d524dd0`, API 0.3.0.
+
+  Rotas novas, e o que cada uma faz:
+
+  - Collect recorrente (enterprise #2103, #2123): `GET
+    /v1/collect/links/{linkId}/subscriptions`, `GET
+    /v1/collect/subscriptions/{subscriptionId}`, `POST
+    /v1/collect/subscriptions/{subscriptionId}/cancel`, `POST
+    /v1/collect/subscriptions/{subscriptionId}/test-pay` e a publica `POST
+    /v1/collect/{linkId}/subscriptions/{subscriptionId}`. Um link criado com
+    `billing: "recurring"` e uma oferta a que cada pagador adere por Pix
+    Automatico; a adesao tem estado derivado (`active`,
+    `authorization_cancelled`, `past_due`, `authorization_expired`,
+    `cancelling`, `cancelled`).
+  - Collect, contrato com o Bill (enterprise #1997, #2033): `GET` e `PUT
+    /v1/collect/receivers/default` (o recebedor que um link sem `consumer_id`
+    usa), `POST /v1/collect/payments/{paymentId}/refund` (devolver um pagamento
+    atrasado em vez de ficar com ele). `GET /v1/collect/attempts` (enterprise
+    #1989): toda cobranca do projeto com seu pagamento, para a Atividade.
+  - Bill (enterprise #2033): `GET /v1/meters/statements`, `GET
+    /v1/meters/statements/{statementId}` e `GET /v1/meters/adjustments`, as
+    leituras do fechamento do ciclo: um extrato por cliente, canal e moeda, e os
+    eventos `max`/`last` atrasados que esperam ajuste.
+  - Shop para um assistente externo (enterprise #2121): `POST
+    /v1/shop/agent/purchases`, `GET /v1/shop/agent/purchases/{id}` e `GET
+    /v1/shop/agent/instruments`, escopos `shop:purchases:write`,
+    `shop:purchases:read` e `shop:instruments:read`. Propoe uma compra, le onde
+    ela esta, le os cartoes mascarados de uma pessoa; pagar, aprovar, guardar
+    cartao e entrar na loja seguem atos da pessoa no dashboard. Projetos Test,
+    atras de `SHOP_PURCHASES_ENABLED` (503 `shop_purchases_disabled` desligado).
+  - `GET /v1/account/spenders` (enterprise #2102): os mandatos que podem
+    gastar da conta deste projeto.
+  - `POST /v1/projects/{id}/archive` e `/unarchive` (enterprise #2060): a saida
+    para um projeto que nao pode ser apagado porque guarda registros;
+    `DELETE /v1/projects/{id}` ganha o 409 de um projeto com registros do Bill
+    (enterprise #2004).
+
+  Tipos que mudam de forma, e o que isso pede de um cliente TypeScript:
+
+  - `POST /v1/collect/links`: `consumer_id` deixa de ser obrigatorio no corpo
+    (so `version` e), `version` passa a ser `anyOf` de versao avulsa e versao
+    recorrente, e o corpo ganha `billing` (`one_time` | `recurring`),
+    `reference` e `reference_version`. `PUT /v1/collect/links/{linkId}/draft`
+    aceita o mesmo `anyOf`. Quem construia o corpo pelo tipo gerado pode
+    precisar de uma asserção de qual ramo esta usando. Todas as leituras de
+    link ganham `due_on`, `reference`, `reference_version` e
+    `receiver_resolution`, obrigatorios (anulaveis onde nao se aplicam).
+  - `GET /v1/collect/links/{linkId}/payments`: cada pagamento ganha `status`,
+    `label` e `confirmation` (a evidencia por tras do registro, D-A),
+    obrigatorios. `GET /v1/collect/receivers`: cada recebedor ganha `holder`,
+    `destination`, `recurring`, `default` e `not_ready`; `identity` admite
+    `bound`. `POST /v1/collect/links/{linkId}/archive` ganha corpo opcional
+    `{"subscriptions": "cancel"}` e um 409 para a oferta cujas adesoes seguem
+    cobrando. 429 `collect_call_budget_wait` nas rotas publicas do pagador e
+    429 novo em `POST /v1/collect/links/{linkId}/attempts`.
+  - Bill: `GET /v1/meters/{meterId}/events` e `POST /v1/meter-events` ganham
+    `late_of_period` e `adjustment`, obrigatorios: um evento que chega depois
+    do fechamento do seu ciclo e marcado, nao descartado.
+  - Conta de teste (enterprise #2052): `POST /v1/account/fund/sandbox/initial`
+    ganha `initial_credit` (o credito de R$ 1.000 como operacao persistente) e
+    `entry_id` e `wallet_id` passam a `string | null`; os tres `fund/sandbox`
+    ganham o 409 `sandbox_funding_open_claim` e o 500 `wallet_credit_failed`,
+    `refill` ganha 422 e 502, e `daily_limit`/`left_today` do refill passam a
+    `integer | null`. `GET /v1/account/test-balance` igual.
+  - `PolicyEvaluation` (enterprise #1980) ganha `estimatedCost`, obrigatorio:
+    o custo que a regra `budget` julgou.
+  - Fontes de fundos (enterprise #1985): `branch` nas tres leituras, e
+    `status` admite `held`.
+  - Onboarding (enterprise #2040 e seguintes): `POST /v1/kyc/onboard`, `POST
+    /v1/account-applications` e as duas leituras de status ganham `next_step`
+    (codigo, mensagem, `retry_after_seconds`), `proposal_status`,
+    `rejected_reason`, `funding_source_status`; `disclosure.codespar_role` passa
+    de `correspondente` a `tomadora`; os 400/403/503 passam ao envelope de erro
+    padrao.
+  - `GET /v1/health` (enterprise #2081): `checks.vault` ganha `key_version`,
+    `canary`, `previous_canary` e `rows_pending`.
+  - Pix: 429 e 503 documentados em `GET`/`POST
+    /v1/consumers/{consumerId}/pix-keys`, `POST /v1/test/pix-in` e `POST
+    /v1/consumers/{consumerId}/fund/pix-in`; `POST
+    /v1/consumers/{consumerId}/pix-keys` ganha um 422 novo. `POST
+    /v1/test/settle-pix-in` e o irmao do consumidor ganham o 200 do replay
+    idempotente e o 422 `settle_amount_mismatch`; `deposit_id` passa a
+    `string | null` no 201.
+  - `POST /v1/sessions/{id}/send` (enterprise #2066): o 500 admite
+    `assistant_unavailable`. `GET /v1/account/sessions`: cada sessao ganha
+    `conversation_id`.
+
+  So texto em 15 operacoes: webhook-endpoints e triggers (create), conta
+  (balances, summary), cartoes, consent-records, wallets receive, charges
+  (create, read, cancel), collect (test-pay, refunds), consumers consents.
+
+  Nenhum campo de resposta foi removido.
+
 ## 0.16.17 — 2026-10-13
 
 ### Changed
