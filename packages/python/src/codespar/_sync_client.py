@@ -23,6 +23,7 @@ from ._async_client import AsyncCodeSpar
 from ._async_session import AsyncSession
 from ._http import normalize_timeout
 from .errors import ConfigError
+from .payables import Payables
 from .types import (
     AuthConfig,
     AuthResult,
@@ -340,6 +341,8 @@ class CodeSpar:
             return AsyncCodeSpar(**kwargs)
 
         self._async = self._runner.run(factory())
+        #: Pay documents and batches (``/v1/payables/files``, ``/v1/payables/batches``).
+        self.payables = Payables(self._async.payables, self._runner)
 
     @property
     def base_url(self) -> str:
