@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 6c74e6f7bc3dc667199e184d4b57cc83769d9169a2ac20bf33ef4bb61fffabc3, fetched 2026-10-23T08:26:33.095Z
+// Source: openapi-snapshot.json (sha256 536969f6b568f556e41be98c2fe1a1a9f27d5dbb70c5726d30e34d283a41fd41, fetched 2026-10-24T05:17:53.378Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -3424,7 +3424,7 @@ export interface paths {
         };
         /**
          * BRL money in, agent spend, tool calls and sessions over a window
-         * @description BRL only. `received_minor` sums the funding entries stamped as money received (category `recebivel`): test funding and the fund legs that mirror a payment on its way out are not received. A TEST project's body also carries, apart, the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets): `test_funding_minor` in the totals, in `previous` and in each `series` bucket; it is not a receipt rail and never appears in `received_by_rail`. A live project's body has no such field. `spent_by_agents_minor` sums debits attributed to an agent. The window is N whole buckets ending with the current, partial one: 24 hours for `24h`, 7 or 30 São Paulo calendar days for `7d` and `30d`. `series` has exactly those N buckets, oldest first, and sums to the two totals; `previous` covers the N buckets immediately before. `received_by_rail` groups that received funding by `metadata.rail`, null where the writer recorded none. `tool_calls` and `sessions` are counts over the same window and scope (tool calls by `called_at`, sessions by creation); `sessions.active_now` counts the sessions open at the time of the read that were created or made a tool call in the last 15 minutes, whatever the window: nothing closes an idle session, so an open session idle for longer is not counted. `sessions.active_idle_ms` states that threshold (900000). `window` defaults to `7d`.
+         * @description BRL only. `received_minor` sums the funding entries stamped as money received (category `recebivel`): test funding and the fund legs that mirror a payment on its way out are not received. A TEST project's body also carries, apart, the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets): `test_funding_minor` in the totals, in `previous` and in each `series` bucket; it is not a receipt rail and never appears in `received_by_rail`. A live project's body has no such field. `spent_by_agents_minor` sums debits attributed to an agent. The window is N whole buckets ending with the current, partial one: 24 hours for `24h`, 7 or 30 São Paulo calendar days for `7d` and `30d`. `series` has exactly those N buckets, oldest first, and sums to the two totals; `previous` covers the N buckets immediately before. `received_by_rail` groups that received funding by rail (`pix`, `boleto`, `ted`): `metadata.rail`, or for an entry written before the rail was stamped, the rail its source fixes (a BolePix charge-in: its Collect payment's rail, else `pix`); null where neither says. `tool_calls` and `sessions` are counts over the same window and scope (tool calls by `called_at`, sessions by creation); `sessions.active_now` counts the sessions open at the time of the read that were created or made a tool call in the last 15 minutes, whatever the window: nothing closes an idle session, so an open session idle for longer is not counted. `sessions.active_idle_ms` states that threshold (900000). `window` defaults to `7d`.
          */
         get: {
             parameters: {
@@ -3466,7 +3466,7 @@ export interface paths {
                                 /** @description TEST projects only: the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets). Never part of `received_minor`. Absent in a live project. */
                                 test_funding_minor?: string;
                             }[];
-                            /** @description Received funding by metadata.rail, null where none was recorded: money received only. Test funding is not a receipt rail and never appears here; a TEST project carries it in `test_funding_minor`. */
+                            /** @description Received funding by rail (`pix`, `boleto`, `ted`): metadata.rail, or for an entry written before the rail was stamped, the rail its source fixes (a BolePix charge-in: its Collect payment's rail, else pix). Null where neither says: money received only. Test funding is not a receipt rail and never appears here; a TEST project carries it in `test_funding_minor`. */
                             received_by_rail: {
                                 rail: string | null;
                                 received_minor: string;
@@ -3583,6 +3583,73 @@ export interface paths {
                             };
                             /** @description Echoes the `X-Request-Id` header when the request carried one. */
                             request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/account/spenders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The mandates that can spend from this project
+         * @description One row per mandate whose funding source belongs to the caller's project, active or paused and not expired, newest first: who may spend from this project's wallet. A mandate over another project's source is not listed, and neither is an agent of the organization with no mandate here. In a Test project with its own bound account, the Shop's mandates count only when signed over that account (one over another source is not in force there). `usage` is the mandate's own, from the same sums its cap gates run: `spent_minor` overall and `period_spent_minor` in the current window of its periodic cap.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            spenders: {
+                                mandate_id: string;
+                                agent_id: string | null;
+                                agent_display_name: string | null;
+                                agent_status: string | null;
+                                display_name: string | null;
+                                /** @enum {string} */
+                                status: "active" | "paused";
+                                currency: string;
+                                /** @description The rail of the mandate's funding source. */
+                                rail: string;
+                                cap_minor: string;
+                                per_tx_cap_minor: string;
+                                periodic_cap: {
+                                    /** @enum {string} */
+                                    window: "day" | "month";
+                                    cap_minor: string;
+                                } | null;
+                                /** Format: date-time */
+                                expires_at: string;
+                                usage: {
+                                    /** @description What this mandate has spent, in its own unit. */
+                                    spent_minor: string;
+                                    /** @description What it has spent in the current periodic window; null without a periodic cap. */
+                                    period_spent_minor: string | null;
+                                };
+                            }[];
                         };
                     };
                 };
@@ -8700,7 +8767,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The `Idempotency-Key` was already used with a different body, or the mandate is not active. `details` carries the mandate's state in the second case. */
+                /** @description The `Idempotency-Key` was already used with a different body, or it belongs to a request made before a `VAULT_MASTER_KEY` rotation and can no longer be matched to its body (retry with a new key), or the mandate is not active. `details` carries the mandate's state in the last case. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -11070,7 +11137,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Key repeated with a different body, or the mandate is not active. */
+                /** @description Key repeated with a different body, or used before a key rotation and no longer matchable (use a new key), or the mandate is not active. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -12222,10 +12289,24 @@ export interface paths {
                                     };
                                 };
                                 vault: {
-                                    /** @description Storage liveness only. Nothing is decrypted, so this says the secret store is reachable, not that a given secret can be read. */
+                                    /** @description The master key derives and completes an encryption round trip, and the secret store is reachable. Whether it is the key the stored secrets were sealed under was proven at boot: `canary`. */
                                     ok: boolean;
                                     /** @description Present only when the check failed or timed out. */
                                     message?: string;
+                                    /** @description The master-key version every new seal records. 1 until the first rotation. Present when the serving process ran the boot canary check. */
+                                    key_version?: number;
+                                    /**
+                                     * @description A known value sealed under this key version opened with exactly the current key at boot. A canary that does not open stops the boot, so a serving process never reports otherwise; absent when the check did not run in this process.
+                                     * @enum {string}
+                                     */
+                                    canary?: "ok";
+                                    /**
+                                     * @description During a key rotation, the previous version's canary opened with the previous key at boot; null outside a rotation.
+                                     * @enum {string|null}
+                                     */
+                                    previous_canary?: "ok" | null;
+                                    /** @description Sealed rows not yet re-encrypted under `key_version`, as counted after the re-encryption job's last pass in the serving process. Absent while the job is off; 0 when a rotation's re-encryption is complete. */
+                                    rows_pending?: number;
                                     /**
                                      * @description What the measurement means here. `failure`: something this deployment or tenant needs is broken, and the only state that moves `status`. `pending_configuration`: nothing is broken, something has not been set up yet, and `action` says what. `no_activity`: working, with nothing to measure yet. `not_in_use`: the feature behind the check is not used here. `unchecked`: the check could not be read and guards nothing required (a required check that cannot be read is a `failure`).
                                      * @enum {string}
@@ -19574,6 +19655,8 @@ export interface paths {
          *     `payer` optionally prefills the payer. `document` (CPF/CNPJ, check digits verified) and `address` are the regulated fields a Pix with due date requires; when they are not prefilled, the hosted page collects them. All payer data is stored encrypted and is never returned: the response names which fields are prefilled and shows the document masked.
          *
          *     Collect is off unless the deployment sets `COLLECT_ENABLED=true`. Off, every `/v1/collect` path (owner and payer) answers 404 `{"error": "collect_disabled", "message": "Collect não está disponível nesta versão. ...", "details": {"reason": "switch_off"}}`, never the router's generic 404. On, a project that may not start a Collect operation gets the same code with `details.reason`: `live` (Collect runs only in test projects in this phase), `project_not_listed` (a test project the deployment has not enabled) or `capability_inactive` (a test project whose `collect` capability was requested but is not active: suspended, revoked, expired or still requested). An unlisted test project whose `collect` capability is active reaches Collect; whether a given receiver is ready to issue is decided at publish.
+         *
+         *     RECURRING OFFERS (0390). `billing: "recurring"` with a version carrying `recurrence` (`first_payment: "now"`, `frequency: "monthly"`, `max_charges`, `retries`, `qr_valid_days`) creates an offer each payer adheres to with Pix Automático: they pay the first charge now and authorize the next ones in their bank app, at the version's total every month. The receiver must be a company (CNPJ) account with a registered name, its own (never a shared one): otherwise 422 `collect_recurring_receiver_not_eligible` with `details.reason`. A recurring offer takes no `reference` and no `payer` prefill, and is paid on the hosted page only.
          */
         post: {
             parameters: {
@@ -19588,6 +19671,11 @@ export interface paths {
                         consumer_id?: string;
                         /** Format: date-time */
                         valid_until?: string;
+                        /**
+                         * @default one_time
+                         * @enum {string}
+                         */
+                        billing?: "one_time" | "recurring";
                         version: {
                             title: string;
                             description?: string;
@@ -19622,6 +19710,50 @@ export interface paths {
                                 external_reference?: "required" | "optional" | "off";
                             };
                             usdc_price?: string;
+                        } | {
+                            title: string;
+                            description?: string;
+                            success_message?: string;
+                            items: {
+                                name: string;
+                                quantity: number;
+                                unit_amount_minor: number;
+                            }[];
+                            brand?: {
+                                /** Format: uri */
+                                logo_url?: string;
+                                color?: string;
+                                text_color?: string;
+                                texts?: {
+                                    header?: string;
+                                    footer?: string;
+                                };
+                            };
+                            surfaces: ("page" | "whatsapp" | "agent")[];
+                            payer_fields?: {
+                                /**
+                                 * @default optional
+                                 * @enum {string}
+                                 */
+                                contact?: "required" | "optional" | "off";
+                                /**
+                                 * @default off
+                                 * @enum {string}
+                                 */
+                                external_reference?: "required" | "optional" | "off";
+                            };
+                            recurrence: {
+                                /** @enum {string} */
+                                first_payment: "now" | "none";
+                                /** @enum {string} */
+                                frequency: "weekly" | "monthly" | "quarter" | "semester" | "yearly";
+                                /** @default null */
+                                max_charges?: number | null;
+                                /** @default false */
+                                retries?: boolean;
+                                /** @default 1 */
+                                qr_valid_days?: number;
+                            };
                         };
                         payer?: {
                             name?: string;
@@ -20236,6 +20368,27 @@ export interface paths {
                                 not_ready?: "receiver_not_bound" | "pix_key_pending" | "receiver_unreadable" | null;
                                 /** @description Capability projects only: the project's only eligible receiver. */
                                 default?: boolean;
+                                /** @description Whose account it is. */
+                                holder: {
+                                    /** @description The registered (KYB) name when the onboarding recorded one, else the display name. */
+                                    name: string | null;
+                                    /** @enum {string|null} */
+                                    person_type: "PF" | "PJ" | null;
+                                    document_masked: string | null;
+                                };
+                                /** @description Where the money lands: the project's own account, a customer account of this project's Spaces, or (one-time links of a listed test project only) the deployment's shared sandbox receiver. Never another project's account. */
+                                destination: {
+                                    /** @enum {string} */
+                                    kind: "project_account" | "space_customer_account" | "shared_sandbox";
+                                    /** @description space_customer_account only: the customer account of this project's Spaces. */
+                                    space_id?: string;
+                                };
+                                /** @description Collect recurring (0390): whether this account may receive a recurring offer: a company (CNPJ) account of its own with a registered name, never a shared one (the stand-in answers receiver_shared_sandbox). In Test the PJ account is a Spaces customer account; the project's own account is a natural person's and answers receiver_not_legal_person. */
+                                recurring: {
+                                    eligible: boolean;
+                                    /** @enum {string|null} */
+                                    reason: "receiver_not_legal_person" | "receiver_name_unregistered" | "receiving_identity_missing" | "receiver_not_ready" | "receiving_identity_unresolved" | "receiver_shared_sandbox" | null;
+                                };
                             }[];
                         };
                     };
@@ -20915,6 +21068,50 @@ export interface paths {
                             external_reference?: "required" | "optional" | "off";
                         };
                         usdc_price?: string;
+                    } | {
+                        title: string;
+                        description?: string;
+                        success_message?: string;
+                        items: {
+                            name: string;
+                            quantity: number;
+                            unit_amount_minor: number;
+                        }[];
+                        brand?: {
+                            /** Format: uri */
+                            logo_url?: string;
+                            color?: string;
+                            text_color?: string;
+                            texts?: {
+                                header?: string;
+                                footer?: string;
+                            };
+                        };
+                        surfaces: ("page" | "whatsapp" | "agent")[];
+                        payer_fields?: {
+                            /**
+                             * @default optional
+                             * @enum {string}
+                             */
+                            contact?: "required" | "optional" | "off";
+                            /**
+                             * @default off
+                             * @enum {string}
+                             */
+                            external_reference?: "required" | "optional" | "off";
+                        };
+                        recurrence: {
+                            /** @enum {string} */
+                            first_payment: "now" | "none";
+                            /** @enum {string} */
+                            frequency: "weekly" | "monthly" | "quarter" | "semester" | "yearly";
+                            /** @default null */
+                            max_charges?: number | null;
+                            /** @default false */
+                            retries?: boolean;
+                            /** @default 1 */
+                            qr_valid_days?: number;
+                        };
                     };
                 };
             };
@@ -22614,6 +22811,8 @@ export interface paths {
         /**
          * Archive a Collect link
          * @description Terminal. The link takes no new version and issues nothing.
+         *
+         *     A RECURRING offer (0390) with live adhesions is never archived by hiding its page while debits continue: without a body it answers 409 `collect_link_has_active_subscriptions`. With `{"subscriptions":"cancel"}` the offer is paused first, every live adhesion is cancelled commercially, and only then is the link archived; a cancel that is refused or uncertain leaves it paused (409 `collect_link_archive_incomplete`, `pending`). To stop selling and keep billing, pause the link instead.
          */
         post: {
             parameters: {
@@ -22624,7 +22823,14 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        subscriptions?: "cancel";
+                    };
+                };
+            };
             responses: {
                 /** @description OK */
                 200: {
@@ -22809,6 +23015,26 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A recurring offer still has adhesions that charge. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "collect_link_has_active_subscriptions" | "collect_link_archive_incomplete";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -23289,6 +23515,8 @@ export interface paths {
         /**
          * Ask a Collect link for a payable Pix (public)
          * @description The hosted page's POST. No credential. The body is strict: `page_session` (the page's idempotency key: the same session answers the same attempt, 200 with `replay: true`), the payer fields the page collected (never a field the charger prefilled), and `renew`. There is no amount field: the charge carries the published version's total. Payer data goes in this body only, never in a URL. Rate limited per client IP and per link, more tightly than the read, because every new attempt is a charge at the issuer.
+         *
+         *     On a RECURRING offer (0390) this creates the caller's adhesion instead: a Pix Automático charge that is paid now and authorizes the next ones, answered as `object: "collect_subscription"` with the QR; the page then follows it with POST /v1/collect/{linkId}/subscriptions/{subscriptionId}. `renew` is refused there (`collect_renew_not_applicable`): an expired QR is a new adhesion under a new page session.
          */
         post: {
             parameters: {
@@ -23810,6 +24038,636 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "collect_refund_not_honorable" | "collect_refund_decision_closed" | "collect_refund_obligation_conflict";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/collect/links/{linkId}/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The adhesions of a recurring offer
+         * @description Newest first, each with the read model: where the payer's authorization stands, the next charge, the payments received and the failed charges, kept apart. `state` filters by the derived state.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    state?: "issuing" | "failed" | "awaiting_payment" | "expired" | "payment_received" | "active" | "authorization_denied" | "authorization_expired" | "authorization_cancelled" | "cancelling" | "cancelled" | "ended";
+                    limit?: number;
+                    before?: string;
+                };
+                header?: never;
+                path: {
+                    linkId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            object: "list";
+                            data: {
+                                /** @description cls_ + 22 characters */
+                                id: string;
+                                /** @enum {string} */
+                                object: "collect_subscription";
+                                link_id: string;
+                                version: number;
+                                /** @enum {string} */
+                                environment: "live" | "test";
+                                /**
+                                 * @description Derived from the recurrence: `active` only once the payer's bank reported the authorization ACCEPTED; `authorization_cancelled` is the payer's or the bank's cancellation; `cancelling` / `cancelled` the seller's; `authorization_expired` a paid adhesion whose authorization never arrived by its deadline (the payment stays credited).
+                                 * @enum {string}
+                                 */
+                                state: "issuing" | "failed" | "awaiting_payment" | "expired" | "payment_received" | "active" | "authorization_denied" | "authorization_expired" | "authorization_cancelled" | "cancelling" | "cancelled" | "ended";
+                                /** @description Active, and the most recent charge due by today failed. The adhesion is still authorized. */
+                                past_due: boolean;
+                                payer: {
+                                    name: string | null;
+                                    document_masked: string | null;
+                                };
+                                terms: {
+                                    [key: string]: unknown;
+                                };
+                                authorization: {
+                                    [key: string]: unknown;
+                                };
+                                next_charge: {
+                                    due_date: string;
+                                    amount_minor: number;
+                                    /** @enum {string} */
+                                    status: "expected" | "sent_to_payer_bank" | "scheduled" | "awaiting_instruction";
+                                } | null;
+                                /** @description The first payment (`initial`) and every paid cycle (`cycle`). */
+                                payments: {
+                                    [key: string]: unknown;
+                                }[];
+                                failed_charges: {
+                                    [key: string]: unknown;
+                                }[];
+                                totals: {
+                                    received_minor: number;
+                                    payments: number;
+                                };
+                                commercial_cancellation: {
+                                    [key: string]: unknown;
+                                } | null;
+                                recurrence_id: string | null;
+                                created_at: string;
+                                updated_at: string;
+                            }[];
+                            next_before: string | null;
+                        };
+                    };
+                };
+                /** @description Bad query. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found. No link with that id in this project. A link of another project answers identically. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/collect/subscriptions/{subscriptionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One adhesion of a recurring offer
+         * @description The same view as the list, with every cycle (`cycles`).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    subscriptionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description cls_ + 22 characters */
+                            id: string;
+                            /** @enum {string} */
+                            object: "collect_subscription";
+                            link_id: string;
+                            version: number;
+                            /** @enum {string} */
+                            environment: "live" | "test";
+                            /**
+                             * @description Derived from the recurrence: `active` only once the payer's bank reported the authorization ACCEPTED; `authorization_cancelled` is the payer's or the bank's cancellation; `cancelling` / `cancelled` the seller's; `authorization_expired` a paid adhesion whose authorization never arrived by its deadline (the payment stays credited).
+                             * @enum {string}
+                             */
+                            state: "issuing" | "failed" | "awaiting_payment" | "expired" | "payment_received" | "active" | "authorization_denied" | "authorization_expired" | "authorization_cancelled" | "cancelling" | "cancelled" | "ended";
+                            /** @description Active, and the most recent charge due by today failed. The adhesion is still authorized. */
+                            past_due: boolean;
+                            payer: {
+                                name: string | null;
+                                document_masked: string | null;
+                            };
+                            terms: {
+                                [key: string]: unknown;
+                            };
+                            authorization: {
+                                [key: string]: unknown;
+                            };
+                            next_charge: {
+                                due_date: string;
+                                amount_minor: number;
+                                /** @enum {string} */
+                                status: "expected" | "sent_to_payer_bank" | "scheduled" | "awaiting_instruction";
+                            } | null;
+                            /** @description The first payment (`initial`) and every paid cycle (`cycle`). */
+                            payments: {
+                                [key: string]: unknown;
+                            }[];
+                            failed_charges: {
+                                [key: string]: unknown;
+                            }[];
+                            totals: {
+                                received_minor: number;
+                                payments: number;
+                            };
+                            commercial_cancellation: {
+                                [key: string]: unknown;
+                            } | null;
+                            recurrence_id: string | null;
+                            created_at: string;
+                            updated_at: string;
+                        };
+                    };
+                };
+                /** @description No adhesion with that id in this project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "collect_subscription_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/collect/subscriptions/{subscriptionId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel an adhesion commercially
+         * @description The seller's cancellation. Recorded before anything is sent; then every charge already scheduled at the payer's bank whose cancel window is open (until 23:59 of the day before) is cancelled, then the authorization itself. 202 with `state: cancelling` once the bank accepted the request; the confirmation arrives from the bank and moves it to `cancelled`. Asking again answers the current state.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    subscriptionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        reason?: "customer_request" | "non_payment" | "offer_discontinued" | "fraud_suspected" | "other";
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description cls_ + 22 characters */
+                            id: string;
+                            /** @enum {string} */
+                            object: "collect_subscription";
+                            link_id: string;
+                            version: number;
+                            /** @enum {string} */
+                            environment: "live" | "test";
+                            /**
+                             * @description Derived from the recurrence: `active` only once the payer's bank reported the authorization ACCEPTED; `authorization_cancelled` is the payer's or the bank's cancellation; `cancelling` / `cancelled` the seller's; `authorization_expired` a paid adhesion whose authorization never arrived by its deadline (the payment stays credited).
+                             * @enum {string}
+                             */
+                            state: "issuing" | "failed" | "awaiting_payment" | "expired" | "payment_received" | "active" | "authorization_denied" | "authorization_expired" | "authorization_cancelled" | "cancelling" | "cancelled" | "ended";
+                            /** @description Active, and the most recent charge due by today failed. The adhesion is still authorized. */
+                            past_due: boolean;
+                            payer: {
+                                name: string | null;
+                                document_masked: string | null;
+                            };
+                            terms: {
+                                [key: string]: unknown;
+                            };
+                            authorization: {
+                                [key: string]: unknown;
+                            };
+                            next_charge: {
+                                due_date: string;
+                                amount_minor: number;
+                                /** @enum {string} */
+                                status: "expected" | "sent_to_payer_bank" | "scheduled" | "awaiting_instruction";
+                            } | null;
+                            /** @description The first payment (`initial`) and every paid cycle (`cycle`). */
+                            payments: {
+                                [key: string]: unknown;
+                            }[];
+                            failed_charges: {
+                                [key: string]: unknown;
+                            }[];
+                            totals: {
+                                received_minor: number;
+                                payments: number;
+                            };
+                            commercial_cancellation: {
+                                [key: string]: unknown;
+                            } | null;
+                            recurrence_id: string | null;
+                            created_at: string;
+                            updated_at: string;
+                            /** @description Due dates of the scheduled charges cancelled with the adhesion. */
+                            cycles_cancelled: string[];
+                            /** @description Scheduled charges that were not cancelled, each with a closed reason. */
+                            cycles_not_cancellable: {
+                                due_date: string;
+                                /** @enum {string} */
+                                reason: "cancel_window_closed" | "provider_refused" | "outcome_uncertain" | "call_budget_wait" | "not_in_state";
+                            }[];
+                        };
+                    };
+                };
+                /** @description OK */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description cls_ + 22 characters */
+                            id: string;
+                            /** @enum {string} */
+                            object: "collect_subscription";
+                            link_id: string;
+                            version: number;
+                            /** @enum {string} */
+                            environment: "live" | "test";
+                            /**
+                             * @description Derived from the recurrence: `active` only once the payer's bank reported the authorization ACCEPTED; `authorization_cancelled` is the payer's or the bank's cancellation; `cancelling` / `cancelled` the seller's; `authorization_expired` a paid adhesion whose authorization never arrived by its deadline (the payment stays credited).
+                             * @enum {string}
+                             */
+                            state: "issuing" | "failed" | "awaiting_payment" | "expired" | "payment_received" | "active" | "authorization_denied" | "authorization_expired" | "authorization_cancelled" | "cancelling" | "cancelled" | "ended";
+                            /** @description Active, and the most recent charge due by today failed. The adhesion is still authorized. */
+                            past_due: boolean;
+                            payer: {
+                                name: string | null;
+                                document_masked: string | null;
+                            };
+                            terms: {
+                                [key: string]: unknown;
+                            };
+                            authorization: {
+                                [key: string]: unknown;
+                            };
+                            next_charge: {
+                                due_date: string;
+                                amount_minor: number;
+                                /** @enum {string} */
+                                status: "expected" | "sent_to_payer_bank" | "scheduled" | "awaiting_instruction";
+                            } | null;
+                            /** @description The first payment (`initial`) and every paid cycle (`cycle`). */
+                            payments: {
+                                [key: string]: unknown;
+                            }[];
+                            failed_charges: {
+                                [key: string]: unknown;
+                            }[];
+                            totals: {
+                                received_minor: number;
+                                payments: number;
+                            };
+                            commercial_cancellation: {
+                                [key: string]: unknown;
+                            } | null;
+                            recurrence_id: string | null;
+                            created_at: string;
+                            updated_at: string;
+                            /** @description Due dates of the scheduled charges cancelled with the adhesion. */
+                            cycles_cancelled: string[];
+                            /** @description Scheduled charges that were not cancelled, each with a closed reason. */
+                            cycles_not_cancellable: {
+                                due_date: string;
+                                /** @enum {string} */
+                                reason: "cancel_window_closed" | "provider_refused" | "outcome_uncertain" | "call_budget_wait" | "not_in_state";
+                            }[];
+                        };
+                    };
+                };
+                /** @description Bad Request. The body did not match the schema (`invalid_body`, with `details.issues`), or the version breaks a rule the schema cannot state: the items total below the R$5.00 a Pix with due date needs (`collect_total_below_minimum`), above R$1,000,000.00 (`collect_total_above_maximum`), or brand colors whose contrast is below 4.5:1 (`collect_brand_contrast_insufficient`), or a `usdc_price` on a version without the agent surface (`collect_usdc_price_requires_agent`). Unknown keys are refused, not dropped: the regulated payer fields (document, address) are never free-text questions. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "project_scope_missing" | "collect_total_below_minimum" | "collect_total_above_maximum" | "collect_brand_contrast_insufficient" | "collect_usdc_price_requires_agent";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No adhesion with that id in this project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "collect_subscription_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not cancellable now. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "collect_subscription_not_cancellable" | "collect_subscription_cancel_uncertain";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The bank refused the cancellation. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "collect_subscription_cancel_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description This project's sandbox calls reached their limit; nothing was sent. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "collect_call_budget_wait";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/collect/{linkId}/subscriptions/{subscriptionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A payer follows their adhesion to a recurring offer (public)
+         * @description No credential. Only the page session that created the adhesion reads it, sent in the body. Answers the QR while it is payable, then the payment and the authorization; `retry_after` while there is something to wait for. Any other session, an unknown id or another link's adhesion is the same 404.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    linkId: string;
+                    subscriptionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        page_session: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Bad request. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "invalid_subscription_id" | "invalid_link_id";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No adhesion with that id for this session. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "collect_subscription_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Too Many Requests. Per client IP and per link, shared by every API replica; `Retry-After` and `details.retry_after` give the wait, `details.scope` names which bucket refused. In a test project that reaches Collect by capability, `collect_call_budget_wait` says the project's sandbox calls reached their hourly or daily limit: nothing was created or sent, and `Retry-After` gives the wait. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "rate_limited" | "collect_call_budget_wait";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;

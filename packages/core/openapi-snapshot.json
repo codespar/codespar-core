@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-10-23T08:26:33.095Z",
-    "sha256": "6c74e6f7bc3dc667199e184d4b57cc83769d9169a2ac20bf33ef4bb61fffabc3",
+    "fetched_at": "2026-10-24T05:17:53.378Z",
+    "sha256": "536969f6b568f556e41be98c2fe1a1a9f27d5dbb70c5726d30e34d283a41fd41",
     "etag": null,
-    "last_modified": "Fri, 23 Oct 2026 08:26:18 GMT",
+    "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 297,
-    "operations": 352,
+    "paths": 302,
+    "operations": 357,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -7489,7 +7489,7 @@
       "/v1/account/summary": {
         "get": {
           "summary": "BRL money in, agent spend, tool calls and sessions over a window",
-          "description": "BRL only. `received_minor` sums the funding entries stamped as money received (category `recebivel`): test funding and the fund legs that mirror a payment on its way out are not received. A TEST project's body also carries, apart, the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets): `test_funding_minor` in the totals, in `previous` and in each `series` bucket; it is not a receipt rail and never appears in `received_by_rail`. A live project's body has no such field. `spent_by_agents_minor` sums debits attributed to an agent. The window is N whole buckets ending with the current, partial one: 24 hours for `24h`, 7 or 30 São Paulo calendar days for `7d` and `30d`. `series` has exactly those N buckets, oldest first, and sums to the two totals; `previous` covers the N buckets immediately before. `received_by_rail` groups that received funding by `metadata.rail`, null where the writer recorded none. `tool_calls` and `sessions` are counts over the same window and scope (tool calls by `called_at`, sessions by creation); `sessions.active_now` counts the sessions open at the time of the read that were created or made a tool call in the last 15 minutes, whatever the window: nothing closes an idle session, so an open session idle for longer is not counted. `sessions.active_idle_ms` states that threshold (900000). `window` defaults to `7d`.",
+          "description": "BRL only. `received_minor` sums the funding entries stamped as money received (category `recebivel`): test funding and the fund legs that mirror a payment on its way out are not received. A TEST project's body also carries, apart, the test funding the account received (initial test balance, Adicionar fundos, refills; never a transfer between the project's wallets): `test_funding_minor` in the totals, in `previous` and in each `series` bucket; it is not a receipt rail and never appears in `received_by_rail`. A live project's body has no such field. `spent_by_agents_minor` sums debits attributed to an agent. The window is N whole buckets ending with the current, partial one: 24 hours for `24h`, 7 or 30 São Paulo calendar days for `7d` and `30d`. `series` has exactly those N buckets, oldest first, and sums to the two totals; `previous` covers the N buckets immediately before. `received_by_rail` groups that received funding by rail (`pix`, `boleto`, `ted`): `metadata.rail`, or for an entry written before the rail was stamped, the rail its source fixes (a BolePix charge-in: its Collect payment's rail, else `pix`); null where neither says. `tool_calls` and `sessions` are counts over the same window and scope (tool calls by `called_at`, sessions by creation); `sessions.active_now` counts the sessions open at the time of the read that were created or made a tool call in the last 15 minutes, whatever the window: nothing closes an idle session, so an open session idle for longer is not counted. `sessions.active_idle_ms` states that threshold (900000). `window` defaults to `7d`.",
           "parameters": [
             {
               "schema": {
@@ -7614,7 +7614,7 @@
                             "received_minor"
                           ]
                         },
-                        "description": "Received funding by metadata.rail, null where none was recorded: money received only. Test funding is not a receipt rail and never appears here; a TEST project carries it in `test_funding_minor`."
+                        "description": "Received funding by rail (`pix`, `boleto`, `ted`): metadata.rail, or for an entry written before the rail was stamped, the rail its source fixes (a BolePix charge-in: its Collect payment's rail, else pix). Null where neither says: money received only. Test funding is not a receipt rail and never appears here; a TEST project carries it in `test_funding_minor`."
                       },
                       "tool_calls": {
                         "type": "object",
@@ -7863,6 +7863,158 @@
                     "required": [
                       "error",
                       "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/account/spenders": {
+        "get": {
+          "summary": "The mandates that can spend from this project",
+          "description": "One row per mandate whose funding source belongs to the caller's project, active or paused and not expired, newest first: who may spend from this project's wallet. A mandate over another project's source is not listed, and neither is an agent of the organization with no mandate here. In a Test project with its own bound account, the Shop's mandates count only when signed over that account (one over another source is not in force there). `usage` is the mandate's own, from the same sums its cap gates run: `spent_minor` overall and `period_spent_minor` in the current window of its periodic cap.",
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "spenders": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "mandate_id": {
+                              "type": "string"
+                            },
+                            "agent_id": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "agent_display_name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "agent_status": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "display_name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "active",
+                                "paused"
+                              ]
+                            },
+                            "currency": {
+                              "type": "string"
+                            },
+                            "rail": {
+                              "type": "string",
+                              "description": "The rail of the mandate's funding source."
+                            },
+                            "cap_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$"
+                            },
+                            "per_tx_cap_minor": {
+                              "type": "string",
+                              "pattern": "^-?\\d+$"
+                            },
+                            "periodic_cap": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "window": {
+                                  "type": "string",
+                                  "enum": [
+                                    "day",
+                                    "month"
+                                  ]
+                                },
+                                "cap_minor": {
+                                  "type": "string",
+                                  "pattern": "^-?\\d+$"
+                                }
+                              },
+                              "required": [
+                                "window",
+                                "cap_minor"
+                              ]
+                            },
+                            "expires_at": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "usage": {
+                              "type": "object",
+                              "properties": {
+                                "spent_minor": {
+                                  "type": "string",
+                                  "pattern": "^-?\\d+$",
+                                  "description": "What this mandate has spent, in its own unit."
+                                },
+                                "period_spent_minor": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "pattern": "^-?\\d+$",
+                                  "description": "What it has spent in the current periodic window; null without a periodic cap."
+                                }
+                              },
+                              "required": [
+                                "spent_minor",
+                                "period_spent_minor"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "mandate_id",
+                            "agent_id",
+                            "agent_display_name",
+                            "agent_status",
+                            "display_name",
+                            "status",
+                            "currency",
+                            "rail",
+                            "cap_minor",
+                            "per_tx_cap_minor",
+                            "periodic_cap",
+                            "expires_at",
+                            "usage"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "spenders"
                     ]
                   }
                 }
@@ -18434,7 +18586,7 @@
               }
             },
             "409": {
-              "description": "The `Idempotency-Key` was already used with a different body, or the mandate is not active. `details` carries the mandate's state in the second case.",
+              "description": "The `Idempotency-Key` was already used with a different body, or it belongs to a request made before a `VAULT_MASTER_KEY` rotation and can no longer be matched to its body (retry with a new key), or the mandate is not active. `details` carries the mandate's state in the last case.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -23295,7 +23447,7 @@
               }
             },
             "409": {
-              "description": "Key repeated with a different body, or the mandate is not active.",
+              "description": "Key repeated with a different body, or used before a key rotation and no longer matchable (use a new key), or the mandate is not active.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -25732,11 +25884,36 @@
                             "properties": {
                               "ok": {
                                 "type": "boolean",
-                                "description": "Storage liveness only. Nothing is decrypted, so this says the secret store is reachable, not that a given secret can be read."
+                                "description": "The master key derives and completes an encryption round trip, and the secret store is reachable. Whether it is the key the stored secrets were sealed under was proven at boot: `canary`."
                               },
                               "message": {
                                 "type": "string",
                                 "description": "Present only when the check failed or timed out."
+                              },
+                              "key_version": {
+                                "type": "integer",
+                                "description": "The master-key version every new seal records. 1 until the first rotation. Present when the serving process ran the boot canary check."
+                              },
+                              "canary": {
+                                "type": "string",
+                                "enum": [
+                                  "ok"
+                                ],
+                                "description": "A known value sealed under this key version opened with exactly the current key at boot. A canary that does not open stops the boot, so a serving process never reports otherwise; absent when the check did not run in this process."
+                              },
+                              "previous_canary": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "ok"
+                                ],
+                                "description": "During a key rotation, the previous version's canary opened with the previous key at boot; null outside a rotation."
+                              },
+                              "rows_pending": {
+                                "type": "integer",
+                                "description": "Sealed rows not yet re-encrypted under `key_version`, as counted after the re-encryption job's last pass in the serving process. Absent while the job is off; 0 when a rotation's re-encryption is complete."
                               },
                               "state": {
                                 "type": "string",
@@ -39775,7 +39952,7 @@
       "/v1/collect/links": {
         "post": {
           "summary": "Create a Collect link with its first draft",
-          "description": "Creates a single-use link (one link, one charge, one valid payment) in `draft`, with version 1 as its draft. Nothing is shown to payers until it is published.\n\n`consumer_id` is the RECEIVING consumer: the Pix the link issues settles into that consumer's wallet. No Pix key or account is accepted on the link. Omitted, Collect chooses it (D-B): the project's default receiver (`PUT /v1/collect/receivers/default`), else the project's only consumer with its own Celcoin receiving identity, else 409 `collect_receiver_unresolved` with `details.next_action`. A receiver Collect chose never falls back to a shared account: publishing or issuing into one is refused (`collect_receiver_not_own`).\n\n`reference` + `reference_version` (both or neither) name the caller's obligation and the version asked for (D-C), inside this org and project. The same pair answers the SAME link, forever, archived or not (200, `replay: true`); the same pair with different content is 409 `collect_reference_conflict`. A new version is created only when no earlier version can still be paid: 409 `collect_reference_paid` (the obligation was paid, or a late payment of it was kept; it is not reissued), `collect_reference_active` (an earlier version is not archived), `collect_reference_late_undecided` (a late payment of an earlier version, recorded before any newer version existed, waits for the collector's decision: keep it or refund it; pending Fabiano's decision, implemented closed), `collect_reference_not_cancelled` (no POSITIVE proof that nothing earlier can still be paid, from the archive's evaluator; `details.reasons`: `link_not_archived`, `attempt_live`, `attempt_state_unrecognized`, `issuance_unresolved`, `charge_unknown`, `charge_payable`, `charge_state_unrecognized`, `payment_notified`, `payment_contradiction`, `payment_unrecorded`, `cancel_unresolved`, `obligation_paid`, `late_undecided`, `paid_before_cancel`, `payment_vs_cancel_unproven`).\n\n`payer` optionally prefills the payer. `document` (CPF/CNPJ, check digits verified) and `address` are the regulated fields a Pix with due date requires; when they are not prefilled, the hosted page collects them. All payer data is stored encrypted and is never returned: the response names which fields are prefilled and shows the document masked.\n\nCollect is off unless the deployment sets `COLLECT_ENABLED=true`. Off, every `/v1/collect` path (owner and payer) answers 404 `{\"error\": \"collect_disabled\", \"message\": \"Collect não está disponível nesta versão. ...\", \"details\": {\"reason\": \"switch_off\"}}`, never the router's generic 404. On, a project that may not start a Collect operation gets the same code with `details.reason`: `live` (Collect runs only in test projects in this phase), `project_not_listed` (a test project the deployment has not enabled) or `capability_inactive` (a test project whose `collect` capability was requested but is not active: suspended, revoked, expired or still requested). An unlisted test project whose `collect` capability is active reaches Collect; whether a given receiver is ready to issue is decided at publish.",
+          "description": "Creates a single-use link (one link, one charge, one valid payment) in `draft`, with version 1 as its draft. Nothing is shown to payers until it is published.\n\n`consumer_id` is the RECEIVING consumer: the Pix the link issues settles into that consumer's wallet. No Pix key or account is accepted on the link. Omitted, Collect chooses it (D-B): the project's default receiver (`PUT /v1/collect/receivers/default`), else the project's only consumer with its own Celcoin receiving identity, else 409 `collect_receiver_unresolved` with `details.next_action`. A receiver Collect chose never falls back to a shared account: publishing or issuing into one is refused (`collect_receiver_not_own`).\n\n`reference` + `reference_version` (both or neither) name the caller's obligation and the version asked for (D-C), inside this org and project. The same pair answers the SAME link, forever, archived or not (200, `replay: true`); the same pair with different content is 409 `collect_reference_conflict`. A new version is created only when no earlier version can still be paid: 409 `collect_reference_paid` (the obligation was paid, or a late payment of it was kept; it is not reissued), `collect_reference_active` (an earlier version is not archived), `collect_reference_late_undecided` (a late payment of an earlier version, recorded before any newer version existed, waits for the collector's decision: keep it or refund it; pending Fabiano's decision, implemented closed), `collect_reference_not_cancelled` (no POSITIVE proof that nothing earlier can still be paid, from the archive's evaluator; `details.reasons`: `link_not_archived`, `attempt_live`, `attempt_state_unrecognized`, `issuance_unresolved`, `charge_unknown`, `charge_payable`, `charge_state_unrecognized`, `payment_notified`, `payment_contradiction`, `payment_unrecorded`, `cancel_unresolved`, `obligation_paid`, `late_undecided`, `paid_before_cancel`, `payment_vs_cancel_unproven`).\n\n`payer` optionally prefills the payer. `document` (CPF/CNPJ, check digits verified) and `address` are the regulated fields a Pix with due date requires; when they are not prefilled, the hosted page collects them. All payer data is stored encrypted and is never returned: the response names which fields are prefilled and shows the document masked.\n\nCollect is off unless the deployment sets `COLLECT_ENABLED=true`. Off, every `/v1/collect` path (owner and payer) answers 404 `{\"error\": \"collect_disabled\", \"message\": \"Collect não está disponível nesta versão. ...\", \"details\": {\"reason\": \"switch_off\"}}`, never the router's generic 404. On, a project that may not start a Collect operation gets the same code with `details.reason`: `live` (Collect runs only in test projects in this phase), `project_not_listed` (a test project the deployment has not enabled) or `capability_inactive` (a test project whose `collect` capability was requested but is not active: suspended, revoked, expired or still requested). An unlisted test project whose `collect` capability is active reaches Collect; whether a given receiver is ready to issue is decided at publish.\n\nRECURRING OFFERS (0390). `billing: \"recurring\"` with a version carrying `recurrence` (`first_payment: \"now\"`, `frequency: \"monthly\"`, `max_charges`, `retries`, `qr_valid_days`) creates an offer each payer adheres to with Pix Automático: they pay the first charge now and authorize the next ones in their bank app, at the version's total every month. The receiver must be a company (CNPJ) account with a registered name, its own (never a shared one): otherwise 422 `collect_recurring_receiver_not_eligible` with `details.reason`. A recurring offer takes no `reference` and no `payer` prefill, and is paid on the hosted page only.",
           "requestBody": {
             "content": {
               "application/json": {
@@ -39791,139 +39968,322 @@
                       "type": "string",
                       "format": "date-time"
                     },
+                    "billing": {
+                      "type": "string",
+                      "enum": [
+                        "one_time",
+                        "recurring"
+                      ],
+                      "default": "one_time"
+                    },
                     "version": {
-                      "type": "object",
-                      "properties": {
-                        "title": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 120
-                        },
-                        "description": {
-                          "type": "string",
-                          "maxLength": 2000
-                        },
-                        "success_message": {
-                          "type": "string",
-                          "maxLength": 500
-                        },
-                        "items": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "name": {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 120
-                              },
-                              "quantity": {
-                                "type": "integer",
-                                "minimum": 1,
-                                "maximum": 999
-                              },
-                              "unit_amount_minor": {
-                                "type": "integer",
-                                "minimum": 1,
-                                "maximum": 100000000
-                              }
-                            },
-                            "required": [
-                              "name",
-                              "quantity",
-                              "unit_amount_minor"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "minItems": 1,
-                          "maxItems": 50
-                        },
-                        "brand": {
+                      "anyOf": [
+                        {
                           "type": "object",
                           "properties": {
-                            "logo_url": {
+                            "title": {
                               "type": "string",
-                              "maxLength": 2048,
-                              "format": "uri"
+                              "minLength": 1,
+                              "maxLength": 120
                             },
-                            "color": {
+                            "description": {
                               "type": "string",
-                              "pattern": "^#[0-9A-Fa-f]{6}$"
+                              "maxLength": 2000
                             },
-                            "text_color": {
+                            "success_message": {
                               "type": "string",
-                              "pattern": "^#[0-9A-Fa-f]{6}$"
+                              "maxLength": 500
                             },
-                            "texts": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 120
+                                  },
+                                  "quantity": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 999
+                                  },
+                                  "unit_amount_minor": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 100000000
+                                  }
+                                },
+                                "required": [
+                                  "name",
+                                  "quantity",
+                                  "unit_amount_minor"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "minItems": 1,
+                              "maxItems": 50
+                            },
+                            "brand": {
                               "type": "object",
                               "properties": {
-                                "header": {
+                                "logo_url": {
                                   "type": "string",
-                                  "maxLength": 200
+                                  "maxLength": 2048,
+                                  "format": "uri"
                                 },
-                                "footer": {
+                                "color": {
                                   "type": "string",
-                                  "maxLength": 500
+                                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                                },
+                                "text_color": {
+                                  "type": "string",
+                                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                                },
+                                "texts": {
+                                  "type": "object",
+                                  "properties": {
+                                    "header": {
+                                      "type": "string",
+                                      "maxLength": 200
+                                    },
+                                    "footer": {
+                                      "type": "string",
+                                      "maxLength": 500
+                                    }
+                                  },
+                                  "additionalProperties": false
                                 }
                               },
                               "additionalProperties": false
+                            },
+                            "surfaces": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "page",
+                                  "whatsapp",
+                                  "agent"
+                                ]
+                              },
+                              "minItems": 1
+                            },
+                            "due_in_days": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 60
+                            },
+                            "payer_fields": {
+                              "type": "object",
+                              "properties": {
+                                "contact": {
+                                  "type": "string",
+                                  "enum": [
+                                    "required",
+                                    "optional",
+                                    "off"
+                                  ],
+                                  "default": "optional"
+                                },
+                                "external_reference": {
+                                  "type": "string",
+                                  "enum": [
+                                    "required",
+                                    "optional",
+                                    "off"
+                                  ],
+                                  "default": "off"
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "usdc_price": {
+                              "type": "string",
+                              "pattern": "^\\d{1,7}(\\.\\d{1,6})?$"
                             }
                           },
+                          "required": [
+                            "title",
+                            "items",
+                            "surfaces",
+                            "due_in_days"
+                          ],
                           "additionalProperties": false
                         },
-                        "surfaces": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "page",
-                              "whatsapp",
-                              "agent"
-                            ]
-                          },
-                          "minItems": 1
-                        },
-                        "due_in_days": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 60
-                        },
-                        "payer_fields": {
+                        {
                           "type": "object",
                           "properties": {
-                            "contact": {
+                            "title": {
                               "type": "string",
-                              "enum": [
-                                "required",
-                                "optional",
-                                "off"
-                              ],
-                              "default": "optional"
+                              "minLength": 1,
+                              "maxLength": 120
                             },
-                            "external_reference": {
+                            "description": {
                               "type": "string",
-                              "enum": [
-                                "required",
-                                "optional",
-                                "off"
+                              "maxLength": 2000
+                            },
+                            "success_message": {
+                              "type": "string",
+                              "maxLength": 500
+                            },
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 120
+                                  },
+                                  "quantity": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 999
+                                  },
+                                  "unit_amount_minor": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 100000000
+                                  }
+                                },
+                                "required": [
+                                  "name",
+                                  "quantity",
+                                  "unit_amount_minor"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "minItems": 1,
+                              "maxItems": 50
+                            },
+                            "brand": {
+                              "type": "object",
+                              "properties": {
+                                "logo_url": {
+                                  "type": "string",
+                                  "maxLength": 2048,
+                                  "format": "uri"
+                                },
+                                "color": {
+                                  "type": "string",
+                                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                                },
+                                "text_color": {
+                                  "type": "string",
+                                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                                },
+                                "texts": {
+                                  "type": "object",
+                                  "properties": {
+                                    "header": {
+                                      "type": "string",
+                                      "maxLength": 200
+                                    },
+                                    "footer": {
+                                      "type": "string",
+                                      "maxLength": 500
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "surfaces": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "page",
+                                  "whatsapp",
+                                  "agent"
+                                ]
+                              },
+                              "minItems": 1
+                            },
+                            "payer_fields": {
+                              "type": "object",
+                              "properties": {
+                                "contact": {
+                                  "type": "string",
+                                  "enum": [
+                                    "required",
+                                    "optional",
+                                    "off"
+                                  ],
+                                  "default": "optional"
+                                },
+                                "external_reference": {
+                                  "type": "string",
+                                  "enum": [
+                                    "required",
+                                    "optional",
+                                    "off"
+                                  ],
+                                  "default": "off"
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "recurrence": {
+                              "type": "object",
+                              "properties": {
+                                "first_payment": {
+                                  "type": "string",
+                                  "enum": [
+                                    "now",
+                                    "none"
+                                  ]
+                                },
+                                "frequency": {
+                                  "type": "string",
+                                  "enum": [
+                                    "weekly",
+                                    "monthly",
+                                    "quarter",
+                                    "semester",
+                                    "yearly"
+                                  ]
+                                },
+                                "max_charges": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ],
+                                  "minimum": 1,
+                                  "maximum": 120,
+                                  "default": null
+                                },
+                                "retries": {
+                                  "type": "boolean",
+                                  "default": false
+                                },
+                                "qr_valid_days": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 7,
+                                  "default": 1
+                                }
+                              },
+                              "required": [
+                                "first_payment",
+                                "frequency"
                               ],
-                              "default": "off"
+                              "additionalProperties": false
                             }
                           },
+                          "required": [
+                            "title",
+                            "items",
+                            "surfaces",
+                            "recurrence"
+                          ],
                           "additionalProperties": false
-                        },
-                        "usdc_price": {
-                          "type": "string",
-                          "pattern": "^\\d{1,7}(\\.\\d{1,6})?$"
                         }
-                      },
-                      "required": [
-                        "title",
-                        "items",
-                        "surfaces",
-                        "due_in_days"
-                      ],
-                      "additionalProperties": false
+                      ]
                     },
                     "payer": {
                       "type": "object",
@@ -42560,6 +42920,88 @@
                             "default": {
                               "type": "boolean",
                               "description": "Capability projects only: the project's only eligible receiver."
+                            },
+                            "holder": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The registered (KYB) name when the onboarding recorded one, else the display name."
+                                },
+                                "person_type": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "PF",
+                                    "PJ"
+                                  ]
+                                },
+                                "document_masked": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "person_type",
+                                "document_masked"
+                              ],
+                              "description": "Whose account it is."
+                            },
+                            "destination": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "project_account",
+                                    "space_customer_account",
+                                    "shared_sandbox"
+                                  ]
+                                },
+                                "space_id": {
+                                  "type": "string",
+                                  "description": "space_customer_account only: the customer account of this project's Spaces."
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "description": "Where the money lands: the project's own account, a customer account of this project's Spaces, or (one-time links of a listed test project only) the deployment's shared sandbox receiver. Never another project's account."
+                            },
+                            "recurring": {
+                              "type": "object",
+                              "properties": {
+                                "eligible": {
+                                  "type": "boolean"
+                                },
+                                "reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "receiver_not_legal_person",
+                                    "receiver_name_unregistered",
+                                    "receiving_identity_missing",
+                                    "receiver_not_ready",
+                                    "receiving_identity_unresolved",
+                                    "receiver_shared_sandbox"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "eligible",
+                                "reason"
+                              ],
+                              "description": "Collect recurring (0390): whether this account may receive a recurring offer: a company (CNPJ) account of its own with a registered name, never a shared one (the stand-in answers receiver_shared_sandbox). In Test the PJ account is a Spaces customer account; the project's own account is a natural person's and answers receiver_not_legal_person."
                             }
                           },
                           "required": [
@@ -42567,7 +43009,10 @@
                             "label",
                             "eligible",
                             "identity",
-                            "reason"
+                            "reason",
+                            "holder",
+                            "destination",
+                            "recurring"
                           ]
                         }
                       }
@@ -44454,138 +44899,314 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "title": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 120
-                    },
-                    "description": {
-                      "type": "string",
-                      "maxLength": 2000
-                    },
-                    "success_message": {
-                      "type": "string",
-                      "maxLength": 500
-                    },
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "name": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 120
-                          },
-                          "quantity": {
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 999
-                          },
-                          "unit_amount_minor": {
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 100000000
-                          }
-                        },
-                        "required": [
-                          "name",
-                          "quantity",
-                          "unit_amount_minor"
-                        ],
-                        "additionalProperties": false
-                      },
-                      "minItems": 1,
-                      "maxItems": 50
-                    },
-                    "brand": {
+                  "anyOf": [
+                    {
                       "type": "object",
                       "properties": {
-                        "logo_url": {
+                        "title": {
                           "type": "string",
-                          "maxLength": 2048,
-                          "format": "uri"
+                          "minLength": 1,
+                          "maxLength": 120
                         },
-                        "color": {
+                        "description": {
                           "type": "string",
-                          "pattern": "^#[0-9A-Fa-f]{6}$"
+                          "maxLength": 2000
                         },
-                        "text_color": {
+                        "success_message": {
                           "type": "string",
-                          "pattern": "^#[0-9A-Fa-f]{6}$"
+                          "maxLength": 500
                         },
-                        "texts": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 120
+                              },
+                              "quantity": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 999
+                              },
+                              "unit_amount_minor": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 100000000
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "quantity",
+                              "unit_amount_minor"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 1,
+                          "maxItems": 50
+                        },
+                        "brand": {
                           "type": "object",
                           "properties": {
-                            "header": {
+                            "logo_url": {
                               "type": "string",
-                              "maxLength": 200
+                              "maxLength": 2048,
+                              "format": "uri"
                             },
-                            "footer": {
+                            "color": {
                               "type": "string",
-                              "maxLength": 500
+                              "pattern": "^#[0-9A-Fa-f]{6}$"
+                            },
+                            "text_color": {
+                              "type": "string",
+                              "pattern": "^#[0-9A-Fa-f]{6}$"
+                            },
+                            "texts": {
+                              "type": "object",
+                              "properties": {
+                                "header": {
+                                  "type": "string",
+                                  "maxLength": 200
+                                },
+                                "footer": {
+                                  "type": "string",
+                                  "maxLength": 500
+                                }
+                              },
+                              "additionalProperties": false
                             }
                           },
                           "additionalProperties": false
+                        },
+                        "surfaces": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "page",
+                              "whatsapp",
+                              "agent"
+                            ]
+                          },
+                          "minItems": 1
+                        },
+                        "due_in_days": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 60
+                        },
+                        "payer_fields": {
+                          "type": "object",
+                          "properties": {
+                            "contact": {
+                              "type": "string",
+                              "enum": [
+                                "required",
+                                "optional",
+                                "off"
+                              ],
+                              "default": "optional"
+                            },
+                            "external_reference": {
+                              "type": "string",
+                              "enum": [
+                                "required",
+                                "optional",
+                                "off"
+                              ],
+                              "default": "off"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "usdc_price": {
+                          "type": "string",
+                          "pattern": "^\\d{1,7}(\\.\\d{1,6})?$"
                         }
                       },
+                      "required": [
+                        "title",
+                        "items",
+                        "surfaces",
+                        "due_in_days"
+                      ],
                       "additionalProperties": false
                     },
-                    "surfaces": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "enum": [
-                          "page",
-                          "whatsapp",
-                          "agent"
-                        ]
-                      },
-                      "minItems": 1
-                    },
-                    "due_in_days": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 60
-                    },
-                    "payer_fields": {
+                    {
                       "type": "object",
                       "properties": {
-                        "contact": {
+                        "title": {
                           "type": "string",
-                          "enum": [
-                            "required",
-                            "optional",
-                            "off"
-                          ],
-                          "default": "optional"
+                          "minLength": 1,
+                          "maxLength": 120
                         },
-                        "external_reference": {
+                        "description": {
                           "type": "string",
-                          "enum": [
-                            "required",
-                            "optional",
-                            "off"
+                          "maxLength": 2000
+                        },
+                        "success_message": {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 120
+                              },
+                              "quantity": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 999
+                              },
+                              "unit_amount_minor": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 100000000
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "quantity",
+                              "unit_amount_minor"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 1,
+                          "maxItems": 50
+                        },
+                        "brand": {
+                          "type": "object",
+                          "properties": {
+                            "logo_url": {
+                              "type": "string",
+                              "maxLength": 2048,
+                              "format": "uri"
+                            },
+                            "color": {
+                              "type": "string",
+                              "pattern": "^#[0-9A-Fa-f]{6}$"
+                            },
+                            "text_color": {
+                              "type": "string",
+                              "pattern": "^#[0-9A-Fa-f]{6}$"
+                            },
+                            "texts": {
+                              "type": "object",
+                              "properties": {
+                                "header": {
+                                  "type": "string",
+                                  "maxLength": 200
+                                },
+                                "footer": {
+                                  "type": "string",
+                                  "maxLength": 500
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "surfaces": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "page",
+                              "whatsapp",
+                              "agent"
+                            ]
+                          },
+                          "minItems": 1
+                        },
+                        "payer_fields": {
+                          "type": "object",
+                          "properties": {
+                            "contact": {
+                              "type": "string",
+                              "enum": [
+                                "required",
+                                "optional",
+                                "off"
+                              ],
+                              "default": "optional"
+                            },
+                            "external_reference": {
+                              "type": "string",
+                              "enum": [
+                                "required",
+                                "optional",
+                                "off"
+                              ],
+                              "default": "off"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "recurrence": {
+                          "type": "object",
+                          "properties": {
+                            "first_payment": {
+                              "type": "string",
+                              "enum": [
+                                "now",
+                                "none"
+                              ]
+                            },
+                            "frequency": {
+                              "type": "string",
+                              "enum": [
+                                "weekly",
+                                "monthly",
+                                "quarter",
+                                "semester",
+                                "yearly"
+                              ]
+                            },
+                            "max_charges": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 1,
+                              "maximum": 120,
+                              "default": null
+                            },
+                            "retries": {
+                              "type": "boolean",
+                              "default": false
+                            },
+                            "qr_valid_days": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 7,
+                              "default": 1
+                            }
+                          },
+                          "required": [
+                            "first_payment",
+                            "frequency"
                           ],
-                          "default": "off"
+                          "additionalProperties": false
                         }
                       },
+                      "required": [
+                        "title",
+                        "items",
+                        "surfaces",
+                        "recurrence"
+                      ],
                       "additionalProperties": false
-                    },
-                    "usdc_price": {
-                      "type": "string",
-                      "pattern": "^\\d{1,7}(\\.\\d{1,6})?$"
                     }
-                  },
-                  "required": [
-                    "title",
-                    "items",
-                    "surfaces",
-                    "due_in_days"
                   ],
-                  "additionalProperties": false
+                  "description": "A one-time link takes a one-time version; a recurring offer's version carries `recurrence` (0390)."
                 }
               }
             }
@@ -49571,7 +50192,7 @@
       "/v1/collect/links/{linkId}/archive": {
         "post": {
           "summary": "Archive a Collect link",
-          "description": "Terminal. The link takes no new version and issues nothing.",
+          "description": "Terminal. The link takes no new version and issues nothing.\n\nA RECURRING offer (0390) with live adhesions is never archived by hiding its page while debits continue: without a body it answers 409 `collect_link_has_active_subscriptions`. With `{\"subscriptions\":\"cancel\"}` the offer is paused first, every live adhesion is cancelled commercially, and only then is the link archived; a cancel that is refused or uncertain leaves it paused (409 `collect_link_archive_incomplete`, `pending`). To stop selling and keep billing, pause the link instead.",
           "parameters": [
             {
               "schema": {
@@ -49582,6 +50203,25 @@
               "in": "path"
             }
           ],
+          "requestBody": {
+            "required": false,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "subscriptions": {
+                      "type": "string",
+                      "enum": [
+                        "cancel"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
           "responses": {
             "200": {
               "description": "OK",
@@ -50253,6 +50893,52 @@
                             "type": "string",
                             "enum": [
                               "not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "A recurring offer still has adhesions that charge.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "collect_link_has_active_subscriptions",
+                              "collect_link_archive_incomplete"
                             ]
                           },
                           "message": {
@@ -51196,7 +51882,7 @@
       "/v1/collect/{linkId}/attempts": {
         "post": {
           "summary": "Ask a Collect link for a payable Pix (public)",
-          "description": "The hosted page's POST. No credential. The body is strict: `page_session` (the page's idempotency key: the same session answers the same attempt, 200 with `replay: true`), the payer fields the page collected (never a field the charger prefilled), and `renew`. There is no amount field: the charge carries the published version's total. Payer data goes in this body only, never in a URL. Rate limited per client IP and per link, more tightly than the read, because every new attempt is a charge at the issuer.",
+          "description": "The hosted page's POST. No credential. The body is strict: `page_session` (the page's idempotency key: the same session answers the same attempt, 200 with `replay: true`), the payer fields the page collected (never a field the charger prefilled), and `renew`. There is no amount field: the charge carries the published version's total. Payer data goes in this body only, never in a URL. Rate limited per client IP and per link, more tightly than the read, because every new attempt is a charge at the issuer.\n\nOn a RECURRING offer (0390) this creates the caller's adhesion instead: a Pix Automático charge that is paid now and authorizes the next ones, answered as `object: \"collect_subscription\"` with the QR; the page then follows it with POST /v1/collect/{linkId}/subscriptions/{subscriptionId}. `renew` is refused there (`collect_renew_not_applicable`): an expired QR is a new adhesion under a new page session.",
           "security": [],
           "parameters": [
             {
@@ -52403,6 +53089,1537 @@
               ]
             }
           ]
+        }
+      },
+      "/v1/collect/links/{linkId}/subscriptions": {
+        "get": {
+          "summary": "The adhesions of a recurring offer",
+          "description": "Newest first, each with the read model: where the payer's authorization stands, the next charge, the payments received and the failed charges, kept apart. `state` filters by the derived state.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string"
+              },
+              "required": true,
+              "name": "linkId",
+              "in": "path"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "issuing",
+                  "failed",
+                  "awaiting_payment",
+                  "expired",
+                  "payment_received",
+                  "active",
+                  "authorization_denied",
+                  "authorization_expired",
+                  "authorization_cancelled",
+                  "cancelling",
+                  "cancelled",
+                  "ended"
+                ]
+              },
+              "required": false,
+              "name": "state",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 200,
+                "default": 50
+              },
+              "required": false,
+              "name": "limit",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "required": false,
+              "name": "before",
+              "in": "query"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "object": {
+                        "type": "string",
+                        "enum": [
+                          "list"
+                        ]
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "description": "cls_ + 22 characters"
+                            },
+                            "object": {
+                              "type": "string",
+                              "enum": [
+                                "collect_subscription"
+                              ]
+                            },
+                            "link_id": {
+                              "type": "string"
+                            },
+                            "version": {
+                              "type": "integer"
+                            },
+                            "environment": {
+                              "type": "string",
+                              "enum": [
+                                "live",
+                                "test"
+                              ]
+                            },
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "issuing",
+                                "failed",
+                                "awaiting_payment",
+                                "expired",
+                                "payment_received",
+                                "active",
+                                "authorization_denied",
+                                "authorization_expired",
+                                "authorization_cancelled",
+                                "cancelling",
+                                "cancelled",
+                                "ended"
+                              ],
+                              "description": "Derived from the recurrence: `active` only once the payer's bank reported the authorization ACCEPTED; `authorization_cancelled` is the payer's or the bank's cancellation; `cancelling` / `cancelled` the seller's; `authorization_expired` a paid adhesion whose authorization never arrived by its deadline (the payment stays credited)."
+                            },
+                            "past_due": {
+                              "type": "boolean",
+                              "description": "Active, and the most recent charge due by today failed. The adhesion is still authorized."
+                            },
+                            "payer": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "document_masked": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "document_masked"
+                              ]
+                            },
+                            "terms": {
+                              "type": "object",
+                              "additionalProperties": {}
+                            },
+                            "authorization": {
+                              "type": "object",
+                              "additionalProperties": {}
+                            },
+                            "next_charge": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "due_date": {
+                                  "type": "string"
+                                },
+                                "amount_minor": {
+                                  "type": "integer"
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "expected",
+                                    "sent_to_payer_bank",
+                                    "scheduled",
+                                    "awaiting_instruction"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "due_date",
+                                "amount_minor",
+                                "status"
+                              ]
+                            },
+                            "payments": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": {}
+                              },
+                              "description": "The first payment (`initial`) and every paid cycle (`cycle`)."
+                            },
+                            "failed_charges": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": {}
+                              }
+                            },
+                            "totals": {
+                              "type": "object",
+                              "properties": {
+                                "received_minor": {
+                                  "type": "integer"
+                                },
+                                "payments": {
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "received_minor",
+                                "payments"
+                              ]
+                            },
+                            "commercial_cancellation": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "additionalProperties": {}
+                            },
+                            "recurrence_id": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "created_at": {
+                              "type": "string"
+                            },
+                            "updated_at": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "object",
+                            "link_id",
+                            "version",
+                            "environment",
+                            "state",
+                            "past_due",
+                            "payer",
+                            "terms",
+                            "authorization",
+                            "next_charge",
+                            "payments",
+                            "failed_charges",
+                            "totals",
+                            "commercial_cancellation",
+                            "recurrence_id",
+                            "created_at",
+                            "updated_at"
+                          ]
+                        }
+                      },
+                      "next_before": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "object",
+                      "data",
+                      "next_before"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad query.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_query"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found. No link with that id in this project. A link of another project answers identically.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "collect:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "collect:read"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/collect/subscriptions/{subscriptionId}": {
+        "get": {
+          "summary": "One adhesion of a recurring offer",
+          "description": "The same view as the list, with every cycle (`cycles`).",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string"
+              },
+              "required": true,
+              "name": "subscriptionId",
+              "in": "path"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "cls_ + 22 characters"
+                      },
+                      "object": {
+                        "type": "string",
+                        "enum": [
+                          "collect_subscription"
+                        ]
+                      },
+                      "link_id": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "integer"
+                      },
+                      "environment": {
+                        "type": "string",
+                        "enum": [
+                          "live",
+                          "test"
+                        ]
+                      },
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "issuing",
+                          "failed",
+                          "awaiting_payment",
+                          "expired",
+                          "payment_received",
+                          "active",
+                          "authorization_denied",
+                          "authorization_expired",
+                          "authorization_cancelled",
+                          "cancelling",
+                          "cancelled",
+                          "ended"
+                        ],
+                        "description": "Derived from the recurrence: `active` only once the payer's bank reported the authorization ACCEPTED; `authorization_cancelled` is the payer's or the bank's cancellation; `cancelling` / `cancelled` the seller's; `authorization_expired` a paid adhesion whose authorization never arrived by its deadline (the payment stays credited)."
+                      },
+                      "past_due": {
+                        "type": "boolean",
+                        "description": "Active, and the most recent charge due by today failed. The adhesion is still authorized."
+                      },
+                      "payer": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "document_masked": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "document_masked"
+                        ]
+                      },
+                      "terms": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      "authorization": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      "next_charge": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "due_date": {
+                            "type": "string"
+                          },
+                          "amount_minor": {
+                            "type": "integer"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "expected",
+                              "sent_to_payer_bank",
+                              "scheduled",
+                              "awaiting_instruction"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "due_date",
+                          "amount_minor",
+                          "status"
+                        ]
+                      },
+                      "payments": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "description": "The first payment (`initial`) and every paid cycle (`cycle`)."
+                      },
+                      "failed_charges": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        }
+                      },
+                      "totals": {
+                        "type": "object",
+                        "properties": {
+                          "received_minor": {
+                            "type": "integer"
+                          },
+                          "payments": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "received_minor",
+                          "payments"
+                        ]
+                      },
+                      "commercial_cancellation": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "additionalProperties": {}
+                      },
+                      "recurrence_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "object",
+                      "link_id",
+                      "version",
+                      "environment",
+                      "state",
+                      "past_due",
+                      "payer",
+                      "terms",
+                      "authorization",
+                      "next_charge",
+                      "payments",
+                      "failed_charges",
+                      "totals",
+                      "commercial_cancellation",
+                      "recurrence_id",
+                      "created_at",
+                      "updated_at"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No adhesion with that id in this project.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "collect_subscription_not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "collect:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "collect:read"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/collect/subscriptions/{subscriptionId}/cancel": {
+        "post": {
+          "summary": "Cancel an adhesion commercially",
+          "description": "The seller's cancellation. Recorded before anything is sent; then every charge already scheduled at the payer's bank whose cancel window is open (until 23:59 of the day before) is cancelled, then the authorization itself. 202 with `state: cancelling` once the bank accepted the request; the confirmation arrives from the bank and moves it to `cancelled`. Asking again answers the current state.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string"
+              },
+              "required": true,
+              "name": "subscriptionId",
+              "in": "path"
+            }
+          ],
+          "requestBody": {
+            "required": false,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reason": {
+                      "type": "string",
+                      "enum": [
+                        "customer_request",
+                        "non_payment",
+                        "offer_discontinued",
+                        "fraud_suspected",
+                        "other"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "cls_ + 22 characters"
+                      },
+                      "object": {
+                        "type": "string",
+                        "enum": [
+                          "collect_subscription"
+                        ]
+                      },
+                      "link_id": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "integer"
+                      },
+                      "environment": {
+                        "type": "string",
+                        "enum": [
+                          "live",
+                          "test"
+                        ]
+                      },
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "issuing",
+                          "failed",
+                          "awaiting_payment",
+                          "expired",
+                          "payment_received",
+                          "active",
+                          "authorization_denied",
+                          "authorization_expired",
+                          "authorization_cancelled",
+                          "cancelling",
+                          "cancelled",
+                          "ended"
+                        ],
+                        "description": "Derived from the recurrence: `active` only once the payer's bank reported the authorization ACCEPTED; `authorization_cancelled` is the payer's or the bank's cancellation; `cancelling` / `cancelled` the seller's; `authorization_expired` a paid adhesion whose authorization never arrived by its deadline (the payment stays credited)."
+                      },
+                      "past_due": {
+                        "type": "boolean",
+                        "description": "Active, and the most recent charge due by today failed. The adhesion is still authorized."
+                      },
+                      "payer": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "document_masked": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "document_masked"
+                        ]
+                      },
+                      "terms": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      "authorization": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      "next_charge": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "due_date": {
+                            "type": "string"
+                          },
+                          "amount_minor": {
+                            "type": "integer"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "expected",
+                              "sent_to_payer_bank",
+                              "scheduled",
+                              "awaiting_instruction"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "due_date",
+                          "amount_minor",
+                          "status"
+                        ]
+                      },
+                      "payments": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "description": "The first payment (`initial`) and every paid cycle (`cycle`)."
+                      },
+                      "failed_charges": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        }
+                      },
+                      "totals": {
+                        "type": "object",
+                        "properties": {
+                          "received_minor": {
+                            "type": "integer"
+                          },
+                          "payments": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "received_minor",
+                          "payments"
+                        ]
+                      },
+                      "commercial_cancellation": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "additionalProperties": {}
+                      },
+                      "recurrence_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      },
+                      "cycles_cancelled": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Due dates of the scheduled charges cancelled with the adhesion."
+                      },
+                      "cycles_not_cancellable": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "due_date": {
+                              "type": "string"
+                            },
+                            "reason": {
+                              "type": "string",
+                              "enum": [
+                                "cancel_window_closed",
+                                "provider_refused",
+                                "outcome_uncertain",
+                                "call_budget_wait",
+                                "not_in_state"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "due_date",
+                            "reason"
+                          ]
+                        },
+                        "description": "Scheduled charges that were not cancelled, each with a closed reason."
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "object",
+                      "link_id",
+                      "version",
+                      "environment",
+                      "state",
+                      "past_due",
+                      "payer",
+                      "terms",
+                      "authorization",
+                      "next_charge",
+                      "payments",
+                      "failed_charges",
+                      "totals",
+                      "commercial_cancellation",
+                      "recurrence_id",
+                      "created_at",
+                      "updated_at",
+                      "cycles_cancelled",
+                      "cycles_not_cancellable"
+                    ]
+                  }
+                }
+              }
+            },
+            "202": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "cls_ + 22 characters"
+                      },
+                      "object": {
+                        "type": "string",
+                        "enum": [
+                          "collect_subscription"
+                        ]
+                      },
+                      "link_id": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "integer"
+                      },
+                      "environment": {
+                        "type": "string",
+                        "enum": [
+                          "live",
+                          "test"
+                        ]
+                      },
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "issuing",
+                          "failed",
+                          "awaiting_payment",
+                          "expired",
+                          "payment_received",
+                          "active",
+                          "authorization_denied",
+                          "authorization_expired",
+                          "authorization_cancelled",
+                          "cancelling",
+                          "cancelled",
+                          "ended"
+                        ],
+                        "description": "Derived from the recurrence: `active` only once the payer's bank reported the authorization ACCEPTED; `authorization_cancelled` is the payer's or the bank's cancellation; `cancelling` / `cancelled` the seller's; `authorization_expired` a paid adhesion whose authorization never arrived by its deadline (the payment stays credited)."
+                      },
+                      "past_due": {
+                        "type": "boolean",
+                        "description": "Active, and the most recent charge due by today failed. The adhesion is still authorized."
+                      },
+                      "payer": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "document_masked": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "document_masked"
+                        ]
+                      },
+                      "terms": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      "authorization": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      "next_charge": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "due_date": {
+                            "type": "string"
+                          },
+                          "amount_minor": {
+                            "type": "integer"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "expected",
+                              "sent_to_payer_bank",
+                              "scheduled",
+                              "awaiting_instruction"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "due_date",
+                          "amount_minor",
+                          "status"
+                        ]
+                      },
+                      "payments": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        },
+                        "description": "The first payment (`initial`) and every paid cycle (`cycle`)."
+                      },
+                      "failed_charges": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        }
+                      },
+                      "totals": {
+                        "type": "object",
+                        "properties": {
+                          "received_minor": {
+                            "type": "integer"
+                          },
+                          "payments": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "received_minor",
+                          "payments"
+                        ]
+                      },
+                      "commercial_cancellation": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "additionalProperties": {}
+                      },
+                      "recurrence_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      },
+                      "cycles_cancelled": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Due dates of the scheduled charges cancelled with the adhesion."
+                      },
+                      "cycles_not_cancellable": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "due_date": {
+                              "type": "string"
+                            },
+                            "reason": {
+                              "type": "string",
+                              "enum": [
+                                "cancel_window_closed",
+                                "provider_refused",
+                                "outcome_uncertain",
+                                "call_budget_wait",
+                                "not_in_state"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "due_date",
+                            "reason"
+                          ]
+                        },
+                        "description": "Scheduled charges that were not cancelled, each with a closed reason."
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "object",
+                      "link_id",
+                      "version",
+                      "environment",
+                      "state",
+                      "past_due",
+                      "payer",
+                      "terms",
+                      "authorization",
+                      "next_charge",
+                      "payments",
+                      "failed_charges",
+                      "totals",
+                      "commercial_cancellation",
+                      "recurrence_id",
+                      "created_at",
+                      "updated_at",
+                      "cycles_cancelled",
+                      "cycles_not_cancellable"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request. The body did not match the schema (`invalid_body`, with `details.issues`), or the version breaks a rule the schema cannot state: the items total below the R$5.00 a Pix with due date needs (`collect_total_below_minimum`), above R$1,000,000.00 (`collect_total_above_maximum`), or brand colors whose contrast is below 4.5:1 (`collect_brand_contrast_insufficient`), or a `usdc_price` on a version without the agent surface (`collect_usdc_price_requires_agent`). Unknown keys are refused, not dropped: the regulated payer fields (document, address) are never free-text questions.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body",
+                              "project_scope_missing",
+                              "collect_total_below_minimum",
+                              "collect_total_above_maximum",
+                              "collect_brand_contrast_insufficient",
+                              "collect_usdc_price_requires_agent"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No adhesion with that id in this project.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "collect_subscription_not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "Not cancellable now.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "collect_subscription_not_cancellable",
+                              "collect_subscription_cancel_uncertain"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "The bank refused the cancellation.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "collect_subscription_cancel_refused"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "429": {
+              "description": "This project's sandbox calls reached their limit; nothing was sent.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "collect_call_budget_wait"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "collect:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "collect:write"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/collect/{linkId}/subscriptions/{subscriptionId}": {
+        "post": {
+          "summary": "A payer follows their adhesion to a recurring offer (public)",
+          "description": "No credential. Only the page session that created the adhesion reads it, sent in the body. Answers the QR while it is payable, then the payment and the authorization; `retry_after` while there is something to wait for. Any other session, an unknown id or another link's adhesion is the same 404.",
+          "security": [],
+          "parameters": [
+            {
+              "schema": {
+                "type": "string"
+              },
+              "required": true,
+              "name": "linkId",
+              "in": "path"
+            },
+            {
+              "schema": {
+                "type": "string"
+              },
+              "required": true,
+              "name": "subscriptionId",
+              "in": "path"
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "page_session": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{16,64}$"
+                    }
+                  },
+                  "required": [
+                    "page_session"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad request.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body",
+                              "invalid_subscription_id",
+                              "invalid_link_id"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No adhesion with that id for this session.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "collect_subscription_not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "429": {
+              "description": "Too Many Requests. Per client IP and per link, shared by every API replica; `Retry-After` and `details.retry_after` give the wait, `details.scope` names which bucket refused. In a test project that reaches Collect by capability, `collect_call_budget_wait` says the project's sandbox calls reached their hourly or daily limit: nothing was created or sent, and `Retry-After` gives the wait.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "rate_limited",
+                              "collect_call_budget_wait"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          }
         }
       },
       "/v1/meters": {
