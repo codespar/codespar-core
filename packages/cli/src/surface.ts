@@ -238,6 +238,30 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     prefix: "/v1/shop/agent",
     description: "Shop (delegated purchases): propose one, read where it stands, list a person's masked cards",
   },
+  // The four families below are published at the refresh to 358 operations
+  // (2026-10-24). Three of them were exceptions whose reason no longer held:
+  // `collect` was excepted because the served API answered `collect_disabled`
+  // on every path, and it answers 401 now (Collect is on, for Test projects);
+  // `paywalls` and `payment-links` were called "dashboard surface", and the
+  // gate's own criterion is terminal use: a person creating a paywall or a
+  // payment link, or reading its stats, from a terminal is exactly that.
+  // Published, not excepted, so the exception list shrinks by three.
+  {
+    name: "collect",
+    prefix: "/v1/collect",
+    description:
+      "Collect: links (draft, publish, pause, archive, stats), attempts and their WhatsApp material, payments and late-payment decisions, receivers, recurring offers and their adhesions, the Test payer button",
+  },
+  {
+    name: "paywalls",
+    prefix: "/v1/paywalls",
+    description: "Gate paywalls: create one in front of an API or MCP server, read it, change it, remove it, read its stats",
+  },
+  {
+    name: "payment-links",
+    prefix: "/v1/payment-links",
+    description: "Payment links: the shareable URL an agent pays over x402/USDC and a person pays via Pix; list, create, read, change, remove, payments, stats",
+  },
 ];
 
 /* ── Derivation ───────────────────────────────────────────────────── */
@@ -538,14 +562,6 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
     reason: "Counterparty reads outside commerce-memory. Not in onda 4 of the matrix.",
     since: "2026-09-10",
   },
-  "payment-links": {
-    reason: "Payment link CRUD. Dashboard surface; not in onda 4 of the matrix.",
-    since: "2026-09-10",
-  },
-  paywalls: {
-    reason: "Paywall reads and stats. Dashboard surface; not in onda 4 of the matrix.",
-    since: "2026-09-10",
-  },
   providers: {
     reason: "Provider catalog and auth schemas. `codespar servers` and `codespar wizard` are the terminal entrances.",
     since: "2026-09-10",
@@ -609,15 +625,10 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
       "Its two live routes (`GET /v1/triggers/events`, `POST /v1/triggers/simulate`) exist only under `/v1/triggers`, whose other 12 operations are deprecated, and the `triggers` command already points at `/v1/webhook-endpoints`.",
     since: "2026-10-07",
   },
-  collect: {
-    reason:
-      "Off unless the deployment enables it: every path of the family answers 404 `collect_disabled`, and the served API answers that today.",
-    since: "2026-10-07",
-  },
 };
 
 /** How many exceptions the gate expects. Lower it when one goes away. */
-export const EXCEPTION_PIN = 40;
+export const EXCEPTION_PIN = 37;
 
 export type ViolationKind =
   | "uncovered-group"

@@ -1,5 +1,46 @@
 # @codespar/cli — changelog
 
+## 0.20.0 — 2026-10-24
+
+### Added
+
+- **Four resource groups, derived from the served document** (358 operations,
+  `@codespar/sdk` 0.16.18): `collect` (29 commands), `paywalls` (6),
+  `payment-links` (7) and `shop` (3). Each is one row in `PUBLISHED_GROUPS`;
+  the subcommands are the operation table's, named by the same rule as every
+  other group, and pinned in `resource-commands.test.ts`.
+  - `codespar collect`: `list-links`, `create-links`, `get-links`,
+    `update-links`, `links-draft`, `links-publish`, `links-pause`,
+    `links-resume`, `links-archive`, `links-stats`, `list-links-attempts`,
+    `create-links-attempts`, `links-payments`, `links-refunds`,
+    `links-subscriptions`, `list-attempts`, `attempts-test-pay`,
+    `attempts-artifact`, `payments-honor`, `payments-refund`, `receivers`,
+    `list-receivers-default`, `set-receivers-default`, `get-subscriptions`,
+    `subscriptions-cancel`, `subscriptions-test-pay`, and the payer's three
+    public operations, `get`, `create-attempts` and `create-subscriptions`.
+  - `codespar paywalls`: `list`, `create`, `get`, `update`, `delete`, `stats`.
+  - `codespar payment-links`: `list`, `create`, `get`, `update`, `delete`,
+    `payments`, `stats`.
+  - `codespar shop`: `create-purchases`, `get-purchases`, `instruments`, the
+    three `/v1/shop/agent` operations an external assistant may call in a Test
+    project (the group row arrived with core#213, on 2026-10-24, unreleased
+    until now). Paying, approving, saving a card and logging in at a store stay
+    the verified person's acts on the dashboard; there is no command for them
+    because there is no route.
+- **Four commands in groups that already existed**: `meters list-statements`,
+  `meters get-statements`, `meters adjustments`, `account spenders`.
+
+### Changed
+
+- **Three surface exceptions retired**, `EXCEPTION_PIN` 40 → 37. `collect`
+  was excepted on 2026-10-07 because the served API answered 404
+  `collect_disabled` on every path; measured on 2026-10-24,
+  `GET /v1/collect/links` answers 401 without a credential, so Collect is on
+  and the premise no longer holds. `paywalls` and `payment-links` were called
+  "dashboard surface"; the gate's criterion is terminal use, and a person
+  creating a paywall or reading a link's payments from a terminal is that.
+- No existing command is renamed.
+
 ## 0.19.0 — 2026-10-09
 
 ### Changed
