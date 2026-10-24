@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 412c8d524dd0f425eb5797ce52c0cb292b5c08ee3552239f19b1fd17227c9c1a, fetched 2026-10-24T16:42:08.202Z
+// Source: openapi-snapshot.json (sha256 412c8d524dd0f425eb5797ce52c0cb292b5c08ee3552239f19b1fd17227c9c1a, fetched 2026-10-24T16:37:05.128Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
