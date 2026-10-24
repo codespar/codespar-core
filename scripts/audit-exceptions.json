@@ -1,0 +1,13 @@
+{
+  "_comment": "Read by scripts/audit-gate.mjs. Each entry accepts ONE advisory for ONE package until `expires` (UTC date, exclusive). Only HIGH can be accepted, only when npm offers no fix inside the declared range (none, or a semver-major one). Renewing an entry is a reviewed change, not an edit to keep CI green.",
+  "exceptions": [
+    {
+      "id": "GHSA-mrhx-c7xc-m3w5",
+      "package": "zod",
+      "severity": "high",
+      "expires": "2026-11-07",
+      "issue": "https://github.com/codespar/codespar-core/issues/214",
+      "justification": "Memory exhaustion while validating oversized constrained collections: a denial of service of the process doing the validation, with no data exposure. The only fix is zod >= 4.6.6, a major that changes the public types of @codespar/api-types and @codespar/sdk consumed by codespar-enterprise and codespar-web; no patched 3.x exists. The zod 4 migration is tracked in #214 with the coordinated bumps."
+    }
+  ]
+}
