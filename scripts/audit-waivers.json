@@ -1,0 +1,20 @@
+{
+  "comment": [
+    "Advisories the security audit gate (scripts/audit-gate.mjs) sets aside, one per GHSA id.",
+    "Each waiver names why the fix is out of reach and the date it stops working; past that",
+    "date the gate is red again until the waiver is renewed in a reviewed change or the",
+    "dependency moves. A waiver for an advisory the audit no longer reports fails the gate,",
+    "so these get deleted rather than accumulated. Never waive by package or by severity."
+  ],
+  "waivers": [
+    {
+      "id": "GHSA-mrhx-c7xc-m3w5",
+      "package": "zod",
+      "severity": "high",
+      "reason": "Patched only in zod 4.6.6 (the advisory's range was extended to every version below it on 2026-10-23). The tree holds zod 3.25.76: @codespar/api-types declares ^3.23.0, and @modelcontextprotocol/sdk 1.32.1 reaches it through zod-to-json-schema ^3.25.1, which does not take zod 4. Moving api-types to zod 4 is a published-contract change for its consumers and still leaves the nested zod 3 under zod-to-json-schema, so the finding would stay. Exposure: a client validating API responses with bounded schemas; no untrusted oversized collection is parsed on the request path of these packages.",
+      "since": "2026-10-24",
+      "expires": "2026-12-01",
+      "revisit": "When @modelcontextprotocol/sdk ships on zod 4 without zod-to-json-schema, or when @codespar/api-types takes zod 4 in its own PR."
+    }
+  ]
+}
