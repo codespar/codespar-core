@@ -134,6 +134,13 @@ const PINNED_COMMANDS = [
   "payables get → GET /v1/payables/{payableId}",
   "payables review → POST /v1/payables/{payableId}/review",
   "payables pay → POST /v1/payables/{payableId}/pay",
+  "payables files → POST /v1/payables/files",
+  "payables files-authorizations → POST /v1/payables/files/authorizations",
+  "payables create-batches → POST /v1/payables/batches",
+  "payables get-batches → GET /v1/payables/batches/{batchId}",
+  "payables update-batches-items → PATCH /v1/payables/batches/{batchId}/items/{itemId}",
+  "payables create-batches-items → POST /v1/payables/batches/{batchId}/items",
+  "payables batches-pay → POST /v1/payables/batches/{batchId}/pay",
   "test charges-pay → POST /v1/test/charges/{chargeId}/pay",
   "test charges-scenarios → POST /v1/test/charges/{chargeId}/scenarios",
   "test fund → POST /v1/test/fund",
@@ -242,6 +249,17 @@ describe("derived resource commands", () => {
       "consumerId",
       "document",
     ]);
+  });
+
+  it("carries the query parameters the document marks required, and only those", () => {
+    // GET /v1/shop/agent/instruments answers 400 without `owner` (25/10/2026,
+    // Test exercise of cli 0.20.0): the row has to say so before the wire does.
+    expect(commandNamed("shop", "instruments").requiredQuery).toEqual(["owner"]);
+    expect(commandNamed("boletos", "list").requiredQuery).toEqual(["from_date", "to_date"]);
+    // Positive control: a command whose operation declares no required query
+    // carries an empty list, so the help line does not appear everywhere.
+    expect(commandNamed("shop", "get-purchases").requiredQuery).toEqual([]);
+    expect(commandNamed("wallets", "list").requiredQuery).toEqual([]);
   });
 
   it("derives nothing for a prefix the document does not declare", () => {

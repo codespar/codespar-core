@@ -37,6 +37,9 @@ export interface OperationRow {
   path: string;
   body: string | null;
   accept: string | null;
+  /** Query parameters the document marks `required`, in declaration order. */
+  requiredQuery: string[];
+  deprecated: boolean;
 }
 
 export interface OperationDiff {
@@ -53,6 +56,10 @@ export const OPERATIONS_PATH: string;
 
 export function documentSha256(document: OpenApiDocument): string;
 export function listOperations(document: OpenApiDocument): OperationEntry[];
+export function requiredQueryParameters(
+  operation: Record<string, unknown>,
+  pathItem?: Record<string, unknown>,
+): string[];
 export function operationTable(document: OpenApiDocument): OperationRow[];
 export function diffOperations(before: OpenApiDocument, after: OpenApiDocument): OperationDiff;
 export function buildSnapshot(

@@ -30,6 +30,8 @@ export interface OperationRow {
   path: string;
   /** Request body content type, or null when the operation takes no body. */
   body: string | null;
+  /** Query parameters the served document marks `required`, in declaration order. */
+  requiredQuery: string[];
   /** The served document marks the operation as dead. */
   deprecated: boolean;
 }
@@ -39,6 +41,7 @@ export const OPERATIONS: readonly OperationRow[] = API_OPERATIONS.map((row) => (
   method: row.method as HttpMethod,
   path: row.path as string,
   body: row.body as string | null,
+  requiredQuery: [...(row.requiredQuery as readonly string[])],
   deprecated: row.deprecated as boolean,
 }));
 
@@ -276,6 +279,12 @@ export interface DerivedCommand {
   params: string[];
   /** True when the operation declares a request body. */
   acceptsBody: boolean;
+  /**
+   * Query parameters the document marks `required`: the `-q name=value`
+   * pairs the API refuses the call without. Shown in `--help`, never
+   * invented here.
+   */
+  requiredQuery: string[];
   /** The served document marks this route as dead. */
   deprecated: boolean;
 }
@@ -295,7 +304,7 @@ function isParam(segment: string): boolean {
 }
 
 /** Segment-wise prefix test: `/v1/consumers/{}/dda` matches `/v1/consumers/{cid}/dda/boletos`. */
-function underPrefix(path: string, prefix: string): boolean {
+export function underPrefix(path: string, prefix: string): boolean {
   const p = normalise(path).split("/");
   const q = prefix.split("/");
   if (p.length < q.length) return false;
@@ -376,6 +385,7 @@ export function deriveGroup(
       path: op.path,
       params,
       acceptsBody: op.body !== null,
+      requiredQuery: [...op.requiredQuery],
       deprecated: op.deprecated,
     };
   });
