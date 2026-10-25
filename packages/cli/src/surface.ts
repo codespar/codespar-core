@@ -304,7 +304,7 @@ function isParam(segment: string): boolean {
 }
 
 /** Segment-wise prefix test: `/v1/consumers/{}/dda` matches `/v1/consumers/{cid}/dda/boletos`. */
-function underPrefix(path: string, prefix: string): boolean {
+export function underPrefix(path: string, prefix: string): boolean {
   const p = normalise(path).split("/");
   const q = prefix.split("/");
   if (p.length < q.length) return false;

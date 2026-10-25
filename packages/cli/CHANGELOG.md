@@ -14,6 +14,20 @@
   exercising 0.20.0 against Test: the API answered 400 `invalid_query` and
   nothing in the CLI had said which key was missing.
 
+### Fixed
+
+- **`codespar payables` lists the files/batches routes once.** The snapshot
+  of `@codespar/sdk` 0.16.20 carries the seven payables files/batches
+  operations, and the derivation named `files-authorizations`,
+  `create-batches`, `get-batches`, `update-batches-items`,
+  `create-batches-items` and `batches-pay` beside the hand-written
+  `files upload` and `batches create|get|update-item|pay` (0.21.0). The
+  reservation now goes by route (`/v1/payables/files`, `/v1/payables/batches`),
+  not by name, so each route has one spelling: the hand-written one.
+  Derived commands do not read `@codespar/sdk` 0.16.20's six newly declared
+  path parameters: their positionals come from the path template and
+  `shop get-purchases <id>` already worked.
+
 ## 0.21.0 — 2026-10-24
 
 ### Added

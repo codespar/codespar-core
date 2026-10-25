@@ -50,7 +50,7 @@ import {
   payablesBatchUpdateItemCommand,
   payablesFilesUploadCommand,
 } from "./commands/payables.js";
-import { derivedSurface, metaToolNames } from "./surface.js";
+import { derivedSurface, metaToolNames, underPrefix } from "./surface.js";
 import { c, json } from "./output.js";
 import { printBanner } from "./banner.js";
 import { VERSION } from "./version.js";
@@ -238,20 +238,23 @@ for (const [alias, tool] of [
 // ============ resource groups (derived from the served OpenAPI document) ============
 // No per-route code: each subcommand below is one row of the SDK's
 // generated operation table, with its path parameters as positionals.
-// Subcommand names a derived group leaves to a hand-written subgroup. The
-// payables files/batches routes are driven through the SDK facade (uploading
-// needs a multipart body built from a local path), and when the snapshot
-// carries them the derivation would name one `files` too; commander throws on
-// a second command of the same name, so the hand-written one keeps it.
-const HAND_WRITTEN_SUBGROUPS: Readonly<Record<string, readonly string[]>> = {
-  payables: ["files", "batches"],
+// Routes a derived group leaves to a hand-written subgroup. The payables
+// files/batches routes are driven through the SDK facade (uploading needs a
+// multipart body built from a local path). Reserved by ROUTE, not by name:
+// the snapshot that carries them (0.16.20) derives `files-authorizations`,
+// `create-batches`, `get-batches`, `update-batches-items`,
+// `create-batches-items` and `batches-pay` beside the hand-written
+// `files upload` and `batches create|get|update-item|pay`, and a list of
+// names would have let the six through as a second spelling of each route.
+const HAND_WRITTEN_ROUTES: Readonly<Record<string, readonly string[]>> = {
+  payables: ["/v1/payables/files", "/v1/payables/batches"],
 };
 
 for (const { spec, commands } of derivedSurface()) {
   const group = program.command(spec.name).description(spec.description);
-  const reserved = HAND_WRITTEN_SUBGROUPS[spec.name] ?? [];
+  const reserved = HAND_WRITTEN_ROUTES[spec.name] ?? [];
   for (const command of commands) {
-    if (reserved.includes(command.name)) continue;
+    if (reserved.some((prefix) => underPrefix(command.path, prefix))) continue;
     const sub = group
       .command(command.name)
       // A marca vem do documento servido, nao de uma lista aqui. Sem ela, os

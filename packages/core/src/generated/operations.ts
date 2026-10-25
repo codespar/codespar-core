@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 456c3f13a9bce6241fa217e232f2658da85105b4840afa7d3765778ef0b5c1ad, fetched 2026-10-25T18:25:44.660Z
+// Source: openapi-snapshot.json (sha256 0eed0c65e65bbc58e08cc762edbfbb3cd5c222e9033e7021c91d6761d18406bf, fetched 2026-10-25T20:57:53.040Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -311,6 +311,13 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/payables/{payableId}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/payables/{payableId}/review", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/payables/{payableId}/pay", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/payables/files", body: "multipart/form-data", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/payables/files/authorizations", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/payables/batches", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/payables/batches/{batchId}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "patch", path: "/v1/payables/batches/{batchId}/items/{itemId}", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/payables/batches/{batchId}/items", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/payables/batches/{batchId}/pay", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/shop/agent/purchases", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/purchases/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/instruments", body: null, accept: "application/json", requiredQuery: ["owner"], deprecated: false },
