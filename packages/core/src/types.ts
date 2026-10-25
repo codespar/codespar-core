@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { MockValue, ToolResult } from "@codespar/types";
+import type { CallOptions, MockValue, ToolResult } from "@codespar/types";
 
 // CallOptions is the shared client-side option bag. Single source of
 // truth lives in @codespar/types so the public Session contract and
@@ -135,3 +135,175 @@ export const SessionConfigSchema = z.object({
   projectId: z.string().regex(PROJECT_ID_REGEX).optional(),
   mocks: z.record(MockValueSchema).optional(),
 });
+
+/* ── Payables: documents and batches (/v1/payables/files, /v1/payables/batches) ── */
+
+/** A file read by `POST /v1/payables/files`. The original is not kept, only its digest and what was found in it. */
+export interface PayableFile {
+  file_id: string;
+  kind: "pdf" | "image" | "csv" | "xlsx";
+  sha256: string;
+  size_bytes: number;
+  /** Charges found in the file. */
+  items_found: number;
+  /** Of those, how many still need a complement in the review. */
+  unresolved: number;
+  /** A file no batch uses expires 24 h after the upload. */
+  expires_at: string;
+}
+
+export type PayableBatchStatus =
+  | "reviewing"
+  | "ready"
+  | "confirmed"
+  | "executing"
+  | "completed"
+  | "partially_completed"
+  | "failed"
+  | "canceled";
+
+export type PayableBatchItemState =
+  | "needs_complement"
+  | "resolving"
+  | "ready"
+  | "excluded"
+  | "rejected"
+  | "dispatching"
+  | "executed"
+  | "refused"
+  | "uncertain";
+
+export interface PayableBatchItemCheck {
+  /** `carrier_check_digits`, `duplicate_in_batch`, `duplicate_document`, `amount_matches_rail`, `due_date_state`, `pix_key_resolved`. */
+  code: string;
+  status: "pass" | "fail" | "warn";
+  message: string;
+  /** True when a test project's own responder answered the consult behind this check, not the rail. */
+  simulated?: boolean;
+}
+
+export interface PayableBatchItemPayment {
+  state: "executed" | "refused" | "uncertain";
+  attempt_id: string | null;
+  receipt_id: string | null;
+  end_to_end_id: string | null;
+  refusal: { code: string; message: string } | null;
+}
+
+export interface PayableBatchItem {
+  /** `pbl_` + 16 characters: the payable's id, derived from the batch and the item's content. */
+  item_id: string;
+  position: number;
+  origin: {
+    file_id: string | null;
+    page: number | null;
+    row: number | null;
+    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual";
+  };
+  rail: "boleto" | "pix" | null;
+  state: PayableBatchItemState;
+  missing: Array<"amount" | "destination" | "pix_key_owner_confirmation">;
+  /** Resolved on the rail: what the person confirms, not what was extracted. */
+  destination: {
+    kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
+    /** Masked line or masked key. */
+    display: string;
+    beneficiary_name: string | null;
+    beneficiary_document_masked: string | null;
+    due_date: string | null;
+  } | null;
+  amount_minor: number | null;
+  amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | null;
+  description: string | null;
+  reference: string | null;
+  checks: PayableBatchItemCheck[];
+  payment: PayableBatchItemPayment | null;
+}
+
+export interface PayableBatchConfirmation {
+  version: number;
+  list_hash: string;
+  /** `user_…` or `api_key:ak_…`. */
+  confirmed_by: string;
+  confirmed_at: string;
+  mandate_id: string;
+}
+
+export interface PayableBatch {
+  batch_id: string;
+  status: PayableBatchStatus;
+  /** Bumps on every change to the list; `pay` binds to it. */
+  version: number;
+  /** sha256 over the canonical list; `pay` binds to it. */
+  list_hash: string;
+  currency: "BRL";
+  totals: { items: number; payable_items: number; excluded: number; amount_minor: number };
+  confirmation: PayableBatchConfirmation | null;
+  items: PayableBatchItem[];
+  created_at: string;
+  source: PayableBatchSource;
+  conversation_id: string | null;
+}
+
+/** `batches.create` answers the batch plus whether it replays an earlier call with the same key. */
+export interface PayableBatchCreated extends PayableBatch {
+  idempotent_replay: boolean;
+}
+
+export type PayableBatchSource = "api" | "chat" | "dashboard" | "cli" | "mcp";
+
+/** A charge stated directly instead of read from a file. One carrier per item. */
+export interface PayableItemInput {
+  pixKey?: string;
+  boletoLine?: string;
+  brCode?: string;
+  /** Required with a bare Pix key: the key never determines the amount. */
+  amountMinor?: number;
+  description?: string;
+  /** Your own reference; part of the item identity for re-sends. */
+  reference?: string;
+}
+
+export interface PayableBatchCreateInput {
+  fileIds?: string[];
+  items?: PayableItemInput[];
+  /** Defaults to `api` on the server. */
+  source?: PayableBatchSource;
+  conversationId?: string;
+}
+
+export interface PayableItemUpdate {
+  /** The `version` you reviewed; a stale one is refused with 409 `payable_batch_version_conflict`. */
+  expectedVersion: number;
+  amountMinor?: number;
+  pixKey?: string;
+  boletoLine?: string;
+  brCode?: string;
+  description?: string;
+  excluded?: boolean;
+}
+
+export interface PayableItemsAddInput {
+  expectedVersion: number;
+  fileIds?: string[];
+  items?: PayableItemInput[];
+}
+
+export interface PayableBatchPayInput {
+  /** The `version` and `list_hash` of the list you are confirming. */
+  version: number;
+  listHash: string;
+  /** Required with an API key: the mandate is the authorization. */
+  mandateId?: string;
+}
+
+export interface PayableUploadOptions extends CallOptions {
+  /** Defaults to the File's name, the stream's path basename, or `document`. */
+  filename?: string;
+  /** Sets the part's type when the input carries none. The API decides by magic bytes either way. */
+  contentType?: string;
+}
+
+export interface PayableIdempotentOptions extends CallOptions {
+  idempotencyKey?: string;
+}

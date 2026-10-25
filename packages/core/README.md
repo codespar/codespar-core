@@ -170,6 +170,44 @@ For everything the API exposes over REST beyond the session surface, see [REST c
 | `findTools(session, query)` | Search tools by name or description |
 | `loop(session, config)` | Run a Complete Loop workflow |
 
+## Pay documents and batches
+
+`cs.payables` uploads boleto PDFs, Pix QR images and CSV/XLSX lists, builds a
+batch, and pays the exact list you reviewed. Destinations are the ones the
+rail resolved (beneficiary name, masked document), and a bare Pix key never
+sets the amount.
+
+```ts
+import { readFile } from "node:fs/promises";
+import { CodeSpar, payableBatchFromError } from "@codespar/sdk";
+
+const cs = new CodeSpar({ apiKey: process.env.CODESPAR_API_KEY });
+const file = await cs.payables.files.upload(await readFile("conta.pdf"), { filename: "conta.pdf" });
+let batch = await cs.payables.batches.create(
+  { fileIds: [file.file_id], items: [{ pixKey: "pessoa@example.com", amountMinor: 5000 }] },
+  { idempotencyKey: "batch-2026-10-24-001" },
+);
+// Complement what the files did not say, then pay the list you reviewed.
+const missing = batch.items.find((i) => i.missing.includes("amount"));
+if (missing) {
+  batch = await cs.payables.batches.updateItem(batch.batch_id, missing.item_id, {
+    expectedVersion: batch.version,
+    amountMinor: 1990,
+  });
+}
+try {
+  batch = await cs.payables.batches.pay(batch.batch_id, {
+    version: batch.version,
+    listHash: batch.list_hash,
+    mandateId: "mdt_example",
+  });
+} catch (err) {
+  const current = payableBatchFromError(err); // 409: the list changed, confirm again
+  if (!current) throw err;
+}
+for (const item of batch.items) console.log(item.item_id, item.payment?.state);
+```
+
 ## REST client generated from the OpenAPI document
 
 `cs.api` reaches every operation the API publishes at

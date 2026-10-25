@@ -34,7 +34,26 @@ export type {
   LoopStep,
   LoopResult,
   CallOptions,
+  PayableBatch,
+  PayableBatchConfirmation,
+  PayableBatchCreated,
+  PayableBatchCreateInput,
+  PayableBatchItem,
+  PayableBatchItemCheck,
+  PayableBatchItemPayment,
+  PayableBatchItemState,
+  PayableBatchPayInput,
+  PayableBatchSource,
+  PayableBatchStatus,
+  PayableFile,
+  PayableIdempotentOptions,
+  PayableItemInput,
+  PayableItemUpdate,
+  PayableItemsAddInput,
+  PayableUploadOptions,
 } from "./types.js";
+export { payableBatchFromError } from "./payables.js";
+export type { Payables, PayablesBatches, PayablesFiles, UploadInput } from "./payables.js";
 
 export { SessionConfigSchema } from "./types.js";
 export { loop } from "./loop.js";
@@ -86,6 +105,7 @@ import type { Session } from "@codespar/types";
 import { SessionConfigSchema, PROJECT_ID_REGEX } from "./types.js";
 import { createSession } from "./session.js";
 import { ApiClient } from "./api/client.js";
+import { createPayables, type Payables } from "./payables.js";
 import { validateTimeout } from "./internal/fetch.js";
 
 const DEFAULT_BASE_URL = "https://api.codespar.dev";
@@ -104,6 +124,23 @@ export class CodeSpar {
    * ```
    */
   readonly api: ApiClient;
+
+  /**
+   * Pay documents and batches: upload boleto PDFs, Pix QR images and
+   * CSV/XLSX lists, review the batch, pay the exact list you confirmed.
+   *
+   * @example
+   * ```ts
+   * const file = await cs.payables.files.upload(await fs.openAsBlob("conta.pdf"), { filename: "conta.pdf" });
+   * const batch = await cs.payables.batches.create({ fileIds: [file.file_id] });
+   * const paid = await cs.payables.batches.pay(batch.batch_id, {
+   *   version: batch.version,
+   *   listHash: batch.list_hash,
+   *   mandateId: "mdt_example",
+   * });
+   * ```
+   */
+  readonly payables: Payables;
 
   constructor(config: CodeSparConfig = {}) {
     this.config = {
@@ -144,6 +181,12 @@ export class CodeSpar {
     }
 
     this.api = new ApiClient({
+      baseUrl: this.config.baseUrl,
+      apiKey: this.config.apiKey,
+      projectId: this.config.projectId || undefined,
+      timeout: this.config.timeout,
+    });
+    this.payables = createPayables({
       baseUrl: this.config.baseUrl,
       apiKey: this.config.apiKey,
       projectId: this.config.projectId || undefined,

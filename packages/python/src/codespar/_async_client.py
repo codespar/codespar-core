@@ -24,6 +24,7 @@ from ._async_session import (
 from ._http import DEFAULT_BASE_URL, normalize_timeout, request_json
 from ._presets import preset_to_servers
 from .errors import ApiError, ConfigError
+from .payables import AsyncPayables
 from .types import SessionConfig
 
 # Wire format for a project scope. Kept in sync with the TS SDK
@@ -102,6 +103,8 @@ class AsyncCodeSpar:
             base_url=self._base_url,
             timeout=timeout,
         )
+        #: Pay documents and batches (``/v1/payables/files``, ``/v1/payables/batches``).
+        self.payables = AsyncPayables(self._client, self._api_key, self._project_id)
 
     @property
     def base_url(self) -> str:

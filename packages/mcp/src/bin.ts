@@ -25,11 +25,18 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { SHOP_PURCHASE_MCP_TOOLS, callShopPurchaseTool, isShopPurchaseTool } from "./shop-purchase-tools.js";
 import {
+  PAYABLES_TOOL_NAME,
+  callPayablesTool,
+  isPayablesTool,
+  payablesErrorText,
+  payablesToolDefinition,
+} from "./payables-tools.js";
+import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { CodeSpar, tools as listTools } from "@codespar/sdk";
-import type { Session, Tool, ToolResult } from "@codespar/sdk";
+import type { Payables, Session, Tool, ToolResult } from "@codespar/sdk";
 import {
   SETUP_TOOL,
   SETUP_TOOL_DESCRIPTION,
@@ -126,6 +133,14 @@ async function main(): Promise<void> {
     }
     throw err;
   }
+  // `cs.payables` arrived in @codespar/sdk 0.16.19; the peer range is wider,
+  // so an older SDK simply does not get the tool.
+  const payables = (cs as { payables?: Payables }).payables;
+  if (payables) {
+    // This server's codespar_payables (with local upload) replaces a hosted
+    // tool of the same name: an MCP client must not see two.
+    toolList = toolList.filter((t) => t.name !== PAYABLES_TOOL_NAME);
+  }
   log(`session ${session.id} (preset=${servers ? "custom" : preset}) ready`);
   log(`exposing ${toolList.length} tool(s): ${toolList.map((t) => t.name).join(", ") || "(none — check connections)"}`);
 
@@ -148,6 +163,8 @@ async function main(): Promise<void> {
       })),
       // Shop v0.2 delegated purchases: propose and read only (shop-purchase-tools.ts).
       ...(session.purchases ? SHOP_PURCHASE_MCP_TOOLS : []),
+      // Pay documents and batches, upload from a local path (payables-tools.ts).
+      ...(payables ? [payablesToolDefinition(true)] : []),
     ],
   }));
 
@@ -160,6 +177,14 @@ async function main(): Promise<void> {
         return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], isError: false };
       } catch (err) {
         return { content: [{ type: "text", text: err instanceof Error ? err.message : String(err) }], isError: true };
+      }
+    }
+    if (payables && isPayablesTool(name)) {
+      try {
+        const out = await callPayablesTool(payables, args, { allowLocalFiles: true });
+        return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], isError: false };
+      } catch (err) {
+        return { content: [{ type: "text", text: payablesErrorText(err) }], isError: true };
       }
     }
     const result: ToolResult = await session.execute(name, args);

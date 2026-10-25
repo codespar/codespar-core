@@ -1,5 +1,44 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.19 — 2026-10-24
+
+### Added
+
+- `cs.payables`: pay documents and batches, on the `CodeSpar` client (no
+  session needed). `cs.payables.files.upload(file, { filename?, contentType? })`
+  posts one file to `POST /v1/payables/files` and returns its `file_id` and how
+  many charges it holds; `file` is a `Blob`/`File`, `Buffer`/typed array,
+  `ArrayBuffer`, a Node `Readable` or a web `ReadableStream`.
+  `cs.payables.batches.create({ fileIds?, items?, source?, conversationId? })`,
+  `get(batchId)`, `updateItem(batchId, itemId, { expectedVersion, ... })`,
+  `addItems(batchId, { expectedVersion, fileIds?, items? })` and
+  `pay(batchId, { version, listHash, mandateId? })` follow the payables
+  contract of 2026-10-24: inputs camelCase, responses the wire shape
+  (`PayableFile`, `PayableBatch`, `PayableBatchItem`, exported). `create` sends
+  a fresh `Idempotency-Key` unless you pass `idempotencyKey`; `pay` derives
+  its key from the batch, version and list hash. `payableBatchFromError(err)`
+  returns the current batch a 409 (`payable_batch_version_conflict`,
+  `payable_batch_version_mismatch`) carries in `error.details.batch`.
+  `pay` repeats the same call (same key and body) while the API answers
+  `status: "executing"` with items still `ready` (its ~20 s budget per call;
+  nothing runs on the server between calls), up to 30 calls, and returns the
+  last answer.
+  The routes are written by hand in the facade until the served document
+  declares them; the OpenAPI snapshot is not refreshed in this version.
+
+### Fixed
+
+- `cs.api` multipart operations (`POST /v1/payables/documents`) send a real
+  `FormData`. The body used to be `JSON.stringify`-ed under a hand-set
+  `Content-Type: multipart/form-data` with no boundary, which no server can
+  split. A `FormData` passes through; an object becomes one part per key, with
+  file values (`Blob`, `File`, `Buffer`, `ArrayBuffer`, streams) as file parts,
+  and `fetch` writes the `Content-Type` with its boundary.
+- `CodesparApiError.code` and the message read the nested error envelope
+  newer routes answer, `{ error: { code, message, details? } }`. `code` was
+  `undefined` for those and the message was the raw body; a top-level `code`
+  still wins, then the nested one, then a legacy `error` string.
+
 ## 0.16.18 — 2026-10-24
 
 ### Changed
