@@ -155,6 +155,36 @@ Every method listed above exists on **both** `Session` (sync) and
 `AsyncSession` (await the async variants). Snake-case throughout —
 TS `paymentStatusStream` ⇆ Python `payment_status_stream`.
 
+## Pay documents and batches
+
+```python
+from codespar import CodeSpar, ApiError, payable_batch_from_error
+
+with CodeSpar(api_key="csk_live_...") as cs:
+    file = cs.payables.files.upload("conta.pdf")
+    batch = cs.payables.batches.create(
+        file_ids=[file["file_id"]],
+        items=[{"pix_key": "pessoa@example.com", "amount_minor": 5000}],
+        idempotency_key="batch-2026-10-24-001",
+    )
+    try:
+        batch = cs.payables.batches.pay(
+            batch["batch_id"],
+            version=batch["version"],
+            list_hash=batch["list_hash"],
+            mandate_id="mdt_example",
+        )
+    except ApiError as err:
+        current = payable_batch_from_error(err)  # 409: the list changed, confirm again
+        if current is None:
+            raise
+    for item in batch["items"]:
+        print(item["item_id"], item["payment"] and item["payment"]["state"])
+```
+
+`upload` takes a path, `bytes` or a binary file object. `AsyncCodeSpar` has
+the same `cs.payables` with `await`.
+
 ## Streaming
 
 ```python

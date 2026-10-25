@@ -71,16 +71,28 @@ async def request_json(
     project_id: str | None,
     body: Any = None,
     timeout: float | None = None,
+    files: dict[str, tuple[str, bytes, str]] | None = None,
+    extra_headers: dict[str, str] | None = None,
 ) -> Any:
-    """Do an authenticated JSON request, return parsed body or raise ApiError."""
+    """Do an authenticated JSON request, return parsed body or raise ApiError.
+
+    ``files`` sends a multipart/form-data body instead of JSON, one part
+    per key as ``(filename, content, content_type)``. The Content-Type is
+    then left to httpx, which writes it with the boundary.
+    """
     timeout = normalize_timeout(timeout)
     headers = build_headers(api_key, project_id)
+    if files is not None:
+        del headers["Content-Type"]
+    if extra_headers:
+        headers.update(extra_headers)
     try:
         response = await client.request(
             method,
             path,
             headers=headers,
-            json=body if body is not None else None,
+            json=body if body is not None and files is None else None,
+            files=files,
             timeout=timeout,
         )
     except httpx.TimeoutException as exc:
@@ -109,13 +121,18 @@ async def request_json(
             # fallback so older envelopes still surface a structured
             # code value rather than None.
             raw_code = parsed.get("code")
+            raw_error = parsed.get("error")
+            # Newer routes answer ``{"error": {"code", "message", "details"}}``.
+            nested = raw_error if isinstance(raw_error, dict) else {}
             if isinstance(raw_code, str):
                 code = raw_code
-            else:
-                raw_error = parsed.get("error")
-                if isinstance(raw_error, str):
-                    code = raw_error
+            elif isinstance(nested.get("code"), str):
+                code = nested["code"]
+            elif isinstance(raw_error, str):
+                code = raw_error
             msg = parsed.get("message")
+            if not isinstance(msg, str):
+                msg = nested.get("message")
             if isinstance(msg, str):
                 message = f"{message} — {msg}"
             elif code:

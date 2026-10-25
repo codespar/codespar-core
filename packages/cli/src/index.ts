@@ -43,6 +43,13 @@ import {
   showMetaToolCommand,
 } from "./commands/meta-tool.js";
 import { runResourceCommand } from "./commands/resource.js";
+import {
+  payablesBatchCreateCommand,
+  payablesBatchGetCommand,
+  payablesBatchPayCommand,
+  payablesBatchUpdateItemCommand,
+  payablesFilesUploadCommand,
+} from "./commands/payables.js";
 import { derivedSurface, metaToolNames } from "./surface.js";
 import { c, json } from "./output.js";
 import { printBanner } from "./banner.js";
@@ -231,9 +238,20 @@ for (const [alias, tool] of [
 // ============ resource groups (derived from the served OpenAPI document) ============
 // No per-route code: each subcommand below is one row of the SDK's
 // generated operation table, with its path parameters as positionals.
+// Subcommand names a derived group leaves to a hand-written subgroup. The
+// payables files/batches routes are driven through the SDK facade (uploading
+// needs a multipart body built from a local path), and when the snapshot
+// carries them the derivation would name one `files` too; commander throws on
+// a second command of the same name, so the hand-written one keeps it.
+const HAND_WRITTEN_SUBGROUPS: Readonly<Record<string, readonly string[]>> = {
+  payables: ["files", "batches"],
+};
+
 for (const { spec, commands } of derivedSurface()) {
   const group = program.command(spec.name).description(spec.description);
+  const reserved = HAND_WRITTEN_SUBGROUPS[spec.name] ?? [];
   for (const command of commands) {
+    if (reserved.includes(command.name)) continue;
     const sub = group
       .command(command.name)
       // A marca vem do documento servido, nao de uma lista aqui. Sem ela, os
@@ -270,6 +288,103 @@ for (const { spec, commands } of derivedSurface()) {
     });
   }
 }
+
+// ============ payables: documents and batches ============
+// Hand-written subgroups of the derived `payables` group (see
+// HAND_WRITTEN_SUBGROUPS). Amounts are minor units, like `spend --amount`.
+const payablesGroup = program.commands.find((cmd) => cmd.name() === "payables");
+if (!payablesGroup) throw new Error("derived group `payables` is missing");
+
+payablesGroup
+  .command("files")
+  .description("Files read for payment: boleto PDFs, Pix QR images, CSV/XLSX lists")
+  .command("upload <path>")
+  .description("Upload one file (10 MB, 10 PDF pages, 500 CSV/XLSX rows); prints its file_id and what was found")
+  .action(async (path: string) => {
+    const auth = await resolveAuth();
+    await payablesFilesUploadCommand(path, { ...auth, json: rootJsonFlag() });
+  });
+
+const batches = payablesGroup
+  .command("batches")
+  .description("Batches: review the list the files and stated items make, complement it, pay the exact list");
+
+batches
+  .command("create")
+  .description("Create a batch from files (uploaded first) and stated items")
+  .option("--file <path>", "A file to upload and read (repeatable, up to 20)", collect, [])
+  .option("--file-id <id>", "A file already uploaded (repeatable)", collect, [])
+  .option(
+    "--item <spec>",
+    "A stated item, `pix_key=…,amount_minor=5000` or JSON (repeatable); one of pix_key, boleto_line, br_code",
+    collect,
+    [],
+  )
+  .option("--idempotency-key <key>", "Your key, so a retry returns the same batch")
+  .action(
+    async (opts: { file: string[]; fileId: string[]; item: string[]; idempotencyKey?: string }) => {
+      const auth = await resolveAuth();
+      await payablesBatchCreateCommand({ ...opts, ...auth, json: rootJsonFlag() });
+    },
+  );
+
+batches
+  .command("get <batchId>")
+  .description("Read a batch: items as the rail resolved them, version, list_hash, per-item results")
+  .action(async (batchId: string) => {
+    const auth = await resolveAuth();
+    await payablesBatchGetCommand(batchId, { ...auth, json: rootJsonFlag() });
+  });
+
+batches
+  .command("update-item <batchId> <itemId>")
+  .description("Complement, correct, exclude or include one item; bumps the batch version")
+  .requiredOption("--expected-version <n>", "The version you reviewed")
+  .option("--amount <minor>", "Amount in minor units (cents)")
+  .option("--pix-key <key>", "Pix key")
+  .option("--boleto-line <line>", "Boleto digitable line")
+  .option("--br-code <payload>", "Pix copia-e-cola (BR Code)")
+  .option("--description <text>", "Description")
+  .option("--exclude", "Leave this item out of the payment")
+  .option("--include", "Put an excluded item back")
+  .action(
+    async (
+      batchId: string,
+      itemId: string,
+      opts: {
+        expectedVersion: string;
+        amount?: string;
+        pixKey?: string;
+        boletoLine?: string;
+        brCode?: string;
+        description?: string;
+        exclude?: boolean;
+        include?: boolean;
+      },
+    ) => {
+      const auth = await resolveAuth();
+      await payablesBatchUpdateItemCommand(batchId, itemId, { ...opts, ...auth, json: rootJsonFlag() });
+    },
+  );
+
+batches
+  .command("pay <batchId>")
+  .description("Confirm the exact list (batch version + list_hash) and pay it; repeating resumes and never pays twice")
+  // Not `--version`: commander reads the root's -v/--version after a
+  // subcommand too (it would print the CLI version and exit).
+  .requiredOption("--batch-version <n>", "The batch version you confirm")
+  .requiredOption("--list-hash <hash>", "The list_hash you confirm")
+  .option("--mandate <id>", "Mandate that authorizes the payment (required with an API key)")
+  .option("--idempotency-key <key>", "Defaults to one derived from the batch, version and hash")
+  .action(
+    async (
+      batchId: string,
+      opts: { batchVersion: string; listHash: string; mandate?: string; idempotencyKey?: string },
+    ) => {
+      const auth = await resolveAuth();
+      await payablesBatchPayCommand(batchId, { ...opts, ...auth, json: rootJsonFlag() });
+    },
+  );
 
 // ============ execute ============
 program
