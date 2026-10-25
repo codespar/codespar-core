@@ -1,6 +1,6 @@
 # @codespar/cli — changelog
 
-## Unreleased
+## 0.21.1 — 2026-10-25
 
 ### Changed
 
@@ -10,7 +10,7 @@
   `codespar shop instruments -q owner=<owner>`; a command without one gets
   only the example, with its positionals and `-i '{...}'` when the operation
   takes a body. The names come from the operation table (`requiredQuery`,
-  `@codespar/sdk` unreleased), never from a list here. Found on 2026-10-25
+  `@codespar/sdk` 0.16.20), never from a list here. Found on 2026-10-25
   exercising 0.20.0 against Test: the API answered 400 `invalid_query` and
   nothing in the CLI had said which key was missing.
 

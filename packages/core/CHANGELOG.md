@@ -1,6 +1,15 @@
 # @codespar/sdk — CHANGELOG
 
-## Unreleased
+## 0.16.20 — 2026-10-25
+
+### Changed
+
+- Snapshot do OpenAPI relido do documento servido em 25/10 (`456c3f13a9bc`,
+  358 operacoes, nenhuma adicionada ou removida): mudam as descricoes do
+  campo de evento em `POST /v1/webhook-endpoints` e `POST /v1/triggers`, e
+  `GET /v1/health` ganha o bloco `tool_strategy` (`status`, `cause`,
+  `since`). Nenhuma mudanca de caminho, metodo ou corpo; a coluna
+  `requiredQuery` abaixo e a mesma nos dois snapshots.
 
 ### Added
 
