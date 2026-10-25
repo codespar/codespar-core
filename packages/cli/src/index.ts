@@ -25,6 +25,7 @@ import { spendCommand } from "./commands/spend.js";
 import { mandateCreateCommand } from "./commands/mandate.js";
 import { mandateVerifyCommand } from "./commands/mandate-verify.js";
 import { DEFAULT_BASE_URL } from "./did.js";
+import { derivedHelpText } from "./derived-help.js";
 import { mandateRevokeCommand } from "./commands/mandate-revoke.js";
 import { auditReplayCommand } from "./commands/audit-replay.js";
 import { agentRunCommand, evalCommand } from "./commands/agent.js";
@@ -248,6 +249,7 @@ for (const { spec, commands } of derivedSurface()) {
         .option("-i, --input <json>", "Request body as a JSON string")
         .option("-f, --input-file <path>", "Request body from a JSON file");
     }
+    sub.addHelpText("after", derivedHelpText(spec.name, command));
     sub.action(async (...actionArgs: unknown[]) => {
       const opts = actionArgs[command.params.length] as {
         query: string[];

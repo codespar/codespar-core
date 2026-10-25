@@ -20,6 +20,7 @@ import {
   documentSha256,
   listOperations,
   operationTable,
+  requiredQueryParameters,
   readSnapshot,
   renderGenerated,
 } from "../../scripts/openapi-spec.mjs";
@@ -64,6 +65,21 @@ describe("src/generated/", () => {
     expect(API_OPERATIONS.map(key)).toEqual(fromSnapshot.map(key));
     expect(new Set(API_OPERATIONS.map(key)).size).toBe(API_OPERATIONS.length);
     expect([...API_OPERATIONS]).toEqual(fromSnapshot);
+  });
+
+  it("names the query parameters the document marks required, and nothing else", () => {
+    const byKey = new Map(operationTable(snapshot.document).map((row) => [key(row), row]));
+    expect(byKey.get("GET /v1/shop/agent/instruments")?.requiredQuery).toEqual(["owner"]);
+    expect(byKey.get("GET /v1/audit-events/export")?.requiredQuery).toEqual(["from", "to"]);
+    // Positive control: an optional query parameter is not listed.
+    expect(byKey.get("GET /v1/wallets")?.requiredQuery).toEqual([]);
+    expect(requiredQueryParameters({ parameters: [{ in: "query", name: "a", required: false }] })).toEqual([]);
+    expect(
+      requiredQueryParameters(
+        { parameters: [{ in: "query", name: "a", required: true }, { in: "path", name: "id", required: true }] },
+        { parameters: [{ in: "query", name: "b", required: true }, { in: "query", name: "a", required: true }] },
+      ),
+    ).toEqual(["a", "b"]);
   });
 
   it("is what the client enumerates as reachable", () => {

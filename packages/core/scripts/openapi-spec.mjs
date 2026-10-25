@@ -93,6 +93,23 @@ function acceptContentType(operation) {
   return null;
 }
 
+/**
+ * Names of the query parameters the document marks `required`, operation
+ * parameters first, then the ones the path item declares for every method.
+ * Without this in the table, a command derived from it offered `-q` and
+ * nothing said which key the API refuses the call without (shop
+ * instruments answered 400 for a missing `owner`, 25/10/2026).
+ */
+export function requiredQueryParameters(operation, pathItem = {}) {
+  const declared = [...(operation.parameters ?? []), ...(pathItem.parameters ?? [])];
+  const names = [];
+  for (const param of declared) {
+    if (!param || typeof param !== "object" || param.in !== "query" || param.required !== true) continue;
+    if (typeof param.name === "string" && !names.includes(param.name)) names.push(param.name);
+  }
+  return names;
+}
+
 /** The runtime operation table: what the client needs beyond the types. */
 export function operationTable(document) {
   return listOperations(document).map(({ method, path: route, operation }) => ({
@@ -100,6 +117,7 @@ export function operationTable(document) {
     path: route,
     body: requestContentType(operation),
     accept: acceptContentType(operation),
+    requiredQuery: requiredQueryParameters(operation, document.paths?.[route]),
     // O documento marca a operacao; sem isto na tabela, quem gera comando a
     // partir dela nao tem como saber que a rota morreu. Foi assim que a CLI
     // publicou 12 comandos para `/v1/triggers`, 12 de 12 depreciadas.
@@ -184,7 +202,7 @@ export async function renderGenerated(snapshot) {
     (op) =>
       `  { method: ${JSON.stringify(op.method)}, path: ${JSON.stringify(op.path)}, ` +
       `body: ${JSON.stringify(op.body)}, accept: ${JSON.stringify(op.accept)}, ` +
-      `deprecated: ${op.deprecated} },`,
+      `requiredQuery: ${JSON.stringify(op.requiredQuery)}, deprecated: ${op.deprecated} },`,
   );
   const operations =
     generatedHeader(snapshot, "npm run spec:generate (in packages/core)") +

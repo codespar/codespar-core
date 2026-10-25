@@ -119,7 +119,10 @@ codespar init my-agent
 
 Resource-group subcommands also take `-q, --query key=value` (repeatable),
 `--timeout <ms>`, and — when the operation declares a request body —
-`-i, --input '<json>'` or `-f, --input-file <path>`.
+`-i, --input '<json>'` or `-f, --input-file <path>`. Each subcommand's
+`--help` lists the query parameters the document marks required (for
+example `owner` on `codespar shop instruments`) and ends with one example
+that names every positional, every required `-q` key and the body flag.
 
 ## Where the commands come from
 

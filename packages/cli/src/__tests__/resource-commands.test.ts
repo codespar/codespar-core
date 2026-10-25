@@ -244,6 +244,17 @@ describe("derived resource commands", () => {
     ]);
   });
 
+  it("carries the query parameters the document marks required, and only those", () => {
+    // GET /v1/shop/agent/instruments answers 400 without `owner` (25/10/2026,
+    // Test exercise of cli 0.20.0): the row has to say so before the wire does.
+    expect(commandNamed("shop", "instruments").requiredQuery).toEqual(["owner"]);
+    expect(commandNamed("boletos", "list").requiredQuery).toEqual(["from_date", "to_date"]);
+    // Positive control: a command whose operation declares no required query
+    // carries an empty list, so the help line does not appear everywhere.
+    expect(commandNamed("shop", "get-purchases").requiredQuery).toEqual([]);
+    expect(commandNamed("wallets", "list").requiredQuery).toEqual([]);
+  });
+
   it("derives nothing for a prefix the document does not declare", () => {
     const empty = deriveGroup(
       { name: "ghost", prefix: "/v1/ghost", description: "not served" },

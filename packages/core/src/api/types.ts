@@ -38,7 +38,15 @@ export type ApiOperationRef = {
   [P in ApiPath]: {
     [M in ApiMethod]: [ApiOperation<P, M>] extends [never]
       ? never
-      : { method: M; path: P; body: string | null; accept: string | null; deprecated: boolean };
+      : {
+          method: M;
+          path: P;
+          body: string | null;
+          accept: string | null;
+          /** Query parameters the document marks `required`, in declaration order. */
+          requiredQuery: readonly string[];
+          deprecated: boolean;
+        };
   }[ApiMethod];
 }[ApiPath];
 
