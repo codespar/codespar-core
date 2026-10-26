@@ -2,6 +2,13 @@
 
 ## 0.16.21 — 2026-10-26
 
+### Changed
+
+- OpenAPI snapshot re-read from the served document on 2026-10-26
+  (`8e0894fb7695`, API 0.3.0, 365 operations, unchanged set): only the
+  description of a webhook endpoint's `event` field changed since
+  `0eed0c65e65b`.
+
 ### Added
 
 - **`cs.wallet.pixKeys`**: the Pix keys of a consumer's own account, over
