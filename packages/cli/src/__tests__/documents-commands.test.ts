@@ -24,8 +24,13 @@ let printed: unknown[] = [];
 let dir: string;
 let cwd: string;
 
+/** A fresh ArrayBuffer copy: `Response` wants `BodyInit`, and a `Buffer` (a `Uint8Array<ArrayBufferLike>`) is not one. */
+function body(bytes: Buffer): ArrayBuffer {
+  return new Uint8Array(bytes).buffer as ArrayBuffer;
+}
+
 function binary(bytes: Buffer, type: string, filename: string): Response {
-  return new Response(bytes, { status: 200, headers: { "content-type": type, "content-disposition": `attachment; filename="${filename}"`, "x-codespar-document-sha256": "c".repeat(64) } });
+  return new Response(body(bytes), { status: 200, headers: { "content-type": type, "content-disposition": `attachment; filename="${filename}"`, "x-codespar-document-sha256": "c".repeat(64) } });
 }
 
 beforeEach(() => {
