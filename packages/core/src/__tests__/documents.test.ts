@@ -19,8 +19,13 @@ interface Seen {
 let seen: Seen[] = [];
 let answer: (s: Seen) => Response;
 
+/** A fresh ArrayBuffer copy: `Response` wants `BodyInit`, and a `Uint8Array<ArrayBufferLike>` is not one. */
+function body(bytes: Uint8Array): ArrayBuffer {
+  return new Uint8Array(bytes).buffer as ArrayBuffer;
+}
+
 function binary(bytes: Uint8Array, type: string, filename: string, sha = "a".repeat(64)): Response {
-  return new Response(bytes, {
+  return new Response(body(bytes), {
     status: 200,
     headers: { "content-type": type, "content-disposition": `attachment; filename="${filename}"`, "x-codespar-document-sha256": sha },
   });
@@ -89,7 +94,7 @@ describe("cs.receipts.document", () => {
 
   it("falls back to its own filename when the server sends no disposition", async () => {
     const cs = install();
-    answer = () => new Response(PDF, { status: 200, headers: { "content-type": "application/pdf" } });
+    answer = () => new Response(body(PDF), { status: 200, headers: { "content-type": "application/pdf" } });
     const doc = await cs.receipts.document("rcpt_x");
     expect(doc.filename).toBe("comprovante-rcpt_x.pdf");
     expect(doc.sha256).toBeNull();
