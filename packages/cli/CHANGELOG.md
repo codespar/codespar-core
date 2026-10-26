@@ -8,8 +8,9 @@
   `codespar account statement --from YYYY-MM-DD --to YYYY-MM-DD [--currency] [--out <file>]`
   (`CONTRATO-documentos`): the payment receipt document and the account statement, written to
   `--out` or to the server's filename in the current directory; `--json` prints the record (path,
-  filename, content type, bytes, sha256). Hand-written over `cs.receipts` / `cs.account`, and the
-  two routes are reserved in `HAND_WRITTEN_ROUTES` so a later snapshot derives no JSON twin.
+  filename, content type, bytes, sha256). Hand-written over `cs.receipts` / `cs.account`. The two
+  routes are not in the served document's snapshot yet; the refresh that brings them must reserve
+  them in `HAND_WRITTEN_ROUTES` (as 0.16.20 did for payables) so no JSON twin is derived beside them.
 
 ### Changed
 
