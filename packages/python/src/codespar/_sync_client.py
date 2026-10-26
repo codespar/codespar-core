@@ -24,6 +24,7 @@ from ._async_session import AsyncSession
 from ._http import normalize_timeout
 from .errors import ConfigError
 from .payables import Payables
+from .documents import Account, Receipts
 from .types import (
     AuthConfig,
     AuthResult,
@@ -343,6 +344,10 @@ class CodeSpar:
         self._async = self._runner.run(factory())
         #: Pay documents and batches (``/v1/payables/files``, ``/v1/payables/batches``).
         self.payables = Payables(self._async.payables, self._runner)
+        #: The receipt document (comprovante) of a payment (``/v1/consumers/receipts/:id/document``).
+        self.receipts = Receipts(self._async.receipts, self._runner)
+        #: The account statement (extrato) of a period (``/v1/account/statement``).
+        self.account = Account(self._async.account, self._runner)
 
     @property
     def base_url(self) -> str:

@@ -37,6 +37,15 @@ from .errors import (
     StreamError,
     TimeoutError,
 )
+from .documents import (
+    Account,
+    AsyncAccount,
+    AsyncReceipts,
+    Document,
+    DocumentFormat,
+    Receipts,
+    filename_from_disposition,
+)
 from .payables import (
     AsyncPayables,
     PayableBatch,
@@ -233,6 +242,13 @@ __all__ = [
     "PayableFile",
     "PayableItemInput",
     "Payables",
+    "Receipts",
+    "AsyncReceipts",
+    "Account",
+    "AsyncAccount",
+    "Document",
+    "DocumentFormat",
+    "filename_from_disposition",
     # Async settlement (codespar_pay etc.)
     "PaymentStatus",
     "PaymentStatusEvent",

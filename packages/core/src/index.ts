@@ -54,6 +54,8 @@ export type {
 } from "./types.js";
 export { payableBatchFromError } from "./payables.js";
 export type { Payables, PayablesBatches, PayablesFiles, UploadInput } from "./payables.js";
+export { filenameFromDisposition } from "./documents.js";
+export type { Account, Document, DocumentFormat, ReceiptDocumentOptions, Receipts, StatementOptions } from "./documents.js";
 
 export { SessionConfigSchema } from "./types.js";
 export { loop } from "./loop.js";
@@ -106,6 +108,7 @@ import { SessionConfigSchema, PROJECT_ID_REGEX } from "./types.js";
 import { createSession } from "./session.js";
 import { ApiClient } from "./api/client.js";
 import { createPayables, type Payables } from "./payables.js";
+import { createDocuments, type Account, type Receipts } from "./documents.js";
 import { validateTimeout } from "./internal/fetch.js";
 
 const DEFAULT_BASE_URL = "https://api.codespar.dev";
@@ -141,6 +144,27 @@ export class CodeSpar {
    * ```
    */
   readonly payables: Payables;
+
+  /**
+   * Documents on demand: the receipt document (comprovante) of a payment,
+   * as PDF or PNG. Read-only; the API serves it only for a confirmed payment.
+   *
+   * ```ts
+   * const doc = await cs.receipts.document("rcpt_…", { format: "png" });
+   * await fs.writeFile(doc.filename, doc.bytes);
+   * ```
+   */
+  readonly receipts: Receipts;
+
+  /**
+   * The account statement (extrato) of a period, as PDF. Read-only; the API
+   * refuses a period that does not reconcile.
+   *
+   * ```ts
+   * const doc = await cs.account.statement({ from: "2026-10-01", to: "2026-10-31" });
+   * ```
+   */
+  readonly account: Account;
 
   constructor(config: CodeSparConfig = {}) {
     this.config = {
@@ -192,6 +216,14 @@ export class CodeSpar {
       projectId: this.config.projectId || undefined,
       timeout: this.config.timeout,
     });
+    const documents = createDocuments({
+      baseUrl: this.config.baseUrl,
+      apiKey: this.config.apiKey,
+      projectId: this.config.projectId || undefined,
+      timeout: this.config.timeout,
+    });
+    this.receipts = documents.receipts;
+    this.account = documents.account;
   }
 
   /**

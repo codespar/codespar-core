@@ -1,5 +1,20 @@
 # @codespar/cli — changelog
 
+## 0.22.0 — 2026-10-26
+
+### Added
+
+- `codespar receipts document <receiptId> [--format pdf|png] [--out <file>]` and
+  `codespar account statement --from YYYY-MM-DD --to YYYY-MM-DD [--currency] [--out <file>]`
+  (`CONTRATO-documentos`): the payment receipt document and the account statement, written to
+  `--out` or to the server's filename in the current directory; `--json` prints the record (path,
+  filename, content type, bytes, sha256). Hand-written over `cs.receipts` / `cs.account`, and the
+  two routes are reserved in `HAND_WRITTEN_ROUTES` so a later snapshot derives no JSON twin.
+
+### Changed
+
+- Requires `@codespar/sdk` 0.16.21 (`cs.receipts`, `cs.account`).
+
 ## 0.21.2 — 2026-10-25
 
 ### Fixed

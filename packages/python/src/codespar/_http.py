@@ -113,6 +113,14 @@ async def request_json(
             parsed = raw
 
     if not response.is_success:
+        raise _failure(method, path, response, parsed)
+
+    return parsed
+
+
+def _failure(method: str, path: str, response: httpx.Response, parsed: Any) -> ApiError:
+    """The ``ApiError`` of a non-success response: the envelope's code and message."""
+    if True:
         code: str | None = None
         message = f"{method} {path} failed: {response.status_code}"
         if isinstance(parsed, dict):
@@ -137,9 +145,40 @@ async def request_json(
                 message = f"{message} — {msg}"
             elif code:
                 message = f"{message} — {code}"
-        raise ApiError(message, status=response.status_code, body=parsed, code=code)
+        return ApiError(message, status=response.status_code, body=parsed, code=code)
 
-    return parsed
+
+async def request_bytes(
+    client: httpx.AsyncClient,
+    path: str,
+    *,
+    api_key: str,
+    project_id: str | None,
+    accept: str,
+    timeout: float | None = None,
+) -> httpx.Response:
+    """GET a binary document (a PDF, a PNG). Returns the response on success;
+    raises ``ApiError`` with the envelope's code on a refusal, exactly as
+    ``request_json`` does."""
+    timeout = normalize_timeout(timeout)
+    headers = build_headers(api_key, project_id)
+    del headers["Content-Type"]
+    headers["Accept"] = f"{accept}, application/json"
+    try:
+        response = await client.request("GET", path, headers=headers, timeout=timeout)
+    except httpx.TimeoutException as exc:
+        raise TimeoutError(str(exc), cause=exc) from exc
+    except httpx.HTTPError as exc:
+        raise ApiError(f"GET {path} failed: {exc}", status=0) from exc
+    if not response.is_success:
+        parsed: Any = None
+        if response.text:
+            try:
+                parsed = response.json()
+            except json.JSONDecodeError:
+                parsed = response.text
+        raise _failure("GET", path, response, parsed)
+    return response
 
 
 async def stream_sse(

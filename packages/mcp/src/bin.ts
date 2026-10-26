@@ -31,6 +31,7 @@ import {
   payablesErrorText,
   payablesToolDefinition,
 } from "./payables-tools.js";
+import { callDocumentsTool, documentsErrorText, documentsToolDefinition, isDocumentsTool, type DocumentsFacades } from "./documents-tools.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -46,7 +47,7 @@ import {
 
 type Preset = "brazilian" | "mexican" | "argentinian" | "colombian" | "all";
 
-const VERSION = "0.5.2";
+const VERSION = "0.5.11";
 
 function flag(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -136,6 +137,10 @@ async function main(): Promise<void> {
   // `cs.payables` arrived in @codespar/sdk 0.16.19; the peer range is wider,
   // so an older SDK simply does not get the tool.
   const payables = (cs as { payables?: Payables }).payables;
+  // `cs.receipts` / `cs.account` arrived in @codespar/sdk 0.16.21: the
+  // documents tool exists only when both are there.
+  const facades = cs as Partial<DocumentsFacades>;
+  const documents: DocumentsFacades | null = facades.receipts && facades.account ? { receipts: facades.receipts, account: facades.account } : null;
   if (payables) {
     // This server's codespar_payables (with local upload) replaces a hosted
     // tool of the same name: an MCP client must not see two.
@@ -165,6 +170,8 @@ async function main(): Promise<void> {
       ...(session.purchases ? SHOP_PURCHASE_MCP_TOOLS : []),
       // Pay documents and batches, upload from a local path (payables-tools.ts).
       ...(payables ? [payablesToolDefinition(true)] : []),
+      // Documents on demand: receipt document and account statement, written to a local path (documents-tools.ts).
+      ...(documents ? [documentsToolDefinition()] : []),
     ],
   }));
 
@@ -185,6 +192,14 @@ async function main(): Promise<void> {
         return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], isError: false };
       } catch (err) {
         return { content: [{ type: "text", text: payablesErrorText(err) }], isError: true };
+      }
+    }
+    if (documents && isDocumentsTool(name)) {
+      try {
+        const out = await callDocumentsTool(documents, args);
+        return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], isError: false };
+      } catch (err) {
+        return { content: [{ type: "text", text: documentsErrorText(err) }], isError: true };
       }
     }
     const result: ToolResult = await session.execute(name, args);
