@@ -1,5 +1,18 @@
 # @codespar/cli — changelog
 
+## 0.21.2 — 2026-10-25
+
+### Fixed
+
+- **The dependency on `@codespar/sdk` now requires 0.16.20.** 0.21.1 reads
+  `requiredQuery` from the operation table, a field that exists from
+  `@codespar/sdk` 0.16.20 on, but still declared `^0.16.19`. In a tree that
+  already held 0.16.19 (npm dedupes to the version present) the binary died
+  before any command, `--version` included: `TypeError: row.requiredQuery is
+  not iterable` at `dist/surface.js:28`. Measured on 2026-10-25 installing
+  0.21.1 next to 0.16.19; the same tree with 0.16.20 answers `0.21.1`. The
+  range now says what the code needs.
+
 ## 0.21.1 — 2026-10-25
 
 ### Changed
