@@ -23,14 +23,8 @@
  */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SHOP_PURCHASE_MCP_TOOLS, callShopPurchaseTool, isShopPurchaseTool } from "./shop-purchase-tools.js";
-import {
-  PAYABLES_TOOL_NAME,
-  callPayablesTool,
-  isPayablesTool,
-  payablesErrorText,
-  payablesToolDefinition,
-} from "./payables-tools.js";
+import { callShopPurchaseTool, isShopPurchaseTool } from "./shop-purchase-tools.js";
+import { callPayablesTool, isPayablesTool, payablesErrorText } from "./payables-tools.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -40,9 +34,9 @@ import type { Payables, Session, Tool, ToolResult } from "@codespar/sdk";
 import {
   SETUP_TOOL,
   SETUP_TOOL_DESCRIPTION,
-  isAuthError,
   setupMessage,
 } from "./setup.js";
+import { NO_SESSION_MESSAGE, bootSession, listedTools, type Boot } from "./boot.js";
 
 type Preset = "brazilian" | "mexican" | "argentinian" | "colombian" | "all";
 
@@ -119,59 +113,42 @@ async function main(): Promise<void> {
   // `servers` (when given) wins over `preset`; otherwise the preset selects
   // the buyer/commerce server set. This is what makes the session "Curb":
   // a buy-side preset surfaces search / cart / checkout / wallet / mandate.
-  let session: Session;
-  let toolList: Tool[];
-  try {
-    session = await cs.create(userId, servers ? { servers, projectId } : { preset, projectId });
-    toolList = await listTools(session);
-  } catch (err) {
-    // A rejected key is the other dead end — surface setup guidance instead of
-    // crashing. Real outages (network, 5xx) still fail loudly.
-    if (isAuthError(err)) {
-      log(`API key rejected (${(err as { status?: number }).status}) — starting in setup mode`);
-      return runSetupServer("bad-key");
-    }
-    throw err;
+  //
+  // A 401 is a key that is not usable: setup guidance instead of a crash. A
+  // 403 is a valid key without `sessions:create` (boot.ts): the server runs
+  // with the tools that need no session. Real outages (network, 5xx) still
+  // fail loudly.
+  const boot: Boot = await bootSession(
+    () => cs.create(userId, servers ? { servers, projectId } : { preset, projectId }),
+    (s: Session) => listTools(s),
+  );
+  if (boot.kind === "setup") {
+    log("API key rejected (401) — starting in setup mode");
+    return runSetupServer("bad-key");
   }
+  const session: Session | null = boot.kind === "session" ? boot.session : null;
   // `cs.payables` arrived in @codespar/sdk 0.16.19; the peer range is wider,
   // so an older SDK simply does not get the tool.
   const payables = (cs as { payables?: Payables }).payables;
-  if (payables) {
-    // This server's codespar_payables (with local upload) replaces a hosted
-    // tool of the same name: an MCP client must not see two.
-    toolList = toolList.filter((t) => t.name !== PAYABLES_TOOL_NAME);
-  }
-  log(`session ${session.id} (preset=${servers ? "custom" : preset}) ready`);
-  log(`exposing ${toolList.length} tool(s): ${toolList.map((t) => t.name).join(", ") || "(none — check connections)"}`);
+  const listed = listedTools(boot, { payables: Boolean(payables) });
+  if (session) log(`session ${session.id} (preset=${servers ? "custom" : preset}) ready`);
+  else log("no session: the key lacks `sessions:create` (403); hosted tools are not offered, codespar_payables is");
+  log(`exposing ${listed.length} tool(s): ${listed.map((t) => t.name).join(", ") || "(none — check connections)"}`);
 
   const server = new Server(
     { name: "codespar", version: VERSION },
     { capabilities: { tools: {} } },
   );
 
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: [
-      ...toolList.map((t) => ({
-        name: t.name,
-        description: t.description,
-        // CodeSpar tools carry a JSON Schema already; default to an open object
-        // so clients that require a schema still accept the tool.
-        inputSchema:
-          t.input_schema && Object.keys(t.input_schema).length > 0
-            ? t.input_schema
-            : { type: "object" },
-      })),
-      // Shop v0.2 delegated purchases: propose and read only (shop-purchase-tools.ts).
-      ...(session.purchases ? SHOP_PURCHASE_MCP_TOOLS : []),
-      // Pay documents and batches, upload from a local path (payables-tools.ts).
-      ...(payables ? [payablesToolDefinition(true)] : []),
-    ],
-  }));
+  // Hosted tools (relayed as published), Shop v0.2 purchases (propose and read
+  // only) and payables (local upload): what each needs is decided in boot.ts.
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: listed }));
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const name = req.params.name;
     const args = (req.params.arguments ?? {}) as Record<string, unknown>;
     if (isShopPurchaseTool(name)) {
+      if (!session) return { content: [{ type: "text", text: NO_SESSION_MESSAGE }], isError: true };
       try {
         const out = await callShopPurchaseTool(session, name, args);
         return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], isError: false };
@@ -186,6 +163,12 @@ async function main(): Promise<void> {
       } catch (err) {
         return { content: [{ type: "text", text: payablesErrorText(err) }], isError: true };
       }
+    }
+    if (!session) {
+      return {
+        content: [{ type: "text", text: NO_SESSION_MESSAGE }],
+        isError: true,
+      };
     }
     const result: ToolResult = await session.execute(name, args);
     const payload = result.success ? (result.data ?? result) : result.error;

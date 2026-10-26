@@ -1,5 +1,19 @@
 # codespar (Python SDK) — CHANGELOG
 
+## 0.14.0
+
+`cs.wallet.pix_keys`, in parity with `@codespar/sdk` 0.16.21.
+
+### Added
+
+- `cs.wallet.pix_keys.list(consumer_id)`, `.register(consumer_id, key_type="EVP", key=None)`
+  and `.delete(consumer_id, key, confirm=True)` on `CodeSpar` and
+  `AsyncCodeSpar`, over `/v1/consumers/:consumer_id/pix-keys`. A delete
+  without `confirm=True` raises `PixKeyDeleteNotConfirmedError`
+  (`pix_key_delete_requires_confirmation`, with the consequence sentence)
+  before any request. Types `PixKey`, `PixKeyList`, `PixKeyRegistered`,
+  `PixKeyDeleted`, `PixKeyType`.
+
 ## 0.13.0
 
 `cs.payables`, in parity with `@codespar/sdk` 0.16.19.

@@ -1,5 +1,26 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.21 — 2026-10-26
+
+### Added
+
+- **`cs.wallet.pixKeys`**: the Pix keys of a consumer's own account, over
+  `/v1/consumers/:consumerId/pix-keys` (the routes the dashboard's "Minhas
+  chaves" panel and the `codespar_wallet` pix_keys_* actions act through).
+  `list(consumerId)`, `register(consumerId, { keyType, key? })` with the type
+  explicit (EVP, a random key, is never minted by omission) and
+  `delete(consumerId, key, { confirm: true })`. A delete without
+  `{ confirm: true }` throws `PixKeyDeleteNotConfirmedError`
+  (`pix_key_delete_requires_confirmation`, with the consequence sentence)
+  before any request. Types `PixKey`, `PixKeyList`, `PixKeyRegistered`,
+  `PixKeyDeleted`, `PixKeyRegisterInput`, `PixKeyDeleteOptions`, `PixKeyType`.
+- The hosted `codespar_wallet` meta-tool, reached through `session.execute`
+  and the stdio server, gains `pix_keys_list`, `pix_keys_register` and
+  `pix_keys_delete` (enterprise, contract CONTRATO-pix-keys-chat.md): the
+  conversation shape, with `key_id` and `key_tail` instead of the key value
+  and a `confirm: true` handshake on delete. Nothing to change in this
+  package for it; the SDK relays the tool definition as the API publishes it.
+
 ## 0.16.20 — 2026-10-25
 
 ### Changed

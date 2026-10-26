@@ -307,3 +307,52 @@ export interface PayableUploadOptions extends CallOptions {
 export interface PayableIdempotentOptions extends CallOptions {
   idempotencyKey?: string;
 }
+
+/* ── Wallet: Pix keys of a consumer's own account (/v1/consumers/:consumerId/pix-keys) ── */
+
+export type PixKeyType = "EVP" | "CPF" | "CNPJ" | "EMAIL" | "PHONE";
+
+/** One key as the bank lists it. */
+export interface PixKey {
+  key: string;
+  key_type: PixKeyType | (string & {});
+}
+
+/** `GET /v1/consumers/:consumerId/pix-keys`. */
+export interface PixKeyList {
+  /** `••••NN`, the account's last two digits. */
+  account_masked: string;
+  keys: PixKey[];
+  count: number;
+}
+
+export interface PixKeyRegisterInput {
+  /** Explicit, EVP included: a random key is never minted by omission. */
+  keyType: PixKeyType;
+  /** The key value for CPF, CNPJ, EMAIL and PHONE; absent for EVP (the bank mints it). */
+  key?: string;
+}
+
+/** `POST /v1/consumers/:consumerId/pix-keys`, 201. */
+export interface PixKeyRegistered {
+  key: string;
+  key_type: PixKeyType | (string & {});
+  account_masked: string;
+  cache_filled?: boolean;
+  /** True when the key came from re-reading the account's list because the bank's answer was unreadable. */
+  reconciled?: boolean;
+}
+
+/** `DELETE /v1/consumers/:consumerId/pix-keys/:key`. */
+export interface PixKeyDeleted {
+  key: string;
+  account_masked: string;
+  deleted: true;
+  cache_cleared?: boolean;
+  cache_refilled_with?: string | null;
+}
+
+export interface PixKeyDeleteOptions extends CallOptions {
+  /** True only after the person confirmed. Anything else sends nothing. */
+  confirm: boolean;
+}
