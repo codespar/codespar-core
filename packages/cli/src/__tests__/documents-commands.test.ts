@@ -44,9 +44,12 @@ beforeEach(() => {
     seen.push(s);
     return answer(s);
   });
-  vi.spyOn(console, "log").mockImplementation((line: unknown) => {
-    printed.push(line);
-  });
+  // `json()` writes to stdout, not console.log (output.ts).
+  vi.spyOn(process.stdout, "write").mockImplementation(((chunk: unknown) => {
+    printed.push(chunk);
+    return true;
+  }) as typeof process.stdout.write);
+  vi.spyOn(process.stderr, "write").mockImplementation((() => true) as typeof process.stderr.write);
 });
 
 afterEach(() => {
@@ -56,8 +59,9 @@ afterEach(() => {
 });
 
 function lastJson(): Record<string, unknown> {
-  const text = String(printed[printed.length - 1]);
-  return JSON.parse(text) as Record<string, unknown>;
+  const text = printed.map(String).join("");
+  const start = text.lastIndexOf("\n{");
+  return JSON.parse(text.slice(start < 0 ? 0 : start + 1)) as Record<string, unknown>;
 }
 
 describe("codespar receipts document", () => {
