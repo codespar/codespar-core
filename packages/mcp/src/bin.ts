@@ -25,6 +25,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { callShopPurchaseTool, isShopPurchaseTool } from "./shop-purchase-tools.js";
 import { callPayablesTool, isPayablesTool, payablesErrorText } from "./payables-tools.js";
+import { callDocumentsTool, documentsErrorText, isDocumentsTool, type DocumentsFacades } from "./documents-tools.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -40,7 +41,7 @@ import { NO_SESSION_MESSAGE, bootSession, listedTools, type Boot } from "./boot.
 
 type Preset = "brazilian" | "mexican" | "argentinian" | "colombian" | "all";
 
-const VERSION = "0.5.2";
+const VERSION = "0.5.12";
 
 function flag(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -130,7 +131,11 @@ async function main(): Promise<void> {
   // `cs.payables` arrived in @codespar/sdk 0.16.19; the peer range is wider,
   // so an older SDK simply does not get the tool.
   const payables = (cs as { payables?: Payables }).payables;
-  const listed = listedTools(boot, { payables: Boolean(payables) });
+  // `cs.receipts` / `cs.account` arrived in @codespar/sdk 0.16.22: the documents
+  // tool exists only when both are there. REST routes, no session needed.
+  const facades = cs as Partial<DocumentsFacades>;
+  const documents: DocumentsFacades | null = facades.receipts && facades.account ? { receipts: facades.receipts, account: facades.account } : null;
+  const listed = listedTools(boot, { payables: Boolean(payables), documents: documents !== null });
   if (session) log(`session ${session.id} (preset=${servers ? "custom" : preset}) ready`);
   else log("no session: the key lacks `sessions:create` (403); hosted tools are not offered, codespar_payables is");
   log(`exposing ${listed.length} tool(s): ${listed.map((t) => t.name).join(", ") || "(none — check connections)"}`);
@@ -154,6 +159,14 @@ async function main(): Promise<void> {
         return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], isError: false };
       } catch (err) {
         return { content: [{ type: "text", text: err instanceof Error ? err.message : String(err) }], isError: true };
+      }
+    }
+    if (documents && isDocumentsTool(name)) {
+      try {
+        const out = await callDocumentsTool(documents, args);
+        return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], isError: false };
+      } catch (err) {
+        return { content: [{ type: "text", text: documentsErrorText(err) }], isError: true };
       }
     }
     if (payables && isPayablesTool(name)) {

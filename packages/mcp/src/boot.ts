@@ -22,6 +22,7 @@
  */
 import type { Session, Tool } from "@codespar/sdk";
 import { PAYABLES_TOOL_NAME, payablesToolDefinition } from "./payables-tools.js";
+import { documentsToolDefinition } from "./documents-tools.js";
 import { SHOP_PURCHASE_MCP_TOOLS } from "./shop-purchase-tools.js";
 
 export type Boot =
@@ -58,8 +59,8 @@ export interface McpListedTool {
   inputSchema: Record<string, unknown>;
 }
 
-/** The `tools/list` answer for a boot: hosted tools and Shop purchases only with a session; payables whenever the SDK has it. */
-export function listedTools(boot: Boot, opts: { payables: boolean }): McpListedTool[] {
+/** The `tools/list` answer for a boot: hosted tools and Shop purchases only with a session; payables and documents whenever the SDK has them (they run over REST, no session). */
+export function listedTools(boot: Boot, opts: { payables: boolean; documents?: boolean }): McpListedTool[] {
   const hosted: McpListedTool[] =
     boot.kind === "session"
       ? boot.tools
@@ -76,7 +77,7 @@ export function listedTools(boot: Boot, opts: { payables: boolean }): McpListedT
           }))
       : [];
   const shop = boot.kind === "session" && boot.session.purchases ? SHOP_PURCHASE_MCP_TOOLS : [];
-  return [...hosted, ...shop, ...(opts.payables ? [payablesToolDefinition(true)] : [])];
+  return [...hosted, ...shop, ...(opts.payables ? [payablesToolDefinition(true)] : []), ...(opts.documents ? [documentsToolDefinition()] : [])];
 }
 
 /** What a client is told when it calls a session tool and the key has no session. */

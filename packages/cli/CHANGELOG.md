@@ -1,14 +1,34 @@
 # @codespar/cli — changelog
 
-## 0.22.1 — 2026-10-27
+## 0.22.2 — 2026-10-27
 
 ### Added
 
 - **`codespar payables batches update-item <batchId> <itemId> --rail pix|boleto`**
   chooses how a bill printed with a Pix code and a boleto is paid (one item,
-  paid once; payables contract v1.1), through `@codespar/sdk` 0.16.22. The
+  paid once; payables contract v1.1), through `@codespar/sdk` 0.16.23. The
   batch table names a document item by its page's title and shows
   `(pix of pix|boleto)` for an item with two ways.
+
+### Changed
+
+- Requires `@codespar/sdk` 0.16.23 (`rail` on `updateItem`).
+
+## 0.22.1 — 2026-10-27
+
+### Added
+
+- `codespar receipts document <receiptId> [--format pdf|png] [--out <file>]` and
+  `codespar account statement --from YYYY-MM-DD --to YYYY-MM-DD [--currency] [--out <file>]`
+  (`CONTRATO-documentos`): the payment receipt document and the account statement, written to
+  `--out` or to the server's filename in the current directory; `--json` prints the record (path,
+  filename, content type, bytes, sha256). Hand-written over `cs.receipts` / `cs.account`. The two
+  routes are not in the served document's snapshot yet; the refresh that brings them must reserve
+  them in `HAND_WRITTEN_ROUTES` (as 0.16.20 did for payables) so no JSON twin is derived beside them.
+
+### Changed
+
+- Requires `@codespar/sdk` 0.16.22 (`cs.receipts`, `cs.account`).
 
 ## 0.22.0 — 2026-10-26
 

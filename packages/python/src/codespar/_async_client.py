@@ -25,6 +25,7 @@ from ._http import DEFAULT_BASE_URL, normalize_timeout, request_json
 from ._presets import preset_to_servers
 from .errors import ApiError, ConfigError
 from .payables import AsyncPayables
+from .documents import AsyncAccount, AsyncReceipts
 from .types import SessionConfig
 from .wallet import AsyncWallet
 
@@ -108,6 +109,10 @@ class AsyncCodeSpar:
         self.payables = AsyncPayables(self._client, self._api_key, self._project_id)
         #: A consumer's own account: ``wallet.pix_keys`` over ``/v1/consumers/:id/pix-keys``.
         self.wallet = AsyncWallet(self._client, self._api_key, self._project_id)
+        #: The receipt document (comprovante) of a payment (``/v1/consumers/receipts/:id/document``).
+        self.receipts = AsyncReceipts(self._client, self._api_key, self._project_id)
+        #: The account statement (extrato) of a period (``/v1/account/statement``).
+        self.account = AsyncAccount(self._client, self._api_key, self._project_id)
 
     @property
     def base_url(self) -> str:

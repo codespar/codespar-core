@@ -1,6 +1,6 @@
 # @codespar/sdk — CHANGELOG
 
-## 0.16.22 — 2026-10-27
+## 0.16.23 — 2026-10-27
 
 ### Added
 
@@ -17,6 +17,21 @@
   409 `payable_item_rail_unavailable` (`error.details.unavailable`). New
   types `PayableBatchItemWay`, `PayableBatchItemDocument`,
   `PayableBatchItemDestination`, `PayableWayRail`, `PayableWayUnavailableCode`.
+
+## 0.16.22 — 2026-10-27
+
+### Added
+
+- **Documents on demand** (`CONTRATO-documentos`, 26/10/2026): `cs.receipts.document(receiptId, { format })`
+  downloads the payment receipt (comprovante) of a sealed receipt from
+  `GET /v1/consumers/receipts/:id/document` as `pdf` (default, one page of 600x828 px) or `png`
+  (the same page at 2x); `cs.account.statement({ from, to, currency? })` downloads the account
+  statement (extrato) of a period from `GET /v1/account/statement` as PDF. Both resolve a
+  `Document` (`bytes`, `contentType`, `filename` from the server's `Content-Disposition`, `sha256`
+  from `X-CodeSpar-Document-Sha256`). Refusals are `CodesparApiError` with the API's code
+  (`document_not_final` 409 for a payment not yet confirmed, `statement_period_invalid` 400,
+  `statement_not_reconciled` 500, `document_renderer_unavailable` 503). `filenameFromDisposition`
+  is exported. Generating or downloading a document never repeats a payment.
 
 ## 0.16.21 — 2026-10-26
 

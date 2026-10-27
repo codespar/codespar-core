@@ -1,8 +1,8 @@
 # codespar (Python SDK) — CHANGELOG
 
-## 0.15.0
+## 0.16.0
 
-One bill, two ways (payables contract v1.1), in parity with `@codespar/sdk` 0.16.22.
+One bill, two ways (payables contract v1.1), in parity with `@codespar/sdk` 0.16.23.
 
 ### Added
 
@@ -12,6 +12,19 @@ One bill, two ways (payables contract v1.1), in parity with `@codespar/sdk` 0.16
   `payable_item_rail_unavailable`. `PayableBatchItem` gains `ways`,
   `rail_chosen_by` and `document`; new types `PayableBatchItemWay`,
   `PayableBatchItemWayUnavailable`, `PayableBatchItemDocument`, `PayableWayRail`.
+
+## 0.15.0
+
+Documents on demand, in parity with `@codespar/sdk` 0.16.22 (`CONTRATO-documentos`).
+
+### Added
+
+- `cs.receipts.document(receipt_id, *, format="pdf"|"png")` and
+  `cs.account.statement(from_date, to_date, *, format="pdf", currency=None)` on `CodeSpar` and
+  `AsyncCodeSpar`, returning a `Document` TypedDict (`bytes`, `content_type`, `filename`,
+  `sha256`). Refusals are `ApiError` with the API's code (`document_not_final`,
+  `statement_period_invalid`, `statement_not_reconciled`, `document_renderer_unavailable`).
+- `filename_from_disposition(header)`.
 
 ## 0.14.0
 

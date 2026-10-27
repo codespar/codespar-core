@@ -39,6 +39,15 @@ from .errors import (
     StreamError,
     TimeoutError,
 )
+from .documents import (
+    Account,
+    AsyncAccount,
+    AsyncReceipts,
+    Document,
+    DocumentFormat,
+    Receipts,
+    filename_from_disposition,
+)
 from .payables import (
     AsyncPayables,
     PayableBatch,
@@ -175,7 +184,7 @@ from .wallet import (
     WalletPixKeys,
 )
 
-__version__ = "0.15.0"
+__version__ = "0.16.0"
 
 __all__ = [
     "APPROVAL_REQUIRED",
@@ -257,6 +266,13 @@ __all__ = [
     "PayableFile",
     "PayableItemInput",
     "Payables",
+    "Receipts",
+    "AsyncReceipts",
+    "Account",
+    "AsyncAccount",
+    "Document",
+    "DocumentFormat",
+    "filename_from_disposition",
     # Async settlement (codespar_pay etc.)
     "PaymentStatus",
     "PaymentStatusEvent",
