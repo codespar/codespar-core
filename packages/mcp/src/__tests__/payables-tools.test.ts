@@ -14,6 +14,7 @@ import {
   isPayablesTool,
   payablesErrorText,
   payablesToolDefinition,
+  projectBatch,
 } from "../payables-tools.js";
 
 const BATCH: PayableBatch = {
@@ -104,6 +105,15 @@ describe("codespar_payables MCP tool", () => {
     ]);
     expect(JSON.stringify(out)).not.toContain("Text read from the document");
     expect(out.items[0]!.destination).toEqual(BATCH.items[0]!.destination);
+    // A Pix destination's FULL key (v1.1 rule 6b) never reaches the model: the masked display does.
+    const pix = {
+      ...BATCH,
+      items: [{ ...BATCH.items[0]!, rail: "pix" as const, destination: { kind: "pix_key" as const, display: "chave •••• d1ca", beneficiary_name: "Pessoa", beneficiary_document_masked: "***.456.789-**", due_date: null, beneficiary_institution: "Banco Exemplo", key: "11c126de-7a60-4556-81e7-97c0b209d1ca" } }],
+    };
+    const projected = JSON.stringify(projectBatch(pix));
+    expect(projected).not.toContain("11c126de-7a60-4556-81e7-97c0b209d1ca");
+    expect(projected).toContain("chave •••• d1ca");
+    expect(projected).toContain("Banco Exemplo");
 
     await callPayablesTool(payables, { action: "get", batch_id: "pbat_example" }, { allowLocalFiles: false });
     await callPayablesTool(

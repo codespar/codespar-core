@@ -212,6 +212,13 @@ export interface PayableBatchItemDestination {
   beneficiary_name: string | null;
   beneficiary_document_masked: string | null;
   due_date: string | null;
+  /** The payee's institution name when the resolution returns one (payables v1.1, rule 6b). */
+  beneficiary_institution?: string | null;
+  /**
+   * A Pix destination's FULL key, for a person's confirmation step only (payables v1.1, rule 6b).
+   * Show it nowhere else: lists, logs and anything a model reads keep `display`.
+   */
+  key?: string | null;
 }
 
 /**

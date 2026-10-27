@@ -149,12 +149,22 @@ class PayableBatchItemDocument(TypedDict):
     amount_minor: int | None
 
 
-class PayableBatchItemDestination(TypedDict):
+class _PayableBatchItemDestinationRequired(TypedDict):
     kind: Literal["boleto", "pix_key", "br_code_static", "br_code_dynamic"]
     display: str
     beneficiary_name: str | None
     beneficiary_document_masked: str | None
     due_date: str | None
+
+
+class PayableBatchItemDestination(_PayableBatchItemDestinationRequired, total=False):
+    """``beneficiary_institution`` and ``key`` since payables v1.1 (rule 6b):
+    the payee's institution name when the resolution returns one, and a Pix
+    destination's FULL key for a person's confirmation step only (show it
+    nowhere else; lists and anything a model reads keep ``display``)."""
+
+    beneficiary_institution: str | None
+    key: str | None
 
 
 class PayableBatchItem(TypedDict):

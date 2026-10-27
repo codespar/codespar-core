@@ -113,7 +113,8 @@ export function projectBatch(batch: PayableBatch): Record<string, unknown> {
       document: item.document ? { title: item.document.title, due_date: item.document.due_date, amount_minor: item.document.amount_minor } : null,
       state: item.state,
       missing: item.missing,
-      destination: item.destination,
+      // The payee's FULL key (v1.1 rule 6b) is for a person's confirmation step, never for the model: the mask stays.
+      destination: item.destination ? withoutKey(item.destination) : null,
       amount_minor: item.amount_minor,
       amount_source: item.amount_source,
       checks: item.checks.map((c) => ({ code: c.code, status: c.status, ...(c.simulated ? { simulated: true } : {}) })),
@@ -127,6 +128,11 @@ export function projectBatch(batch: PayableBatch): Record<string, unknown> {
         : null,
     })),
   };
+}
+
+function withoutKey<T extends { key?: string | null }>(destination: T): Omit<T, "key"> {
+  const { key: _key, ...rest } = destination;
+  return rest;
 }
 
 function projectFile(file: PayableFile): Record<string, unknown> {
