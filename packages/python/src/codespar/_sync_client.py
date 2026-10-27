@@ -22,9 +22,9 @@ from typing import Any, TypeVar
 from ._async_client import AsyncCodeSpar
 from ._async_session import AsyncSession
 from ._http import normalize_timeout
+from .documents import Account, Receipts
 from .errors import ConfigError
 from .payables import Payables
-from .documents import Account, Receipts
 from .types import (
     AuthConfig,
     AuthResult,
@@ -162,9 +162,7 @@ class Session:
         timeout: float | None = None,
     ) -> VerificationStatusResult:
         """Sync wrapper around ``AsyncSession.verification_status``. See that for docs."""
-        return self._runner.run(
-            self._async.verification_status(tool_call_id, timeout=timeout)
-        )
+        return self._runner.run(self._async.verification_status(tool_call_id, timeout=timeout))
 
     def payment_status_stream(
         self,
@@ -182,9 +180,7 @@ class Session:
         (terminal state + 5s grace).
         """
         return self._runner.run(
-            self._async.payment_status_stream(
-                tool_call_id, on_update=on_update, timeout=timeout
-            ),
+            self._async.payment_status_stream(tool_call_id, on_update=on_update, timeout=timeout),
         )
 
     def verification_status_stream(
@@ -347,7 +343,8 @@ class CodeSpar:
         self.payables = Payables(self._async.payables, self._runner)
         #: A consumer's own account: ``wallet.pix_keys`` over ``/v1/consumers/:id/pix-keys``.
         self.wallet = Wallet(self._async.wallet, self._runner)
-        #: The receipt document (comprovante) of a payment (``/v1/consumers/receipts/:id/document``).
+        #: The receipt document (comprovante) of a payment
+        #: (``/v1/consumers/receipts/:id/document``).
         self.receipts = Receipts(self._async.receipts, self._runner)
         #: The account statement (extrato) of a period (``/v1/account/statement``).
         self.account = Account(self._async.account, self._runner)
@@ -369,9 +366,7 @@ class CodeSpar:
     ) -> Session:
         if config is not None and kwargs:
             raise ConfigError("Pass SessionConfig or keyword arguments, not both.")
-        async_session = self._runner.run(
-            self._async.create(user_id, config, **kwargs)
-        )
+        async_session = self._runner.run(self._async.create(user_id, config, **kwargs))
         return Session(async_session, self._runner)
 
     def close(self) -> None:

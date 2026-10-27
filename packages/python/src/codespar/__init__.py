@@ -29,6 +29,15 @@ from __future__ import annotations
 from ._async_client import AsyncCodeSpar
 from ._async_session import AsyncSession
 from ._sync_client import CodeSpar, Session
+from .documents import (
+    Account,
+    AsyncAccount,
+    AsyncReceipts,
+    Document,
+    DocumentFormat,
+    Receipts,
+    filename_from_disposition,
+)
 from .errors import (
     PIX_KEY_DELETE_CONSEQUENCE,
     ApiError,
@@ -38,15 +47,6 @@ from .errors import (
     PixKeyDeleteNotConfirmedError,
     StreamError,
     TimeoutError,
-)
-from .documents import (
-    Account,
-    AsyncAccount,
-    AsyncReceipts,
-    Document,
-    DocumentFormat,
-    Receipts,
-    filename_from_disposition,
 )
 from .payables import (
     AsyncPayables,
@@ -190,13 +190,16 @@ __all__ = [
     "POLICY_DENIED",
     "TOOL_NOT_MOCKED",
     "TOOL_RESULT_CODES",
+    "Account",
     # Agentic receipt (the Control Record)
     "AgenticReceipt",
     "ApiError",
     "ApprovalRequiredOutput",
     "AssistantTextEvent",
+    "AsyncAccount",
     "AsyncCodeSpar",
     "AsyncPayables",
+    "AsyncReceipts",
     "AsyncSession",
     "AsyncWallet",
     "AsyncWalletPixKeys",
@@ -225,6 +228,8 @@ __all__ = [
     "DiscoverPlanStep",
     "DiscoverResult",
     "DiscoverToolMatch",
+    "Document",
+    "DocumentFormat",
     "DoneEvent",
     "ErrorEvent",
     "HttpMethod",
@@ -258,13 +263,6 @@ __all__ = [
     "PayableFile",
     "PayableItemInput",
     "Payables",
-    "Receipts",
-    "AsyncReceipts",
-    "Account",
-    "AsyncAccount",
-    "Document",
-    "DocumentFormat",
-    "filename_from_disposition",
     # Async settlement (codespar_pay etc.)
     "PaymentStatus",
     "PaymentStatusEvent",
@@ -285,6 +283,7 @@ __all__ = [
     "ReceiptMandate",
     "ReceiptPayment",
     "ReceiptQuote",
+    "Receipts",
     "RequiredSecret",
     "SearchStrategy",
     "SendResult",
@@ -340,6 +339,7 @@ __all__ = [
     # Version
     "__version__",
     "assert_exhaustive_tool_result",
+    "filename_from_disposition",
     "is_approval_required",
     "is_mocks_engine_error",
     "is_mocks_exhausted",
