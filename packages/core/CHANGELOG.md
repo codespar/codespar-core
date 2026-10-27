@@ -1,5 +1,23 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.22 — 2026-10-27
+
+### Added
+
+- **One bill, two ways** (payables contract v1.1, 27/10/2026). A page that
+  prints a boleto and a Pix code for the same charge is ONE batch item:
+  `PayableBatchItem` gains `ways` (1 or 2 entries, Pix first, each with its
+  resolved `destination` and an `unavailable { code, message }` when the rail
+  refused it), `rail_chosen_by` (`default | person | integration`) and
+  `document` (what the page says about itself: a catalog `title` such as
+  "DARE-SP", `issuer`, `due_date`, `amount_minor`), plus `origin.kind:
+  "document"`, `missing: "rail"` and `amount_source: "document"`.
+  `cs.payables.batches.updateItem(batchId, itemId, { expectedVersion, rail })`
+  chooses the way; a way the item lacks or that is unavailable is refused with
+  409 `payable_item_rail_unavailable` (`error.details.unavailable`). New
+  types `PayableBatchItemWay`, `PayableBatchItemDocument`,
+  `PayableBatchItemDestination`, `PayableWayRail`, `PayableWayUnavailableCode`.
+
 ## 0.16.21 — 2026-10-26
 
 ### Changed

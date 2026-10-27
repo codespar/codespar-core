@@ -174,7 +174,11 @@ export type PayableBatchItemState =
   | "uncertain";
 
 export interface PayableBatchItemCheck {
-  /** `carrier_check_digits`, `duplicate_in_batch`, `duplicate_document`, `amount_matches_rail`, `due_date_state`, `pix_key_resolved`. */
+  /**
+   * `carrier_check_digits`, `duplicate_in_batch`, `duplicate_document`, `amount_matches_rail`, `due_date_state`,
+   * `pix_key_resolved`; since payables v1.1 also `amount_matches_document`, `rail_switched`, `ways_amount_mismatch`,
+   * `ways_unavailable` (their `message` is already the person's sentence).
+   */
   code: string;
   status: "pass" | "fail" | "warn";
   message: string;
@@ -190,6 +194,51 @@ export interface PayableBatchItemPayment {
   refusal: { code: string; message: string } | null;
 }
 
+export type PayableWayRail = "pix" | "boleto";
+
+/** Why a way cannot be paid now (payables v1.1, rules 5 and 7). */
+export type PayableWayUnavailableCode =
+  | "br_code_expired"
+  | "br_code_not_found"
+  | "boleto_expired"
+  | "boleto_refused"
+  | "rail_unavailable"
+  | "no_sandbox_fixture";
+
+export interface PayableBatchItemDestination {
+  kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
+  /** Masked line or masked key. */
+  display: string;
+  beneficiary_name: string | null;
+  beneficiary_document_masked: string | null;
+  due_date: string | null;
+}
+
+/**
+ * One way of paying the item (payables v1.1, rule 2). Two when one page
+ * printed a boleto and a Pix code for the same bill; the item is paid ONCE,
+ * through `rail`. Choose with `updateItem(..., { rail })`.
+ */
+export interface PayableBatchItemWay {
+  rail: PayableWayRail;
+  origin: { page: number | null; kind: PayableBatchItem["origin"]["kind"] };
+  /** This way's resolved destination, when the rail answered. */
+  destination: PayableBatchItemDestination | null;
+  /** Why this way cannot be paid now, in the person's words; null when it can. */
+  unavailable: { code: PayableWayUnavailableCode | string; message: string } | null;
+}
+
+/** What the page says about the document (payables v1.1, rule 4): shown as such, never confirmed in place of the rail's values. */
+export interface PayableBatchItemDocument {
+  /** From a closed catalog ("DARE-SP", "Nota Fiscal", ...). */
+  title: string | null;
+  issuer: string | null;
+  /** YYYY-MM-DD. */
+  due_date: string | null;
+  /** The boleto's effective value or a static BR Code's amount; never loose text. */
+  amount_minor: number | null;
+}
+
 export interface PayableBatchItem {
   /** `pbl_` + 16 characters: the payable's id, derived from the batch and the item's content. */
   item_id: string;
@@ -198,22 +247,24 @@ export interface PayableBatchItem {
     file_id: string | null;
     page: number | null;
     row: number | null;
-    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual";
+    /** `document`: one boleto and one Pix code of the same page, fused into one item (v1.1). */
+    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
   };
+  /** The chosen way when the item has two; the only way otherwise. */
   rail: "boleto" | "pix" | null;
+  /** `default` until a person (dashboard, chat) or an integration (API key) chose with `updateItem(..., { rail })`. */
+  rail_chosen_by: "default" | "person" | "integration";
+  /** 1 or 2 entries, in order of preference (Pix first). */
+  ways: PayableBatchItemWay[];
+  document: PayableBatchItemDocument | null;
   state: PayableBatchItemState;
-  missing: Array<"amount" | "destination" | "pix_key_owner_confirmation">;
+  /** `rail`: the two ways state different amounts and nobody chose yet (v1.1). */
+  missing: Array<"amount" | "destination" | "pix_key_owner_confirmation" | "rail">;
   /** Resolved on the rail: what the person confirms, not what was extracted. */
-  destination: {
-    kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
-    /** Masked line or masked key. */
-    display: string;
-    beneficiary_name: string | null;
-    beneficiary_document_masked: string | null;
-    due_date: string | null;
-  } | null;
+  destination: PayableBatchItemDestination | null;
   amount_minor: number | null;
-  amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | null;
+  /** `document`: the page's own amount, shown until the rail quote replaces it. */
+  amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | "document" | null;
   description: string | null;
   reference: string | null;
   checks: PayableBatchItemCheck[];
@@ -281,6 +332,12 @@ export interface PayableItemUpdate {
   brCode?: string;
   description?: string;
   excluded?: boolean;
+  /**
+   * The way to pay an item that has two (`ways`, payables v1.1): the item
+   * re-resolves on it. Refused with 409 `payable_item_rail_unavailable` when
+   * the item has no such way or it is unavailable (`error.details.unavailable`).
+   */
+  rail?: PayableWayRail;
 }
 
 export interface PayableItemsAddInput {

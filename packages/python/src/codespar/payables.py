@@ -100,8 +100,53 @@ class PayableBatchItemOrigin(TypedDict):
     page: int | None
     row: int | None
     kind: Literal[
-        "boleto_line", "br_code", "pix_key", "qr_image", "barcode_image", "csv_row", "manual"
+        "boleto_line",
+        "br_code",
+        "pix_key",
+        "qr_image",
+        "barcode_image",
+        "csv_row",
+        "manual",
+        "document",
     ]
+
+
+PayableWayRail = Literal["pix", "boleto"]
+
+
+class PayableBatchItemWayUnavailable(TypedDict):
+    """Why a way cannot be paid now (payables v1.1): ``br_code_expired``,
+    ``br_code_not_found``, ``boleto_expired``, ``boleto_refused``,
+    ``rail_unavailable`` or ``no_sandbox_fixture``; the message is the person's."""
+
+    code: str
+    message: str
+
+
+class PayableBatchItemWayOrigin(TypedDict):
+    page: int | None
+    kind: str
+
+
+class PayableBatchItemWay(TypedDict):
+    """One way of paying the item (payables v1.1). Two when one page printed a
+    boleto and a Pix code for the same bill: one item, paid once, through
+    ``rail``; choose with ``update_item(..., rail=...)``."""
+
+    rail: PayableWayRail
+    origin: PayableBatchItemWayOrigin
+    destination: "PayableBatchItemDestination | None"
+    unavailable: PayableBatchItemWayUnavailable | None
+
+
+class PayableBatchItemDocument(TypedDict):
+    """What the page says about the document (payables v1.1): shown as such,
+    never confirmed in place of the rail's values."""
+
+    title: str | None
+    issuer: str | None
+    due_date: str | None
+    amount_minor: int | None
 
 
 class PayableBatchItemDestination(TypedDict):
@@ -117,11 +162,16 @@ class PayableBatchItem(TypedDict):
     position: int
     origin: PayableBatchItemOrigin
     rail: Literal["boleto", "pix"] | None
+    rail_chosen_by: Literal["default", "person", "integration"]
+    ways: list[PayableBatchItemWay]
+    document: PayableBatchItemDocument | None
     state: PayableBatchItemState
-    missing: list[Literal["amount", "destination", "pix_key_owner_confirmation"]]
+    missing: list[Literal["amount", "destination", "pix_key_owner_confirmation", "rail"]]
     destination: PayableBatchItemDestination | None
     amount_minor: int | None
-    amount_source: Literal["rail_quote", "br_code", "stated_by_person", "csv"] | None
+    amount_source: (
+        Literal["rail_quote", "br_code", "stated_by_person", "csv", "document"] | None
+    )
     description: str | None
     reference: str | None
     checks: list[PayableBatchItemCheck]
@@ -339,11 +389,15 @@ class AsyncPayablesBatches:
         br_code: str | None = None,
         description: str | None = None,
         excluded: bool | None = None,
+        rail: PayableWayRail | None = None,
         timeout: float | None = None,
     ) -> PayableBatch:
         """``PATCH /v1/payables/batches/:batch_id/items/:item_id``.
 
         A stale ``expected_version`` raises 409 ``payable_batch_version_conflict``.
+        ``rail`` chooses the way of an item that has two (``ways``, payables
+        v1.1); a way the item lacks or that is unavailable raises 409
+        ``payable_item_rail_unavailable`` (``error.details.unavailable``).
         """
         body = _drop_none(
             {
@@ -354,6 +408,7 @@ class AsyncPayablesBatches:
                 "br_code": br_code,
                 "description": description,
                 "excluded": excluded,
+                "rail": rail,
             }
         )
         data: PayableBatch = await self._t.call(
@@ -507,6 +562,7 @@ class PayablesBatches:
         br_code: str | None = None,
         description: str | None = None,
         excluded: bool | None = None,
+        rail: PayableWayRail | None = None,
         timeout: float | None = None,
     ) -> PayableBatch:
         return self._runner.run(
@@ -518,6 +574,7 @@ class PayablesBatches:
                 pix_key=pix_key,
                 boleto_line=boleto_line,
                 br_code=br_code,
+                rail=rail,
                 description=description,
                 excluded=excluded,
                 timeout=timeout,

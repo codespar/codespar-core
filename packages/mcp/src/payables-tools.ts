@@ -13,7 +13,7 @@
  */
 import { open, stat } from "node:fs/promises";
 import { basename, extname } from "node:path";
-import type { PayableBatch, PayableFile, PayableItemInput, Payables } from "@codespar/sdk";
+import type { PayableBatch, PayableFile, PayableItemInput, Payables, PayableWayRail } from "@codespar/sdk";
 import type { McpToolDefinition } from "./shop-purchase-tools.js";
 
 export const PAYABLES_TOOL_NAME = "codespar_payables";
@@ -38,8 +38,8 @@ const ITEM_SCHEMA = {
 /** The tool definition. `withUpload: false` is the shape a server without local files would list. */
 export function payablesToolDefinition(withUpload = true): McpToolDefinition {
   const actions = withUpload
-    ? ["upload", "create_batch", "get", "update_item", "pay"]
-    : ["create_batch", "get", "update_item", "pay"];
+    ? ["upload", "create_batch", "get", "update_item", "set_rail", "pay"]
+    : ["create_batch", "get", "update_item", "set_rail", "pay"];
   return {
     name: PAYABLES_TOOL_NAME,
     description:
@@ -47,6 +47,8 @@ export function payablesToolDefinition(withUpload = true): McpToolDefinition {
       (withUpload ? "action=upload reads a local file (path) and returns its file_id and how many charges it holds; " : "") +
       "action=create_batch builds a batch from file_ids and/or stated items; action=get reads it; " +
       "action=update_item complements or corrects one item (expected_version) or excludes it; " +
+      "action=set_rail chooses how an item printed with a Pix code AND a boleto for the same bill is paid (its ways are pix|boleto; " +
+      "it is one item, paid once; rail=pix|boleto); " +
       "action=pay confirms the exact list (version + list_hash) and pays it, each item with its own result. " +
       "Destinations shown are the ones the rail resolved (beneficiary name, masked document), never the extracted text. " +
       "Only pay a list the person reviewed and confirmed; a changed list is refused and must be confirmed again.",
@@ -74,6 +76,7 @@ export function payablesToolDefinition(withUpload = true): McpToolDefinition {
         boleto_line: { type: "string", description: "update_item." },
         br_code: { type: "string", description: "update_item." },
         excluded: { type: "boolean", description: "update_item: true leaves the item out, false puts it back." },
+        rail: { type: "string", enum: ["pix", "boleto"], description: "set_rail (or update_item): the way to pay an item that has two ways." },
         version: { type: "integer", description: "pay: the batch version the person confirmed." },
         list_hash: { type: "string", description: "pay: the list_hash the person confirmed." },
         mandate_id: { type: "string", description: "pay: the mandate that authorizes it." },
@@ -104,6 +107,10 @@ export function projectBatch(batch: PayableBatch): Record<string, unknown> {
       position: item.position,
       origin: { file_id: item.origin.file_id, kind: item.origin.kind },
       rail: item.rail,
+      rail_chosen_by: item.rail_chosen_by,
+      ways: (item.ways ?? []).map((w) => ({ rail: w.rail, unavailable: w.unavailable })),
+      // What the page calls itself (a closed catalog title, a labelled issuer): never the document's text.
+      document: item.document ? { title: item.document.title, due_date: item.document.due_date, amount_minor: item.document.amount_minor } : null,
       state: item.state,
       missing: item.missing,
       destination: item.destination,
@@ -148,6 +155,11 @@ function optional<T>(v: unknown, check: (x: unknown) => x is T): T | undefined {
 }
 
 const isString = (x: unknown): x is string => typeof x === "string";
+
+function wayRail(v: unknown): PayableWayRail {
+  if (v === "pix" || v === "boleto") return v;
+  throw new Error("rail must be pix or boleto");
+}
 const isInt = (x: unknown): x is number => typeof x === "number" && Number.isInteger(x);
 
 function items(raw: unknown): PayableItemInput[] | undefined {
@@ -246,6 +258,7 @@ export async function callPayablesTool(
       const boletoLine = optional(args.boleto_line, isString);
       const brCode = optional(args.br_code, isString);
       const excluded = typeof args.excluded === "boolean" ? args.excluded : undefined;
+      const rail = args.rail === undefined ? undefined : wayRail(args.rail);
       const batch = await payables.batches.updateItem(str(args.batch_id, "batch_id"), str(args.item_id, "item_id"), {
         expectedVersion: int(args.expected_version, "expected_version"),
         ...(amountMinor !== undefined ? { amountMinor } : {}),
@@ -253,6 +266,15 @@ export async function callPayablesTool(
         ...(boletoLine !== undefined ? { boletoLine } : {}),
         ...(brCode !== undefined ? { brCode } : {}),
         ...(excluded !== undefined ? { excluded } : {}),
+        ...(rail !== undefined ? { rail } : {}),
+      });
+      return projectBatch(batch);
+    }
+    case "set_rail": {
+      // The chat tool's spelling (contract v1.1, rule 3), as a passthrough to the same PATCH.
+      const batch = await payables.batches.updateItem(str(args.batch_id, "batch_id"), str(args.item_id, "item_id"), {
+        expectedVersion: int(args.expected_version, "expected_version"),
+        rail: wayRail(args.rail),
       });
       return projectBatch(batch);
     }

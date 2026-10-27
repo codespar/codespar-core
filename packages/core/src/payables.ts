@@ -46,7 +46,7 @@ export interface PayablesBatches {
   create(input: PayableBatchCreateInput, opts?: PayableIdempotentOptions): Promise<PayableBatchCreated>;
   /** `GET /v1/payables/batches/:batchId`. */
   get(batchId: string, opts?: CallOptions): Promise<PayableBatch>;
-  /** `PATCH /v1/payables/batches/:batchId/items/:itemId`: complement, correct, exclude or include one item. */
+  /** `PATCH /v1/payables/batches/:batchId/items/:itemId`: complement, correct, exclude or include one item, or choose its way (`rail`). */
   updateItem(
     batchId: string,
     itemId: string,
@@ -195,6 +195,7 @@ export function createPayables(deps: PayablesDeps): Payables {
           br_code: update.brCode,
           description: update.description,
           excluded: update.excluded,
+          rail: update.rail,
         });
         return call<PayableBatch>(
           "payables.batches.updateItem",

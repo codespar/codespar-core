@@ -30,6 +30,9 @@ const BATCH: PayableBatch = {
       position: 0,
       origin: { file_id: "pfile_example", page: 1, row: null, kind: "boleto_line" },
       rail: "boleto",
+      rail_chosen_by: "default",
+      ways: [{ rail: "boleto", origin: { page: 1, kind: "boleto_line" }, destination: null, unavailable: null }],
+      document: { title: "Boleto", issuer: "Text read from the document", due_date: "2026-10-30", amount_minor: 12345 },
       state: "ready",
       missing: [],
       destination: {
@@ -79,8 +82,9 @@ describe("codespar_payables MCP tool", () => {
     expect(local.name).toBe("codespar_payables");
     expect(local.inputSchema.additionalProperties).toBe(false);
     const props = (s: typeof local) => s.inputSchema.properties as Record<string, { enum?: string[] }>;
-    expect(props(local).action!.enum).toEqual(["upload", "create_batch", "get", "update_item", "pay"]);
-    expect(props(hosted).action!.enum).toEqual(["create_batch", "get", "update_item", "pay"]);
+    expect(props(local).action!.enum).toEqual(["upload", "create_batch", "get", "update_item", "set_rail", "pay"]);
+    expect(props(hosted).action!.enum).toEqual(["create_batch", "get", "update_item", "set_rail", "pay"]);
+    expect(props(hosted).rail!.enum).toEqual(["pix", "boleto"]);
     expect(props(hosted).path).toBeUndefined();
     expect(JSON.stringify(local.inputSchema)).not.toMatch(/"url"/);
     expect(isPayablesTool("codespar_pay")).toBe(false);
@@ -107,6 +111,17 @@ describe("codespar_payables MCP tool", () => {
       { action: "update_item", batch_id: "pbat_example", item_id: "pbl_AbCdEfGhIjKlMnOp", expected_version: 2, excluded: true },
       { allowLocalFiles: false },
     );
+    // One bill, two ways (payables v1.1): set_rail is the chat tool's spelling of the same PATCH; update_item takes rail too.
+    await callPayablesTool(
+      payables,
+      { action: "set_rail", batch_id: "pbat_example", item_id: "pbl_AbCdEfGhIjKlMnOp", expected_version: 3, rail: "boleto" },
+      { allowLocalFiles: false },
+    );
+    await callPayablesTool(
+      payables,
+      { action: "update_item", batch_id: "pbat_example", item_id: "pbl_AbCdEfGhIjKlMnOp", expected_version: 4, rail: "pix" },
+      { allowLocalFiles: false },
+    );
     await callPayablesTool(
       payables,
       { action: "pay", batch_id: "pbat_example", version: 2, list_hash: "hash_v2", mandate_id: "mdt_example" },
@@ -115,8 +130,13 @@ describe("codespar_payables MCP tool", () => {
     expect(calls.slice(1)).toEqual([
       ["get", "pbat_example"],
       ["updateItem", "pbat_example", "pbl_AbCdEfGhIjKlMnOp", { expectedVersion: 2, excluded: true }],
+      ["updateItem", "pbat_example", "pbl_AbCdEfGhIjKlMnOp", { expectedVersion: 3, rail: "boleto" }],
+      ["updateItem", "pbat_example", "pbl_AbCdEfGhIjKlMnOp", { expectedVersion: 4, rail: "pix" }],
       ["pay", "pbat_example", { version: 2, listHash: "hash_v2", mandateId: "mdt_example" }],
     ]);
+    await expect(
+      callPayablesTool(payables, { action: "set_rail", batch_id: "pbat_example", item_id: "pbl_AbCdEfGhIjKlMnOp", expected_version: 3, rail: "ted" }, { allowLocalFiles: false }),
+    ).rejects.toThrow(/rail must be pix or boleto/);
     await expect(
       callPayablesTool(payables, { action: "pay", batch_id: "pbat_example", list_hash: "h" }, { allowLocalFiles: false }),
     ).rejects.toThrow(/version must be an integer/);

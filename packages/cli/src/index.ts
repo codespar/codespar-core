@@ -342,13 +342,14 @@ batches
 
 batches
   .command("update-item <batchId> <itemId>")
-  .description("Complement, correct, exclude or include one item; bumps the batch version")
+  .description("Complement, correct, exclude or include one item, or choose its way (--rail); bumps the batch version")
   .requiredOption("--expected-version <n>", "The version you reviewed")
   .option("--amount <minor>", "Amount in minor units (cents)")
   .option("--pix-key <key>", "Pix key")
   .option("--boleto-line <line>", "Boleto digitable line")
   .option("--br-code <payload>", "Pix copia-e-cola (BR Code)")
   .option("--description <text>", "Description")
+  .option("--rail <pix|boleto>", "The way to pay an item printed with a Pix code and a boleto (one bill, paid once)")
   .option("--exclude", "Leave this item out of the payment")
   .option("--include", "Put an excluded item back")
   .action(
@@ -362,6 +363,7 @@ batches
         boletoLine?: string;
         brCode?: string;
         description?: string;
+        rail?: string;
         exclude?: boolean;
         include?: boolean;
       },

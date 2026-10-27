@@ -20,6 +20,7 @@ import {
   type PayableFile,
   type PayableItemInput,
   type PayableItemUpdate,
+  type PayableWayRail,
 } from "@codespar/sdk";
 
 import { CliError } from "../config.js";
@@ -136,9 +137,14 @@ export function renderBatch(batch: PayableBatch): void {
       String(item.position),
       item.item_id,
       item.missing.length ? `${item.state} (needs ${item.missing.join(", ")})` : item.state,
-      item.destination
-        ? [item.destination.beneficiary_name, item.destination.display].filter(Boolean).join(" ")
-        : "-",
+      // A document item is named by what its page calls itself; two ways show as "pix|boleto" with the chosen one first.
+      [
+        item.document?.title ?? null,
+        item.destination ? [item.destination.beneficiary_name, item.destination.display].filter(Boolean).join(" ") : null,
+        item.ways && item.ways.length > 1 ? `(${item.rail ?? "?"} of ${item.ways.map((w) => w.rail).join("|")})` : null,
+      ]
+        .filter(Boolean)
+        .join(" ") || "-",
       brl(item.amount_minor),
       item.payment
         ? item.payment.refusal
@@ -212,6 +218,13 @@ export interface UpdateItemOptions extends PayablesAuth {
   description?: string;
   exclude?: boolean;
   include?: boolean;
+  /** `pix` or `boleto`: the way of an item printed with both (payables v1.1). */
+  rail?: string;
+}
+
+function wayRail(raw: string): PayableWayRail {
+  if (raw === "pix" || raw === "boleto") return raw;
+  throw new CliError(`--rail must be pix or boleto, got "${raw}".`);
 }
 
 function version(raw: string, flag: string): number {
@@ -236,10 +249,11 @@ export async function payablesBatchUpdateItemCommand(
     ...(opts.brCode !== undefined ? { brCode: opts.brCode } : {}),
     ...(opts.description !== undefined ? { description: opts.description } : {}),
     ...(opts.exclude ? { excluded: true } : opts.include ? { excluded: false } : {}),
+    ...(opts.rail !== undefined ? { rail: wayRail(opts.rail) } : {}),
   };
   if (Object.keys(update).length === 1) {
     throw new CliError(
-      "Nothing to change: pass --amount, --pix-key, --boleto-line, --br-code, --description, --exclude or --include.",
+      "Nothing to change: pass --amount, --pix-key, --boleto-line, --br-code, --description, --rail, --exclude or --include.",
     );
   }
   emit(await client(opts).payables.batches.updateItem(batchId, itemId, update), opts);

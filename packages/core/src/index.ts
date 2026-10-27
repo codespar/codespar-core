@@ -49,6 +49,11 @@ export type {
   PayableIdempotentOptions,
   PayableItemInput,
   PayableItemUpdate,
+  PayableBatchItemDestination,
+  PayableBatchItemDocument,
+  PayableBatchItemWay,
+  PayableWayRail,
+  PayableWayUnavailableCode,
   PayableItemsAddInput,
   PayableUploadOptions,
 } from "./types.js";

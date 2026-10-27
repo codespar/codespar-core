@@ -1,5 +1,18 @@
 # codespar (Python SDK) — CHANGELOG
 
+## 0.15.0
+
+One bill, two ways (payables contract v1.1), in parity with `@codespar/sdk` 0.16.22.
+
+### Added
+
+- `cs.payables.batches.update_item(batch_id, item_id, expected_version=..., rail="pix" | "boleto")`
+  chooses the way of an item printed with a Pix code and a boleto (one item,
+  paid once); a way the item lacks or that is unavailable raises 409
+  `payable_item_rail_unavailable`. `PayableBatchItem` gains `ways`,
+  `rail_chosen_by` and `document`; new types `PayableBatchItemWay`,
+  `PayableBatchItemWayUnavailable`, `PayableBatchItemDocument`, `PayableWayRail`.
+
 ## 0.14.0
 
 `cs.wallet.pix_keys`, in parity with `@codespar/sdk` 0.16.21.
