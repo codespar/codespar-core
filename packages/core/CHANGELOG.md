@@ -18,6 +18,13 @@
   types `PayableBatchItemWay`, `PayableBatchItemDocument`,
   `PayableBatchItemDestination`, `PayableWayRail`, `PayableWayUnavailableCode`.
 
+### Changed
+
+- OpenAPI snapshot re-read from the served document on 2026-10-27
+  (`2e081b97a350`, API 0.3.0, 367 operations): `GET /v1/consumers/receipts/{id}/document`
+  and `GET /v1/account/statement` are now in the document, so the CLI reserves them for
+  its hand-written `receipts document` / `account statement` (no derived JSON twin).
+
 ## 0.16.22 — 2026-10-27
 
 ### Added

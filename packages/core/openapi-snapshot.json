@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-10-26T21:53:13.984Z",
-    "sha256": "8e0894fb7695ddc562e3a6de74a2445e597c1c2cc04b7d6510ebacd246462ca7",
+    "fetched_at": "2026-10-27T11:34:26.214Z",
+    "sha256": "2e081b97a3500a1a408bef17c53569112686cbbcb1264d239cba5f42cf536d82",
     "etag": null,
     "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 310,
-    "operations": 365,
+    "paths": 312,
+    "operations": 367,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -105974,6 +105974,475 @@
             {
               "bearerAuth": [
                 "payables:pay"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/consumers/receipts/{id}/document": {
+        "get": {
+          "summary": "The payment receipt (comprovante) of a sealed receipt, as PDF or PNG",
+          "description": "Composes the comprovante of the payment the receipt seals (state and amount, who received, who paid, who authorized, the end-to-end id and the receipt id) and renders it. `format=pdf` is one page of 600x828 px; `format=png` is the same page at 2x (1200x1656), for sharing as an image.\n\nRead-only: generating or downloading a document never repeats or touches the payment. Served only when the payment is in a final confirmed state (its attempt is `settled`); otherwise 409 `document_not_final` with the attempt's status. A Test project's document carries the chip \"Ambiente de teste\" once. Deterministic: the same receipt gives the same document content, and the `X-CodeSpar-Document-Sha256` header is its hash.\n\nScoped to the organization AND the project of the caller, like the receipt read.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "description": "The receipt id (`rcpt_…`)."
+              },
+              "required": true,
+              "description": "The receipt id (`rcpt_…`).",
+              "name": "id",
+              "in": "path"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "pdf",
+                  "png"
+                ],
+                "default": "pdf",
+                "description": "`pdf` (default) or `png` (600x828 at 2x)."
+              },
+              "required": false,
+              "description": "`pdf` (default) or `png` (600x828 at 2x).",
+              "name": "format",
+              "in": "query"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The document.",
+              "headers": {
+                "X-CodeSpar-Document-Sha256": {
+                  "description": "SHA-256 of the document's structured content (the model the template renders). The same receipt answers the same value on every call.",
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              },
+              "content": {
+                "application/pdf": {
+                  "schema": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "image/png": {
+                  "schema": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "`format` is neither `pdf` nor `png`.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "document_format_invalid"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No receipt with this id in the caller's project.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "receipt_not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "The payment is not in a final confirmed state (`details.status` is the attempt's status: `dispatching`, `uncertain`, …). Retriable once it settles.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "document_not_final"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "503": {
+              "description": "The renderer (the hosted browser worker) is not configured or did not answer. Retriable; `Retry-After` is set.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "document_renderer_unavailable"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "receipts:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "receipts:read"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/account/statement": {
+        "get": {
+          "summary": "The account statement (extrato) of a period, as PDF",
+          "description": "The statement of the project's account over `[from, to]` (calendar days in America/Sao_Paulo, inclusive, at most 92 days, `to` not after today): holder, document, institution, agency and account; opening balance, inflows, outflows and closing balance over the BOOKED balance (the ledger kinds that move it: fund, debit, fee, reverse); reserves (holds open at the end of the period) shown apart and outside the balance identity; one row per balance-moving entry, newest first; A4, paginated, the column header on every page.\n\n`closing = opening + inflows - outflows` is asserted in code against an independent aggregate: a period that does not reconcile answers 500 `statement_not_reconciled` and no document. The wallet set is the one the account balances sum (a Test project with a bound account: that account's wallet), so the closing balance at `to = today` equals the account's booked balance.\n\nRead-only; nothing is cached. `format=pdf` only. The Wallet's CSV export is unchanged and separate.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "First day of the period, `YYYY-MM-DD`, America/Sao_Paulo."
+              },
+              "required": true,
+              "description": "First day of the period, `YYYY-MM-DD`, America/Sao_Paulo.",
+              "name": "from",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Last day, inclusive; not after today; at most 92 days after `from`."
+              },
+              "required": true,
+              "description": "Last day, inclusive; not after today; at most 92 days after `from`.",
+              "name": "to",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "pdf"
+                ],
+                "default": "pdf",
+                "description": "`pdf` only in this delivery."
+              },
+              "required": false,
+              "description": "`pdf` only in this delivery.",
+              "name": "format",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "pattern": "^[A-Za-z]{3,5}$",
+                "default": "BRL",
+                "description": "The ledger currency (default BRL)."
+              },
+              "required": false,
+              "description": "The ledger currency (default BRL).",
+              "name": "currency",
+              "in": "query"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The statement.",
+              "headers": {
+                "X-CodeSpar-Document-Sha256": {
+                  "description": "SHA-256 of the document's structured content (the model the template renders). The same receipt answers the same value on every call.",
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              },
+              "content": {
+                "application/pdf": {
+                  "schema": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "`format` is not `pdf` (`document_format_invalid`); or the period is malformed, `from` is after `to`, `to` is after today, or the span exceeds the maximum (`statement_period_invalid`, `details.reason`).",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "document_format_invalid",
+                              "statement_period_invalid"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "The ledger of the period does not reconcile; logged, nothing served.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "statement_not_reconciled"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "503": {
+              "description": "The renderer (the hosted browser worker) is not configured or did not answer. Retriable; `Retry-After` is set.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "document_renderer_unavailable"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
               ]
             }
           ]

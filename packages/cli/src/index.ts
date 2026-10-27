@@ -252,13 +252,12 @@ const HAND_WRITTEN_ROUTES: Readonly<Record<string, readonly string[]>> = {
   payables: ["/v1/payables/files", "/v1/payables/batches"],
   // Documents on demand (CONTRATO-documentos): `receipts document` and
   // `account statement` are hand-written over the SDK facades because the
-  // answer is a file. Their routes (the receipt document under
-  // /consumers/receipts and the statement under /account) are NOT in the
-  // served document's snapshot yet, so there is nothing to reserve: the
-  // snapshot refresh that brings them adds `consumers` and `account`
-  // entries here (the parameter spelled `{}`, as `underPrefix` compares),
-  // or the derivation publishes a JSON twin beside each
+  // answer is a file. Reserved since the snapshot of 2026-10-27 (2e081b97a350)
+  // brought their routes (the parameter spelled `{}`, as `underPrefix`
+  // compares), so the derivation publishes no JSON twin beside either
   // (payables-rotas-a-mao.test.ts is the guard that would say so).
+  consumers: ["/v1/consumers/receipts/{}/document"],
+  account: ["/v1/account/statement"],
 };
 
 for (const { spec, commands } of derivedSurface()) {
