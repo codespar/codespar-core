@@ -1,5 +1,16 @@
 # codespar (Python SDK) — CHANGELOG
 
+## 0.15.1
+
+The 0.15.0 release never reached PyPI: `publish-python.yml` stops at `ruff check` and
+the documents change had 24 findings (import blocks, `__all__` order, lines over 100).
+No API change; the package is 0.15.0 with the lint clean.
+
+### Fixed
+
+- `ruff check src/ tests/`, `mypy src/codespar` and `pytest` all green on the package;
+  the gate stays in the publication workflow (the repository's `ci.yml` has no Python job).
+
 ## 0.15.0
 
 Documents on demand, in parity with `@codespar/sdk` 0.16.22 (`CONTRATO-documentos`).

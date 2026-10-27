@@ -43,7 +43,11 @@ _DISPOSITION = re.compile(r"filename\*?=(?:UTF-8'')?\"?([^\";]+)\"?", re.IGNOREC
 
 
 def filename_from_disposition(header: str | None) -> str | None:
-    """``comprovante-rcpt_x.pdf`` out of ``attachment; filename="comprovante-rcpt_x.pdf"``; None when absent or a path."""
+    """The filename a ``Content-Disposition`` header names.
+
+    ``comprovante-rcpt_x.pdf`` out of ``attachment; filename="comprovante-rcpt_x.pdf"``;
+    None when the header is absent or the name is a path.
+    """
     if not header:
         return None
     m = _DISPOSITION.search(header)
@@ -58,7 +62,8 @@ def _document(response: httpx.Response, fallback_name: str, accept: str) -> Docu
     return Document(
         bytes=response.content,
         content_type=content_type,
-        filename=filename_from_disposition(response.headers.get("content-disposition")) or fallback_name,
+        filename=filename_from_disposition(response.headers.get("content-disposition"))
+        or fallback_name,
         sha256=response.headers.get("x-codespar-document-sha256"),
     )
 
@@ -78,15 +83,27 @@ class AsyncReceipts:
         format: DocumentFormat = "pdf",
         timeout: float | None = None,
     ) -> Document:
-        """The comprovante of the payment this receipt seals, as ``pdf`` (default, 600x828) or ``png`` (2x)."""
+        """The comprovante of the payment this receipt seals.
+
+        ``pdf`` (default, one page of 600x828 pt) or ``png`` (the same page as an image, 2x).
+        """
         if not receipt_id:
-            raise ApiError("receipts.document: receipt_id is required", status=0, code="invalid_args")
+            raise ApiError(
+                "receipts.document: receipt_id is required", status=0, code="invalid_args"
+            )
         if format not in ("pdf", "png"):
-            raise ApiError("receipts.document: format must be pdf or png", status=0, code="invalid_args")
+            raise ApiError(
+                "receipts.document: format must be pdf or png", status=0, code="invalid_args"
+            )
         accept = "application/pdf" if format == "pdf" else "image/png"
         path = f"/v1/consumers/receipts/{quote(receipt_id, safe='')}/document?format={format}"
         response = await request_bytes(
-            self._client, path, api_key=self._api_key, project_id=self._project_id, accept=accept, timeout=timeout
+            self._client,
+            path,
+            api_key=self._api_key,
+            project_id=self._project_id,
+            accept=accept,
+            timeout=timeout,
         )
         return _document(response, f"comprovante-{receipt_id}.{format}", accept)
 
@@ -108,15 +125,27 @@ class AsyncAccount:
         currency: str | None = None,
         timeout: float | None = None,
     ) -> Document:
-        """The extrato of the project's account over ``[from_date, to_date]`` (``YYYY-MM-DD``, at most 92 days)."""
+        """The extrato of the project's account over ``[from_date, to_date]``.
+
+        Calendar days as ``YYYY-MM-DD``, ``to_date`` inclusive, at most 92 days.
+        """
         if not from_date or not to_date:
-            raise ApiError("account.statement: from_date and to_date are required (YYYY-MM-DD)", status=0, code="invalid_args")
+            raise ApiError(
+                "account.statement: from_date and to_date are required (YYYY-MM-DD)",
+                status=0,
+                code="invalid_args",
+            )
         query = {"from": from_date, "to": to_date, "format": format}
         if currency:
             query["currency"] = currency
         path = f"/v1/account/statement?{urlencode(query)}"
         response = await request_bytes(
-            self._client, path, api_key=self._api_key, project_id=self._project_id, accept="application/pdf", timeout=timeout
+            self._client,
+            path,
+            api_key=self._api_key,
+            project_id=self._project_id,
+            accept="application/pdf",
+            timeout=timeout,
         )
         return _document(response, f"extrato-{from_date}-{to_date}.pdf", "application/pdf")
 
@@ -128,7 +157,9 @@ class Receipts:
         self._inner = inner
         self._runner = runner
 
-    def document(self, receipt_id: str, *, format: DocumentFormat = "pdf", timeout: float | None = None) -> Document:
+    def document(
+        self, receipt_id: str, *, format: DocumentFormat = "pdf", timeout: float | None = None
+    ) -> Document:
         return self._runner.run(self._inner.document(receipt_id, format=format, timeout=timeout))
 
 
@@ -148,4 +179,8 @@ class Account:
         currency: str | None = None,
         timeout: float | None = None,
     ) -> Document:
-        return self._runner.run(self._inner.statement(from_date, to_date, format=format, currency=currency, timeout=timeout))
+        return self._runner.run(
+            self._inner.statement(
+                from_date, to_date, format=format, currency=currency, timeout=timeout
+            )
+        )

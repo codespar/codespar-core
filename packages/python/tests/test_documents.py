@@ -31,11 +31,21 @@ def _binary(content: bytes, content_type: str, filename: str) -> dict:
 
 
 def _refusal(http_status: int, code: str, **details: object) -> dict:
-    return {"status_code": http_status, "json": {"error": {"code": code, "message": code, "details": details}, "request_id": "req_1"}}
+    return {
+        "status_code": http_status,
+        "json": {
+            "error": {"code": code, "message": code, "details": details},
+            "request_id": "req_1",
+        },
+    }
 
 
 def test_receipt_document_pdf_sync(httpx_mock: HTTPXMock) -> None:
-    httpx_mock.add_response(method="GET", url=f"{BASE}/v1/consumers/receipts/rcpt_x/document?format=pdf", **_binary(PDF, "application/pdf", "comprovante-rcpt_x.pdf"))
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{BASE}/v1/consumers/receipts/rcpt_x/document?format=pdf",
+        **_binary(PDF, "application/pdf", "comprovante-rcpt_x.pdf"),
+    )
     cs = CodeSpar(api_key="csk_test_example", base_url=BASE, project_id="prj_abc123DEF456ghi7")
     try:
         doc = cs.receipts.document("rcpt_x")
@@ -45,7 +55,10 @@ def test_receipt_document_pdf_sync(httpx_mock: HTTPXMock) -> None:
     assert request.headers["authorization"] == "Bearer csk_test_example"
     assert request.headers["x-codespar-project"] == "prj_abc123DEF456ghi7"
     assert "application/pdf" in request.headers["accept"]
-    assert "content-type" not in request.headers or request.headers.get("content-type") != "application/json"
+    assert (
+        "content-type" not in request.headers
+        or request.headers.get("content-type") != "application/json"
+    )
     assert doc["bytes"] == PDF
     assert doc["content_type"] == "application/pdf"
     assert doc["filename"] == "comprovante-rcpt_x.pdf"
@@ -53,7 +66,11 @@ def test_receipt_document_pdf_sync(httpx_mock: HTTPXMock) -> None:
 
 
 async def test_receipt_document_png_async(httpx_mock: HTTPXMock) -> None:
-    httpx_mock.add_response(method="GET", url=f"{BASE}/v1/consumers/receipts/rcpt_x/document?format=png", **_binary(PNG, "image/png", "comprovante-rcpt_x.png"))
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{BASE}/v1/consumers/receipts/rcpt_x/document?format=png",
+        **_binary(PNG, "image/png", "comprovante-rcpt_x.png"),
+    )
     async with AsyncCodeSpar(api_key="csk_test_example", base_url=BASE) as cs:
         doc = await cs.receipts.document("rcpt_x", format="png")
     assert doc["bytes"][:4] == b"\x89PNG"
@@ -63,7 +80,11 @@ async def test_receipt_document_png_async(httpx_mock: HTTPXMock) -> None:
 
 
 def test_receipt_document_not_final_is_an_api_error(httpx_mock: HTTPXMock) -> None:
-    httpx_mock.add_response(method="GET", url=f"{BASE}/v1/consumers/receipts/rcpt_u/document?format=pdf", **_refusal(409, "document_not_final", attempt_id="att_1", status="uncertain"))
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{BASE}/v1/consumers/receipts/rcpt_u/document?format=pdf",
+        **_refusal(409, "document_not_final", attempt_id="att_1", status="uncertain"),
+    )
     cs = CodeSpar(api_key="csk_test_example", base_url=BASE)
     try:
         with pytest.raises(ApiError) as info:
@@ -115,7 +136,12 @@ async def test_statement_period_refusal_async(httpx_mock: HTTPXMock) -> None:
 
 
 def test_statement_falls_back_to_its_own_filename(httpx_mock: HTTPXMock) -> None:
-    httpx_mock.add_response(method="GET", url=f"{BASE}/v1/account/statement?from=2026-09-01&to=2026-09-30&format=pdf", content=PDF, headers={"content-type": "application/pdf"})
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{BASE}/v1/account/statement?from=2026-09-01&to=2026-09-30&format=pdf",
+        content=PDF,
+        headers={"content-type": "application/pdf"},
+    )
     cs = CodeSpar(api_key="csk_test_example", base_url=BASE)
     try:
         doc = cs.account.statement("2026-09-01", "2026-09-30")
@@ -126,7 +152,10 @@ def test_statement_falls_back_to_its_own_filename(httpx_mock: HTTPXMock) -> None
 
 
 def test_filename_from_disposition() -> None:
-    assert filename_from_disposition('attachment; filename="comprovante-rcpt_x.pdf"') == "comprovante-rcpt_x.pdf"
+    assert (
+        filename_from_disposition('attachment; filename="comprovante-rcpt_x.pdf"')
+        == "comprovante-rcpt_x.pdf"
+    )
     assert filename_from_disposition("attachment; filename=extrato.pdf") == "extrato.pdf"
     assert filename_from_disposition('attachment; filename="../x.pdf"') is None
     assert filename_from_disposition(None) is None
