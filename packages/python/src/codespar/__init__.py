@@ -30,10 +30,12 @@ from ._async_client import AsyncCodeSpar
 from ._async_session import AsyncSession
 from ._sync_client import CodeSpar, Session
 from .errors import (
+    PIX_KEY_DELETE_CONSEQUENCE,
     ApiError,
     CodeSparError,
     ConfigError,
     NotConnectedError,
+    PixKeyDeleteNotConfirmedError,
     StreamError,
     TimeoutError,
 )
@@ -166,13 +168,25 @@ from .types import (
     VerificationStatusResult,
     WizardAction,
 )
+from .wallet import (
+    AsyncWallet,
+    AsyncWalletPixKeys,
+    PixKey,
+    PixKeyDeleted,
+    PixKeyList,
+    PixKeyRegistered,
+    PixKeyType,
+    Wallet,
+    WalletPixKeys,
+)
 
-__version__ = "0.13.0"
+__version__ = "0.14.0"
 
 __all__ = [
     "APPROVAL_REQUIRED",
     "MOCKS_ENGINE_ERROR",
     "MOCKS_EXHAUSTED",
+    "PIX_KEY_DELETE_CONSEQUENCE",
     "POLICY_DENIED",
     "TOOL_NOT_MOCKED",
     "TOOL_RESULT_CODES",
@@ -184,6 +198,8 @@ __all__ = [
     "AsyncCodeSpar",
     "AsyncPayables",
     "AsyncSession",
+    "AsyncWallet",
+    "AsyncWalletPixKeys",
     # Connect Links
     "AuthConfig",
     "AuthResult",
@@ -253,6 +269,12 @@ __all__ = [
     "PaymentStatus",
     "PaymentStatusEvent",
     "PaymentStatusResult",
+    "PixKey",
+    "PixKeyDeleteNotConfirmedError",
+    "PixKeyDeleted",
+    "PixKeyList",
+    "PixKeyRegistered",
+    "PixKeyType",
     "PolicyDeniedOutput",
     "Preset",
     # Proxy
@@ -312,6 +334,8 @@ __all__ = [
     "VerificationStatus",
     "VerificationStatusEvent",
     "VerificationStatusResult",
+    "Wallet",
+    "WalletPixKeys",
     "WizardAction",
     # Version
     "__version__",

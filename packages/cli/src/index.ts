@@ -50,6 +50,7 @@ import {
   payablesBatchUpdateItemCommand,
   payablesFilesUploadCommand,
 } from "./commands/payables.js";
+import { pixKeysDeleteCommand, pixKeysListCommand, pixKeysRegisterCommand } from "./commands/pix-keys.js";
 import { accountStatementCommand, receiptsDocumentCommand } from "./commands/documents.js";
 import { derivedSurface, metaToolNames, underPrefix } from "./surface.js";
 import { c, json } from "./output.js";
@@ -427,6 +428,44 @@ batches
       await payablesBatchPayCommand(batchId, { ...opts, ...auth, json: rootJsonFlag() });
     },
   );
+
+// ============ pix-keys: the Pix keys of a consumer's own account ============
+// Through `cs.wallet.pixKeys` (commands/pix-keys.ts). The derived `consumers`
+// group keeps the generic spelling of the same routes; this one adds the
+// explicit type, `--confirm` on delete and a readable table.
+const pixKeys = program
+  .command("pix-keys")
+  .description("Pix keys of a consumer's own account: list, register, delete (with --confirm)");
+
+pixKeys
+  .command("list")
+  .description("List the account's Pix keys, read from the bank")
+  .requiredOption("--consumer <id>", "The consumer whose account (a Test project's own account is sbx_<projectId>)")
+  .action(async (opts: { consumer: string }) => {
+    const auth = await resolveAuth();
+    await pixKeysListCommand({ ...opts, ...auth, json: rootJsonFlag() });
+  });
+
+pixKeys
+  .command("register")
+  .description("Register one Pix key; a random key (EVP) by default, the only type a Test project's own account takes")
+  .requiredOption("--consumer <id>", "The consumer whose account")
+  .option("--type <type>", "EVP | CPF | CNPJ | EMAIL | PHONE (default EVP)")
+  .option("--key <value>", "The key value for CPF, CNPJ, EMAIL or PHONE")
+  .action(async (opts: { consumer: string; type?: string; key?: string }) => {
+    const auth = await resolveAuth();
+    await pixKeysRegisterCommand({ ...opts, ...auth, json: rootJsonFlag() });
+  });
+
+pixKeys
+  .command("delete <key>")
+  .description("Delete one Pix key; sends nothing without --confirm")
+  .requiredOption("--consumer <id>", "The consumer whose account")
+  .option("--confirm", "You confirmed: after it is deleted, the key no longer points to this account")
+  .action(async (key: string, opts: { consumer: string; confirm?: boolean }) => {
+    const auth = await resolveAuth();
+    await pixKeysDeleteCommand(key, { ...opts, ...auth, json: rootJsonFlag() });
+  });
 
 // ============ execute ============
 program

@@ -1,8 +1,8 @@
 # codespar (Python SDK) — CHANGELOG
 
-## 0.14.0
+## 0.15.0
 
-Documents on demand, in parity with `@codespar/sdk` 0.16.21 (`CONTRATO-documentos`).
+Documents on demand, in parity with `@codespar/sdk` 0.16.22 (`CONTRATO-documentos`).
 
 ### Added
 
@@ -12,6 +12,20 @@ Documents on demand, in parity with `@codespar/sdk` 0.16.21 (`CONTRATO-documento
   `sha256`). Refusals are `ApiError` with the API's code (`document_not_final`,
   `statement_period_invalid`, `statement_not_reconciled`, `document_renderer_unavailable`).
 - `filename_from_disposition(header)`.
+
+## 0.14.0
+
+`cs.wallet.pix_keys`, in parity with `@codespar/sdk` 0.16.21.
+
+### Added
+
+- `cs.wallet.pix_keys.list(consumer_id)`, `.register(consumer_id, key_type="EVP", key=None)`
+  and `.delete(consumer_id, key, confirm=True)` on `CodeSpar` and
+  `AsyncCodeSpar`, over `/v1/consumers/:consumer_id/pix-keys`. A delete
+  without `confirm=True` raises `PixKeyDeleteNotConfirmedError`
+  (`pix_key_delete_requires_confirmation`, with the consequence sentence)
+  before any request. Types `PixKey`, `PixKeyList`, `PixKeyRegistered`,
+  `PixKeyDeleted`, `PixKeyType`.
 
 ## 0.13.0
 

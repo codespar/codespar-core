@@ -54,6 +54,7 @@ from .types import (
     ToolResult,
     VerificationStatusResult,
 )
+from .wallet import Wallet
 
 T = TypeVar("T")
 
@@ -344,6 +345,8 @@ class CodeSpar:
         self._async = self._runner.run(factory())
         #: Pay documents and batches (``/v1/payables/files``, ``/v1/payables/batches``).
         self.payables = Payables(self._async.payables, self._runner)
+        #: A consumer's own account: ``wallet.pix_keys`` over ``/v1/consumers/:id/pix-keys``.
+        self.wallet = Wallet(self._async.wallet, self._runner)
         #: The receipt document (comprovante) of a payment (``/v1/consumers/receipts/:id/document``).
         self.receipts = Receipts(self._async.receipts, self._runner)
         #: The account statement (extrato) of a period (``/v1/account/statement``).
