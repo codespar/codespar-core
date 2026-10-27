@@ -170,6 +170,8 @@ export class CodeSpar {
    * ```
    */
   readonly wallet: Wallet;
+
+  /**
    * Documents on demand: the receipt document (comprovante) of a payment,
    * as PDF or PNG. Read-only; the API serves it only for a confirmed payment.
    *
