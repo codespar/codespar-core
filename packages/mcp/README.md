@@ -33,6 +33,27 @@ Config (env or `--flag`): `CODESPAR_API_KEY` (required), `CODESPAR_PROJECT` (`pr
 `CODESPAR_PRESET` (`brazilian`|`mexican`|`argentinian`|`colombian`|`all`, default
 `brazilian`), `CODESPAR_SERVERS` (comma list, overrides preset), `CODESPAR_USER_ID`.
 
+## Scopes: what the key decides
+
+The API enforces every scope; this server widens nothing. At boot it opens a
+session, and the answer decides what `tools/list` offers:
+
+| Answer to `POST /v1/sessions` | What the server does |
+|---|---|
+| session | the session's commerce tools (`codespar_pay`, `codespar_charge`, `codespar_discover`, wallet, mandates, Shop purchases) plus `codespar_payables` and `codespar_documents` |
+| `403` (valid key without `sessions:create`) | no session: only `codespar_payables` and `codespar_documents`, which run over REST; a session tool called by name answers that the key lacks `sessions:create` |
+| `401` (wrong, revoked or other-environment key) | setup mode |
+
+| Tools | Scope the key needs |
+|---|---|
+| session tools | `sessions:create` (and `tools:execute` to call them) |
+| `codespar_payables` `upload`, `create_batch`, `get`, `update_item` | `payables:read` / `payables:write` |
+| `codespar_payables` `pay` | `payables:pay` |
+
+Inside `codespar_payables`, a `403` is rendered as `insufficient permission (403): …`
+with the API's message naming the scope, and a `401` as `credential invalid or
+revoked (401): …`, so an agent never retries a missing scope as a broken key.
+
 ## Use as a config helper (library)
 
 ```bash

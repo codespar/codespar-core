@@ -1,5 +1,16 @@
 # @codespar/mcp — changelog
 
+## 0.5.13 — 2026-10-27
+
+### Changed
+
+- `codespar_payables` says the two auth answers apart, in the API's words: a `403`
+  is rendered as `insufficient permission (403): <the API's message naming the scope>`
+  and a `401` as `credential invalid or revoked (401): …`, so an agent with a key
+  that lacks only `payables:pay` keeps uploading and reading instead of treating
+  the key as broken. Nothing is widened: the API still requires `payables:pay` to
+  pay and `sessions:create` to open a session. README gains a "Scopes" section.
+
 ## 0.5.12 — 2026-10-27
 
 ### Added
