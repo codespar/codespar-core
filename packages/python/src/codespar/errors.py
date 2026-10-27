@@ -37,6 +37,24 @@ class ApiError(CodeSparError):
         self.code = code
 
 
+#: What the person is told before a key is deleted (the TypeScript SDK exports the same).
+PIX_KEY_DELETE_CONSEQUENCE = "Depois de excluída, esta chave deixa de apontar para esta conta."
+
+
+class PixKeyDeleteNotConfirmedError(CodeSparError):
+    """``cs.wallet.pix_keys.delete`` was called without ``confirm=True``: nothing was sent."""
+
+    code = "pix_key_delete_requires_confirmation"
+    consequence = PIX_KEY_DELETE_CONSEQUENCE
+
+    def __init__(self, key: str):
+        super().__init__(
+            "pix_keys.delete needs confirm=True after the person confirmed. "
+            f"{self.consequence} Nothing was sent."
+        )
+        self.key = key
+
+
 class ConfigError(CodeSparError):
     """Raised when the SDK is constructed with invalid / missing config."""
 

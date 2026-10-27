@@ -26,6 +26,7 @@ from ._presets import preset_to_servers
 from .errors import ApiError, ConfigError
 from .payables import AsyncPayables
 from .types import SessionConfig
+from .wallet import AsyncWallet
 
 # Wire format for a project scope. Kept in sync with the TS SDK
 # (`PROJECT_ID_REGEX` in packages/core/src/types.ts) so both clients
@@ -105,6 +106,8 @@ class AsyncCodeSpar:
         )
         #: Pay documents and batches (``/v1/payables/files``, ``/v1/payables/batches``).
         self.payables = AsyncPayables(self._client, self._api_key, self._project_id)
+        #: A consumer's own account: ``wallet.pix_keys`` over ``/v1/consumers/:id/pix-keys``.
+        self.wallet = AsyncWallet(self._client, self._api_key, self._project_id)
 
     @property
     def base_url(self) -> str:

@@ -54,6 +54,17 @@ export type {
 } from "./types.js";
 export { payableBatchFromError } from "./payables.js";
 export type { Payables, PayablesBatches, PayablesFiles, UploadInput } from "./payables.js";
+export type {
+  PixKey,
+  PixKeyDeleted,
+  PixKeyDeleteOptions,
+  PixKeyList,
+  PixKeyRegistered,
+  PixKeyRegisterInput,
+  PixKeyType,
+} from "./types.js";
+export { PIX_KEY_DELETE_CONSEQUENCE, PixKeyDeleteNotConfirmedError } from "./wallet.js";
+export type { Wallet, WalletPixKeys } from "./wallet.js";
 
 export { SessionConfigSchema } from "./types.js";
 export { loop } from "./loop.js";
@@ -106,6 +117,7 @@ import { SessionConfigSchema, PROJECT_ID_REGEX } from "./types.js";
 import { createSession } from "./session.js";
 import { ApiClient } from "./api/client.js";
 import { createPayables, type Payables } from "./payables.js";
+import { createWallet, type Wallet } from "./wallet.js";
 import { validateTimeout } from "./internal/fetch.js";
 
 const DEFAULT_BASE_URL = "https://api.codespar.dev";
@@ -141,6 +153,20 @@ export class CodeSpar {
    * ```
    */
   readonly payables: Payables;
+
+  /**
+   * A consumer's own account: `cs.wallet.pixKeys` lists, registers and
+   * deletes the account's Pix keys (`/v1/consumers/:consumerId/pix-keys`).
+   * Deleting needs `{ confirm: true }`.
+   *
+   * @example
+   * ```ts
+   * const keys = await cs.wallet.pixKeys.list("sbx_prj_example");
+   * const added = await cs.wallet.pixKeys.register("sbx_prj_example", { keyType: "EVP" });
+   * await cs.wallet.pixKeys.delete("sbx_prj_example", added.key, { confirm: true });
+   * ```
+   */
+  readonly wallet: Wallet;
 
   constructor(config: CodeSparConfig = {}) {
     this.config = {
@@ -187,6 +213,12 @@ export class CodeSpar {
       timeout: this.config.timeout,
     });
     this.payables = createPayables({
+      baseUrl: this.config.baseUrl,
+      apiKey: this.config.apiKey,
+      projectId: this.config.projectId || undefined,
+      timeout: this.config.timeout,
+    });
+    this.wallet = createWallet({
       baseUrl: this.config.baseUrl,
       apiKey: this.config.apiKey,
       projectId: this.config.projectId || undefined,

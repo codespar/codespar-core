@@ -1,5 +1,21 @@
 # @codespar/cli — changelog
 
+## 0.22.0 — 2026-10-26
+
+### Added
+
+- **`codespar pix-keys list|register|delete <key>`**, through the SDK's
+  `cs.wallet.pixKeys` (0.16.21). `--consumer <id>` names the account (a Test
+  project's own account is `sbx_<projectId>`); `register` takes `--type`
+  (EVP by default, the only type a Test project's own account registers) and
+  `--key` for a value type; `delete` sends nothing without `--confirm` and
+  says why. The derived `consumers` group keeps the generic spelling of the
+  same three routes.
+
+### Changed
+
+- Requires `@codespar/sdk` 0.16.21 (`cs.wallet`).
+
 ## 0.21.2 — 2026-10-25
 
 ### Fixed
