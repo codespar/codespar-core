@@ -24,6 +24,13 @@
   (`2e081b97a350`, API 0.3.0, 367 operations): `GET /v1/consumers/receipts/{id}/document`
   and `GET /v1/account/statement` are now in the document, so the CLI reserves them for
   its hand-written `receipts document` / `account statement` (no derived JSON twin).
+- OpenAPI snapshot re-read again after enterprise #2206 and #2211 were served
+  (`ceee33204d9e`, API 0.3.0, same 367 operations): the payables batch and item
+  schemas now describe the v1.1 shape (`ways`, `rail_chosen_by`, `document`, the
+  checks `amount_matches_document`, `rail_switched`, `ways_amount_mismatch`,
+  `ways_unavailable`), `GET /v1/account/payments` names the paid document, and the
+  KYC onboarding refusals gain `consumer_onboarded_in_sibling_project`. No route
+  added or removed, so no client change is forced.
 
 ## 0.16.22 — 2026-10-27
 
