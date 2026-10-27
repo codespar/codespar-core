@@ -187,4 +187,18 @@ describe("codespar_payables MCP tool", () => {
     expect(text.current_batch).toMatchObject({ version: 3, list_hash: "hash_v3" });
     expect(payablesErrorText(new Error("403: forbidden"))).toBe("403: forbidden");
   });
+
+  it("a 403 is said as a missing permission, with the API's words, and a 401 as a bad credential", () => {
+    const forbidden = Object.assign(new Error("payables.batches.pay failed: 403 — API key does not have the 'payables:pay' scope."), {
+      status: 403,
+      body: { error: { code: "forbidden", message: "API key does not have the 'payables:pay' scope." } },
+    });
+    expect(payablesErrorText(forbidden)).toBe(
+      "insufficient permission (403): API key does not have the 'payables:pay' scope. The key is valid; this one action needs a scope it does not carry.",
+    );
+    const flat = Object.assign(new Error("payables.files.upload failed: 403 — missing scope"), { status: 403, body: { message: "missing scope" } });
+    expect(payablesErrorText(flat)).toMatch(/^insufficient permission \(403\): missing scope\./);
+    const unauthorized = Object.assign(new Error("payables.files.upload failed: 401 — Invalid API key"), { status: 401 });
+    expect(payablesErrorText(unauthorized)).toBe("credential invalid or revoked (401): payables.files.upload failed: 401 — Invalid API key");
+  });
 });

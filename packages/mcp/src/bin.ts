@@ -41,7 +41,7 @@ import { NO_SESSION_MESSAGE, bootSession, listedTools, type Boot } from "./boot.
 
 type Preset = "brazilian" | "mexican" | "argentinian" | "colombian" | "all";
 
-const VERSION = "0.5.12";
+const VERSION = "0.5.13";
 
 function flag(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);

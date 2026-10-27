@@ -213,6 +213,17 @@ async function readLocalFile(path: string): Promise<{ bytes: Buffer; filename: s
 export function payablesErrorText(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
   const e = err as { status?: unknown; body?: unknown };
+  // The two auth answers in the API's own words, so the agent never reads a
+  // missing scope as a broken key: 401 is the credential (wrong, revoked or for
+  // another environment); 403 is one permission the key does not carry
+  // (payables:pay to pay, for example) and the key stays good for the rest.
+  if (e && e.status === 401) return `credential invalid or revoked (401): ${message}`;
+  if (e && e.status === 403) {
+    const body = e.body as { message?: unknown; error?: { message?: unknown } } | undefined;
+    const said =
+      typeof body?.message === "string" ? body.message : typeof body?.error?.message === "string" ? body.error.message : message;
+    return `insufficient permission (403): ${said.replace(/\.$/, "")}. The key is valid; this one action needs a scope it does not carry.`;
+  }
   const batch =
     e && e.status === 409
       ? (e.body as { error?: { details?: { batch?: unknown } } } | undefined)?.error?.details?.batch

@@ -23,9 +23,9 @@ from ._async_session import (
 )
 from ._http import DEFAULT_BASE_URL, normalize_timeout, request_json
 from ._presets import preset_to_servers
+from .documents import AsyncAccount, AsyncReceipts
 from .errors import ApiError, ConfigError
 from .payables import AsyncPayables
-from .documents import AsyncAccount, AsyncReceipts
 from .types import SessionConfig
 from .wallet import AsyncWallet
 
@@ -89,9 +89,7 @@ class AsyncCodeSpar:
                 "Get one from https://dashboard.codespar.dev."
             )
         if project_id is not None and not _PROJECT_ID_RE.match(project_id):
-            raise ConfigError(
-                "project_id must match ^prj_[A-Za-z0-9]{16}$ (e.g. 'prj_...')."
-            )
+            raise ConfigError("project_id must match ^prj_[A-Za-z0-9]{16}$ (e.g. 'prj_...').")
         # Fail fast on a misconfigured client-default timeout, same
         # rule the per-call paths use (parity with TS validateTimeout).
         timeout = normalize_timeout(timeout) or 60.0
@@ -109,7 +107,8 @@ class AsyncCodeSpar:
         self.payables = AsyncPayables(self._client, self._api_key, self._project_id)
         #: A consumer's own account: ``wallet.pix_keys`` over ``/v1/consumers/:id/pix-keys``.
         self.wallet = AsyncWallet(self._client, self._api_key, self._project_id)
-        #: The receipt document (comprovante) of a payment (``/v1/consumers/receipts/:id/document``).
+        #: The receipt document (comprovante) of a payment
+        #: (``/v1/consumers/receipts/:id/document``).
         self.receipts = AsyncReceipts(self._client, self._api_key, self._project_id)
         #: The account statement (extrato) of a period (``/v1/account/statement``).
         self.account = AsyncAccount(self._client, self._api_key, self._project_id)
@@ -225,9 +224,7 @@ class AsyncCodeSpar:
     ) -> SessionConfig:
         """Accept either a SessionConfig dataclass or kwargs, never both."""
         if config is not None and kwargs:
-            raise ConfigError(
-                "Pass SessionConfig or keyword arguments, not both."
-            )
+            raise ConfigError("Pass SessionConfig or keyword arguments, not both.")
         if config is not None:
             return config
         if not kwargs:

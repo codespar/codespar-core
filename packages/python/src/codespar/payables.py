@@ -135,7 +135,7 @@ class PayableBatchItemWay(TypedDict):
 
     rail: PayableWayRail
     origin: PayableBatchItemWayOrigin
-    destination: "PayableBatchItemDestination | None"
+    destination: PayableBatchItemDestination | None
     unavailable: PayableBatchItemWayUnavailable | None
 
 
