@@ -51,6 +51,7 @@ import {
   payablesFilesUploadCommand,
 } from "./commands/payables.js";
 import { pixKeysDeleteCommand, pixKeysListCommand, pixKeysRegisterCommand } from "./commands/pix-keys.js";
+import { accountStatementCommand, receiptsDocumentCommand } from "./commands/documents.js";
 import { derivedSurface, metaToolNames, underPrefix } from "./surface.js";
 import { c, json } from "./output.js";
 import { printBanner } from "./banner.js";
@@ -249,6 +250,15 @@ for (const [alias, tool] of [
 // names would have let the six through as a second spelling of each route.
 const HAND_WRITTEN_ROUTES: Readonly<Record<string, readonly string[]>> = {
   payables: ["/v1/payables/files", "/v1/payables/batches"],
+  // Documents on demand (CONTRATO-documentos): `receipts document` and
+  // `account statement` are hand-written over the SDK facades because the
+  // answer is a file. Their routes (the receipt document under
+  // /consumers/receipts and the statement under /account) are NOT in the
+  // served document's snapshot yet, so there is nothing to reserve: the
+  // snapshot refresh that brings them adds `consumers` and `account`
+  // entries here (the parameter spelled `{}`, as `underPrefix` compares),
+  // or the derivation publishes a JSON twin beside each
+  // (payables-rotas-a-mao.test.ts is the guard that would say so).
 };
 
 for (const { spec, commands } of derivedSurface()) {
@@ -294,6 +304,35 @@ for (const { spec, commands } of derivedSurface()) {
 }
 
 // ============ payables: documents and batches ============
+// Documents on demand (CONTRATO-documentos): the receipt document and the
+// account statement are files, so they are hand-written over the SDK facades
+// (`cs.receipts`, `cs.account`) and reserved in HAND_WRITTEN_ROUTES.
+program
+  .command("receipts")
+  .description("Receipts: the receipt document (comprovante) of a payment, as PDF or PNG")
+  .command("document <receiptId>")
+  .description("Download the comprovante of the payment this receipt seals; served only once the payment is confirmed")
+  .option("--format <format>", "pdf (default) or png (the same page as an image)", "pdf")
+  .option("--out <file>", "Where to write it (default: the server's filename in the current directory)")
+  .action(async (receiptId: string, opts: { format?: string; out?: string }) => {
+    const auth = await resolveAuth();
+    await receiptsDocumentCommand(receiptId, { ...opts, ...auth, json: rootJsonFlag() });
+  });
+
+const accountGroup = program.commands.find((cmd) => cmd.name() === "account");
+if (!accountGroup) throw new Error("derived group `account` is missing");
+accountGroup
+  .command("statement")
+  .description("Download the account statement (extrato) of a period as PDF: opening, inflows, outflows, closing; reserves apart")
+  .requiredOption("--from <YYYY-MM-DD>", "First day of the period (America/Sao_Paulo)")
+  .requiredOption("--to <YYYY-MM-DD>", "Last day, inclusive; not after today; at most 92 days after --from")
+  .option("--currency <code>", "Ledger currency (default BRL)")
+  .option("--out <file>", "Where to write it (default: extrato-<from>-<to>.pdf in the current directory)")
+  .action(async (opts: { from: string; to: string; currency?: string; out?: string }) => {
+    const auth = await resolveAuth();
+    await accountStatementCommand({ ...opts, ...auth, json: rootJsonFlag() });
+  });
+
 // Hand-written subgroups of the derived `payables` group (see
 // HAND_WRITTEN_SUBGROUPS). Amounts are minor units, like `spend --amount`.
 const payablesGroup = program.commands.find((cmd) => cmd.name() === "payables");
