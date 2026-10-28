@@ -1,5 +1,14 @@
 # @codespar/mcp — changelog
 
+## 0.5.15 — 2026-10-28
+
+### Fixed
+
+- `initialize` announces the version npm published (`serverInfo.version`). 0.5.14 said
+  "0.5.13" because `bin.ts` carried the number as a literal that the release bump missed;
+  the server now reads it from the package's own `package.json` (`src/version.ts`), and a
+  test starts the built server and compares the two.
+
 ## 0.5.14 — 2026-10-27
 
 ### Added
