@@ -203,6 +203,13 @@ class PayableBatchConfirmation(TypedDict):
     mandate_id: str
 
 
+class PayableBatchDiscarded(TypedDict):
+    """When the batch was discarded and how many items the discard took out."""
+
+    at: str
+    items: int
+
+
 class PayableBatch(TypedDict):
     batch_id: str
     status: PayableBatchStatus
@@ -211,6 +218,7 @@ class PayableBatch(TypedDict):
     currency: Literal["BRL"]
     totals: PayableBatchTotals
     confirmation: PayableBatchConfirmation | None
+    discarded: PayableBatchDiscarded | None
     items: list[PayableBatchItem]
     created_at: str
     source: PayableBatchSource
@@ -494,6 +502,19 @@ class AsyncPayablesBatches:
             rounds += 1
         return data
 
+    async def discard(self, batch_id: str, *, timeout: float | None = None) -> PayableBatch:
+        """``POST /v1/payables/batches/:batch_id/discard``: take out every item never dispatched.
+
+        With nothing dispatched yet the batch becomes ``canceled`` and a later
+        change or pay is a 409 ``payable_batch_discarded``. After a partial
+        execution, paid, uncertain and in-flight items keep their payment.
+        Discarding again returns the batch as it is.
+        """
+        data: PayableBatch = await self._t.call(
+            "POST", f"{_batch_path(batch_id)}/discard", body={}, timeout=timeout
+        )
+        return data
+
 
 _PAY_MAX_ROUNDS = 30
 
@@ -630,6 +651,9 @@ class PayablesBatches:
                 timeout=timeout,
             )
         )
+
+    def discard(self, batch_id: str, *, timeout: float | None = None) -> PayableBatch:
+        return self._runner.run(self._inner.discard(batch_id, timeout=timeout))
 
 
 class Payables:
