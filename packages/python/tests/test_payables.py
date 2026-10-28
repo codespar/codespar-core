@@ -156,12 +156,16 @@ async def test_create_sends_snake_case_and_idempotency_key(httpx_mock: HTTPXMock
 
 
 async def test_get_update_add_and_pay_paths(httpx_mock: HTTPXMock) -> None:
-    for _ in range(4):
+    for _ in range(5):
         httpx_mock.add_response(json=BATCH)
     async with AsyncCodeSpar(api_key="csk_test_x") as cs:
         await cs.payables.batches.get("pbat_example")
         await cs.payables.batches.update_item(
             "pbat_example", "pbl_AbCdEfGhIjKlMnOp", expected_version=3, excluded=True
+        )
+        # One bill, two ways (payables v1.1): the way is chosen on the same door.
+        await cs.payables.batches.update_item(
+            "pbat_example", "pbl_AbCdEfGhIjKlMnOp", expected_version=4, rail="boleto"
         )
         await cs.payables.batches.add_items(
             "pbat_example", expected_version=4, items=[{"boleto_line": "2379"}]
@@ -173,20 +177,22 @@ async def test_get_update_add_and_pay_paths(httpx_mock: HTTPXMock) -> None:
     assert [(r.method, r.url.path) for r in reqs] == [
         ("GET", "/v1/payables/batches/pbat_example"),
         ("PATCH", "/v1/payables/batches/pbat_example/items/pbl_AbCdEfGhIjKlMnOp"),
+        ("PATCH", "/v1/payables/batches/pbat_example/items/pbl_AbCdEfGhIjKlMnOp"),
         ("POST", "/v1/payables/batches/pbat_example/items"),
         ("POST", "/v1/payables/batches/pbat_example/pay"),
     ]
     assert json.loads(reqs[1].content) == {"expected_version": 3, "excluded": True}
-    assert json.loads(reqs[2].content) == {
+    assert json.loads(reqs[2].content) == {"expected_version": 4, "rail": "boleto"}
+    assert json.loads(reqs[3].content) == {
         "expected_version": 4,
         "items": [{"boleto_line": "2379"}],
     }
-    assert json.loads(reqs[3].content) == {
+    assert json.loads(reqs[4].content) == {
         "version": 5,
         "list_hash": "hash_v5",
         "mandate_id": "mdt_example",
     }
-    assert reqs[3].headers["idempotency-key"] == "pay:pbat_example:5:hash_v5"
+    assert reqs[4].headers["idempotency-key"] == "pay:pbat_example:5:hash_v5"
 
 
 async def test_pay_repeats_while_executing_with_items_ready(httpx_mock: HTTPXMock) -> None:

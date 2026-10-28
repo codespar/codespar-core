@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-10-26T21:53:13.984Z",
-    "sha256": "8e0894fb7695ddc562e3a6de74a2445e597c1c2cc04b7d6510ebacd246462ca7",
+    "fetched_at": "2026-10-27T17:52:30.609Z",
+    "sha256": "ceee33204d9ec636547e7745fc7237e68e899b863a766d62bfa2b3ed5aad97d2",
     "etag": null,
     "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 310,
-    "operations": 365,
+    "paths": 312,
+    "operations": 367,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -8203,6 +8203,13 @@
                                 "null"
                               ]
                             },
+                            "label": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "What the paid document calls itself, when the payment paid a batch item read from one (\"DARE-SP\", \"DARE-SP · Secretaria da Fazenda\"; contract payables v1.1, rule 6). Null for every other payment."
+                            },
                             "status": {
                               "type": "string",
                               "enum": [
@@ -8264,6 +8271,7 @@
                             "currency",
                             "rail",
                             "payee",
+                            "label",
                             "status",
                             "failure_code",
                             "receipt_id",
@@ -21198,7 +21206,7 @@
               }
             },
             "409": {
-              "description": "ONBOARDING COLLISION, and it is caller state and not a provider failure, which is why 409 and not 502. `provider_code` carries the provider's code (OBE064 proposal already open, CBE022 account already exists, OBE062 clientCode already linked) so the audit trail records the ground for the refusal. CBE022 is attributed only on this organization's own evidence: `onboarding_account_exists_in_project`, `onboarding_account_exists_elsewhere` (another project of the organization) or `onboarding_account_exists_unattributed` (no evidence; not concluded to be anyone's). E2 also answers here `onboarding_attempt_in_progress` (another request holds this clientCode's reservation; repeat later), `onboarding_client_code_conflict` for a clientCode this project used for another document, and `onboarding_unreserved`. Bare body.",
+              "description": "ONBOARDING COLLISION, and it is caller state and not a provider failure, which is why 409 and not 502. `provider_code` carries the provider's code (OBE064 proposal already open, CBE022 account already exists, OBE062 clientCode already linked) so the audit trail records the ground for the refusal. CBE022 is attributed only on this organization's own evidence: `onboarding_account_exists_in_project`, `onboarding_account_exists_elsewhere` (another project of the organization) or `onboarding_account_exists_unattributed` (no evidence; not concluded to be anyone's). E2 also answers here `onboarding_attempt_in_progress` (another request holds this clientCode's reservation; repeat later), `onboarding_client_code_conflict` for a clientCode this project used for another document, and `onboarding_unreserved`. On the OBE062 recovery, `consumer_onboarded_in_sibling_project`: the consumer is already onboarded in another project of the caller's organization, and the body carries `holding_project_id`. Bare body.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -21213,7 +21221,8 @@
                           "onboarding_account_exists_unattributed",
                           "onboarding_client_code_conflict",
                           "onboarding_attempt_in_progress",
-                          "onboarding_unreserved"
+                          "onboarding_unreserved",
+                          "consumer_onboarded_in_sibling_project"
                         ]
                       },
                       "provider_code": {
@@ -21224,6 +21233,10 @@
                       },
                       "message": {
                         "type": "string"
+                      },
+                      "holding_project_id": {
+                        "type": "string",
+                        "description": "On `consumer_onboarded_in_sibling_project` only: the project of the organization that holds the consumer."
                       }
                     },
                     "required": [
@@ -21736,7 +21749,7 @@
               }
             },
             "409": {
-              "description": "E2 adds the binding refusals: `account_bound_elsewhere` (the account is, or was, bound to another project), `account_binding_closed` (this project closed its binding; never reopened automatically), `consumer_holds_other_binding`. A refusal decided before anything is bound: the id has no proposal recorded for this project (`document_ownership_unproven`), the document does not match the one the proposal verified, or the account the provider returned names another document (`onboarding_document_mismatch`), or the funding source written did not confirm as this consumer's in this project (`funding_source_binding_unconfirmed`). Bare body.",
+              "description": "E2 adds the binding refusals: `account_bound_elsewhere` (the account is, or was, bound to another project), `account_binding_closed` (this project closed its binding; never reopened automatically), `consumer_holds_other_binding`. A refusal decided before anything is bound: the id has no proposal recorded for this project (`document_ownership_unproven`), the document does not match the one the proposal verified, or the account the provider returned names another document (`onboarding_document_mismatch`), or the funding source written did not confirm as this consumer's in this project (`funding_source_binding_unconfirmed`). Or the consumer is already onboarded in another project of the caller's organization (`consumer_onboarded_in_sibling_project`), refused before any write, and the body carries `holding_project_id`. Bare body.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -21749,6 +21762,7 @@
                           "onboarding_document_mismatch",
                           "consumer_bound_to_other_document",
                           "funding_source_binding_unconfirmed",
+                          "consumer_onboarded_in_sibling_project",
                           "account_bound_elsewhere",
                           "account_binding_closed",
                           "consumer_holds_other_binding"
@@ -21756,6 +21770,10 @@
                       },
                       "message": {
                         "type": "string"
+                      },
+                      "holding_project_id": {
+                        "type": "string",
+                        "description": "On `consumer_onboarded_in_sibling_project` only: the project of the organization that holds the consumer."
                       }
                     },
                     "required": [
@@ -24028,7 +24046,7 @@
               }
             },
             "409": {
-              "description": "Onboarding collision: caller state, not a provider failure. `provider_code` carries OBE064, CBE022 or OBE062; CBE022 is attributed only on this organization's evidence. E2 adds `onboarding_attempt_in_progress`, `onboarding_client_code_conflict` and `onboarding_unreserved`. Raw body.",
+              "description": "Onboarding collision: caller state, not a provider failure. `provider_code` carries OBE064, CBE022 or OBE062; CBE022 is attributed only on this organization's evidence. E2 adds `onboarding_attempt_in_progress`, `onboarding_client_code_conflict` and `onboarding_unreserved`. On the OBE062 recovery, `consumer_onboarded_in_sibling_project`: the consumer is already onboarded in another project of the caller's organization, and the body carries `holding_project_id`. Raw body.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -24043,7 +24061,8 @@
                           "onboarding_account_exists_unattributed",
                           "onboarding_client_code_conflict",
                           "onboarding_attempt_in_progress",
-                          "onboarding_unreserved"
+                          "onboarding_unreserved",
+                          "consumer_onboarded_in_sibling_project"
                         ]
                       },
                       "provider_code": {
@@ -24054,6 +24073,10 @@
                       },
                       "message": {
                         "type": "string"
+                      },
+                      "holding_project_id": {
+                        "type": "string",
+                        "description": "On `consumer_onboarded_in_sibling_project` only: the project of the organization that holds the consumer."
                       }
                     },
                     "required": [
@@ -24593,7 +24616,7 @@
               }
             },
             "409": {
-              "description": "Conflict — E2's binding refusals (`account_bound_elsewhere`, `account_binding_closed`, `consumer_holds_other_binding`), or a refusal decided before anything is bound: no proposal recorded for this project under this id, a `document_number` (or an account read) that does not match the document the proposal verified, or a funding source that did not confirm as this consumer's in this project.",
+              "description": "Conflict — E2's binding refusals (`account_bound_elsewhere`, `account_binding_closed`, `consumer_holds_other_binding`), or a refusal decided before anything is bound: no proposal recorded for this project under this id, a `document_number` (or an account read) that does not match the document the proposal verified, or a funding source that did not confirm as this consumer's in this project. Or `consumer_onboarded_in_sibling_project`: the consumer is already onboarded in another project of the caller's organization, refused before any write, and the body carries `holding_project_id`.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -24606,6 +24629,7 @@
                           "onboarding_document_mismatch",
                           "consumer_bound_to_other_document",
                           "funding_source_binding_unconfirmed",
+                          "consumer_onboarded_in_sibling_project",
                           "account_bound_elsewhere",
                           "account_binding_closed",
                           "consumer_holds_other_binding"
@@ -24613,6 +24637,10 @@
                       },
                       "message": {
                         "type": "string"
+                      },
+                      "holding_project_id": {
+                        "type": "string",
+                        "description": "On `consumer_onboarded_in_sibling_project` only: the project of the organization that holds the consumer."
                       }
                     },
                     "required": [
@@ -102328,7 +102356,7 @@
       "/v1/payables/batches": {
         "post": {
           "summary": "Create a batch of payables from files and items",
-          "description": "At least one of `file_ids` (uploaded with `POST /v1/payables/files`) and `items` (stated in text). At most 20 files and 500 items. Every item is resolved on the rail before it can be confirmed.\n\n**What an item shows comes from the rail, never from the file.** A boleto is quoted (amount, beneficiary, masked document, due date); a Pix key is resolved in the DICT (owner name, masked document); a BR Code is decoded with its CRC, and a dynamic one through the payment provider's own decode call (its location URL is never fetched by us). A bare Pix key never sets the amount: the person, the integration or the CSV column states it, and `amount_source` says which. Nothing a document says about a beneficiary or an amount changes those values. No model reads any file.\n\n**Identity.** An item's `item_id` is the payable's id, derived from the batch and the item's content (the file hash and the carrier, or a row's content and `reference`), never from its position: re-uploading the same file into the same batch, reordering, or resuming never yields another item. A carrier repeated in the batch is flagged `duplicate_in_batch`; one already open or paid in the project fails `duplicate_document`.\n\n`Idempotency-Key` is required; a replay with the same key answers the same batch.\n\nScope: `payables:write`.",
+          "description": "At least one of `file_ids` (uploaded with `POST /v1/payables/files`) and `items` (stated in text). At most 20 files and 500 items. Every item is resolved on the rail before it can be confirmed.\n\n**What an item shows comes from the rail, never from the file.** A boleto is quoted (amount, beneficiary, masked document, due date); a Pix key is resolved in the DICT (owner name, masked document); a BR Code is decoded with its CRC, and a dynamic one through the payment provider's own decode call (its location URL is never fetched by us). A bare Pix key never sets the amount: the person, the integration or the CSV column states it, and `amount_source` says which. Nothing a document says about a beneficiary or an amount changes those values. No model reads any file.\n\n**Identity.** An item's `item_id` is the payable's id, derived from the batch and the item's content (the file hash and the carrier, or a row's content and `reference`), never from its position: re-uploading the same file into the same batch, reordering, or resuming never yields another item. A carrier repeated in the batch is flagged `duplicate_in_batch`; one already open or paid in the project fails `duplicate_document`.\n\n**One bill, two ways.** A page that prints one boleto and one Pix code for the same charge is ONE item with two `ways` (Pix first); `rail` is the chosen way and `rail_chosen_by` says who chose it (`default` until a person or an integration sends `PATCH { rail }`). A way the rail refuses (an expired dynamic code, a boleto past its final date, a provider that did not answer) carries `unavailable` and the item switches to the other way (`rail_switched`); two ways whose own amounts differ wait for a choice (`missing: [\"rail\"]`, `ways_amount_mismatch`). `document` carries what the page says about itself (title from a closed catalog, issuer, due date, the carrier's own amount), shown before the rail answers and never confirmed in its place.\n\n`Idempotency-Key` is required; a replay with the same key answers the same batch.\n\nScope: `payables:write`.",
           "parameters": [
             {
               "schema": {
@@ -102558,7 +102586,8 @@
                                     "qr_image",
                                     "barcode_image",
                                     "csv_row",
-                                    "manual"
+                                    "manual",
+                                    "document"
                                   ]
                                 }
                               },
@@ -102577,6 +102606,200 @@
                               "enum": [
                                 "boleto",
                                 "pix"
+                              ],
+                              "description": "The chosen way, when the item has two; the only way otherwise."
+                            },
+                            "rail_chosen_by": {
+                              "type": "string",
+                              "enum": [
+                                "default",
+                                "person",
+                                "integration"
+                              ],
+                              "description": "`default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`."
+                            },
+                            "ways": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "rail": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pix",
+                                      "boleto"
+                                    ]
+                                  },
+                                  "origin": {
+                                    "type": "object",
+                                    "properties": {
+                                      "page": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      },
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto_line",
+                                          "br_code",
+                                          "pix_key",
+                                          "qr_image",
+                                          "barcode_image",
+                                          "csv_row",
+                                          "manual",
+                                          "document"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "page",
+                                      "kind"
+                                    ]
+                                  },
+                                  "destination": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto",
+                                          "pix_key",
+                                          "br_code_static",
+                                          "br_code_dynamic"
+                                        ]
+                                      },
+                                      "display": {
+                                        "type": "string",
+                                        "description": "The boleto line or the Pix key, masked."
+                                      },
+                                      "beneficiary_name": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail (the boleto registration, the DICT owner); never from the document."
+                                      },
+                                      "beneficiary_document_masked": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail, masked."
+                                      },
+                                      "due_date": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "YYYY-MM-DD from the rail, or null."
+                                      },
+                                      "beneficiary_institution": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                      },
+                                      "key": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "display",
+                                      "beneficiary_name",
+                                      "beneficiary_document_masked",
+                                      "due_date"
+                                    ],
+                                    "description": "This way's resolved destination, when the rail answered."
+                                  },
+                                  "unavailable": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "code": {
+                                        "type": "string",
+                                        "enum": [
+                                          "br_code_expired",
+                                          "br_code_not_found",
+                                          "boleto_expired",
+                                          "boleto_refused",
+                                          "rail_unavailable",
+                                          "no_sandbox_fixture"
+                                        ]
+                                      },
+                                      "message": {
+                                        "type": "string",
+                                        "description": "In the person's words; never a provider's name or body."
+                                      }
+                                    },
+                                    "required": [
+                                      "code",
+                                      "message"
+                                    ],
+                                    "description": "Why this way cannot be paid now, or null when it can."
+                                  }
+                                },
+                                "required": [
+                                  "rail",
+                                  "origin",
+                                  "destination",
+                                  "unavailable"
+                                ]
+                              },
+                              "description": "1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill."
+                            },
+                            "document": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "From a closed catalog of document kinds (\"DARE-SP\", \"Nota Fiscal\", ...)."
+                                },
+                                "issuer": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The text after a beneficiary/issuer label on the page, when it has one."
+                                },
+                                "due_date": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "YYYY-MM-DD from a labelled date, else the boleto's own due factor."
+                                },
+                                "amount_minor": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ],
+                                  "description": "The boleto's effective value or a static BR Code's amount; never loose text."
+                                }
+                              },
+                              "required": [
+                                "title",
+                                "issuer",
+                                "due_date",
+                                "amount_minor"
                               ]
                             },
                             "state": {
@@ -102600,7 +102823,8 @@
                                 "enum": [
                                   "amount",
                                   "destination",
-                                  "pix_key_owner_confirmation"
+                                  "pix_key_owner_confirmation",
+                                  "rail"
                                 ]
                               }
                             },
@@ -102643,6 +102867,20 @@
                                     "null"
                                   ],
                                   "description": "YYYY-MM-DD from the rail, or null."
+                                },
+                                "beneficiary_institution": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                },
+                                "key": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
                                 }
                               },
                               "required": [
@@ -102668,7 +102906,8 @@
                                 "rail_quote",
                                 "br_code",
                                 "stated_by_person",
-                                "csv"
+                                "csv",
+                                "document"
                               ]
                             },
                             "description": {
@@ -102696,7 +102935,11 @@
                                       "duplicate_document",
                                       "amount_matches_rail",
                                       "due_date_state",
-                                      "pix_key_resolved"
+                                      "pix_key_resolved",
+                                      "amount_matches_document",
+                                      "rail_switched",
+                                      "ways_amount_mismatch",
+                                      "ways_unavailable"
                                     ]
                                   },
                                   "status": {
@@ -102787,6 +103030,9 @@
                             "position",
                             "origin",
                             "rail",
+                            "rail_chosen_by",
+                            "ways",
+                            "document",
                             "state",
                             "missing",
                             "destination",
@@ -102977,7 +103223,8 @@
                                     "qr_image",
                                     "barcode_image",
                                     "csv_row",
-                                    "manual"
+                                    "manual",
+                                    "document"
                                   ]
                                 }
                               },
@@ -102996,6 +103243,200 @@
                               "enum": [
                                 "boleto",
                                 "pix"
+                              ],
+                              "description": "The chosen way, when the item has two; the only way otherwise."
+                            },
+                            "rail_chosen_by": {
+                              "type": "string",
+                              "enum": [
+                                "default",
+                                "person",
+                                "integration"
+                              ],
+                              "description": "`default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`."
+                            },
+                            "ways": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "rail": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pix",
+                                      "boleto"
+                                    ]
+                                  },
+                                  "origin": {
+                                    "type": "object",
+                                    "properties": {
+                                      "page": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      },
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto_line",
+                                          "br_code",
+                                          "pix_key",
+                                          "qr_image",
+                                          "barcode_image",
+                                          "csv_row",
+                                          "manual",
+                                          "document"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "page",
+                                      "kind"
+                                    ]
+                                  },
+                                  "destination": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto",
+                                          "pix_key",
+                                          "br_code_static",
+                                          "br_code_dynamic"
+                                        ]
+                                      },
+                                      "display": {
+                                        "type": "string",
+                                        "description": "The boleto line or the Pix key, masked."
+                                      },
+                                      "beneficiary_name": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail (the boleto registration, the DICT owner); never from the document."
+                                      },
+                                      "beneficiary_document_masked": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail, masked."
+                                      },
+                                      "due_date": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "YYYY-MM-DD from the rail, or null."
+                                      },
+                                      "beneficiary_institution": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                      },
+                                      "key": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "display",
+                                      "beneficiary_name",
+                                      "beneficiary_document_masked",
+                                      "due_date"
+                                    ],
+                                    "description": "This way's resolved destination, when the rail answered."
+                                  },
+                                  "unavailable": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "code": {
+                                        "type": "string",
+                                        "enum": [
+                                          "br_code_expired",
+                                          "br_code_not_found",
+                                          "boleto_expired",
+                                          "boleto_refused",
+                                          "rail_unavailable",
+                                          "no_sandbox_fixture"
+                                        ]
+                                      },
+                                      "message": {
+                                        "type": "string",
+                                        "description": "In the person's words; never a provider's name or body."
+                                      }
+                                    },
+                                    "required": [
+                                      "code",
+                                      "message"
+                                    ],
+                                    "description": "Why this way cannot be paid now, or null when it can."
+                                  }
+                                },
+                                "required": [
+                                  "rail",
+                                  "origin",
+                                  "destination",
+                                  "unavailable"
+                                ]
+                              },
+                              "description": "1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill."
+                            },
+                            "document": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "From a closed catalog of document kinds (\"DARE-SP\", \"Nota Fiscal\", ...)."
+                                },
+                                "issuer": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The text after a beneficiary/issuer label on the page, when it has one."
+                                },
+                                "due_date": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "YYYY-MM-DD from a labelled date, else the boleto's own due factor."
+                                },
+                                "amount_minor": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ],
+                                  "description": "The boleto's effective value or a static BR Code's amount; never loose text."
+                                }
+                              },
+                              "required": [
+                                "title",
+                                "issuer",
+                                "due_date",
+                                "amount_minor"
                               ]
                             },
                             "state": {
@@ -103019,7 +103460,8 @@
                                 "enum": [
                                   "amount",
                                   "destination",
-                                  "pix_key_owner_confirmation"
+                                  "pix_key_owner_confirmation",
+                                  "rail"
                                 ]
                               }
                             },
@@ -103062,6 +103504,20 @@
                                     "null"
                                   ],
                                   "description": "YYYY-MM-DD from the rail, or null."
+                                },
+                                "beneficiary_institution": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                },
+                                "key": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
                                 }
                               },
                               "required": [
@@ -103087,7 +103543,8 @@
                                 "rail_quote",
                                 "br_code",
                                 "stated_by_person",
-                                "csv"
+                                "csv",
+                                "document"
                               ]
                             },
                             "description": {
@@ -103115,7 +103572,11 @@
                                       "duplicate_document",
                                       "amount_matches_rail",
                                       "due_date_state",
-                                      "pix_key_resolved"
+                                      "pix_key_resolved",
+                                      "amount_matches_document",
+                                      "rail_switched",
+                                      "ways_amount_mismatch",
+                                      "ways_unavailable"
                                     ]
                                   },
                                   "status": {
@@ -103206,6 +103667,9 @@
                             "position",
                             "origin",
                             "rail",
+                            "rail_chosen_by",
+                            "ways",
+                            "document",
                             "state",
                             "missing",
                             "destination",
@@ -103562,7 +104026,8 @@
                                     "qr_image",
                                     "barcode_image",
                                     "csv_row",
-                                    "manual"
+                                    "manual",
+                                    "document"
                                   ]
                                 }
                               },
@@ -103581,6 +104046,200 @@
                               "enum": [
                                 "boleto",
                                 "pix"
+                              ],
+                              "description": "The chosen way, when the item has two; the only way otherwise."
+                            },
+                            "rail_chosen_by": {
+                              "type": "string",
+                              "enum": [
+                                "default",
+                                "person",
+                                "integration"
+                              ],
+                              "description": "`default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`."
+                            },
+                            "ways": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "rail": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pix",
+                                      "boleto"
+                                    ]
+                                  },
+                                  "origin": {
+                                    "type": "object",
+                                    "properties": {
+                                      "page": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      },
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto_line",
+                                          "br_code",
+                                          "pix_key",
+                                          "qr_image",
+                                          "barcode_image",
+                                          "csv_row",
+                                          "manual",
+                                          "document"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "page",
+                                      "kind"
+                                    ]
+                                  },
+                                  "destination": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto",
+                                          "pix_key",
+                                          "br_code_static",
+                                          "br_code_dynamic"
+                                        ]
+                                      },
+                                      "display": {
+                                        "type": "string",
+                                        "description": "The boleto line or the Pix key, masked."
+                                      },
+                                      "beneficiary_name": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail (the boleto registration, the DICT owner); never from the document."
+                                      },
+                                      "beneficiary_document_masked": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail, masked."
+                                      },
+                                      "due_date": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "YYYY-MM-DD from the rail, or null."
+                                      },
+                                      "beneficiary_institution": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                      },
+                                      "key": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "display",
+                                      "beneficiary_name",
+                                      "beneficiary_document_masked",
+                                      "due_date"
+                                    ],
+                                    "description": "This way's resolved destination, when the rail answered."
+                                  },
+                                  "unavailable": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "code": {
+                                        "type": "string",
+                                        "enum": [
+                                          "br_code_expired",
+                                          "br_code_not_found",
+                                          "boleto_expired",
+                                          "boleto_refused",
+                                          "rail_unavailable",
+                                          "no_sandbox_fixture"
+                                        ]
+                                      },
+                                      "message": {
+                                        "type": "string",
+                                        "description": "In the person's words; never a provider's name or body."
+                                      }
+                                    },
+                                    "required": [
+                                      "code",
+                                      "message"
+                                    ],
+                                    "description": "Why this way cannot be paid now, or null when it can."
+                                  }
+                                },
+                                "required": [
+                                  "rail",
+                                  "origin",
+                                  "destination",
+                                  "unavailable"
+                                ]
+                              },
+                              "description": "1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill."
+                            },
+                            "document": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "From a closed catalog of document kinds (\"DARE-SP\", \"Nota Fiscal\", ...)."
+                                },
+                                "issuer": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The text after a beneficiary/issuer label on the page, when it has one."
+                                },
+                                "due_date": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "YYYY-MM-DD from a labelled date, else the boleto's own due factor."
+                                },
+                                "amount_minor": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ],
+                                  "description": "The boleto's effective value or a static BR Code's amount; never loose text."
+                                }
+                              },
+                              "required": [
+                                "title",
+                                "issuer",
+                                "due_date",
+                                "amount_minor"
                               ]
                             },
                             "state": {
@@ -103604,7 +104263,8 @@
                                 "enum": [
                                   "amount",
                                   "destination",
-                                  "pix_key_owner_confirmation"
+                                  "pix_key_owner_confirmation",
+                                  "rail"
                                 ]
                               }
                             },
@@ -103647,6 +104307,20 @@
                                     "null"
                                   ],
                                   "description": "YYYY-MM-DD from the rail, or null."
+                                },
+                                "beneficiary_institution": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                },
+                                "key": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
                                 }
                               },
                               "required": [
@@ -103672,7 +104346,8 @@
                                 "rail_quote",
                                 "br_code",
                                 "stated_by_person",
-                                "csv"
+                                "csv",
+                                "document"
                               ]
                             },
                             "description": {
@@ -103700,7 +104375,11 @@
                                       "duplicate_document",
                                       "amount_matches_rail",
                                       "due_date_state",
-                                      "pix_key_resolved"
+                                      "pix_key_resolved",
+                                      "amount_matches_document",
+                                      "rail_switched",
+                                      "ways_amount_mismatch",
+                                      "ways_unavailable"
                                     ]
                                   },
                                   "status": {
@@ -103791,6 +104470,9 @@
                             "position",
                             "origin",
                             "rail",
+                            "rail_chosen_by",
+                            "ways",
+                            "document",
                             "state",
                             "missing",
                             "destination",
@@ -103898,8 +104580,8 @@
       },
       "/v1/payables/batches/{batchId}/items/{itemId}": {
         "patch": {
-          "summary": "Complement, correct or exclude one item",
-          "description": "Re-resolves the item's destination on the rail, re-runs its checks, keeps every other item as it is and bumps `version`. A correction of the carrier is a new carrier for the same item.\n\n**The confirmation binds to the list.** `version` bumps on every change and `list_hash` is the SHA-256 of the canonical list (each non-excluded item in `item_id` order as `item_id|rail|destination id|amount_minor|currency`, then the total). Any change after a confirmation needs a new one.\n\nScope: `payables:write`.",
+          "summary": "Complement, correct, choose the way or exclude one item",
+          "description": "Re-resolves the item's destination on the rail, re-runs its checks, keeps every other item as it is and bumps `version`. A correction of the carrier is a new carrier for the same item. `rail` chooses the way of an item that has two (`ways`): the item re-resolves on it, `rail_chosen_by` becomes `person` (dashboard, chat) or `integration` (API key), and a switch after a confirmation needs a new one, since `list_hash` covers `rail`.\n\n**The confirmation binds to the list.** `version` bumps on every change and `list_hash` is the SHA-256 of the canonical list (each non-excluded item in `item_id` order as `item_id|rail|destination id|amount_minor|currency`, then the total). Any change after a confirmation needs a new one.\n\nScope: `payables:write`.",
           "parameters": [
             {
               "schema": {
@@ -103957,6 +104639,14 @@
                     },
                     "excluded": {
                       "type": "boolean"
+                    },
+                    "rail": {
+                      "type": "string",
+                      "enum": [
+                        "pix",
+                        "boleto"
+                      ],
+                      "description": "The way to pay an item that has two (`ways`): the item re-resolves on it. Refused 409 `payable_item_rail_unavailable` when the item has no such way or it is unavailable."
                     }
                   },
                   "required": [
@@ -104103,7 +104793,8 @@
                                     "qr_image",
                                     "barcode_image",
                                     "csv_row",
-                                    "manual"
+                                    "manual",
+                                    "document"
                                   ]
                                 }
                               },
@@ -104122,6 +104813,200 @@
                               "enum": [
                                 "boleto",
                                 "pix"
+                              ],
+                              "description": "The chosen way, when the item has two; the only way otherwise."
+                            },
+                            "rail_chosen_by": {
+                              "type": "string",
+                              "enum": [
+                                "default",
+                                "person",
+                                "integration"
+                              ],
+                              "description": "`default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`."
+                            },
+                            "ways": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "rail": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pix",
+                                      "boleto"
+                                    ]
+                                  },
+                                  "origin": {
+                                    "type": "object",
+                                    "properties": {
+                                      "page": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      },
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto_line",
+                                          "br_code",
+                                          "pix_key",
+                                          "qr_image",
+                                          "barcode_image",
+                                          "csv_row",
+                                          "manual",
+                                          "document"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "page",
+                                      "kind"
+                                    ]
+                                  },
+                                  "destination": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto",
+                                          "pix_key",
+                                          "br_code_static",
+                                          "br_code_dynamic"
+                                        ]
+                                      },
+                                      "display": {
+                                        "type": "string",
+                                        "description": "The boleto line or the Pix key, masked."
+                                      },
+                                      "beneficiary_name": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail (the boleto registration, the DICT owner); never from the document."
+                                      },
+                                      "beneficiary_document_masked": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail, masked."
+                                      },
+                                      "due_date": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "YYYY-MM-DD from the rail, or null."
+                                      },
+                                      "beneficiary_institution": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                      },
+                                      "key": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "display",
+                                      "beneficiary_name",
+                                      "beneficiary_document_masked",
+                                      "due_date"
+                                    ],
+                                    "description": "This way's resolved destination, when the rail answered."
+                                  },
+                                  "unavailable": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "code": {
+                                        "type": "string",
+                                        "enum": [
+                                          "br_code_expired",
+                                          "br_code_not_found",
+                                          "boleto_expired",
+                                          "boleto_refused",
+                                          "rail_unavailable",
+                                          "no_sandbox_fixture"
+                                        ]
+                                      },
+                                      "message": {
+                                        "type": "string",
+                                        "description": "In the person's words; never a provider's name or body."
+                                      }
+                                    },
+                                    "required": [
+                                      "code",
+                                      "message"
+                                    ],
+                                    "description": "Why this way cannot be paid now, or null when it can."
+                                  }
+                                },
+                                "required": [
+                                  "rail",
+                                  "origin",
+                                  "destination",
+                                  "unavailable"
+                                ]
+                              },
+                              "description": "1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill."
+                            },
+                            "document": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "From a closed catalog of document kinds (\"DARE-SP\", \"Nota Fiscal\", ...)."
+                                },
+                                "issuer": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The text after a beneficiary/issuer label on the page, when it has one."
+                                },
+                                "due_date": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "YYYY-MM-DD from a labelled date, else the boleto's own due factor."
+                                },
+                                "amount_minor": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ],
+                                  "description": "The boleto's effective value or a static BR Code's amount; never loose text."
+                                }
+                              },
+                              "required": [
+                                "title",
+                                "issuer",
+                                "due_date",
+                                "amount_minor"
                               ]
                             },
                             "state": {
@@ -104145,7 +105030,8 @@
                                 "enum": [
                                   "amount",
                                   "destination",
-                                  "pix_key_owner_confirmation"
+                                  "pix_key_owner_confirmation",
+                                  "rail"
                                 ]
                               }
                             },
@@ -104188,6 +105074,20 @@
                                     "null"
                                   ],
                                   "description": "YYYY-MM-DD from the rail, or null."
+                                },
+                                "beneficiary_institution": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                },
+                                "key": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
                                 }
                               },
                               "required": [
@@ -104213,7 +105113,8 @@
                                 "rail_quote",
                                 "br_code",
                                 "stated_by_person",
-                                "csv"
+                                "csv",
+                                "document"
                               ]
                             },
                             "description": {
@@ -104241,7 +105142,11 @@
                                       "duplicate_document",
                                       "amount_matches_rail",
                                       "due_date_state",
-                                      "pix_key_resolved"
+                                      "pix_key_resolved",
+                                      "amount_matches_document",
+                                      "rail_switched",
+                                      "ways_amount_mismatch",
+                                      "ways_unavailable"
                                     ]
                                   },
                                   "status": {
@@ -104332,6 +105237,9 @@
                             "position",
                             "origin",
                             "rail",
+                            "rail_chosen_by",
+                            "ways",
+                            "document",
                             "state",
                             "missing",
                             "destination",
@@ -104473,7 +105381,7 @@
               }
             },
             "409": {
-              "description": "`payable_batch_version_conflict`: `expected_version` is stale; `details.batch` is the current batch. `payable_batch_locked`: the batch was confirmed.",
+              "description": "`payable_batch_version_conflict`: `expected_version` is stale; `details.batch` is the current batch. `payable_batch_locked`: the batch was confirmed. `payable_item_rail_unavailable`: `rail` names a way the item does not have, or one that is unavailable (`details.unavailable` says why, `details.ways` lists the item's ways).",
               "content": {
                 "application/json": {
                   "schema": {
@@ -104486,7 +105394,8 @@
                             "type": "string",
                             "enum": [
                               "payable_batch_version_conflict",
-                              "payable_batch_locked"
+                              "payable_batch_locked",
+                              "payable_item_rail_unavailable"
                             ]
                           },
                           "message": {
@@ -104796,7 +105705,8 @@
                                     "qr_image",
                                     "barcode_image",
                                     "csv_row",
-                                    "manual"
+                                    "manual",
+                                    "document"
                                   ]
                                 }
                               },
@@ -104815,6 +105725,200 @@
                               "enum": [
                                 "boleto",
                                 "pix"
+                              ],
+                              "description": "The chosen way, when the item has two; the only way otherwise."
+                            },
+                            "rail_chosen_by": {
+                              "type": "string",
+                              "enum": [
+                                "default",
+                                "person",
+                                "integration"
+                              ],
+                              "description": "`default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`."
+                            },
+                            "ways": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "rail": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pix",
+                                      "boleto"
+                                    ]
+                                  },
+                                  "origin": {
+                                    "type": "object",
+                                    "properties": {
+                                      "page": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      },
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto_line",
+                                          "br_code",
+                                          "pix_key",
+                                          "qr_image",
+                                          "barcode_image",
+                                          "csv_row",
+                                          "manual",
+                                          "document"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "page",
+                                      "kind"
+                                    ]
+                                  },
+                                  "destination": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto",
+                                          "pix_key",
+                                          "br_code_static",
+                                          "br_code_dynamic"
+                                        ]
+                                      },
+                                      "display": {
+                                        "type": "string",
+                                        "description": "The boleto line or the Pix key, masked."
+                                      },
+                                      "beneficiary_name": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail (the boleto registration, the DICT owner); never from the document."
+                                      },
+                                      "beneficiary_document_masked": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail, masked."
+                                      },
+                                      "due_date": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "YYYY-MM-DD from the rail, or null."
+                                      },
+                                      "beneficiary_institution": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                      },
+                                      "key": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "display",
+                                      "beneficiary_name",
+                                      "beneficiary_document_masked",
+                                      "due_date"
+                                    ],
+                                    "description": "This way's resolved destination, when the rail answered."
+                                  },
+                                  "unavailable": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "code": {
+                                        "type": "string",
+                                        "enum": [
+                                          "br_code_expired",
+                                          "br_code_not_found",
+                                          "boleto_expired",
+                                          "boleto_refused",
+                                          "rail_unavailable",
+                                          "no_sandbox_fixture"
+                                        ]
+                                      },
+                                      "message": {
+                                        "type": "string",
+                                        "description": "In the person's words; never a provider's name or body."
+                                      }
+                                    },
+                                    "required": [
+                                      "code",
+                                      "message"
+                                    ],
+                                    "description": "Why this way cannot be paid now, or null when it can."
+                                  }
+                                },
+                                "required": [
+                                  "rail",
+                                  "origin",
+                                  "destination",
+                                  "unavailable"
+                                ]
+                              },
+                              "description": "1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill."
+                            },
+                            "document": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "From a closed catalog of document kinds (\"DARE-SP\", \"Nota Fiscal\", ...)."
+                                },
+                                "issuer": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The text after a beneficiary/issuer label on the page, when it has one."
+                                },
+                                "due_date": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "YYYY-MM-DD from a labelled date, else the boleto's own due factor."
+                                },
+                                "amount_minor": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ],
+                                  "description": "The boleto's effective value or a static BR Code's amount; never loose text."
+                                }
+                              },
+                              "required": [
+                                "title",
+                                "issuer",
+                                "due_date",
+                                "amount_minor"
                               ]
                             },
                             "state": {
@@ -104838,7 +105942,8 @@
                                 "enum": [
                                   "amount",
                                   "destination",
-                                  "pix_key_owner_confirmation"
+                                  "pix_key_owner_confirmation",
+                                  "rail"
                                 ]
                               }
                             },
@@ -104881,6 +105986,20 @@
                                     "null"
                                   ],
                                   "description": "YYYY-MM-DD from the rail, or null."
+                                },
+                                "beneficiary_institution": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                },
+                                "key": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
                                 }
                               },
                               "required": [
@@ -104906,7 +106025,8 @@
                                 "rail_quote",
                                 "br_code",
                                 "stated_by_person",
-                                "csv"
+                                "csv",
+                                "document"
                               ]
                             },
                             "description": {
@@ -104934,7 +106054,11 @@
                                       "duplicate_document",
                                       "amount_matches_rail",
                                       "due_date_state",
-                                      "pix_key_resolved"
+                                      "pix_key_resolved",
+                                      "amount_matches_document",
+                                      "rail_switched",
+                                      "ways_amount_mismatch",
+                                      "ways_unavailable"
                                     ]
                                   },
                                   "status": {
@@ -105025,6 +106149,9 @@
                             "position",
                             "origin",
                             "rail",
+                            "rail_chosen_by",
+                            "ways",
+                            "document",
                             "state",
                             "missing",
                             "destination",
@@ -105458,7 +106585,8 @@
                                     "qr_image",
                                     "barcode_image",
                                     "csv_row",
-                                    "manual"
+                                    "manual",
+                                    "document"
                                   ]
                                 }
                               },
@@ -105477,6 +106605,200 @@
                               "enum": [
                                 "boleto",
                                 "pix"
+                              ],
+                              "description": "The chosen way, when the item has two; the only way otherwise."
+                            },
+                            "rail_chosen_by": {
+                              "type": "string",
+                              "enum": [
+                                "default",
+                                "person",
+                                "integration"
+                              ],
+                              "description": "`default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`."
+                            },
+                            "ways": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "rail": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pix",
+                                      "boleto"
+                                    ]
+                                  },
+                                  "origin": {
+                                    "type": "object",
+                                    "properties": {
+                                      "page": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      },
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto_line",
+                                          "br_code",
+                                          "pix_key",
+                                          "qr_image",
+                                          "barcode_image",
+                                          "csv_row",
+                                          "manual",
+                                          "document"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "page",
+                                      "kind"
+                                    ]
+                                  },
+                                  "destination": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto",
+                                          "pix_key",
+                                          "br_code_static",
+                                          "br_code_dynamic"
+                                        ]
+                                      },
+                                      "display": {
+                                        "type": "string",
+                                        "description": "The boleto line or the Pix key, masked."
+                                      },
+                                      "beneficiary_name": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail (the boleto registration, the DICT owner); never from the document."
+                                      },
+                                      "beneficiary_document_masked": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail, masked."
+                                      },
+                                      "due_date": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "YYYY-MM-DD from the rail, or null."
+                                      },
+                                      "beneficiary_institution": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                      },
+                                      "key": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "display",
+                                      "beneficiary_name",
+                                      "beneficiary_document_masked",
+                                      "due_date"
+                                    ],
+                                    "description": "This way's resolved destination, when the rail answered."
+                                  },
+                                  "unavailable": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "code": {
+                                        "type": "string",
+                                        "enum": [
+                                          "br_code_expired",
+                                          "br_code_not_found",
+                                          "boleto_expired",
+                                          "boleto_refused",
+                                          "rail_unavailable",
+                                          "no_sandbox_fixture"
+                                        ]
+                                      },
+                                      "message": {
+                                        "type": "string",
+                                        "description": "In the person's words; never a provider's name or body."
+                                      }
+                                    },
+                                    "required": [
+                                      "code",
+                                      "message"
+                                    ],
+                                    "description": "Why this way cannot be paid now, or null when it can."
+                                  }
+                                },
+                                "required": [
+                                  "rail",
+                                  "origin",
+                                  "destination",
+                                  "unavailable"
+                                ]
+                              },
+                              "description": "1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill."
+                            },
+                            "document": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "From a closed catalog of document kinds (\"DARE-SP\", \"Nota Fiscal\", ...)."
+                                },
+                                "issuer": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The text after a beneficiary/issuer label on the page, when it has one."
+                                },
+                                "due_date": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "YYYY-MM-DD from a labelled date, else the boleto's own due factor."
+                                },
+                                "amount_minor": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ],
+                                  "description": "The boleto's effective value or a static BR Code's amount; never loose text."
+                                }
+                              },
+                              "required": [
+                                "title",
+                                "issuer",
+                                "due_date",
+                                "amount_minor"
                               ]
                             },
                             "state": {
@@ -105500,7 +106822,8 @@
                                 "enum": [
                                   "amount",
                                   "destination",
-                                  "pix_key_owner_confirmation"
+                                  "pix_key_owner_confirmation",
+                                  "rail"
                                 ]
                               }
                             },
@@ -105543,6 +106866,20 @@
                                     "null"
                                   ],
                                   "description": "YYYY-MM-DD from the rail, or null."
+                                },
+                                "beneficiary_institution": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                },
+                                "key": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
                                 }
                               },
                               "required": [
@@ -105568,7 +106905,8 @@
                                 "rail_quote",
                                 "br_code",
                                 "stated_by_person",
-                                "csv"
+                                "csv",
+                                "document"
                               ]
                             },
                             "description": {
@@ -105596,7 +106934,11 @@
                                       "duplicate_document",
                                       "amount_matches_rail",
                                       "due_date_state",
-                                      "pix_key_resolved"
+                                      "pix_key_resolved",
+                                      "amount_matches_document",
+                                      "rail_switched",
+                                      "ways_amount_mismatch",
+                                      "ways_unavailable"
                                     ]
                                   },
                                   "status": {
@@ -105687,6 +107029,9 @@
                             "position",
                             "origin",
                             "rail",
+                            "rail_chosen_by",
+                            "ways",
+                            "document",
                             "state",
                             "missing",
                             "destination",
@@ -105974,6 +107319,475 @@
             {
               "bearerAuth": [
                 "payables:pay"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/consumers/receipts/{id}/document": {
+        "get": {
+          "summary": "The payment receipt (comprovante) of a sealed receipt, as PDF or PNG",
+          "description": "Composes the comprovante of the payment the receipt seals (state and amount, who received, who paid, who authorized, the end-to-end id and the receipt id) and renders it. `format=pdf` is one page of 600x828 px; `format=png` is the same page at 2x (1200x1656), for sharing as an image.\n\nRead-only: generating or downloading a document never repeats or touches the payment. Served only when the payment is in a final confirmed state (its attempt is `settled`); otherwise 409 `document_not_final` with the attempt's status. A Test project's document carries the chip \"Ambiente de teste\" once. Deterministic: the same receipt gives the same document content, and the `X-CodeSpar-Document-Sha256` header is its hash.\n\nScoped to the organization AND the project of the caller, like the receipt read.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "description": "The receipt id (`rcpt_…`)."
+              },
+              "required": true,
+              "description": "The receipt id (`rcpt_…`).",
+              "name": "id",
+              "in": "path"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "pdf",
+                  "png"
+                ],
+                "default": "pdf",
+                "description": "`pdf` (default) or `png` (600x828 at 2x)."
+              },
+              "required": false,
+              "description": "`pdf` (default) or `png` (600x828 at 2x).",
+              "name": "format",
+              "in": "query"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The document.",
+              "headers": {
+                "X-CodeSpar-Document-Sha256": {
+                  "description": "SHA-256 of the document's structured content (the model the template renders). The same receipt answers the same value on every call.",
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              },
+              "content": {
+                "application/pdf": {
+                  "schema": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "image/png": {
+                  "schema": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "`format` is neither `pdf` nor `png`.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "document_format_invalid"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No receipt with this id in the caller's project.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "receipt_not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "The payment is not in a final confirmed state (`details.status` is the attempt's status: `dispatching`, `uncertain`, …). Retriable once it settles.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "document_not_final"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "503": {
+              "description": "The renderer (the hosted browser worker) is not configured or did not answer. Retriable; `Retry-After` is set.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "document_renderer_unavailable"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "receipts:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "receipts:read"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/account/statement": {
+        "get": {
+          "summary": "The account statement (extrato) of a period, as PDF",
+          "description": "The statement of the project's account over `[from, to]` (calendar days in America/Sao_Paulo, inclusive, at most 92 days, `to` not after today): holder, document, institution, agency and account; opening balance, inflows, outflows and closing balance over the BOOKED balance (the ledger kinds that move it: fund, debit, fee, reverse); reserves (holds open at the end of the period) shown apart and outside the balance identity; one row per balance-moving entry, newest first; A4, paginated, the column header on every page.\n\n`closing = opening + inflows - outflows` is asserted in code against an independent aggregate: a period that does not reconcile answers 500 `statement_not_reconciled` and no document. The wallet set is the one the account balances sum (a Test project with a bound account: that account's wallet), so the closing balance at `to = today` equals the account's booked balance.\n\nRead-only; nothing is cached. `format=pdf` only. The Wallet's CSV export is unchanged and separate.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "First day of the period, `YYYY-MM-DD`, America/Sao_Paulo."
+              },
+              "required": true,
+              "description": "First day of the period, `YYYY-MM-DD`, America/Sao_Paulo.",
+              "name": "from",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Last day, inclusive; not after today; at most 92 days after `from`."
+              },
+              "required": true,
+              "description": "Last day, inclusive; not after today; at most 92 days after `from`.",
+              "name": "to",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "pdf"
+                ],
+                "default": "pdf",
+                "description": "`pdf` only in this delivery."
+              },
+              "required": false,
+              "description": "`pdf` only in this delivery.",
+              "name": "format",
+              "in": "query"
+            },
+            {
+              "schema": {
+                "type": "string",
+                "pattern": "^[A-Za-z]{3,5}$",
+                "default": "BRL",
+                "description": "The ledger currency (default BRL)."
+              },
+              "required": false,
+              "description": "The ledger currency (default BRL).",
+              "name": "currency",
+              "in": "query"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The statement.",
+              "headers": {
+                "X-CodeSpar-Document-Sha256": {
+                  "description": "SHA-256 of the document's structured content (the model the template renders). The same receipt answers the same value on every call.",
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              },
+              "content": {
+                "application/pdf": {
+                  "schema": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "`format` is not `pdf` (`document_format_invalid`); or the period is malformed, `from` is after `to`, `to` is after today, or the span exceeds the maximum (`statement_period_invalid`, `details.reason`).",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "document_format_invalid",
+                              "statement_period_invalid"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "The ledger of the period does not reconcile; logged, nothing served.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "statement_not_reconciled"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "503": {
+              "description": "The renderer (the hosted browser worker) is not configured or did not answer. Retriable; `Retry-After` is set.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "document_renderer_unavailable"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "wallets:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "wallets:read"
               ]
             }
           ]

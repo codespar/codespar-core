@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 8e0894fb7695ddc562e3a6de74a2445e597c1c2cc04b7d6510ebacd246462ca7, fetched 2026-10-26T21:53:13.984Z
+// Source: openapi-snapshot.json (sha256 ceee33204d9ec636547e7745fc7237e68e899b863a766d62bfa2b3ed5aad97d2, fetched 2026-10-27T17:52:30.609Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -318,6 +318,8 @@ export const API_OPERATIONS = [
   { method: "patch", path: "/v1/payables/batches/{batchId}/items/{itemId}", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/payables/batches/{batchId}/items", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/payables/batches/{batchId}/pay", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/consumers/receipts/{id}/document", body: null, accept: "application/pdf", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/account/statement", body: null, accept: "application/pdf", requiredQuery: ["from","to"], deprecated: false },
   { method: "post", path: "/v1/shop/agent/purchases", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/purchases/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/instruments", body: null, accept: "application/json", requiredQuery: ["owner"], deprecated: false },

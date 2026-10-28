@@ -169,6 +169,15 @@ describe("payables commands", () => {
     ).rejects.toThrow(/Nothing to change/);
   });
 
+  it("update-item --rail chooses the way of a bill printed with Pix and boleto (payables v1.1); anything else is refused before any request", async () => {
+    await payablesBatchUpdateItemCommand("pbat_example", "pay_example", { ...AUTH, expectedVersion: "3", rail: "boleto" });
+    expect(JSON.parse(String(seen[0]!.body))).toEqual({ expected_version: 3, rail: "boleto" });
+    await expect(
+      payablesBatchUpdateItemCommand("pbat_example", "pay_example", { ...AUTH, expectedVersion: "3", rail: "ted" }),
+    ).rejects.toThrow(/--rail must be pix or boleto/);
+    expect(seen).toHaveLength(1);
+  });
+
   it("pay binds to the batch version and list hash, with the mandate", async () => {
     await payablesBatchPayCommand("pbat_example", {
       ...AUTH,

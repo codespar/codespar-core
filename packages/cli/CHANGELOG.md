@@ -1,5 +1,19 @@
 # @codespar/cli — changelog
 
+## 0.22.2 — 2026-10-27
+
+### Added
+
+- **`codespar payables batches update-item <batchId> <itemId> --rail pix|boleto`**
+  chooses how a bill printed with a Pix code and a boleto is paid (one item,
+  paid once; payables contract v1.1), through `@codespar/sdk` 0.16.23. The
+  batch table names a document item by its page's title and shows
+  `(pix of pix|boleto)` for an item with two ways.
+
+### Changed
+
+- Requires `@codespar/sdk` 0.16.23 (`rail` on `updateItem`).
+
 ## 0.22.1 — 2026-10-27
 
 ### Added

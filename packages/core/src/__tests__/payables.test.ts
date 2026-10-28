@@ -35,6 +35,9 @@ const BATCH: PayableBatch = {
       position: 0,
       origin: { file_id: null, page: null, row: null, kind: "manual" },
       rail: "pix",
+      rail_chosen_by: "default",
+      ways: [{ rail: "pix", origin: { page: null, kind: "manual" }, destination: null, unavailable: null }],
+      document: null,
       state: "ready",
       missing: [],
       destination: {
@@ -173,6 +176,8 @@ describe("cs.payables.batches", () => {
     await cs.payables.batches.get("pbat_example");
     await cs.payables.batches.updateItem("pbat_example", "pbl_AbCdEfGhIjKlMnOp", { expectedVersion: 3, amountMinor: 5000 });
     await cs.payables.batches.updateItem("pbat_example", "pbl_AbCdEfGhIjKlMnOp", { expectedVersion: 4, excluded: true });
+    // One bill, two ways (payables v1.1): the way is chosen on the same door.
+    await cs.payables.batches.updateItem("pbat_example", "pbl_AbCdEfGhIjKlMnOp", { expectedVersion: 5, rail: "boleto" });
     await cs.payables.batches.addItems("pbat_example", {
       expectedVersion: 5,
       items: [{ pixKey: "+5511999990000", amountMinor: 1200 }],
@@ -182,12 +187,14 @@ describe("cs.payables.batches", () => {
       "GET /v1/payables/batches/pbat_example",
       "PATCH /v1/payables/batches/pbat_example/items/pbl_AbCdEfGhIjKlMnOp",
       "PATCH /v1/payables/batches/pbat_example/items/pbl_AbCdEfGhIjKlMnOp",
+      "PATCH /v1/payables/batches/pbat_example/items/pbl_AbCdEfGhIjKlMnOp",
       "POST /v1/payables/batches/pbat_example/items",
     ]);
     expect(seen[0]!.body).toBeUndefined();
     expect(JSON.parse(String(seen[1]!.body))).toEqual({ expected_version: 3, amount_minor: 5000 });
     expect(JSON.parse(String(seen[2]!.body))).toEqual({ expected_version: 4, excluded: true });
-    expect(JSON.parse(String(seen[3]!.body))).toEqual({
+    expect(JSON.parse(String(seen[3]!.body))).toEqual({ expected_version: 5, rail: "boleto" });
+    expect(JSON.parse(String(seen[4]!.body))).toEqual({
       expected_version: 5,
       items: [{ pix_key: "+5511999990000", amount_minor: 1200 }],
     });

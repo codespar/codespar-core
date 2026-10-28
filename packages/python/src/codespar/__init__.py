@@ -55,13 +55,17 @@ from .payables import (
     PayableBatchCreated,
     PayableBatchItem,
     PayableBatchItemCheck,
+    PayableBatchItemDocument,
     PayableBatchItemPayment,
     PayableBatchItemState,
+    PayableBatchItemWay,
+    PayableBatchItemWayUnavailable,
     PayableBatchSource,
     PayableBatchStatus,
     PayableFile,
     PayableItemInput,
     Payables,
+    PayableWayRail,
     UploadFile,
     payable_batch_from_error,
 )
@@ -180,7 +184,7 @@ from .wallet import (
     WalletPixKeys,
 )
 
-__version__ = "0.14.0"
+__version__ = "0.16.0"
 
 __all__ = [
     "APPROVAL_REQUIRED",
@@ -256,12 +260,16 @@ __all__ = [
     "PayableBatchCreated",
     "PayableBatchItem",
     "PayableBatchItemCheck",
+    "PayableBatchItemDocument",
     "PayableBatchItemPayment",
     "PayableBatchItemState",
+    "PayableBatchItemWay",
+    "PayableBatchItemWayUnavailable",
     "PayableBatchSource",
     "PayableBatchStatus",
     "PayableFile",
     "PayableItemInput",
+    "PayableWayRail",
     "Payables",
     # Async settlement (codespar_pay etc.)
     "PaymentStatus",

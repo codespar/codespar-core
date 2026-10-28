@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 8e0894fb7695ddc562e3a6de74a2445e597c1c2cc04b7d6510ebacd246462ca7, fetched 2026-10-26T21:53:13.984Z
+// Source: openapi-snapshot.json (sha256 ceee33204d9ec636547e7745fc7237e68e899b863a766d62bfa2b3ed5aad97d2, fetched 2026-10-27T17:52:30.609Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -3721,6 +3721,8 @@ export interface paths {
                                 currency: string;
                                 rail: string;
                                 payee: string | null;
+                                /** @description What the paid document calls itself, when the payment paid a batch item read from one ("DARE-SP", "DARE-SP · Secretaria da Fazenda"; contract payables v1.1, rule 6). Null for every other payment. */
+                                label: string | null;
                                 /**
                                  * @description settled = paid and on the ledger; failed = provably nothing moved; uncertain = held for reconciliation; claimed / dispatching / dispatched / settle_failed = in flight or resuming.
                                  * @enum {string}
@@ -10143,7 +10145,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description ONBOARDING COLLISION, and it is caller state and not a provider failure, which is why 409 and not 502. `provider_code` carries the provider's code (OBE064 proposal already open, CBE022 account already exists, OBE062 clientCode already linked) so the audit trail records the ground for the refusal. CBE022 is attributed only on this organization's own evidence: `onboarding_account_exists_in_project`, `onboarding_account_exists_elsewhere` (another project of the organization) or `onboarding_account_exists_unattributed` (no evidence; not concluded to be anyone's). E2 also answers here `onboarding_attempt_in_progress` (another request holds this clientCode's reservation; repeat later), `onboarding_client_code_conflict` for a clientCode this project used for another document, and `onboarding_unreserved`. Bare body. */
+                /** @description ONBOARDING COLLISION, and it is caller state and not a provider failure, which is why 409 and not 502. `provider_code` carries the provider's code (OBE064 proposal already open, CBE022 account already exists, OBE062 clientCode already linked) so the audit trail records the ground for the refusal. CBE022 is attributed only on this organization's own evidence: `onboarding_account_exists_in_project`, `onboarding_account_exists_elsewhere` (another project of the organization) or `onboarding_account_exists_unattributed` (no evidence; not concluded to be anyone's). E2 also answers here `onboarding_attempt_in_progress` (another request holds this clientCode's reservation; repeat later), `onboarding_client_code_conflict` for a clientCode this project used for another document, and `onboarding_unreserved`. On the OBE062 recovery, `consumer_onboarded_in_sibling_project`: the consumer is already onboarded in another project of the caller's organization, and the body carries `holding_project_id`. Bare body. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -10151,10 +10153,12 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_account_exists_in_project" | "onboarding_account_exists_unattributed" | "onboarding_client_code_conflict" | "onboarding_attempt_in_progress" | "onboarding_unreserved";
+                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_account_exists_in_project" | "onboarding_account_exists_unattributed" | "onboarding_client_code_conflict" | "onboarding_attempt_in_progress" | "onboarding_unreserved" | "consumer_onboarded_in_sibling_project";
                             provider_code?: string;
                             retriable?: boolean;
                             message: string;
+                            /** @description On `consumer_onboarded_in_sibling_project` only: the project of the organization that holds the consumer. */
+                            holding_project_id?: string;
                         };
                     };
                 };
@@ -10371,7 +10375,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description E2 adds the binding refusals: `account_bound_elsewhere` (the account is, or was, bound to another project), `account_binding_closed` (this project closed its binding; never reopened automatically), `consumer_holds_other_binding`. A refusal decided before anything is bound: the id has no proposal recorded for this project (`document_ownership_unproven`), the document does not match the one the proposal verified, or the account the provider returned names another document (`onboarding_document_mismatch`), or the funding source written did not confirm as this consumer's in this project (`funding_source_binding_unconfirmed`). Bare body. */
+                /** @description E2 adds the binding refusals: `account_bound_elsewhere` (the account is, or was, bound to another project), `account_binding_closed` (this project closed its binding; never reopened automatically), `consumer_holds_other_binding`. A refusal decided before anything is bound: the id has no proposal recorded for this project (`document_ownership_unproven`), the document does not match the one the proposal verified, or the account the provider returned names another document (`onboarding_document_mismatch`), or the funding source written did not confirm as this consumer's in this project (`funding_source_binding_unconfirmed`). Or the consumer is already onboarded in another project of the caller's organization (`consumer_onboarded_in_sibling_project`), refused before any write, and the body carries `holding_project_id`. Bare body. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -10379,8 +10383,10 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "document_ownership_unproven" | "onboarding_document_mismatch" | "consumer_bound_to_other_document" | "funding_source_binding_unconfirmed" | "account_bound_elsewhere" | "account_binding_closed" | "consumer_holds_other_binding";
+                            error: "document_ownership_unproven" | "onboarding_document_mismatch" | "consumer_bound_to_other_document" | "funding_source_binding_unconfirmed" | "consumer_onboarded_in_sibling_project" | "account_bound_elsewhere" | "account_binding_closed" | "consumer_holds_other_binding";
                             message: string;
+                            /** @description On `consumer_onboarded_in_sibling_project` only: the project of the organization that holds the consumer. */
+                            holding_project_id?: string;
                         };
                     };
                 };
@@ -11366,7 +11372,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Onboarding collision: caller state, not a provider failure. `provider_code` carries OBE064, CBE022 or OBE062; CBE022 is attributed only on this organization's evidence. E2 adds `onboarding_attempt_in_progress`, `onboarding_client_code_conflict` and `onboarding_unreserved`. Raw body. */
+                /** @description Onboarding collision: caller state, not a provider failure. `provider_code` carries OBE064, CBE022 or OBE062; CBE022 is attributed only on this organization's evidence. E2 adds `onboarding_attempt_in_progress`, `onboarding_client_code_conflict` and `onboarding_unreserved`. On the OBE062 recovery, `consumer_onboarded_in_sibling_project`: the consumer is already onboarded in another project of the caller's organization, and the body carries `holding_project_id`. Raw body. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -11374,10 +11380,12 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_account_exists_in_project" | "onboarding_account_exists_unattributed" | "onboarding_client_code_conflict" | "onboarding_attempt_in_progress" | "onboarding_unreserved";
+                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_account_exists_in_project" | "onboarding_account_exists_unattributed" | "onboarding_client_code_conflict" | "onboarding_attempt_in_progress" | "onboarding_unreserved" | "consumer_onboarded_in_sibling_project";
                             provider_code?: string;
                             retriable?: boolean;
                             message: string;
+                            /** @description On `consumer_onboarded_in_sibling_project` only: the project of the organization that holds the consumer. */
+                            holding_project_id?: string;
                         };
                     };
                 };
@@ -11593,7 +11601,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Conflict — E2's binding refusals (`account_bound_elsewhere`, `account_binding_closed`, `consumer_holds_other_binding`), or a refusal decided before anything is bound: no proposal recorded for this project under this id, a `document_number` (or an account read) that does not match the document the proposal verified, or a funding source that did not confirm as this consumer's in this project. */
+                /** @description Conflict — E2's binding refusals (`account_bound_elsewhere`, `account_binding_closed`, `consumer_holds_other_binding`), or a refusal decided before anything is bound: no proposal recorded for this project under this id, a `document_number` (or an account read) that does not match the document the proposal verified, or a funding source that did not confirm as this consumer's in this project. Or `consumer_onboarded_in_sibling_project`: the consumer is already onboarded in another project of the caller's organization, refused before any write, and the body carries `holding_project_id`. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -11601,8 +11609,10 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "document_ownership_unproven" | "onboarding_document_mismatch" | "consumer_bound_to_other_document" | "funding_source_binding_unconfirmed" | "account_bound_elsewhere" | "account_binding_closed" | "consumer_holds_other_binding";
+                            error: "document_ownership_unproven" | "onboarding_document_mismatch" | "consumer_bound_to_other_document" | "funding_source_binding_unconfirmed" | "consumer_onboarded_in_sibling_project" | "account_bound_elsewhere" | "account_binding_closed" | "consumer_holds_other_binding";
                             message: string;
+                            /** @description On `consumer_onboarded_in_sibling_project` only: the project of the organization that holds the consumer. */
+                            holding_project_id?: string;
                         };
                     };
                 };
@@ -43112,6 +43122,8 @@ export interface paths {
          *
          *     **Identity.** An item's `item_id` is the payable's id, derived from the batch and the item's content (the file hash and the carrier, or a row's content and `reference`), never from its position: re-uploading the same file into the same batch, reordering, or resuming never yields another item. A carrier repeated in the batch is flagged `duplicate_in_batch`; one already open or paid in the project fails `duplicate_document`.
          *
+         *     **One bill, two ways.** A page that prints one boleto and one Pix code for the same charge is ONE item with two `ways` (Pix first); `rail` is the chosen way and `rail_chosen_by` says who chose it (`default` until a person or an integration sends `PATCH { rail }`). A way the rail refuses (an expired dynamic code, a boleto past its final date, a provider that did not answer) carries `unavailable` and the item switches to the other way (`rail_switched`); two ways whose own amounts differ wait for a choice (`missing: ["rail"]`, `ways_amount_mismatch`). `document` carries what the page says about itself (title from a closed catalog, issuer, due date, the carrier's own amount), shown before the rail answers and never confirmed in its place.
+         *
          *     `Idempotency-Key` is required; a replay with the same key answers the same batch.
          *
          *     Scope: `payables:write`.
@@ -43193,13 +43205,65 @@ export interface paths {
                                     page: number | null;
                                     row: number | null;
                                     /** @enum {string} */
-                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual";
+                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
                                 };
-                                /** @enum {string|null} */
+                                /**
+                                 * @description The chosen way, when the item has two; the only way otherwise.
+                                 * @enum {string|null}
+                                 */
                                 rail: "boleto" | "pix" | null;
+                                /**
+                                 * @description `default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`.
+                                 * @enum {string}
+                                 */
+                                rail_chosen_by: "default" | "person" | "integration";
+                                /** @description 1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill. */
+                                ways: {
+                                    /** @enum {string} */
+                                    rail: "pix" | "boleto";
+                                    origin: {
+                                        page: number | null;
+                                        /** @enum {string} */
+                                        kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
+                                    };
+                                    /** @description This way's resolved destination, when the rail answered. */
+                                    destination: {
+                                        /** @enum {string} */
+                                        kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
+                                        /** @description The boleto line or the Pix key, masked. */
+                                        display: string;
+                                        /** @description From the rail (the boleto registration, the DICT owner); never from the document. */
+                                        beneficiary_name: string | null;
+                                        /** @description From the rail, masked. */
+                                        beneficiary_document_masked: string | null;
+                                        /** @description YYYY-MM-DD from the rail, or null. */
+                                        due_date: string | null;
+                                        /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                        beneficiary_institution?: string | null;
+                                        /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                        key?: string | null;
+                                    } | null;
+                                    /** @description Why this way cannot be paid now, or null when it can. */
+                                    unavailable: {
+                                        /** @enum {string} */
+                                        code: "br_code_expired" | "br_code_not_found" | "boleto_expired" | "boleto_refused" | "rail_unavailable" | "no_sandbox_fixture";
+                                        /** @description In the person's words; never a provider's name or body. */
+                                        message: string;
+                                    } | null;
+                                }[];
+                                document: {
+                                    /** @description From a closed catalog of document kinds ("DARE-SP", "Nota Fiscal", ...). */
+                                    title: string | null;
+                                    /** @description The text after a beneficiary/issuer label on the page, when it has one. */
+                                    issuer: string | null;
+                                    /** @description YYYY-MM-DD from a labelled date, else the boleto's own due factor. */
+                                    due_date: string | null;
+                                    /** @description The boleto's effective value or a static BR Code's amount; never loose text. */
+                                    amount_minor: number | null;
+                                } | null;
                                 /** @enum {string} */
                                 state: "needs_complement" | "resolving" | "ready" | "excluded" | "rejected" | "dispatching" | "executed" | "refused" | "uncertain";
-                                missing: ("amount" | "destination" | "pix_key_owner_confirmation")[];
+                                missing: ("amount" | "destination" | "pix_key_owner_confirmation" | "rail")[];
                                 destination: {
                                     /** @enum {string} */
                                     kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
@@ -43211,15 +43275,19 @@ export interface paths {
                                     beneficiary_document_masked: string | null;
                                     /** @description YYYY-MM-DD from the rail, or null. */
                                     due_date: string | null;
+                                    /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                    beneficiary_institution?: string | null;
+                                    /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                    key?: string | null;
                                 } | null;
                                 amount_minor: number | null;
                                 /** @enum {string|null} */
-                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | null;
+                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | "document" | null;
                                 description: string | null;
                                 reference: string | null;
                                 checks: {
                                     /** @enum {string} */
-                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved";
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable";
                                     /** @enum {string} */
                                     status: "pass" | "fail" | "warn";
                                     message: string;
@@ -43288,13 +43356,65 @@ export interface paths {
                                     page: number | null;
                                     row: number | null;
                                     /** @enum {string} */
-                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual";
+                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
                                 };
-                                /** @enum {string|null} */
+                                /**
+                                 * @description The chosen way, when the item has two; the only way otherwise.
+                                 * @enum {string|null}
+                                 */
                                 rail: "boleto" | "pix" | null;
+                                /**
+                                 * @description `default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`.
+                                 * @enum {string}
+                                 */
+                                rail_chosen_by: "default" | "person" | "integration";
+                                /** @description 1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill. */
+                                ways: {
+                                    /** @enum {string} */
+                                    rail: "pix" | "boleto";
+                                    origin: {
+                                        page: number | null;
+                                        /** @enum {string} */
+                                        kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
+                                    };
+                                    /** @description This way's resolved destination, when the rail answered. */
+                                    destination: {
+                                        /** @enum {string} */
+                                        kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
+                                        /** @description The boleto line or the Pix key, masked. */
+                                        display: string;
+                                        /** @description From the rail (the boleto registration, the DICT owner); never from the document. */
+                                        beneficiary_name: string | null;
+                                        /** @description From the rail, masked. */
+                                        beneficiary_document_masked: string | null;
+                                        /** @description YYYY-MM-DD from the rail, or null. */
+                                        due_date: string | null;
+                                        /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                        beneficiary_institution?: string | null;
+                                        /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                        key?: string | null;
+                                    } | null;
+                                    /** @description Why this way cannot be paid now, or null when it can. */
+                                    unavailable: {
+                                        /** @enum {string} */
+                                        code: "br_code_expired" | "br_code_not_found" | "boleto_expired" | "boleto_refused" | "rail_unavailable" | "no_sandbox_fixture";
+                                        /** @description In the person's words; never a provider's name or body. */
+                                        message: string;
+                                    } | null;
+                                }[];
+                                document: {
+                                    /** @description From a closed catalog of document kinds ("DARE-SP", "Nota Fiscal", ...). */
+                                    title: string | null;
+                                    /** @description The text after a beneficiary/issuer label on the page, when it has one. */
+                                    issuer: string | null;
+                                    /** @description YYYY-MM-DD from a labelled date, else the boleto's own due factor. */
+                                    due_date: string | null;
+                                    /** @description The boleto's effective value or a static BR Code's amount; never loose text. */
+                                    amount_minor: number | null;
+                                } | null;
                                 /** @enum {string} */
                                 state: "needs_complement" | "resolving" | "ready" | "excluded" | "rejected" | "dispatching" | "executed" | "refused" | "uncertain";
-                                missing: ("amount" | "destination" | "pix_key_owner_confirmation")[];
+                                missing: ("amount" | "destination" | "pix_key_owner_confirmation" | "rail")[];
                                 destination: {
                                     /** @enum {string} */
                                     kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
@@ -43306,15 +43426,19 @@ export interface paths {
                                     beneficiary_document_masked: string | null;
                                     /** @description YYYY-MM-DD from the rail, or null. */
                                     due_date: string | null;
+                                    /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                    beneficiary_institution?: string | null;
+                                    /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                    key?: string | null;
                                 } | null;
                                 amount_minor: number | null;
                                 /** @enum {string|null} */
-                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | null;
+                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | "document" | null;
                                 description: string | null;
                                 reference: string | null;
                                 checks: {
                                     /** @enum {string} */
-                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved";
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable";
                                     /** @enum {string} */
                                     status: "pass" | "fail" | "warn";
                                     message: string;
@@ -43478,13 +43602,65 @@ export interface paths {
                                     page: number | null;
                                     row: number | null;
                                     /** @enum {string} */
-                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual";
+                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
                                 };
-                                /** @enum {string|null} */
+                                /**
+                                 * @description The chosen way, when the item has two; the only way otherwise.
+                                 * @enum {string|null}
+                                 */
                                 rail: "boleto" | "pix" | null;
+                                /**
+                                 * @description `default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`.
+                                 * @enum {string}
+                                 */
+                                rail_chosen_by: "default" | "person" | "integration";
+                                /** @description 1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill. */
+                                ways: {
+                                    /** @enum {string} */
+                                    rail: "pix" | "boleto";
+                                    origin: {
+                                        page: number | null;
+                                        /** @enum {string} */
+                                        kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
+                                    };
+                                    /** @description This way's resolved destination, when the rail answered. */
+                                    destination: {
+                                        /** @enum {string} */
+                                        kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
+                                        /** @description The boleto line or the Pix key, masked. */
+                                        display: string;
+                                        /** @description From the rail (the boleto registration, the DICT owner); never from the document. */
+                                        beneficiary_name: string | null;
+                                        /** @description From the rail, masked. */
+                                        beneficiary_document_masked: string | null;
+                                        /** @description YYYY-MM-DD from the rail, or null. */
+                                        due_date: string | null;
+                                        /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                        beneficiary_institution?: string | null;
+                                        /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                        key?: string | null;
+                                    } | null;
+                                    /** @description Why this way cannot be paid now, or null when it can. */
+                                    unavailable: {
+                                        /** @enum {string} */
+                                        code: "br_code_expired" | "br_code_not_found" | "boleto_expired" | "boleto_refused" | "rail_unavailable" | "no_sandbox_fixture";
+                                        /** @description In the person's words; never a provider's name or body. */
+                                        message: string;
+                                    } | null;
+                                }[];
+                                document: {
+                                    /** @description From a closed catalog of document kinds ("DARE-SP", "Nota Fiscal", ...). */
+                                    title: string | null;
+                                    /** @description The text after a beneficiary/issuer label on the page, when it has one. */
+                                    issuer: string | null;
+                                    /** @description YYYY-MM-DD from a labelled date, else the boleto's own due factor. */
+                                    due_date: string | null;
+                                    /** @description The boleto's effective value or a static BR Code's amount; never loose text. */
+                                    amount_minor: number | null;
+                                } | null;
                                 /** @enum {string} */
                                 state: "needs_complement" | "resolving" | "ready" | "excluded" | "rejected" | "dispatching" | "executed" | "refused" | "uncertain";
-                                missing: ("amount" | "destination" | "pix_key_owner_confirmation")[];
+                                missing: ("amount" | "destination" | "pix_key_owner_confirmation" | "rail")[];
                                 destination: {
                                     /** @enum {string} */
                                     kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
@@ -43496,15 +43672,19 @@ export interface paths {
                                     beneficiary_document_masked: string | null;
                                     /** @description YYYY-MM-DD from the rail, or null. */
                                     due_date: string | null;
+                                    /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                    beneficiary_institution?: string | null;
+                                    /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                    key?: string | null;
                                 } | null;
                                 amount_minor: number | null;
                                 /** @enum {string|null} */
-                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | null;
+                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | "document" | null;
                                 description: string | null;
                                 reference: string | null;
                                 checks: {
                                     /** @enum {string} */
-                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved";
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable";
                                     /** @enum {string} */
                                     status: "pass" | "fail" | "warn";
                                     message: string;
@@ -43574,8 +43754,8 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Complement, correct or exclude one item
-         * @description Re-resolves the item's destination on the rail, re-runs its checks, keeps every other item as it is and bumps `version`. A correction of the carrier is a new carrier for the same item.
+         * Complement, correct, choose the way or exclude one item
+         * @description Re-resolves the item's destination on the rail, re-runs its checks, keeps every other item as it is and bumps `version`. A correction of the carrier is a new carrier for the same item. `rail` chooses the way of an item that has two (`ways`): the item re-resolves on it, `rail_chosen_by` becomes `person` (dashboard, chat) or `integration` (API key), and a switch after a confirmation needs a new one, since `list_hash` covers `rail`.
          *
          *     **The confirmation binds to the list.** `version` bumps on every change and `list_hash` is the SHA-256 of the canonical list (each non-excluded item in `item_id` order as `item_id|rail|destination id|amount_minor|currency`, then the total). Any change after a confirmation needs a new one.
          *
@@ -43602,6 +43782,11 @@ export interface paths {
                         br_code?: string;
                         description?: string;
                         excluded?: boolean;
+                        /**
+                         * @description The way to pay an item that has two (`ways`): the item re-resolves on it. Refused 409 `payable_item_rail_unavailable` when the item has no such way or it is unavailable.
+                         * @enum {string}
+                         */
+                        rail?: "pix" | "boleto";
                     };
                 };
             };
@@ -43647,13 +43832,65 @@ export interface paths {
                                     page: number | null;
                                     row: number | null;
                                     /** @enum {string} */
-                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual";
+                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
                                 };
-                                /** @enum {string|null} */
+                                /**
+                                 * @description The chosen way, when the item has two; the only way otherwise.
+                                 * @enum {string|null}
+                                 */
                                 rail: "boleto" | "pix" | null;
+                                /**
+                                 * @description `default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`.
+                                 * @enum {string}
+                                 */
+                                rail_chosen_by: "default" | "person" | "integration";
+                                /** @description 1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill. */
+                                ways: {
+                                    /** @enum {string} */
+                                    rail: "pix" | "boleto";
+                                    origin: {
+                                        page: number | null;
+                                        /** @enum {string} */
+                                        kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
+                                    };
+                                    /** @description This way's resolved destination, when the rail answered. */
+                                    destination: {
+                                        /** @enum {string} */
+                                        kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
+                                        /** @description The boleto line or the Pix key, masked. */
+                                        display: string;
+                                        /** @description From the rail (the boleto registration, the DICT owner); never from the document. */
+                                        beneficiary_name: string | null;
+                                        /** @description From the rail, masked. */
+                                        beneficiary_document_masked: string | null;
+                                        /** @description YYYY-MM-DD from the rail, or null. */
+                                        due_date: string | null;
+                                        /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                        beneficiary_institution?: string | null;
+                                        /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                        key?: string | null;
+                                    } | null;
+                                    /** @description Why this way cannot be paid now, or null when it can. */
+                                    unavailable: {
+                                        /** @enum {string} */
+                                        code: "br_code_expired" | "br_code_not_found" | "boleto_expired" | "boleto_refused" | "rail_unavailable" | "no_sandbox_fixture";
+                                        /** @description In the person's words; never a provider's name or body. */
+                                        message: string;
+                                    } | null;
+                                }[];
+                                document: {
+                                    /** @description From a closed catalog of document kinds ("DARE-SP", "Nota Fiscal", ...). */
+                                    title: string | null;
+                                    /** @description The text after a beneficiary/issuer label on the page, when it has one. */
+                                    issuer: string | null;
+                                    /** @description YYYY-MM-DD from a labelled date, else the boleto's own due factor. */
+                                    due_date: string | null;
+                                    /** @description The boleto's effective value or a static BR Code's amount; never loose text. */
+                                    amount_minor: number | null;
+                                } | null;
                                 /** @enum {string} */
                                 state: "needs_complement" | "resolving" | "ready" | "excluded" | "rejected" | "dispatching" | "executed" | "refused" | "uncertain";
-                                missing: ("amount" | "destination" | "pix_key_owner_confirmation")[];
+                                missing: ("amount" | "destination" | "pix_key_owner_confirmation" | "rail")[];
                                 destination: {
                                     /** @enum {string} */
                                     kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
@@ -43665,15 +43902,19 @@ export interface paths {
                                     beneficiary_document_masked: string | null;
                                     /** @description YYYY-MM-DD from the rail, or null. */
                                     due_date: string | null;
+                                    /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                    beneficiary_institution?: string | null;
+                                    /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                    key?: string | null;
                                 } | null;
                                 amount_minor: number | null;
                                 /** @enum {string|null} */
-                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | null;
+                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | "document" | null;
                                 description: string | null;
                                 reference: string | null;
                                 checks: {
                                     /** @enum {string} */
-                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved";
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable";
                                     /** @enum {string} */
                                     status: "pass" | "fail" | "warn";
                                     message: string;
@@ -43739,7 +43980,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `payable_batch_version_conflict`: `expected_version` is stale; `details.batch` is the current batch. `payable_batch_locked`: the batch was confirmed. */
+                /** @description `payable_batch_version_conflict`: `expected_version` is stale; `details.batch` is the current batch. `payable_batch_locked`: the batch was confirmed. `payable_item_rail_unavailable`: `rail` names a way the item does not have, or one that is unavailable (`details.unavailable` says why, `details.ways` lists the item's ways). */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -43748,7 +43989,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "payable_batch_version_conflict" | "payable_batch_locked";
+                                code: "payable_batch_version_conflict" | "payable_batch_locked" | "payable_item_rail_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -43870,13 +44111,65 @@ export interface paths {
                                     page: number | null;
                                     row: number | null;
                                     /** @enum {string} */
-                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual";
+                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
                                 };
-                                /** @enum {string|null} */
+                                /**
+                                 * @description The chosen way, when the item has two; the only way otherwise.
+                                 * @enum {string|null}
+                                 */
                                 rail: "boleto" | "pix" | null;
+                                /**
+                                 * @description `default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`.
+                                 * @enum {string}
+                                 */
+                                rail_chosen_by: "default" | "person" | "integration";
+                                /** @description 1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill. */
+                                ways: {
+                                    /** @enum {string} */
+                                    rail: "pix" | "boleto";
+                                    origin: {
+                                        page: number | null;
+                                        /** @enum {string} */
+                                        kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
+                                    };
+                                    /** @description This way's resolved destination, when the rail answered. */
+                                    destination: {
+                                        /** @enum {string} */
+                                        kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
+                                        /** @description The boleto line or the Pix key, masked. */
+                                        display: string;
+                                        /** @description From the rail (the boleto registration, the DICT owner); never from the document. */
+                                        beneficiary_name: string | null;
+                                        /** @description From the rail, masked. */
+                                        beneficiary_document_masked: string | null;
+                                        /** @description YYYY-MM-DD from the rail, or null. */
+                                        due_date: string | null;
+                                        /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                        beneficiary_institution?: string | null;
+                                        /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                        key?: string | null;
+                                    } | null;
+                                    /** @description Why this way cannot be paid now, or null when it can. */
+                                    unavailable: {
+                                        /** @enum {string} */
+                                        code: "br_code_expired" | "br_code_not_found" | "boleto_expired" | "boleto_refused" | "rail_unavailable" | "no_sandbox_fixture";
+                                        /** @description In the person's words; never a provider's name or body. */
+                                        message: string;
+                                    } | null;
+                                }[];
+                                document: {
+                                    /** @description From a closed catalog of document kinds ("DARE-SP", "Nota Fiscal", ...). */
+                                    title: string | null;
+                                    /** @description The text after a beneficiary/issuer label on the page, when it has one. */
+                                    issuer: string | null;
+                                    /** @description YYYY-MM-DD from a labelled date, else the boleto's own due factor. */
+                                    due_date: string | null;
+                                    /** @description The boleto's effective value or a static BR Code's amount; never loose text. */
+                                    amount_minor: number | null;
+                                } | null;
                                 /** @enum {string} */
                                 state: "needs_complement" | "resolving" | "ready" | "excluded" | "rejected" | "dispatching" | "executed" | "refused" | "uncertain";
-                                missing: ("amount" | "destination" | "pix_key_owner_confirmation")[];
+                                missing: ("amount" | "destination" | "pix_key_owner_confirmation" | "rail")[];
                                 destination: {
                                     /** @enum {string} */
                                     kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
@@ -43888,15 +44181,19 @@ export interface paths {
                                     beneficiary_document_masked: string | null;
                                     /** @description YYYY-MM-DD from the rail, or null. */
                                     due_date: string | null;
+                                    /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                    beneficiary_institution?: string | null;
+                                    /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                    key?: string | null;
                                 } | null;
                                 amount_minor: number | null;
                                 /** @enum {string|null} */
-                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | null;
+                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | "document" | null;
                                 description: string | null;
                                 reference: string | null;
                                 checks: {
                                     /** @enum {string} */
-                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved";
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable";
                                     /** @enum {string} */
                                     status: "pass" | "fail" | "warn";
                                     message: string;
@@ -44096,13 +44393,65 @@ export interface paths {
                                     page: number | null;
                                     row: number | null;
                                     /** @enum {string} */
-                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual";
+                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
                                 };
-                                /** @enum {string|null} */
+                                /**
+                                 * @description The chosen way, when the item has two; the only way otherwise.
+                                 * @enum {string|null}
+                                 */
                                 rail: "boleto" | "pix" | null;
+                                /**
+                                 * @description `default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`.
+                                 * @enum {string}
+                                 */
+                                rail_chosen_by: "default" | "person" | "integration";
+                                /** @description 1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill. */
+                                ways: {
+                                    /** @enum {string} */
+                                    rail: "pix" | "boleto";
+                                    origin: {
+                                        page: number | null;
+                                        /** @enum {string} */
+                                        kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
+                                    };
+                                    /** @description This way's resolved destination, when the rail answered. */
+                                    destination: {
+                                        /** @enum {string} */
+                                        kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
+                                        /** @description The boleto line or the Pix key, masked. */
+                                        display: string;
+                                        /** @description From the rail (the boleto registration, the DICT owner); never from the document. */
+                                        beneficiary_name: string | null;
+                                        /** @description From the rail, masked. */
+                                        beneficiary_document_masked: string | null;
+                                        /** @description YYYY-MM-DD from the rail, or null. */
+                                        due_date: string | null;
+                                        /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                        beneficiary_institution?: string | null;
+                                        /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                        key?: string | null;
+                                    } | null;
+                                    /** @description Why this way cannot be paid now, or null when it can. */
+                                    unavailable: {
+                                        /** @enum {string} */
+                                        code: "br_code_expired" | "br_code_not_found" | "boleto_expired" | "boleto_refused" | "rail_unavailable" | "no_sandbox_fixture";
+                                        /** @description In the person's words; never a provider's name or body. */
+                                        message: string;
+                                    } | null;
+                                }[];
+                                document: {
+                                    /** @description From a closed catalog of document kinds ("DARE-SP", "Nota Fiscal", ...). */
+                                    title: string | null;
+                                    /** @description The text after a beneficiary/issuer label on the page, when it has one. */
+                                    issuer: string | null;
+                                    /** @description YYYY-MM-DD from a labelled date, else the boleto's own due factor. */
+                                    due_date: string | null;
+                                    /** @description The boleto's effective value or a static BR Code's amount; never loose text. */
+                                    amount_minor: number | null;
+                                } | null;
                                 /** @enum {string} */
                                 state: "needs_complement" | "resolving" | "ready" | "excluded" | "rejected" | "dispatching" | "executed" | "refused" | "uncertain";
-                                missing: ("amount" | "destination" | "pix_key_owner_confirmation")[];
+                                missing: ("amount" | "destination" | "pix_key_owner_confirmation" | "rail")[];
                                 destination: {
                                     /** @enum {string} */
                                     kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
@@ -44114,15 +44463,19 @@ export interface paths {
                                     beneficiary_document_masked: string | null;
                                     /** @description YYYY-MM-DD from the rail, or null. */
                                     due_date: string | null;
+                                    /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                    beneficiary_institution?: string | null;
+                                    /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                    key?: string | null;
                                 } | null;
                                 amount_minor: number | null;
                                 /** @enum {string|null} */
-                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | null;
+                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | "document" | null;
                                 description: string | null;
                                 reference: string | null;
                                 checks: {
                                     /** @enum {string} */
-                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved";
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable";
                                     /** @enum {string} */
                                     status: "pass" | "fail" | "warn";
                                     message: string;
@@ -44250,6 +44603,252 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consumers/receipts/{id}/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The payment receipt (comprovante) of a sealed receipt, as PDF or PNG
+         * @description Composes the comprovante of the payment the receipt seals (state and amount, who received, who paid, who authorized, the end-to-end id and the receipt id) and renders it. `format=pdf` is one page of 600x828 px; `format=png` is the same page at 2x (1200x1656), for sharing as an image.
+         *
+         *     Read-only: generating or downloading a document never repeats or touches the payment. Served only when the payment is in a final confirmed state (its attempt is `settled`); otherwise 409 `document_not_final` with the attempt's status. A Test project's document carries the chip "Ambiente de teste" once. Deterministic: the same receipt gives the same document content, and the `X-CodeSpar-Document-Sha256` header is its hash.
+         *
+         *     Scoped to the organization AND the project of the caller, like the receipt read.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description `pdf` (default) or `png` (600x828 at 2x). */
+                    format?: "pdf" | "png";
+                };
+                header?: never;
+                path: {
+                    /** @description The receipt id (`rcpt_…`). */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The document. */
+                200: {
+                    headers: {
+                        /** @description SHA-256 of the document's structured content (the model the template renders). The same receipt answers the same value on every call. */
+                        "X-CodeSpar-Document-Sha256"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": string;
+                        "image/png": string;
+                    };
+                };
+                /** @description `format` is neither `pdf` nor `png`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "document_format_invalid";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No receipt with this id in the caller's project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "receipt_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The payment is not in a final confirmed state (`details.status` is the attempt's status: `dispatching`, `uncertain`, …). Retriable once it settles. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "document_not_final";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The renderer (the hosted browser worker) is not configured or did not answer. Retriable; `Retry-After` is set. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "document_renderer_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/account/statement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The account statement (extrato) of a period, as PDF
+         * @description The statement of the project's account over `[from, to]` (calendar days in America/Sao_Paulo, inclusive, at most 92 days, `to` not after today): holder, document, institution, agency and account; opening balance, inflows, outflows and closing balance over the BOOKED balance (the ledger kinds that move it: fund, debit, fee, reverse); reserves (holds open at the end of the period) shown apart and outside the balance identity; one row per balance-moving entry, newest first; A4, paginated, the column header on every page.
+         *
+         *     `closing = opening + inflows - outflows` is asserted in code against an independent aggregate: a period that does not reconcile answers 500 `statement_not_reconciled` and no document. The wallet set is the one the account balances sum (a Test project with a bound account: that account's wallet), so the closing balance at `to = today` equals the account's booked balance.
+         *
+         *     Read-only; nothing is cached. `format=pdf` only. The Wallet's CSV export is unchanged and separate.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description First day of the period, `YYYY-MM-DD`, America/Sao_Paulo. */
+                    from: string;
+                    /** @description Last day, inclusive; not after today; at most 92 days after `from`. */
+                    to: string;
+                    /** @description `pdf` only in this delivery. */
+                    format?: "pdf";
+                    /** @description The ledger currency (default BRL). */
+                    currency?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The statement. */
+                200: {
+                    headers: {
+                        /** @description SHA-256 of the document's structured content (the model the template renders). The same receipt answers the same value on every call. */
+                        "X-CodeSpar-Document-Sha256"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": string;
+                    };
+                };
+                /** @description `format` is not `pdf` (`document_format_invalid`); or the period is malformed, `from` is after `to`, `to` is after today, or the span exceeds the maximum (`statement_period_invalid`, `details.reason`). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "document_format_invalid" | "statement_period_invalid";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The ledger of the period does not reconcile; logged, nothing served. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "statement_not_reconciled";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The renderer (the hosted browser worker) is not configured or did not answer. Retriable; `Retry-After` is set. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "document_renderer_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;

@@ -1,5 +1,16 @@
 # @codespar/mcp — changelog
 
+## 0.5.14 — 2026-10-27
+
+### Added
+
+- **`codespar_payables` action `set_rail`** (`batch_id`, `item_id`,
+  `expected_version`, `rail`): the way to pay an item printed with a Pix code
+  and a boleto for the same bill (payables contract v1.1); `update_item` takes
+  `rail` too. The projection the model reads gains `rail_chosen_by`, `ways`
+  (rail and `unavailable` only) and `document` (title, due date, amount; never
+  the page's free text).
+
 ## 0.5.13 — 2026-10-27
 
 ### Changed

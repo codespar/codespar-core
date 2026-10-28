@@ -1,5 +1,37 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.23 — 2026-10-27
+
+### Added
+
+- **One bill, two ways** (payables contract v1.1, 27/10/2026). A page that
+  prints a boleto and a Pix code for the same charge is ONE batch item:
+  `PayableBatchItem` gains `ways` (1 or 2 entries, Pix first, each with its
+  resolved `destination` and an `unavailable { code, message }` when the rail
+  refused it), `rail_chosen_by` (`default | person | integration`) and
+  `document` (what the page says about itself: a catalog `title` such as
+  "DARE-SP", `issuer`, `due_date`, `amount_minor`), plus `origin.kind:
+  "document"`, `missing: "rail"` and `amount_source: "document"`.
+  `cs.payables.batches.updateItem(batchId, itemId, { expectedVersion, rail })`
+  chooses the way; a way the item lacks or that is unavailable is refused with
+  409 `payable_item_rail_unavailable` (`error.details.unavailable`). New
+  types `PayableBatchItemWay`, `PayableBatchItemDocument`,
+  `PayableBatchItemDestination`, `PayableWayRail`, `PayableWayUnavailableCode`.
+
+### Changed
+
+- OpenAPI snapshot re-read from the served document on 2026-10-27
+  (`2e081b97a350`, API 0.3.0, 367 operations): `GET /v1/consumers/receipts/{id}/document`
+  and `GET /v1/account/statement` are now in the document, so the CLI reserves them for
+  its hand-written `receipts document` / `account statement` (no derived JSON twin).
+- OpenAPI snapshot re-read again after enterprise #2206 and #2211 were served
+  (`ceee33204d9e`, API 0.3.0, same 367 operations): the payables batch and item
+  schemas now describe the v1.1 shape (`ways`, `rail_chosen_by`, `document`, the
+  checks `amount_matches_document`, `rail_switched`, `ways_amount_mismatch`,
+  `ways_unavailable`), `GET /v1/account/payments` names the paid document, and the
+  KYC onboarding refusals gain `consumer_onboarded_in_sibling_project`. No route
+  added or removed, so no client change is forced.
+
 ## 0.16.22 — 2026-10-27
 
 ### Added
