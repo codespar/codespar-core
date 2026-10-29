@@ -47,7 +47,7 @@ session, and the answer decides what `tools/list` offers:
 | Tools | Scope the key needs |
 |---|---|
 | session tools | `sessions:create` (and `tools:execute` to call them) |
-| `codespar_payables` `upload`, `create_batch`, `get`, `update_item` | `payables:read` / `payables:write` |
+| `codespar_payables` `upload`, `create_batch`, `get`, `update_item`, `set_rail`, `discard` | `payables:read` / `payables:write` |
 | `codespar_payables` `pay` | `payables:pay` |
 
 Inside `codespar_payables`, a `403` is rendered as `insufficient permission (403): …`

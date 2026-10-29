@@ -1,5 +1,15 @@
 # codespar (Python SDK) — CHANGELOG
 
+## 0.16.1
+
+Discard a batch, in parity with `@codespar/sdk` 0.16.24.
+
+### Added
+
+- `cs.payables.batches.discard(batch_id)` → `POST /v1/payables/batches/:batch_id/discard`:
+  every item never sent leaves the batch; paid, uncertain and in-flight items keep
+  their payment. `PayableBatch` gains `discarded` (`PayableBatchDiscarded | None`).
+
 ## 0.16.0
 
 One bill, two ways (payables contract v1.1), in parity with `@codespar/sdk` 0.16.23.

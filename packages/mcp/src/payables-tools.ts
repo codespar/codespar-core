@@ -38,8 +38,8 @@ const ITEM_SCHEMA = {
 /** The tool definition. `withUpload: false` is the shape a server without local files would list. */
 export function payablesToolDefinition(withUpload = true): McpToolDefinition {
   const actions = withUpload
-    ? ["upload", "create_batch", "get", "update_item", "set_rail", "pay"]
-    : ["create_batch", "get", "update_item", "set_rail", "pay"];
+    ? ["upload", "create_batch", "get", "update_item", "set_rail", "pay", "discard"]
+    : ["create_batch", "get", "update_item", "set_rail", "pay", "discard"];
   return {
     name: PAYABLES_TOOL_NAME,
     description:
@@ -50,6 +50,8 @@ export function payablesToolDefinition(withUpload = true): McpToolDefinition {
       "action=set_rail chooses how an item printed with a Pix code AND a boleto for the same bill is paid (its ways are pix|boleto; " +
       "it is one item, paid once; rail=pix|boleto); " +
       "action=pay confirms the exact list (version + list_hash) and pays it, each item with its own result. " +
+      "action=discard drops what was never sent (paid, uncertain and in-flight items stay): first without confirm, " +
+      "which only says what would be dropped; then confirm=true after the person said yes. " +
       "Destinations shown are the ones the rail resolved (beneficiary name, masked document), never the extracted text. " +
       "Only pay a list the person reviewed and confirmed; a changed list is refused and must be confirmed again.",
     inputSchema: {
@@ -68,7 +70,7 @@ export function payablesToolDefinition(withUpload = true): McpToolDefinition {
           : {}),
         file_ids: { type: "array", maxItems: 20, items: { type: "string" }, description: "create_batch: uploaded files." },
         items: { type: "array", maxItems: 500, items: ITEM_SCHEMA, description: "create_batch: stated charges." },
-        batch_id: { type: "string", description: "get, update_item, pay." },
+        batch_id: { type: "string", description: "get, update_item, pay, discard." },
         item_id: { type: "string", description: "update_item." },
         expected_version: { type: "integer", description: "update_item: the batch version you read." },
         amount_minor: { type: "integer", minimum: 1, description: "update_item: amount in cents." },
@@ -81,6 +83,7 @@ export function payablesToolDefinition(withUpload = true): McpToolDefinition {
         list_hash: { type: "string", description: "pay: the list_hash the person confirmed." },
         mandate_id: { type: "string", description: "pay: the mandate that authorizes it." },
         idempotency_key: { type: "string", description: "create_batch: the same key returns the same batch." },
+        confirm: { type: "boolean", description: "discard: true only after the person said yes; without it nothing is sent." },
       },
     },
   };
@@ -102,6 +105,7 @@ export function projectBatch(batch: PayableBatch): Record<string, unknown> {
     confirmation: batch.confirmation
       ? { version: batch.confirmation.version, list_hash: batch.confirmation.list_hash, confirmed_at: batch.confirmation.confirmed_at }
       : null,
+    discarded: batch.discarded ?? null,
     items: batch.items.map((item) => ({
       item_id: item.item_id,
       position: item.position,
@@ -303,6 +307,22 @@ export async function callPayablesTool(
         ...(mandateId ? { mandateId } : {}),
       });
       return projectBatch(batch);
+    }
+    case "discard": {
+      const batchId = str(args.batch_id, "batch_id");
+      if (args.confirm !== true) {
+        // Two steps, as a Pix key deletion: the first call reads and says what would leave.
+        const batch = await payables.batches.get(batchId);
+        const pending = batch.items.filter((i) => i.payment === null && i.state !== "excluded").length;
+        return {
+          requires_confirmation: true,
+          message: `Discarding takes out the ${pending} item(s) never sent; paid, uncertain and in-flight items stay as they are. Ask the person; call again with confirm=true only after a yes. Nothing was sent.`,
+          batch: projectBatch(batch),
+        };
+      }
+      // The SDK range this server accepts reaches back before 0.16.24, which added discard.
+      if (typeof payables.batches.discard !== "function") throw new Error("discard needs @codespar/sdk 0.16.24 or later");
+      return projectBatch(await payables.batches.discard(batchId));
     }
     default:
       throw new Error(`unknown codespar_payables action ${String(args.action)}`);

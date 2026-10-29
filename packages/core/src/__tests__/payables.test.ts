@@ -58,6 +58,7 @@ const BATCH: PayableBatch = {
   created_at: "2026-10-24T12:00:00.000Z",
   source: "api",
   conversation_id: null,
+  discarded: null,
 };
 
 function client(answer: (seen: Seen) => Response) {
@@ -198,6 +199,16 @@ describe("cs.payables.batches", () => {
       expected_version: 5,
       items: [{ pix_key: "+5511999990000", amount_minor: 1200 }],
     });
+  });
+
+  it("discard posts an empty object to the batch's discard door and returns the batch", async () => {
+    const discarded = { ...BATCH, status: "canceled" as const, discarded: { at: "2026-10-28T10:00:00.000Z", items: 1 } };
+    const { cs, seen } = client(() => json(200, discarded));
+    const batch = await cs.payables.batches.discard("pbat_example");
+    expect(batch).toEqual(discarded);
+    expect(seen.map((s) => `${s.method} ${s.url.slice(BASE.length)}`)).toEqual(["POST /v1/payables/batches/pbat_example/discard"]);
+    expect(JSON.parse(String(seen[0]!.body))).toEqual({});
+    expect(seen[0]!.headers["Idempotency-Key"]).toBeUndefined();
   });
 
   it("pay binds to version and list_hash with a key derived from them", async () => {
