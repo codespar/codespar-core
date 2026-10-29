@@ -114,9 +114,11 @@ export async function callShopPurchaseTool(session: Session, name: string, args:
   if (!session.purchases || !session.instruments) throw new Error("this runtime does not offer Shop delegated purchases");
   switch (name) {
     case "codespar_shop_purchase_propose": {
+      const paymentMethod: "card" | "store_on_file" | undefined =
+        args.payment_method === "store_on_file" || args.payment_method === "card" ? args.payment_method : undefined;
       const common = {
         agentId: String(args.agent_id ?? ""),
-        ...(args.payment_method === "store_on_file" || args.payment_method === "card" ? { paymentMethod: args.payment_method } : {}),
+        ...(paymentMethod ? { paymentMethod } : {}),
         idempotencyKey: String(args.idempotency_key ?? ""),
       };
       if (typeof args.offer_id === "string") {
@@ -132,8 +134,9 @@ export async function callShopPurchaseTool(session: Session, name: string, args:
     case "codespar_shop_research": {
       if (!session.research) throw new Error("this runtime does not offer Shop research");
       const sources = Array.isArray(args.sources) ? (args.sources as ("registry" | "vtex" | "meli")[]) : undefined;
+      const priority: "total" | "eta" | undefined = args.priority === "total" || args.priority === "eta" ? args.priority : undefined;
       const criteria = {
-        ...(args.priority === "total" || args.priority === "eta" ? { priority: args.priority } : {}),
+        ...(priority ? { priority } : {}),
         ...(typeof args.max_total_minor === "number" ? { maxTotalMinor: args.max_total_minor } : {}),
         ...(sources ? { sources } : {}),
         ...(typeof args.limit === "number" ? { limit: args.limit } : {}),

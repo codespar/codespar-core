@@ -87,3 +87,37 @@ describe("session.instruments", () => {
     expect(list).toEqual([{ id: "cfs_AAAAAAAA", kind: "byo_card", brand: "visa", last4: "4242", status: "active" }]);
   });
 });
+
+describe("Shop v0.3: session.research and a purchase from an offer", () => {
+  const RESEARCH = { id: "srr_AbCdEfGhIjKlMnOp", state: "completed", offers: [], recommendation: { principal_offer_id: null } };
+
+  it("research.create sends the query and the criteria in the wire's snake_case, and returns the research", async () => {
+    const { session, seen } = await sessionWith(() => ({ status: 201, body: { research: RESEARCH } }));
+    const r = await session.research!.create({ query: "fone bluetooth", criteria: { priority: "eta", maxTotalMinor: 40000, sources: ["registry"], limit: 3 } });
+    expect(seen[0]).toMatchObject({
+      url: "https://api.example.com/v1/shop/agent/research",
+      method: "POST",
+      body: { query: "fone bluetooth", criteria: { priority: "eta", max_total_minor: 40000, sources: ["registry"], limit: 3 } },
+    });
+    expect(r.id).toBe(RESEARCH.id);
+  });
+
+  it("research.create without criteria sends only the query; research.get reads it back by id", async () => {
+    const { session, seen } = await sessionWith(() => ({ status: 200, body: { research: RESEARCH } }));
+    await session.research!.create({ query: "fone" });
+    expect(seen[0]!.body).toEqual({ query: "fone" });
+    await session.research!.get(RESEARCH.id);
+    expect(seen[1]).toMatchObject({ url: `https://api.example.com/v1/shop/agent/research/${RESEARCH.id}`, method: "GET" });
+  });
+
+  it("purchases.create with an offerId sends offer_id and quantity, never merchant or items", async () => {
+    const { session, seen } = await sessionWith(() => ({ status: 201, body: { purchase: PURCHASE, proposal: null, idempotent_replay: false } }));
+    await session.purchases!.create({ agentId: "ag_1", offerId: "sof_AbCdEfGhIjKlMnOp", quantity: 2, idempotencyKey: "idem_k1_0002" });
+    expect(seen[0]!.body).toEqual({ agent_id: "ag_1", offer_id: "sof_AbCdEfGhIjKlMnOp", quantity: 2, payment_method: "card", idempotency_key: "idem_k1_0002" });
+  });
+
+  it("a refused research (offer moved, no source) surfaces as an error, never an empty success", async () => {
+    const { session } = await sessionWith(() => ({ status: 409, body: { error: { code: "research_no_sources", message: "no source" } } }));
+    await expect(session.research!.create({ query: "fone" })).rejects.toBeInstanceOf(CodesparApiError);
+  });
+});
