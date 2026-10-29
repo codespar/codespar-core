@@ -17,7 +17,7 @@ import { getTools, handleToolCall } from "@codespar/openai";
 const cs = new CodeSpar({ apiKey: "ak_..." });
 // Optionally pin to a project: new CodeSpar({ apiKey: "ak_...", projectId: "prj_..." })
 const session = await cs.create("user_123", { preset: "brazilian" });
-const tools = getTools(session);
+const tools = await getTools(session);
 ```
 
 The session itself also exposes the meta-tool router wrappers — `session.discover(query)`, `session.connectionWizard({...})`, `session.paymentStatus(toolCallId)` — for tool search, connect deep-links, and async settlement correlation.

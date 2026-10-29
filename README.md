@@ -198,25 +198,25 @@ codespar transfer <consumer> --from BRL --to USDC --amount 15000
 
 ## Framework Adapters
 
-Each adapter exposes `getTools(session)` returning tools shaped for that framework. Same session, any framework — pick one or compose several.
+Each adapter exposes an async `getTools(session)` that resolves to tools shaped for that framework. Same session, any framework — pick one or compose several.
 
 ```typescript
 // Vercel AI SDK
 import { getTools } from "@codespar/vercel";
-const tools = getTools(session);
+const tools = await getTools(session);
 const result = await generateText({ model: openai("gpt-4o"), tools, prompt: "..." });
 
 // Claude Agent SDK
 import { getTools } from "@codespar/claude";
-const tools = getTools(session);
+const tools = await getTools(session);
 
 // OpenAI Agents SDK
 import { getTools, handleToolCall } from "@codespar/openai";
-const tools = getTools(session);
+const tools = await getTools(session);
 
 // LangChain.js / LlamaIndex.TS / Mastra / CrewAI / AutoGen / CAMEL / Letta / Gemini
 import { getTools } from "@codespar/langchain";  // or @codespar/llama-index, @codespar/mastra, etc.
-const tools = getTools(session);
+const tools = await getTools(session);
 
 // MCP (Claude Desktop, Cursor, VS Code)
 import { getMcpConfig } from "@codespar/mcp";
