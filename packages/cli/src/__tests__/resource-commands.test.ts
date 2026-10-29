@@ -88,22 +88,16 @@ const PINNED_COMMANDS = [
   "mcp-servers delete → DELETE /v1/mcp-servers/{id}",
   "mcp-servers update → PATCH /v1/mcp-servers/{id}",
   "mcp-servers tools → PATCH /v1/mcp-servers/{id}/tools/{tool}",
-  "mcp-servers platform-fees-sweep → POST /v1/mcp-servers/platform-fees/sweep",
   "wallets list → GET /v1/wallets",
   "wallets create → POST /v1/wallets",
   "wallets get → GET /v1/wallets/{id}",
   "wallets list-ledger → GET /v1/wallets/{id}/ledger",
-  "wallets create-ledger → POST /v1/wallets/{id}/ledger",
   "wallets list-funding-sources → GET /v1/wallets/{id}/funding-sources",
-  "wallets create-funding-sources → POST /v1/wallets/{id}/funding-sources",
-  "wallets delete-funding-sources → DELETE /v1/wallets/{id}/funding-sources/{connection_id}/{currency}",
   "wallets execute → POST /v1/wallets/{id}/execute",
   "wallets list-recon-anomalies → GET /v1/wallets/{id}/recon-anomalies",
-  "wallets create-recon-anomalies → POST /v1/wallets/{id}/recon-anomalies/{aid}",
   "wallets receive → GET /v1/wallets/{id}/receive",
   "wallets custody → GET /v1/wallets/{id}/custody",
   "wallets transfer → POST /v1/wallets/{id}/transfer",
-  "wallets statement-import → POST /v1/wallets/{id}/statement-import",
   "triggers list → GET /v1/webhook-endpoints",
   "triggers create → POST /v1/webhook-endpoints",
   "triggers get → GET /v1/webhook-endpoints/{id}",
@@ -154,11 +148,8 @@ const PINNED_COMMANDS = [
   "account agent-activity → GET /v1/account/agent-activity",
   "account spenders → GET /v1/account/spenders",
   "account payments → GET /v1/account/payments",
-  "account fund-sandbox → POST /v1/account/fund/sandbox",
-  "account fund-sandbox-initial → POST /v1/account/fund/sandbox/initial",
   "account sessions → GET /v1/account/sessions",
   "account test-balance → GET /v1/account/test-balance",
-  "account fund-sandbox-refill → POST /v1/account/fund/sandbox/refill",
   "account statement → GET /v1/account/statement",
   "gate stats → GET /v1/gate/stats",
   "meters list → GET /v1/meters",
@@ -370,5 +361,17 @@ describe("dispatch", () => {
         json: true,
       }),
     ).rejects.toBeInstanceOf(CodesparApiError);
+  });
+});
+
+describe("api-tenancy#2: operations no API key can perform are not offered", () => {
+  it("no derived command targets an administrative operation, and the neighbours keep their names", async () => {
+    const { KEY_REFUSED_OPERATIONS } = await import("../surface.js");
+    const all = derivedSurface().flatMap((g) => g.commands.map((c) => `${c.method} ${c.path}`));
+    for (const op of KEY_REFUSED_OPERATIONS) expect(all).not.toContain(op);
+    const wallets = derivedSurface().find((g) => g.spec.name === "wallets")!;
+    // Named before the removal: the read keeps the name it had beside the write.
+    expect(wallets.commands.map((c) => c.name)).toContain("list-ledger");
+    expect(wallets.commands.map((c) => c.name)).not.toContain("create-ledger");
   });
 });

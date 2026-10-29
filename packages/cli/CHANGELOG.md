@@ -1,5 +1,18 @@
 # @codespar/cli — changelog
 
+## 0.22.4 — 2026-10-29
+
+### Removed
+
+- The derived commands for operations no API key can perform any more
+  (codespar-enterprise api-tenancy#2: administrative routes answer every key
+  with 403 `admin_session_required`, whatever its scopes; an admin does them
+  on the dashboard): `account fund-sandbox`, `fund-sandbox-initial`,
+  `fund-sandbox-refill`; `wallets create-ledger`, `create-funding-sources`,
+  `delete-funding-sources`, `create-recon-anomalies`, `statement-import`;
+  `mcp-servers platform-fees-sweep`. The commands that stay keep their names
+  (`wallets list-ledger` is still `list-ledger`).
+
 ## 0.22.3 — 2026-10-28
 
 ### Added
