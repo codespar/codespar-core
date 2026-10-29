@@ -158,7 +158,8 @@ async function main(): Promise<void> {
       if (!session) return { content: [{ type: "text", text: NO_SESSION_MESSAGE }], isError: true };
       try {
         const out = await callShopPurchaseTool(session, name, args);
-        return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], isError: false };
+        // A string is already the text to relay (the card list's "needs a person"), not data to serialize.
+        return { content: [{ type: "text", text: typeof out === "string" ? out : JSON.stringify(out, null, 2) }], isError: false };
       } catch (err) {
         return { content: [{ type: "text", text: err instanceof Error ? err.message : String(err) }], isError: true };
       }

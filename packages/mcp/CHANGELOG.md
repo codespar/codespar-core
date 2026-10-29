@@ -1,5 +1,20 @@
 # @codespar/mcp — changelog
 
+## 0.5.16 — 2026-10-28
+
+### Changed
+
+- **`codespar_shop_instruments` names nobody** (Shop v0.3, enterprise #2239):
+  its input schema has no `owner` (an empty, closed object), and it lists the
+  authenticated person's cards. With a project key the API refuses the list
+  (`bearer_token_has_no_person`); the tool then answers a text saying why and
+  what to do (`INSTRUMENTS_NEED_A_PERSON`: the person sees their cards on the
+  dashboard; a session bound to a person by login arrives with Shop v0.3
+  increment 5), instead of an error to retry. The refusal is read by its code,
+  so an older `@codespar/sdk` inside the peer range behaves the same.
+- A Shop purchase tool that answers a string is relayed as that text, not as
+  a JSON-quoted string.
+
 ## 0.5.15 — 2026-10-28
 
 ### Fixed

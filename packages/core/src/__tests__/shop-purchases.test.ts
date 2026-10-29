@@ -5,7 +5,7 @@
  * error, never as an empty success.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CodesparApiError } from "../errors.js";
+import { BearerTokenHasNoPersonError, CodesparApiError } from "../errors.js";
 import { createSession } from "../session.js";
 
 const originalFetch = globalThis.fetch;
@@ -80,10 +80,33 @@ describe("session.purchases", () => {
 });
 
 describe("session.instruments", () => {
-  it("lists a person's cards masked", async () => {
+  it("lists the authenticated person's cards masked, with no owner to name", async () => {
     const { session, seen } = await sessionWith(() => ({ status: 200, body: { instruments: [{ id: "cfs_AAAAAAAA", kind: "byo_card", brand: "visa", last4: "4242", status: "active" }] } }));
-    const list = await session.instruments!.list({ owner: "user_ana" });
-    expect(seen[0]!.url).toBe("https://api.example.com/v1/shop/agent/instruments?owner=user_ana");
+    const list = await session.instruments!.list();
+    expect(seen[0]!.url).toBe("https://api.example.com/v1/shop/agent/instruments");
     expect(list).toEqual([{ id: "cfs_AAAAAAAA", kind: "byo_card", brand: "visa", last4: "4242", status: "active" }]);
+  });
+
+  it("still sends the deprecated owner when given, for an API older than Shop v0.3", async () => {
+    const { session, seen } = await sessionWith(() => ({ status: 200, body: { instruments: [] } }));
+    await session.instruments!.list({ owner: "user_ana" });
+    expect(seen[0]!.url).toBe("https://api.example.com/v1/shop/agent/instruments?owner=user_ana");
+  });
+
+  it("a credential with no person gets the typed error with the API's details, never an empty list", async () => {
+    const details = { reason: "bearer_has_no_person", list_belongs_to: "authenticated_person", owner_param: "deprecated_ignored", how_to_list: "the person's own session on the dashboard" };
+    const { session } = await sessionWith(() => ({ status: 403, body: { error: { code: "bearer_token_has_no_person", message: "this list is a person's own", details }, request_id: null } }));
+    const err = await session.instruments!.list({ owner: "user_ana" }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(BearerTokenHasNoPersonError);
+    expect(err).toBeInstanceOf(CodesparApiError);
+    expect(err).toMatchObject({ status: 403, code: "bearer_token_has_no_person", details });
+    expect(String((err as Error).message)).toMatch(/carries no person/);
+  });
+
+  it("CONTROL: another 403 (a missing scope) stays the generic error", async () => {
+    const { session } = await sessionWith(() => ({ status: 403, body: { error: "forbidden", message: "missing scope shop:instruments:read", status: 403 } }));
+    const err = await session.instruments!.list().catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(CodesparApiError);
+    expect(err).not.toBeInstanceOf(BearerTokenHasNoPersonError);
   });
 });

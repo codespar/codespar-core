@@ -2,7 +2,7 @@
  * Session implementation for the CodeSpar managed runtime.
  */
 
-import { CodesparApiError, networkErrorToApiError, throwFromResponse, TimeoutError } from "./errors.js";
+import { CodesparApiError, networkErrorToApiError, throwFromInstrumentsResponse, throwFromResponse, TimeoutError } from "./errors.js";
 import type { SessionConfig, Tool, CallOptions } from "./types.js";
 import { fetchWithTimeout, validateTimeout } from "./internal/fetch.js";
 import { mergeSignals } from "./internal/abort.js";
@@ -469,17 +469,24 @@ export async function createSession(
       },
     },
 
-    /** A person's cards as masked references (`shop:instruments:read`). */
+    /**
+     * The authenticated person's cards as masked references
+     * (`shop:instruments:read`). A credential with no person (a project key,
+     * an OAuth token) gets `BearerTokenHasNoPersonError` (Shop v0.3). `owner`
+     * is deprecated: still sent when given, so an API older than Shop v0.3
+     * keeps answering, and ignored by a newer one.
+     */
     instruments: {
-      async list(opts: { owner: string } & CallOptions): Promise<AgentInstrument[]> {
+      async list(opts: { owner?: string } & CallOptions = {}): Promise<AgentInstrument[]> {
         const { owner, ...rest } = opts;
+        const query = owner ? `?owner=${encodeURIComponent(owner)}` : "";
         return await safeFetch(
-          `${baseUrl}/v1/shop/agent/instruments?owner=${encodeURIComponent(owner)}`,
+          `${baseUrl}/v1/shop/agent/instruments${query}`,
           { headers },
           "instruments.list",
           callOpts(rest),
           async (r) => {
-            if (!r.ok) await throwFromResponse(r, "instruments.list");
+            if (!r.ok) await throwFromInstrumentsResponse(r, "instruments.list");
             return ((await r.json()) as { instruments: AgentInstrument[] }).instruments;
           },
         );

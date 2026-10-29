@@ -218,11 +218,19 @@ export interface Session extends SessionBase {
     get(purchaseId: string, opts?: CallOptions): Promise<AgentPurchase>;
   };
   /**
-   * A person's cards as masked references (`shop:instruments:read`): brand and
-   * last four, never a number. Choosing one stays the person's act at Pagar.
+   * The AUTHENTICATED person's cards as masked references
+   * (`shop:instruments:read`): brand and last four, never a number. Choosing
+   * one stays the person's act at Pagar. Since Shop v0.3 the list belongs to
+   * the person behind the credential: a project API key or an OAuth token
+   * carries no person and is refused 403 `bearer_token_has_no_person`
+   * (`BearerTokenHasNoPersonError` in the SDK). A session bound to a person
+   * (MCP consent by login) arrives with Shop v0.3 increment 5.
    */
   instruments?: {
-    list(opts: { owner: string } & CallOptions): Promise<AgentInstrument[]>;
+    list(opts?: {
+      /** @deprecated Ignored by the API since Shop v0.3: it no longer selects another person's cards. */
+      owner?: string;
+    } & CallOptions): Promise<AgentInstrument[]>;
   };
   mcp?: { url: string; headers: Record<string, string> };
 }

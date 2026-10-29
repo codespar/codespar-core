@@ -1,5 +1,25 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.24 — 2026-10-28
+
+### Changed
+
+- **`session.instruments.list()` reads the authenticated person's cards**
+  (Shop v0.3, enterprise #2239). The API stops letting a project key list the
+  masked cards of any member it names: `GET /v1/shop/agent/instruments`
+  answers 403 `bearer_token_has_no_person` to a project API key or an OAuth
+  token, whatever `owner` says. `list()` takes no argument now; `owner` is
+  optional and deprecated (still sent when given, so an API older than Shop
+  v0.3 keeps answering; a newer one ignores it).
+- That refusal is a typed error: `BearerTokenHasNoPersonError` (a
+  `CodesparApiError` with `status: 403`, `code: "bearer_token_has_no_person"`
+  and the API's `details`: `reason`, `list_belongs_to`, `owner_param`,
+  `how_to_list`), exported with the `BEARER_TOKEN_HAS_NO_PERSON` constant.
+  Another 403 (a missing scope) stays the generic `CodesparApiError`.
+- Not in this release: the OpenAPI snapshot and the generated operation table
+  still say `owner` is required. They are re-read from the served document
+  once the API change is deployed.
+
 ## 0.16.23 — 2026-10-27
 
 ### Added

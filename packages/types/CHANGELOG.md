@@ -1,5 +1,13 @@
 # @codespar/types — CHANGELOG
 
+## 0.11.6 — 2026-10-28
+
+### Changed
+
+- `Session.instruments.list(opts?)`: `owner` is optional and deprecated (Shop
+  v0.3, enterprise #2239). The list is the authenticated person's own; a
+  credential with no person gets 403 `bearer_token_has_no_person`.
+
 ## 0.11.5 — 2026-10-23
 
 ### Added

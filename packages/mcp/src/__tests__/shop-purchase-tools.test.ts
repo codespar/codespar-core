@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import type { Session } from "@codespar/sdk";
-import { SHOP_PURCHASE_MCP_TOOLS, callShopPurchaseTool, isShopPurchaseTool } from "../shop-purchase-tools.js";
+import { INSTRUMENTS_NEED_A_PERSON, SHOP_PURCHASE_MCP_TOOLS, callShopPurchaseTool, isShopPurchaseTool } from "../shop-purchase-tools.js";
 
 describe("Shop purchase MCP tools", () => {
   it("are closed schemas with no card, code, password or cookie field", () => {
@@ -33,6 +33,30 @@ describe("Shop purchase MCP tools", () => {
     await callShopPurchaseTool(session, "codespar_shop_purchase_propose", { agent_id: "ag", merchant: "test-merchant", items: [{ sku_id: "x", quantity: 2 }], idempotency_key: "idem_0001" });
     expect(calls[0]).toEqual(["create", { agentId: "ag", merchant: "test-merchant", items: [{ skuId: "x", quantity: 2 }], idempotencyKey: "idem_0001" }]);
     await callShopPurchaseTool(session, "codespar_shop_purchase_status", { purchase_id: "prp_AbCdEfGhIjKlMnOp" });
-    await expect(callShopPurchaseTool(session, "codespar_shop_instruments", { owner: "u" })).rejects.toThrow(/forbidden/);
+    await expect(callShopPurchaseTool(session, "codespar_shop_instruments", {})).rejects.toThrow(/forbidden/);
+  });
+
+  it("the card list names nobody: no owner in its schema, and the facade is called with nothing", async () => {
+    const tool = SHOP_PURCHASE_MCP_TOOLS.find((t) => t.name === "codespar_shop_instruments")!;
+    expect(tool.inputSchema).toEqual({ type: "object", additionalProperties: false, properties: {} });
+    const calls: unknown[][] = [];
+    const session = {
+      purchases: { create: async () => ({}), get: async () => ({}) },
+      instruments: { list: async (...a: unknown[]) => (calls.push(a), [{ id: "cfs_AAAAAAAA", kind: "byo_card", brand: "visa", last4: "4242", status: "active" }]) },
+    } as unknown as Session;
+    expect(await callShopPurchaseTool(session, "codespar_shop_instruments", { owner: "user_ana" })).toHaveLength(1);
+    expect(calls).toEqual([[]]);
+  });
+
+  it("a session with no person gets a text saying why and what to do, not a failure", async () => {
+    const refusal = Object.assign(new Error("instruments.list failed: 403 bearer_token_has_no_person"), { status: 403, code: "bearer_token_has_no_person" });
+    const session = {
+      purchases: { create: async () => ({}), get: async () => ({}) },
+      instruments: { list: async () => { throw refusal; } },
+    } as unknown as Session;
+    const out = await callShopPurchaseTool(session, "codespar_shop_instruments", {});
+    expect(out).toBe(INSTRUMENTS_NEED_A_PERSON);
+    expect(String(out)).toMatch(/signed in/);
+    expect(String(out)).toMatch(/project key/);
   });
 });
