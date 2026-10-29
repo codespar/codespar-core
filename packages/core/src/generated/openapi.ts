@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 3be7cfce6ecc02d8caee88f588dbccb6d4bda2fc6a06bc701caa76560fc95765, fetched 2026-10-29T02:06:37.205Z
+// Source: openapi-snapshot.json (sha256 35dd8de9b12987945fe8f5c8e865fc0997027a19912641e060eb27066168ea09, fetched 2026-10-29T02:48:47.633Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -45008,7 +45008,7 @@ export interface paths {
         };
         /**
          * The payment receipt (comprovante) of a sealed receipt, as PDF or PNG
-         * @description Composes the comprovante of the payment the receipt seals (state and amount, who received, who paid, who authorized, the end-to-end id and the receipt id) and renders it. `format=pdf` is one page of 600x828 px; `format=png` is the same page at 2x (1200x1656), for sharing as an image.
+         * @description Composes the comprovante of the payment the receipt seals (state and amount; who received: name, masked document, institution, branch and account as the provider resolved them when the payment went out, and the Pix key or a shortened copia-e-cola; who paid: name, masked document, institution, branch and account; who authorized; the end-to-end id and the receipt id) and renders it. A CPF is masked as a bank receipt masks it (`***.951.767-**`); a field the payment did not record is left out, never backfilled. Institution, branch and account come only from the provider's answer about the destination. A name someone declared (the QR Code's merchant, the document's supplier, the store) is printed on its own labeled row, never as the confirmed payee. `format=pdf` is one page of 600x828 px; `format=png` is the same page at 2x (1200x1656), for sharing as an image.
          *
          *     Read-only: generating or downloading a document never repeats or touches the payment. Served only when the payment is in a final confirmed state (its attempt is `settled`); otherwise 409 `document_not_final` with the attempt's status. A Test project's document carries the chip "Ambiente de teste" once. Deterministic: the same receipt gives the same document content, and the `X-CodeSpar-Document-Sha256` header is its hash.
          *
