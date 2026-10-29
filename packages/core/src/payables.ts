@@ -65,6 +65,14 @@ export interface PayablesBatches {
    * times; the batch returned is the last answer.
    */
   pay(batchId: string, input: PayableBatchPayInput, opts?: PayableIdempotentOptions): Promise<PayableBatch>;
+  /**
+   * `POST /v1/payables/batches/:batchId/discard`: take out every item never
+   * dispatched. Nothing dispatched yet: the batch becomes `canceled` and a
+   * later change or pay is a 409 `payable_batch_discarded`. After a partial
+   * execution, paid, uncertain and in-flight items keep their payment.
+   * Discarding again returns the batch as it is.
+   */
+  discard(batchId: string, opts?: CallOptions): Promise<PayableBatch>;
 }
 
 export interface Payables {
@@ -233,6 +241,9 @@ export function createPayables(deps: PayablesDeps): Payables {
         let batch = await once();
         for (let round = 1; round < PAY_MAX_ROUNDS && continuesOnRepeat(batch); round++) batch = await once();
         return batch;
+      },
+      async discard(batchId, opts) {
+        return call<PayableBatch>("payables.batches.discard", `${batchUrl(batchId)}/discard`, json("POST", {}), opts);
       },
     },
   };

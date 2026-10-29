@@ -297,6 +297,8 @@ export interface PayableBatch {
   currency: "BRL";
   totals: { items: number; payable_items: number; excluded: number; amount_minor: number };
   confirmation: PayableBatchConfirmation | null;
+  /** Set once the batch was discarded: when, and how many items the discard took out (each `excluded`, never dispatched). */
+  discarded: { at: string; items: number } | null;
   items: PayableBatchItem[];
   created_at: string;
   source: PayableBatchSource;

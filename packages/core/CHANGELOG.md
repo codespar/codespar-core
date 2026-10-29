@@ -1,5 +1,17 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.24 — 2026-10-28
+
+### Added
+
+- **Discard a batch** (payables contract, "Discard a batch", 28/10/2026):
+  `cs.payables.batches.discard(batchId)` → `POST /v1/payables/batches/:batchId/discard`.
+  Every item never sent leaves the batch (`excluded`) and frees the charge it
+  held; dispatched, uncertain, executed and refused items keep their payment.
+  With nothing sent before, the batch is `canceled` and a later change or pay
+  is a 409 `payable_batch_discarded`. `PayableBatch` gains
+  `discarded: { at, items } | null`.
+
 ## 0.16.23 — 2026-10-27
 
 ### Added

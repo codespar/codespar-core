@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-10-27T17:52:30.609Z",
-    "sha256": "ceee33204d9ec636547e7745fc7237e68e899b863a766d62bfa2b3ed5aad97d2",
+    "fetched_at": "2026-10-29T02:48:47.633Z",
+    "sha256": "35dd8de9b12987945fe8f5c8e865fc0997027a19912641e060eb27066168ea09",
     "etag": null,
     "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 312,
-    "operations": 367,
+    "paths": 313,
+    "operations": 368,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -29167,7 +29167,7 @@
               }
             },
             "409": {
-              "description": "Conflict. `no_onchain_wallet`: the wallet is not consumer-scoped and has no withdrawal path at all. `no_funding_source`: the rail has no active funding source to cash out through. `withdrawal_in_progress` and `withdrawal_failed`: the idempotency key is already spent — see the note above. `insufficient_funds`: the wallet does not hold the amount, caught by the balance invariant rather than by a pre-check, so it can also surface after the hold is attempted. `no_default_project`: the paying organization has no default project for the mandate to settle into.",
+              "description": "Conflict. `no_onchain_wallet`: the wallet is not consumer-scoped and has no withdrawal path at all. `no_funding_source`: the rail has no active funding source to cash out through. `withdrawal_in_progress` and `withdrawal_failed`: the idempotency key is already spent — see the note above. `insufficient_funds`: the wallet does not hold the amount, caught by the balance invariant rather than by a pre-check, so it can also surface after the hold is attempted.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -29183,8 +29183,7 @@
                               "no_funding_source",
                               "withdrawal_in_progress",
                               "withdrawal_failed",
-                              "insufficient_funds",
-                              "no_default_project"
+                              "insufficient_funds"
                             ]
                           },
                           "message": {
@@ -85174,10 +85173,21 @@
                               "document_line",
                               "sandbox_fixture"
                             ],
-                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted."
+                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal."
                           },
                           "document_amount_minor": {
                             "type": "integer"
+                          },
+                          "original_document_settled": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ],
+                            "description": "Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid."
+                          },
+                          "settlement_note": {
+                            "type": "string",
+                            "description": "The person's words for a substituted test payment (`settled_against: sandbox_fixture`)."
                           },
                           "mandate_id": {
                             "type": "string"
@@ -87305,10 +87315,21 @@
                               "document_line",
                               "sandbox_fixture"
                             ],
-                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted."
+                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal."
                           },
                           "document_amount_minor": {
                             "type": "integer"
+                          },
+                          "original_document_settled": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ],
+                            "description": "Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid."
+                          },
+                          "settlement_note": {
+                            "type": "string",
+                            "description": "The person's words for a substituted test payment (`settled_against: sandbox_fixture`)."
                           },
                           "mandate_id": {
                             "type": "string"
@@ -89722,10 +89743,21 @@
                                     "document_line",
                                     "sandbox_fixture"
                                   ],
-                                  "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted."
+                                  "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal."
                                 },
                                 "document_amount_minor": {
                                   "type": "integer"
+                                },
+                                "original_document_settled": {
+                                  "type": "boolean",
+                                  "enum": [
+                                    false
+                                  ],
+                                  "description": "Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid."
+                                },
+                                "settlement_note": {
+                                  "type": "string",
+                                  "description": "The person's words for a substituted test payment (`settled_against: sandbox_fixture`)."
                                 },
                                 "mandate_id": {
                                   "type": "string"
@@ -91968,10 +92000,21 @@
                               "document_line",
                               "sandbox_fixture"
                             ],
-                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted."
+                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal."
                           },
                           "document_amount_minor": {
                             "type": "integer"
+                          },
+                          "original_document_settled": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ],
+                            "description": "Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid."
+                          },
+                          "settlement_note": {
+                            "type": "string",
+                            "description": "The person's words for a substituted test payment (`settled_against: sandbox_fixture`)."
                           },
                           "mandate_id": {
                             "type": "string"
@@ -94099,10 +94142,21 @@
                               "document_line",
                               "sandbox_fixture"
                             ],
-                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted."
+                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal."
                           },
                           "document_amount_minor": {
                             "type": "integer"
+                          },
+                          "original_document_settled": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ],
+                            "description": "Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid."
+                          },
+                          "settlement_note": {
+                            "type": "string",
+                            "description": "The person's words for a substituted test payment (`settled_against: sandbox_fixture`)."
                           },
                           "mandate_id": {
                             "type": "string"
@@ -96636,10 +96690,21 @@
                               "document_line",
                               "sandbox_fixture"
                             ],
-                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted."
+                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal."
                           },
                           "document_amount_minor": {
                             "type": "integer"
+                          },
+                          "original_document_settled": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ],
+                            "description": "Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid."
+                          },
+                          "settlement_note": {
+                            "type": "string",
+                            "description": "The person's words for a substituted test payment (`settled_against: sandbox_fixture`)."
                           },
                           "mandate_id": {
                             "type": "string"
@@ -98941,10 +99006,21 @@
                               "document_line",
                               "sandbox_fixture"
                             ],
-                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted."
+                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal."
                           },
                           "document_amount_minor": {
                             "type": "integer"
+                          },
+                          "original_document_settled": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ],
+                            "description": "Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid."
+                          },
+                          "settlement_note": {
+                            "type": "string",
+                            "description": "The person's words for a substituted test payment (`settled_against: sandbox_fixture`)."
                           },
                           "mandate_id": {
                             "type": "string"
@@ -99373,7 +99449,7 @@
       "/v1/payables/{payableId}/pay": {
         "post": {
           "summary": "Pay a payable under a consumer mandate",
-          "description": "Pays a `READY` payable through the governed consumer-payment cycle — mandate HMAC verification, policy, cap under lock, hold, dispatch with uncertainty classification and a sealed receipt — and moves it to `EXECUTED`. Only a boleto is paid in this wave.\n\n**The rail is consulted again first.** The stored quote may have aged, so the eleven checks re-run over a fresh consult, with the review's confirmations standing. If that verdict no longer allows paying, nothing is dispatched: the payable goes back to `NEEDS_REVIEW` with the new verdict and the call answers `payable_quote_diverged`. READY is derived from a verdict, never assumed from the row.\n\n**The attempt id is derived**, from the payable id and the fresh quote (`payment.attempt_id`). The same quote is the same attempt — a retry lands on the same hold, the same provider anchor and the same receipt — and a different quote is a different attempt, which is why the payable leaves READY before money moves.\n\n**What the outcome does to the payable.** Success: `EXECUTED`, `payment.state = executed`, with `receipt_id`, `transaction_id` and `end_to_end_id`; the response also carries `receipt`. A refusal that provably moved no money (policy, cap, allowlist, funds, `boleto_amount_mismatch`): the payable is `READY` again with `payment.last_refusal`. A dispatch whose outcome is unknown (`psp_dispatch_uncertain`, `psp_attempt_uncertain`, `payable_dispatch_unknown`): the payable stays `APPROVED` with `payment.state = uncertain`, pinned for reconciliation — do not resubmit it, under this payable or another; a later call answers `payable_payment_uncertain`.\n\n**The receipt carries the document hash.** Its delivery proof is a `merchant_document_ref` of kind `payable` whose reference is `payable:<id>;sha256:<document_hash>` (the hash part only when the payable has one), covered by the receipt's chain: document → mandate → payment → receipt verifies offline.\n\n**A policy approval holds the payable.** When the durable policy engine routes the spend to a person (403 `policy_denied` with `approval_id`), the payable leaves READY under that approval (`payment.state = awaiting_approval`, `payment.approval_id`); `/pay` answers `payable_payment_pending_approval` until it is decided. The approved execution pays the attempt and records the outcome on the payable; a denied or expired approval is released by the next `/pay`, which asks the gate again.\n\n**Test projects settle the sandbox fixture.** A boleto in a test project is settled against Celcoin's sandbox fixture, not the document's line (spec §18): `payment.settled_against = sandbox_fixture`, `payment.document_amount_minor` keeps what the document quoted, and the receipt's delivery reference ends in `;settled_against:sandbox_fixture`. Live projects are untouched.\n\nScope: `payables:pay`. The mandate must be one of this organization's consumers' and its `merchant_allowlist` must name the boleto's digitable line.",
+          "description": "Pays a `READY` payable through the governed consumer-payment cycle — mandate HMAC verification, policy, cap under lock, hold, dispatch with uncertainty classification and a sealed receipt — and moves it to `EXECUTED`. Only a boleto is paid in this wave.\n\n**The rail is consulted again first.** The stored quote may have aged, so the eleven checks re-run over a fresh consult, with the review's confirmations standing. If that verdict no longer allows paying, nothing is dispatched: the payable goes back to `NEEDS_REVIEW` with the new verdict and the call answers `payable_quote_diverged`. READY is derived from a verdict, never assumed from the row.\n\n**The attempt id is derived**, from the payable id and the fresh quote (`payment.attempt_id`). The same quote is the same attempt — a retry lands on the same hold, the same provider anchor and the same receipt — and a different quote is a different attempt, which is why the payable leaves READY before money moves.\n\n**What the outcome does to the payable.** Success: `EXECUTED`, `payment.state = executed`, with `receipt_id`, `transaction_id` and `end_to_end_id`; the response also carries `receipt`. A refusal that provably moved no money (policy, cap, allowlist, funds, `boleto_amount_mismatch`): the payable is `READY` again with `payment.last_refusal`. A dispatch whose outcome is unknown (`psp_dispatch_uncertain`, `psp_attempt_uncertain`, `payable_dispatch_unknown`): the payable stays `APPROVED` with `payment.state = uncertain`, pinned for reconciliation — do not resubmit it, under this payable or another; a later call answers `payable_payment_uncertain`.\n\n**The receipt carries the document hash.** Its delivery proof is a `merchant_document_ref` of kind `payable` whose reference is `payable:<id>;sha256:<document_hash>` (the hash part only when the payable has one), covered by the receipt's chain: document → mandate → payment → receipt verifies offline.\n\n**A policy approval holds the payable.** When the durable policy engine routes the spend to a person (403 `policy_denied` with `approval_id`), the payable leaves READY under that approval (`payment.state = awaiting_approval`, `payment.approval_id`); `/pay` answers `payable_payment_pending_approval` until it is decided. The approved execution pays the attempt and records the outcome on the payable; a denied or expired approval is released by the next `/pay`, which asks the gate again.\n\n**Test projects: the document's own line first, a substituted test payment otherwise.** A boleto in a test project is settled as its own line when the sandbox knows it. When it does not, a test line (the sandbox fixture) is paid in its place, and only at the confirmed amount: a fixture of another amount is refused `sandbox_fixture_amount_mismatch` (409) before anything is held. A substituted payment says so: `payment.settled_against = sandbox_fixture`, `payment.original_document_settled = false`, `payment.settlement_note` in the person's words, `payment.document_amount_minor` keeps what the document quoted, and the receipt's delivery reference ends in `;settled_against:sandbox_fixture`. It is never the settlement of the original document, even at an equal amount. Live projects are untouched.\n\nScope: `payables:pay`. The mandate must be one of this organization's consumers' and its `merchant_allowlist` must name the boleto's digitable line.",
           "parameters": [
             {
               "schema": {
@@ -101400,10 +101476,21 @@
                               "document_line",
                               "sandbox_fixture"
                             ],
-                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted."
+                            "description": "What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal."
                           },
                           "document_amount_minor": {
                             "type": "integer"
+                          },
+                          "original_document_settled": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ],
+                            "description": "Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid."
+                          },
+                          "settlement_note": {
+                            "type": "string",
+                            "description": "The person's words for a substituted test payment (`settled_against: sandbox_fixture`)."
                           },
                           "mandate_id": {
                             "type": "string"
@@ -102543,6 +102630,26 @@
                           "mandate_id"
                         ]
                       },
+                      "discarded": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "at": {
+                            "type": "string"
+                          },
+                          "items": {
+                            "type": "integer",
+                            "description": "Items the discard took out; each is `excluded` and was never dispatched."
+                          }
+                        },
+                        "required": [
+                          "at",
+                          "items"
+                        ],
+                        "description": "Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments."
+                      },
                       "items": {
                         "type": "array",
                         "items": {
@@ -102939,7 +103046,8 @@
                                       "amount_matches_document",
                                       "rail_switched",
                                       "ways_amount_mismatch",
-                                      "ways_unavailable"
+                                      "ways_unavailable",
+                                      "pix_destination_unverified"
                                     ]
                                   },
                                   "status": {
@@ -103014,6 +103122,39 @@
                                     "code",
                                     "message"
                                   ]
+                                },
+                                "test_substitution": {
+                                  "type": "object",
+                                  "properties": {
+                                    "settled_against": {
+                                      "type": "string",
+                                      "enum": [
+                                        "sandbox_fixture"
+                                      ]
+                                    },
+                                    "original_document_settled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        false
+                                      ]
+                                    },
+                                    "document_amount_minor": {
+                                      "type": [
+                                        "integer",
+                                        "null"
+                                      ]
+                                    },
+                                    "note": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "settled_against",
+                                    "original_document_settled",
+                                    "document_amount_minor",
+                                    "note"
+                                  ],
+                                  "description": "TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount."
                                 }
                               },
                               "required": [
@@ -103077,6 +103218,7 @@
                       "currency",
                       "totals",
                       "confirmation",
+                      "discarded",
                       "items",
                       "created_at",
                       "source",
@@ -103180,6 +103322,26 @@
                           "mandate_id"
                         ]
                       },
+                      "discarded": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "at": {
+                            "type": "string"
+                          },
+                          "items": {
+                            "type": "integer",
+                            "description": "Items the discard took out; each is `excluded` and was never dispatched."
+                          }
+                        },
+                        "required": [
+                          "at",
+                          "items"
+                        ],
+                        "description": "Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments."
+                      },
                       "items": {
                         "type": "array",
                         "items": {
@@ -103576,7 +103738,8 @@
                                       "amount_matches_document",
                                       "rail_switched",
                                       "ways_amount_mismatch",
-                                      "ways_unavailable"
+                                      "ways_unavailable",
+                                      "pix_destination_unverified"
                                     ]
                                   },
                                   "status": {
@@ -103651,6 +103814,39 @@
                                     "code",
                                     "message"
                                   ]
+                                },
+                                "test_substitution": {
+                                  "type": "object",
+                                  "properties": {
+                                    "settled_against": {
+                                      "type": "string",
+                                      "enum": [
+                                        "sandbox_fixture"
+                                      ]
+                                    },
+                                    "original_document_settled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        false
+                                      ]
+                                    },
+                                    "document_amount_minor": {
+                                      "type": [
+                                        "integer",
+                                        "null"
+                                      ]
+                                    },
+                                    "note": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "settled_against",
+                                    "original_document_settled",
+                                    "document_amount_minor",
+                                    "note"
+                                  ],
+                                  "description": "TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount."
                                 }
                               },
                               "required": [
@@ -103714,6 +103910,7 @@
                       "currency",
                       "totals",
                       "confirmation",
+                      "discarded",
                       "items",
                       "created_at",
                       "source",
@@ -103983,6 +104180,26 @@
                           "mandate_id"
                         ]
                       },
+                      "discarded": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "at": {
+                            "type": "string"
+                          },
+                          "items": {
+                            "type": "integer",
+                            "description": "Items the discard took out; each is `excluded` and was never dispatched."
+                          }
+                        },
+                        "required": [
+                          "at",
+                          "items"
+                        ],
+                        "description": "Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments."
+                      },
                       "items": {
                         "type": "array",
                         "items": {
@@ -104379,7 +104596,8 @@
                                       "amount_matches_document",
                                       "rail_switched",
                                       "ways_amount_mismatch",
-                                      "ways_unavailable"
+                                      "ways_unavailable",
+                                      "pix_destination_unverified"
                                     ]
                                   },
                                   "status": {
@@ -104454,6 +104672,39 @@
                                     "code",
                                     "message"
                                   ]
+                                },
+                                "test_substitution": {
+                                  "type": "object",
+                                  "properties": {
+                                    "settled_against": {
+                                      "type": "string",
+                                      "enum": [
+                                        "sandbox_fixture"
+                                      ]
+                                    },
+                                    "original_document_settled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        false
+                                      ]
+                                    },
+                                    "document_amount_minor": {
+                                      "type": [
+                                        "integer",
+                                        "null"
+                                      ]
+                                    },
+                                    "note": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "settled_against",
+                                    "original_document_settled",
+                                    "document_amount_minor",
+                                    "note"
+                                  ],
+                                  "description": "TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount."
                                 }
                               },
                               "required": [
@@ -104513,6 +104764,7 @@
                       "currency",
                       "totals",
                       "confirmation",
+                      "discarded",
                       "items",
                       "created_at",
                       "source",
@@ -104750,6 +105002,26 @@
                           "mandate_id"
                         ]
                       },
+                      "discarded": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "at": {
+                            "type": "string"
+                          },
+                          "items": {
+                            "type": "integer",
+                            "description": "Items the discard took out; each is `excluded` and was never dispatched."
+                          }
+                        },
+                        "required": [
+                          "at",
+                          "items"
+                        ],
+                        "description": "Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments."
+                      },
                       "items": {
                         "type": "array",
                         "items": {
@@ -105146,7 +105418,8 @@
                                       "amount_matches_document",
                                       "rail_switched",
                                       "ways_amount_mismatch",
-                                      "ways_unavailable"
+                                      "ways_unavailable",
+                                      "pix_destination_unverified"
                                     ]
                                   },
                                   "status": {
@@ -105221,6 +105494,39 @@
                                     "code",
                                     "message"
                                   ]
+                                },
+                                "test_substitution": {
+                                  "type": "object",
+                                  "properties": {
+                                    "settled_against": {
+                                      "type": "string",
+                                      "enum": [
+                                        "sandbox_fixture"
+                                      ]
+                                    },
+                                    "original_document_settled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        false
+                                      ]
+                                    },
+                                    "document_amount_minor": {
+                                      "type": [
+                                        "integer",
+                                        "null"
+                                      ]
+                                    },
+                                    "note": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "settled_against",
+                                    "original_document_settled",
+                                    "document_amount_minor",
+                                    "note"
+                                  ],
+                                  "description": "TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount."
                                 }
                               },
                               "required": [
@@ -105280,6 +105586,7 @@
                       "currency",
                       "totals",
                       "confirmation",
+                      "discarded",
                       "items",
                       "created_at",
                       "source",
@@ -105381,7 +105688,7 @@
               }
             },
             "409": {
-              "description": "`payable_batch_version_conflict`: `expected_version` is stale; `details.batch` is the current batch. `payable_batch_locked`: the batch was confirmed. `payable_item_rail_unavailable`: `rail` names a way the item does not have, or one that is unavailable (`details.unavailable` says why, `details.ways` lists the item's ways).",
+              "description": "`payable_batch_version_conflict`: `expected_version` is stale; `details.batch` is the current batch. `payable_batch_locked`: the batch was confirmed. `payable_item_rail_unavailable`: `rail` names a way the item does not have, or one that is unavailable (`details.unavailable` says why, `details.ways` lists the item's ways). `payable_batch_discarded`: the batch was discarded.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -105395,7 +105702,8 @@
                             "enum": [
                               "payable_batch_version_conflict",
                               "payable_batch_locked",
-                              "payable_item_rail_unavailable"
+                              "payable_item_rail_unavailable",
+                              "payable_batch_discarded"
                             ]
                           },
                           "message": {
@@ -105662,6 +105970,26 @@
                           "mandate_id"
                         ]
                       },
+                      "discarded": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "at": {
+                            "type": "string"
+                          },
+                          "items": {
+                            "type": "integer",
+                            "description": "Items the discard took out; each is `excluded` and was never dispatched."
+                          }
+                        },
+                        "required": [
+                          "at",
+                          "items"
+                        ],
+                        "description": "Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments."
+                      },
                       "items": {
                         "type": "array",
                         "items": {
@@ -106058,7 +106386,8 @@
                                       "amount_matches_document",
                                       "rail_switched",
                                       "ways_amount_mismatch",
-                                      "ways_unavailable"
+                                      "ways_unavailable",
+                                      "pix_destination_unverified"
                                     ]
                                   },
                                   "status": {
@@ -106133,6 +106462,39 @@
                                     "code",
                                     "message"
                                   ]
+                                },
+                                "test_substitution": {
+                                  "type": "object",
+                                  "properties": {
+                                    "settled_against": {
+                                      "type": "string",
+                                      "enum": [
+                                        "sandbox_fixture"
+                                      ]
+                                    },
+                                    "original_document_settled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        false
+                                      ]
+                                    },
+                                    "document_amount_minor": {
+                                      "type": [
+                                        "integer",
+                                        "null"
+                                      ]
+                                    },
+                                    "note": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "settled_against",
+                                    "original_document_settled",
+                                    "document_amount_minor",
+                                    "note"
+                                  ],
+                                  "description": "TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount."
                                 }
                               },
                               "required": [
@@ -106192,6 +106554,7 @@
                       "currency",
                       "totals",
                       "confirmation",
+                      "discarded",
                       "items",
                       "created_at",
                       "source",
@@ -106293,7 +106656,7 @@
               }
             },
             "409": {
-              "description": "Stale `expected_version` (current batch in `details.batch`), or the batch was confirmed.",
+              "description": "Stale `expected_version` (current batch in `details.batch`), or the batch was confirmed or discarded.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -106306,7 +106669,8 @@
                             "type": "string",
                             "enum": [
                               "payable_batch_version_conflict",
-                              "payable_batch_locked"
+                              "payable_batch_locked",
+                              "payable_batch_discarded"
                             ]
                           },
                           "message": {
@@ -106542,6 +106906,26 @@
                           "mandate_id"
                         ]
                       },
+                      "discarded": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "at": {
+                            "type": "string"
+                          },
+                          "items": {
+                            "type": "integer",
+                            "description": "Items the discard took out; each is `excluded` and was never dispatched."
+                          }
+                        },
+                        "required": [
+                          "at",
+                          "items"
+                        ],
+                        "description": "Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments."
+                      },
                       "items": {
                         "type": "array",
                         "items": {
@@ -106938,7 +107322,8 @@
                                       "amount_matches_document",
                                       "rail_switched",
                                       "ways_amount_mismatch",
-                                      "ways_unavailable"
+                                      "ways_unavailable",
+                                      "pix_destination_unverified"
                                     ]
                                   },
                                   "status": {
@@ -107013,6 +107398,39 @@
                                     "code",
                                     "message"
                                   ]
+                                },
+                                "test_substitution": {
+                                  "type": "object",
+                                  "properties": {
+                                    "settled_against": {
+                                      "type": "string",
+                                      "enum": [
+                                        "sandbox_fixture"
+                                      ]
+                                    },
+                                    "original_document_settled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        false
+                                      ]
+                                    },
+                                    "document_amount_minor": {
+                                      "type": [
+                                        "integer",
+                                        "null"
+                                      ]
+                                    },
+                                    "note": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "settled_against",
+                                    "original_document_settled",
+                                    "document_amount_minor",
+                                    "note"
+                                  ],
+                                  "description": "TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount."
                                 }
                               },
                               "required": [
@@ -107072,6 +107490,7 @@
                       "currency",
                       "totals",
                       "confirmation",
+                      "discarded",
                       "items",
                       "created_at",
                       "source",
@@ -107222,7 +107641,7 @@
               }
             },
             "409": {
-              "description": "`version`/`list_hash` are not the current list's; `details.batch` is the current batch.",
+              "description": "`payable_batch_version_mismatch`: `version`/`list_hash` are not the current list's; `details.batch` is the current batch. `payable_batch_discarded`: the batch was discarded.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -107234,7 +107653,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "payable_batch_version_mismatch"
+                              "payable_batch_version_mismatch",
+                              "payable_batch_discarded"
                             ]
                           },
                           "message": {
@@ -107324,10 +107744,823 @@
           ]
         }
       },
+      "/v1/payables/batches/{batchId}/discard": {
+        "post": {
+          "summary": "Discard what was never dispatched",
+          "description": "Takes out of the list every item never dispatched (`needs_complement`, `resolving`, `ready`, `rejected`, including items a large batch has not reached yet): each becomes `excluded`, and the charge it held is free for a new batch. Items already dispatched, awaiting an approval, `uncertain`, `executed` or `refused` stay exactly as they are; a discard never stops or reverses money already in motion, and a later pay call with the same confirmation dispatches nothing new.\n\nWith nothing dispatched before, the batch becomes `canceled`: no change, add or pay is taken after (`payable_batch_discarded`). After a partial execution, `status` is the one the remaining items give. `discarded` records when and how many. Discarding again answers the batch as it is.\n\nScope: `payables:write`.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string"
+              },
+              "required": true,
+              "name": "batchId",
+              "in": "path"
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "batch_id": {
+                        "type": "string",
+                        "description": "`pbat_` followed by 20 characters."
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "reviewing",
+                          "ready",
+                          "confirmed",
+                          "executing",
+                          "completed",
+                          "partially_completed",
+                          "failed",
+                          "canceled"
+                        ]
+                      },
+                      "version": {
+                        "type": "integer",
+                        "description": "Bumps on every change to the list. A confirmation binds to one version."
+                      },
+                      "list_hash": {
+                        "type": "string",
+                        "description": "SHA-256 over the canonical list: for each non-excluded item in `item_id` order `item_id|rail|destination id|amount_minor|currency`, then the total. Send it back on pay."
+                      },
+                      "currency": {
+                        "type": "string",
+                        "enum": [
+                          "BRL"
+                        ]
+                      },
+                      "totals": {
+                        "type": "object",
+                        "properties": {
+                          "items": {
+                            "type": "integer"
+                          },
+                          "payable_items": {
+                            "type": "integer"
+                          },
+                          "excluded": {
+                            "type": "integer"
+                          },
+                          "amount_minor": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "items",
+                          "payable_items",
+                          "excluded",
+                          "amount_minor"
+                        ]
+                      },
+                      "confirmation": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "version": {
+                            "type": "integer"
+                          },
+                          "list_hash": {
+                            "type": "string"
+                          },
+                          "confirmed_by": {
+                            "type": "string",
+                            "description": "`user_…` (a verified person) or `api_key:<key id>`."
+                          },
+                          "confirmed_at": {
+                            "type": "string"
+                          },
+                          "mandate_id": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "version",
+                          "list_hash",
+                          "confirmed_by",
+                          "confirmed_at",
+                          "mandate_id"
+                        ]
+                      },
+                      "discarded": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "at": {
+                            "type": "string"
+                          },
+                          "items": {
+                            "type": "integer",
+                            "description": "Items the discard took out; each is `excluded` and was never dispatched."
+                          }
+                        },
+                        "required": [
+                          "at",
+                          "items"
+                        ],
+                        "description": "Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments."
+                      },
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "item_id": {
+                              "type": "string",
+                              "description": "`pbl_` + 16 characters: the payable's id, derived from the batch and the item's content."
+                            },
+                            "position": {
+                              "type": "integer",
+                              "description": "Display order. Not part of the identity: reordering never makes another item."
+                            },
+                            "origin": {
+                              "type": "object",
+                              "properties": {
+                                "file_id": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "page": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ]
+                                },
+                                "row": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ]
+                                },
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "boleto_line",
+                                    "br_code",
+                                    "pix_key",
+                                    "qr_image",
+                                    "barcode_image",
+                                    "csv_row",
+                                    "manual",
+                                    "document"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "file_id",
+                                "page",
+                                "row",
+                                "kind"
+                              ]
+                            },
+                            "rail": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "boleto",
+                                "pix"
+                              ],
+                              "description": "The chosen way, when the item has two; the only way otherwise."
+                            },
+                            "rail_chosen_by": {
+                              "type": "string",
+                              "enum": [
+                                "default",
+                                "person",
+                                "integration"
+                              ],
+                              "description": "`default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`."
+                            },
+                            "ways": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "rail": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pix",
+                                      "boleto"
+                                    ]
+                                  },
+                                  "origin": {
+                                    "type": "object",
+                                    "properties": {
+                                      "page": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      },
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto_line",
+                                          "br_code",
+                                          "pix_key",
+                                          "qr_image",
+                                          "barcode_image",
+                                          "csv_row",
+                                          "manual",
+                                          "document"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "page",
+                                      "kind"
+                                    ]
+                                  },
+                                  "destination": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "boleto",
+                                          "pix_key",
+                                          "br_code_static",
+                                          "br_code_dynamic"
+                                        ]
+                                      },
+                                      "display": {
+                                        "type": "string",
+                                        "description": "The boleto line or the Pix key, masked."
+                                      },
+                                      "beneficiary_name": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail (the boleto registration, the DICT owner); never from the document."
+                                      },
+                                      "beneficiary_document_masked": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "From the rail, masked."
+                                      },
+                                      "due_date": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "YYYY-MM-DD from the rail, or null."
+                                      },
+                                      "beneficiary_institution": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                      },
+                                      "key": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "display",
+                                      "beneficiary_name",
+                                      "beneficiary_document_masked",
+                                      "due_date"
+                                    ],
+                                    "description": "This way's resolved destination, when the rail answered."
+                                  },
+                                  "unavailable": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "code": {
+                                        "type": "string",
+                                        "enum": [
+                                          "br_code_expired",
+                                          "br_code_not_found",
+                                          "boleto_expired",
+                                          "boleto_refused",
+                                          "rail_unavailable",
+                                          "no_sandbox_fixture"
+                                        ]
+                                      },
+                                      "message": {
+                                        "type": "string",
+                                        "description": "In the person's words; never a provider's name or body."
+                                      }
+                                    },
+                                    "required": [
+                                      "code",
+                                      "message"
+                                    ],
+                                    "description": "Why this way cannot be paid now, or null when it can."
+                                  }
+                                },
+                                "required": [
+                                  "rail",
+                                  "origin",
+                                  "destination",
+                                  "unavailable"
+                                ]
+                              },
+                              "description": "1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill."
+                            },
+                            "document": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "From a closed catalog of document kinds (\"DARE-SP\", \"Nota Fiscal\", ...)."
+                                },
+                                "issuer": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The text after a beneficiary/issuer label on the page, when it has one."
+                                },
+                                "due_date": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "YYYY-MM-DD from a labelled date, else the boleto's own due factor."
+                                },
+                                "amount_minor": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ],
+                                  "description": "The boleto's effective value or a static BR Code's amount; never loose text."
+                                }
+                              },
+                              "required": [
+                                "title",
+                                "issuer",
+                                "due_date",
+                                "amount_minor"
+                              ]
+                            },
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "needs_complement",
+                                "resolving",
+                                "ready",
+                                "excluded",
+                                "rejected",
+                                "dispatching",
+                                "executed",
+                                "refused",
+                                "uncertain"
+                              ]
+                            },
+                            "missing": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "amount",
+                                  "destination",
+                                  "pix_key_owner_confirmation",
+                                  "rail"
+                                ]
+                              }
+                            },
+                            "destination": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "boleto",
+                                    "pix_key",
+                                    "br_code_static",
+                                    "br_code_dynamic"
+                                  ]
+                                },
+                                "display": {
+                                  "type": "string",
+                                  "description": "The boleto line or the Pix key, masked."
+                                },
+                                "beneficiary_name": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "From the rail (the boleto registration, the DICT owner); never from the document."
+                                },
+                                "beneficiary_document_masked": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "From the rail, masked."
+                                },
+                                "due_date": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "YYYY-MM-DD from the rail, or null."
+                                },
+                                "beneficiary_institution": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise."
+                                },
+                                "key": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto."
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "display",
+                                "beneficiary_name",
+                                "beneficiary_document_masked",
+                                "due_date"
+                              ]
+                            },
+                            "amount_minor": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "amount_source": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "rail_quote",
+                                "br_code",
+                                "stated_by_person",
+                                "csv",
+                                "document"
+                              ]
+                            },
+                            "description": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "reference": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "checks": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string",
+                                    "enum": [
+                                      "carrier_check_digits",
+                                      "duplicate_in_batch",
+                                      "duplicate_document",
+                                      "amount_matches_rail",
+                                      "due_date_state",
+                                      "pix_key_resolved",
+                                      "amount_matches_document",
+                                      "rail_switched",
+                                      "ways_amount_mismatch",
+                                      "ways_unavailable",
+                                      "pix_destination_unverified"
+                                    ]
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pass",
+                                      "fail",
+                                      "warn"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  },
+                                  "simulated": {
+                                    "type": "boolean",
+                                    "description": "True when a test project's own responder answered the consult behind this check, not the rail."
+                                  }
+                                },
+                                "required": [
+                                  "code",
+                                  "status",
+                                  "message"
+                                ]
+                              }
+                            },
+                            "payment": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "executed",
+                                    "refused",
+                                    "uncertain"
+                                  ]
+                                },
+                                "attempt_id": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "receipt_id": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "end_to_end_id": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "refusal": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "properties": {
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "message": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "code",
+                                    "message"
+                                  ]
+                                },
+                                "test_substitution": {
+                                  "type": "object",
+                                  "properties": {
+                                    "settled_against": {
+                                      "type": "string",
+                                      "enum": [
+                                        "sandbox_fixture"
+                                      ]
+                                    },
+                                    "original_document_settled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        false
+                                      ]
+                                    },
+                                    "document_amount_minor": {
+                                      "type": [
+                                        "integer",
+                                        "null"
+                                      ]
+                                    },
+                                    "note": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "settled_against",
+                                    "original_document_settled",
+                                    "document_amount_minor",
+                                    "note"
+                                  ],
+                                  "description": "TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount."
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "attempt_id",
+                                "receipt_id",
+                                "end_to_end_id",
+                                "refusal"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "item_id",
+                            "position",
+                            "origin",
+                            "rail",
+                            "rail_chosen_by",
+                            "ways",
+                            "document",
+                            "state",
+                            "missing",
+                            "destination",
+                            "amount_minor",
+                            "amount_source",
+                            "description",
+                            "reference",
+                            "checks",
+                            "payment"
+                          ]
+                        }
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "api",
+                          "chat",
+                          "dashboard",
+                          "cli",
+                          "mcp"
+                        ]
+                      },
+                      "conversation_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "batch_id",
+                      "status",
+                      "version",
+                      "list_hash",
+                      "currency",
+                      "totals",
+                      "confirmation",
+                      "discarded",
+                      "items",
+                      "created_at",
+                      "source",
+                      "conversation_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "The body is not an empty object.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No batch with this id in this project.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "payable_batch_not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "payables:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "payables:write"
+              ]
+            }
+          ]
+        }
+      },
       "/v1/consumers/receipts/{id}/document": {
         "get": {
           "summary": "The payment receipt (comprovante) of a sealed receipt, as PDF or PNG",
-          "description": "Composes the comprovante of the payment the receipt seals (state and amount, who received, who paid, who authorized, the end-to-end id and the receipt id) and renders it. `format=pdf` is one page of 600x828 px; `format=png` is the same page at 2x (1200x1656), for sharing as an image.\n\nRead-only: generating or downloading a document never repeats or touches the payment. Served only when the payment is in a final confirmed state (its attempt is `settled`); otherwise 409 `document_not_final` with the attempt's status. A Test project's document carries the chip \"Ambiente de teste\" once. Deterministic: the same receipt gives the same document content, and the `X-CodeSpar-Document-Sha256` header is its hash.\n\nScoped to the organization AND the project of the caller, like the receipt read.",
+          "description": "Composes the comprovante of the payment the receipt seals (state and amount; who received: name, masked document, institution, branch and account as the provider resolved them when the payment went out, and the Pix key or a shortened copia-e-cola; who paid: name, masked document, institution, branch and account; who authorized; the end-to-end id and the receipt id) and renders it. A CPF is masked as a bank receipt masks it (`***.951.767-**`); a field the payment did not record is left out, never backfilled. Institution, branch and account come only from the provider's answer about the destination. A name someone declared (the QR Code's merchant, the document's supplier, the store) is printed on its own labeled row, never as the confirmed payee. `format=pdf` is one page of 600x828 px; `format=png` is the same page at 2x (1200x1656), for sharing as an image.\n\nRead-only: generating or downloading a document never repeats or touches the payment. Served only when the payment is in a final confirmed state (its attempt is `settled`); otherwise 409 `document_not_final` with the attempt's status. A Test project's document carries the chip \"Ambiente de teste\" once. Deterministic: the same receipt gives the same document content, and the `X-CodeSpar-Document-Sha256` header is its hash.\n\nScoped to the organization AND the project of the caller, like the receipt read.",
           "parameters": [
             {
               "schema": {

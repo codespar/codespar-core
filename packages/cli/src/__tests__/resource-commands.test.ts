@@ -142,6 +142,7 @@ const PINNED_COMMANDS = [
   "payables update-batches-items → PATCH /v1/payables/batches/{batchId}/items/{itemId}",
   "payables create-batches-items → POST /v1/payables/batches/{batchId}/items",
   "payables batches-pay → POST /v1/payables/batches/{batchId}/pay",
+  "payables batches-discard → POST /v1/payables/batches/{batchId}/discard",
   "test charges-pay → POST /v1/test/charges/{chargeId}/pay",
   "test charges-scenarios → POST /v1/test/charges/{chargeId}/scenarios",
   "test fund → POST /v1/test/fund",

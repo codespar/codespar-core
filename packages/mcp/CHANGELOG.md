@@ -1,5 +1,14 @@
 # @codespar/mcp — changelog
 
+## 0.5.16 — 2026-10-28
+
+### Added
+
+- `codespar_payables` gains `action: "discard"`, in two steps: without
+  `confirm` it reads the batch and answers `requires_confirmation` with how many
+  items would leave (nothing is sent); with `confirm: true` it discards through
+  `@codespar/sdk` 0.16.24. The projection carries `discarded`.
+
 ## 0.5.15 — 2026-10-28
 
 ### Fixed
