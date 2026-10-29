@@ -1,5 +1,24 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.26 — 2026-10-29
+
+### Added
+
+- **Shop research** (Shop v0.3, increment 2): `session.research.create({ query, criteria? })`
+  → `POST /v1/shop/agent/research` and `session.research.get(id)` →
+  `GET /v1/shop/agent/research/:id`. A pedido aberto compared across the
+  stores the Shop consults: every offer with its source and `observed_at`,
+  price, shipping, total, delivery days, stock, seller and warranty when the
+  store shows them; one principal recommendation with reason codes and at most
+  three alternatives; `lowest_price` stated as "menor preço entre as ofertas
+  consultadas" with its count and window; and `decisive_unknowns`. Needs
+  `shop:purchases:write` / `shop:purchases:read`. A key's research belongs to
+  the project.
+- `purchases.create` takes `{ offerId, quantity? }` instead of
+  `{ merchant, items }`: the store and the SKU come from the offer and the
+  store quotes it again (`offer_stale`, `offer_not_purchasable`,
+  `offer_not_found` refuse it with nothing proposed).
+
 ## 0.16.24 — 2026-10-28
 
 ### Added

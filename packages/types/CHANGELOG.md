@@ -1,5 +1,13 @@
 # @codespar/types — CHANGELOG
 
+## 0.11.7 — 2026-10-29
+
+### Added
+
+- `Session.research?` with `AgentResearchInput`, `AgentResearch` and
+  `AgentResearchOffer` (Shop v0.3 research, `/v1/shop/agent/research`).
+- `AgentPurchaseInput` is a union: `{ merchant, items }` or `{ offerId, quantity? }`.
+
 ## 0.11.5 — 2026-10-23
 
 ### Added

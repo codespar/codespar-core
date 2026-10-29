@@ -1,5 +1,14 @@
 # @codespar/mcp — changelog
 
+## 0.5.18 — 2026-10-29
+
+### Added
+
+- `codespar_shop_research` and `codespar_shop_research_status` (Shop v0.3
+  research, through `@codespar/sdk` 0.16.26 `session.research`).
+- `codespar_shop_purchase_propose` takes `offer_id` (and `quantity`) instead of
+  `merchant` and `items`.
+
 ## 0.5.16 — 2026-10-28
 
 ### Added
