@@ -1,5 +1,17 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.25 — 2026-10-29
+
+### Changed
+
+- `session.tools()` reads the tools the session-creation response
+  (`POST /v1/sessions`) carries, when it carries them, and asks
+  `GET /v1/sessions/:id/connections` only when it does not, as before. An
+  empty list on creation is an answer; a non-list is ignored.
+
+Ships in the same release as 0.16.24 (batch discard), which was not
+published on its own.
+
 ## 0.16.24 — 2026-10-28
 
 ### Added
