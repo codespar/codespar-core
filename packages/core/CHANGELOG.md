@@ -8,6 +8,10 @@
   (`POST /v1/sessions`) carries, when it carries them, and asks
   `GET /v1/sessions/:id/connections` only when it does not, as before. An
   empty list on creation is an answer; a non-list is ignored.
+- OpenAPI snapshot refreshed to the served document (sha256 f266becac406,
+  371 operations): `POST /v1/sessions` answers `tools` (ent#2282), plus the
+  operations served since 0.16.24 (among them the project's agent autonomy
+  reads and write); `src/generated/` regenerated from it.
 
 Ships in the same release as 0.16.24 (batch discard), which was not
 published on its own.
