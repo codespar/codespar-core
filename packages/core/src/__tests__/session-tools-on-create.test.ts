@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { CodeSpar } from "../index.js";
+import { CodeSpar, tools } from "../index.js";
 
 /**
  * `session.tools()` reads the tools the creation response carries, and only
@@ -34,27 +34,27 @@ describe("session.tools() on creation", () => {
   it("uses the tools the creation response carries, without asking the connections route", async () => {
     const calls = harness({ tools: [TOOL] });
     const session = await new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x" }).create("u");
-    await expect(session.tools()).resolves.toEqual([TOOL]);
+    await expect(tools(session)).resolves.toEqual([TOOL]);
     expect(calls.connections).toBe(0);
   }, 5000);
 
   it("falls back to GET /v1/sessions/:id/connections when the creation response has no tools", async () => {
     const calls = harness({});
     const session = await new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x" }).create("u");
-    const tools = await session.tools();
-    expect(tools.map((t) => t.name)).toEqual(["from_connections"]);
+    const listed = await tools(session);
+    expect(listed.map((t) => t.name)).toEqual(["from_connections"]);
     expect(calls.connections).toBe(1);
   }, 5000);
 
   it("an empty list on creation is an answer (no round trip); a non-array is ignored", async () => {
     const empty = harness({ tools: [] });
     const s1 = await new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x" }).create("u");
-    await expect(s1.tools()).resolves.toEqual([]);
+    await expect(tools(s1)).resolves.toEqual([]);
     expect(empty.connections).toBe(0);
 
     const junk = harness({ tools: "nope" });
     const s2 = await new CodeSpar({ apiKey: "csk_live_t", baseUrl: "https://x" }).create("u");
-    expect((await s2.tools()).map((t) => t.name)).toEqual(["from_connections"]);
+    expect((await tools(s2)).map((t) => t.name)).toEqual(["from_connections"]);
     expect(junk.connections).toBe(1);
   }, 5000);
 });
