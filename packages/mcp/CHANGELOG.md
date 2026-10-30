@@ -1,5 +1,38 @@
 # @codespar/mcp — changelog
 
+## 0.5.18 — 2026-10-30
+
+### Changed
+
+- **`codespar_shop_instruments` names nobody** (Shop v0.3, enterprise #2239):
+  its input schema has no `owner` (an empty, closed object), and it lists the
+  authenticated person's cards. With a project key the API refuses the list
+  (`bearer_token_has_no_person`); the tool then answers a text saying why and
+  what to do (`INSTRUMENTS_NEED_A_PERSON`: the person sees their cards on the
+  dashboard; a session bound to a person by login arrives with Shop v0.3
+  increment 5), instead of an error to retry. The refusal is read by its code,
+  so an older `@codespar/sdk` inside the peer range behaves the same.
+- A Shop purchase tool that answers a string is relayed as that text, not as
+  a JSON-quoted string.
+## 0.5.17 — 2026-10-29
+
+### Added
+
+- Documents reach the client as MCP content, the contract the hosted
+  connector serves: a receipt's PNG as an `image` block and a PDF as an
+  embedded `resource` (`codespar://documents/receipts/<receipt_id>.pdf`,
+  `codespar://documents/statements/<from>_<to>.pdf`), nothing above 4 MiB,
+  and one sentence saying what is attached. Both doors: `codespar_documents`
+  attaches the document it downloaded, and a `codespar_wallet`
+  `receipt_document` / `statement_document` answered through the session
+  fetches its document through the REST door the reference names (the
+  receipt's PNG and PDF, the statement's PDF) with the caller's own key. The
+  JSON reference is unchanged; a client that ignores images or resources
+  reads it as before.
+
+Ships in the same release as 0.5.16 (`codespar_payables` discard) and
+`@codespar/sdk` 0.16.25 (session tools read on creation).
+
 ## 0.5.16 — 2026-10-28
 
 ### Added

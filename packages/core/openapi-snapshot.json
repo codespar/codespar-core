@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-10-29T02:48:47.633Z",
-    "sha256": "35dd8de9b12987945fe8f5c8e865fc0997027a19912641e060eb27066168ea09",
+    "fetched_at": "2026-10-30T03:15:26.606Z",
+    "sha256": "277cd9131ecfc1fd75c36f7b1739d0844b83fe7c4a63816f48566667346dc0a1",
     "etag": null,
     "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 313,
-    "operations": 368,
+    "paths": 315,
+    "operations": 371,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -1513,6 +1513,90 @@
             "engine_status",
             "connect_fields",
             "connectable"
+          ]
+        },
+        "CreatedSession": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "`ses_`-prefixed"
+            },
+            "org_id": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            },
+            "user_id": {
+              "type": "string"
+            },
+            "servers": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "closed",
+                "error"
+              ]
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "closed_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "tools": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "input_schema": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "server": {
+                    "type": "string",
+                    "enum": [
+                      "codespar"
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "description",
+                  "input_schema",
+                  "server"
+                ]
+              },
+              "description": "The meta-tools this session exposes (catalog-wide), as GET /v1/sessions/{id}/connections lists them. A tool listed here is not an authorization for each of its actions: every execution still checks the action's own scope and answers `forbidden` naming it when the key lacks it."
+            }
+          },
+          "required": [
+            "id",
+            "org_id",
+            "project_id",
+            "user_id",
+            "servers",
+            "status",
+            "created_at",
+            "tools"
           ]
         },
         "SpendOutcome": {
@@ -3023,7 +3107,7 @@
               "content": {
                 "application/json": {
                   "schema": {
-                    "$ref": "#/components/schemas/Session"
+                    "$ref": "#/components/schemas/CreatedSession"
                   }
                 }
               }
@@ -4231,7 +4315,7 @@
                       "minLength": 1,
                       "maxLength": 128,
                       "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)*$",
-                      "description": "The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below."
+                      "description": "The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below."
                     },
                     "server_id": {
                       "type": "string",
@@ -4613,7 +4697,7 @@
                       "minLength": 1,
                       "maxLength": 128,
                       "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)*$",
-                      "description": "The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below."
+                      "description": "The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below."
                     },
                     "server_id": {
                       "type": "string",
@@ -62471,6 +62555,73 @@
                             "at"
                           ]
                         }
+                      },
+                      "payee": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "name_source": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "dict",
+                              "credit_party",
+                              "destination",
+                              "proof",
+                              "supplier",
+                              "br_code",
+                              "seller"
+                            ],
+                            "description": "Where `name` came from. `dict` and `credit_party`: the provider's answer about the destination when the money went out; `destination` and `proof`: the rail's resolution recorded with the payable or the payment; `supplier`, `br_code` and `seller`: a name someone declared (the document, the QR Code's merchant, the store), never a confirmed payee."
+                          },
+                          "document_masked": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "A CPF masked as `***.951.767-**`, a CNPJ whole."
+                          },
+                          "institution": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "From the provider's answer only (the participant's name)."
+                          },
+                          "branch": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "From the provider's answer only; null when it gave no account."
+                          },
+                          "account": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "From the provider's answer only; null when it gave none or gave it fully masked."
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "name_source",
+                          "document_masked",
+                          "institution",
+                          "branch",
+                          "account"
+                        ],
+                        "description": "On this point read only: who was paid, as the receipt document prints it under \"Para\". Read-side, outside the sealed fields. Fields the payment did not record are null, never backfilled."
                       }
                     },
                     "required": [
@@ -62486,7 +62637,8 @@
                       "receipt_sig",
                       "receipt_sig_ed25519",
                       "receipt_sig_kid",
-                      "exceptions"
+                      "exceptions",
+                      "payee"
                     ]
                   }
                 }
@@ -109151,7 +109303,9 @@
                                   "store_login",
                                   "cvv",
                                   "approval",
-                                  "challenge"
+                                  "challenge",
+                                  "store_challenge",
+                                  "store_cvv_requested"
                                 ]
                               }
                             },
@@ -109386,7 +109540,9 @@
                                   "store_login",
                                   "cvv",
                                   "approval",
-                                  "challenge"
+                                  "challenge",
+                                  "store_challenge",
+                                  "store_cvv_requested"
                                 ]
                               }
                             },
@@ -109869,7 +110025,9 @@
                                   "store_login",
                                   "cvv",
                                   "approval",
-                                  "challenge"
+                                  "challenge",
+                                  "store_challenge",
+                                  "store_cvv_requested"
                                 ]
                               }
                             },
@@ -110112,16 +110270,16 @@
       },
       "/v1/shop/agent/instruments": {
         "get": {
-          "summary": "A person's cards, masked",
-          "description": "Scope `shop:instruments:read`. Brand and last four of the person's active cards, as references an assistant can name; choosing one stays the person's act at Pagar.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
+          "summary": "The calling person's cards, masked",
+          "description": "Brand and last four of the CALLING person's active cards, as references an assistant can name; choosing one stays the person's act at Pagar. The list belongs to a verified person: a project API key or an OAuth token carries no person and is refused `bearer_token_has_no_person` (403), whatever `owner` says. `owner` is deprecated and ignored: it no longer selects another person's cards (Shop v0.3). The 403's `details` say why and what to do, with stable keys: `reason: \"bearer_has_no_person\"`, `list_belongs_to: \"authenticated_person\"`, `owner_param: \"deprecated_ignored\"` and `how_to_list` (the person's own session on the dashboard; an MCP session bound to a person by login arrives with Shop v0.3 increment 5). A client holding only a project key has no way to list cards until then.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
           "parameters": [
             {
               "schema": {
-                "type": "string",
-                "description": "The person whose masked cards the assistant may reference."
+                "type": "string"
               },
-              "required": true,
-              "description": "The person whose masked cards the assistant may reference.",
+              "required": false,
+              "description": "Deprecated and ignored (Shop v0.3): the list is always the authenticated person's own; it no longer selects another person's cards.",
+              "deprecated": true,
               "name": "owner",
               "in": "query"
             }
@@ -110178,8 +110336,8 @@
                 }
               }
             },
-            "400": {
-              "description": "owner is missing or malformed.",
+            "403": {
+              "description": "The bearer carries no verified person, or the key does not hold `shop:instruments:read`.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -110191,50 +110349,8 @@
                           "code": {
                             "type": "string",
                             "enum": [
-                              "invalid_query"
+                              "bearer_token_has_no_person"
                             ]
-                          },
-                          "message": {
-                            "type": "string"
-                          },
-                          "details": {
-                            "type": "object",
-                            "additionalProperties": {}
-                          }
-                        },
-                        "required": [
-                          "code",
-                          "message"
-                        ]
-                      },
-                      "request_id": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
-                        "description": "Echoes the `X-Request-Id` header when the request carried one."
-                      }
-                    },
-                    "required": [
-                      "error",
-                      "request_id"
-                    ]
-                  }
-                }
-              }
-            },
-            "403": {
-              "description": "The key does not hold `shop:instruments:read`.",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "error": {
-                        "type": "object",
-                        "properties": {
-                          "code": {
-                            "type": "string"
                           },
                           "message": {
                             "type": "string"
@@ -111720,6 +111836,659 @@
             {
               "bearerAuth": [
                 "projects:settings"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/projects/{id}/agent-autonomy": {
+        "get": {
+          "summary": "Read the agent's autonomy of a project",
+          "description": "How much the project's agent may pay without a person, inside its mandate, and the levels it may be set to now.\n\nSCOPE. A key created with an explicit scope list needs `projects:read`. The dashboard reads it for any member. A cross-tenant id is 404.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "description": "Project id. An id from another organization reads as absent."
+              },
+              "required": true,
+              "description": "Project id. An id from another organization reads as absent.",
+              "name": "id",
+              "in": "path"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "project_id": {
+                        "type": "string"
+                      },
+                      "environment": {
+                        "type": "string",
+                        "enum": [
+                          "live",
+                          "test"
+                        ]
+                      },
+                      "level": {
+                        "type": "string",
+                        "enum": [
+                          "confirm_each",
+                          "confirm_exceptions",
+                          "within_mandate"
+                        ],
+                        "description": "`confirm_each`: a person confirms every payment. `confirm_exceptions`: a payment above `exception_amount_minor`, or to a payee never paid, waits for a person. `within_mandate`: the agent pays inside the mandate unconfirmed. No level widens a mandate. A project that never changed it is at `confirm_each`."
+                      },
+                      "exception_amount_minor": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "description": "The threshold of `confirm_exceptions`, in minor units; null at the other levels."
+                      },
+                      "version": {
+                        "type": "integer",
+                        "description": "Send it back on the PUT. 0 for a project that never changed its level."
+                      },
+                      "updated_by": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "The verified person who made the last change."
+                      },
+                      "updated_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "available_levels": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "confirm_each",
+                            "confirm_exceptions",
+                            "within_mandate"
+                          ]
+                        },
+                        "description": "The levels the project may be set to now. Empty on a live project, where the agent's autonomy is not available yet."
+                      },
+                      "live_activation": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "pending"
+                        ],
+                        "description": "`pending` on a live project; null on a test project."
+                      }
+                    },
+                    "required": [
+                      "project_id",
+                      "environment",
+                      "level",
+                      "exception_amount_minor",
+                      "version",
+                      "updated_by",
+                      "updated_at",
+                      "available_levels",
+                      "live_activation"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "`not_found`. Also the answer for an id owned by another organization.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "projects:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "projects:read"
+              ]
+            }
+          ]
+        },
+        "put": {
+          "summary": "Change the agent's autonomy of a project",
+          "description": "ONLY a verified person with the organization role `admin` or `owner`, through the dashboard. An API key or an OAuth token is refused with 403 `bearer_token_cannot_manage_autonomy`, whatever its scopes: no agent and no integration changes how much it may pay unconfirmed.\n\nCompare-and-set: send the `version` you read. A stale one is 409 `autonomy_version_conflict` with the current `details.version`. The same level and threshold again answer `changed: false` and write nothing. Every change is recorded in the history and in the organization's audit chain (`agent_autonomy.changed`), in the same transaction.\n\nA level outside `available_levels` is 409 `autonomy_level_unavailable`; a live project has none available yet. `confirm_exceptions` takes `exception_amount_minor` (a positive integer), and without it the answer is 400 `autonomy_exception_amount_required`. The new level applies to payments gated after it; nothing pending changes.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "description": "Project id. An id from another organization reads as absent."
+              },
+              "required": true,
+              "description": "Project id. An id from another organization reads as absent.",
+              "name": "id",
+              "in": "path"
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "confirm_each",
+                        "confirm_exceptions",
+                        "within_mandate"
+                      ]
+                    },
+                    "exception_amount_minor": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "exclusiveMinimum": 0
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "level",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "changed": {
+                        "type": "boolean"
+                      },
+                      "autonomy": {
+                        "type": "object",
+                        "properties": {
+                          "project_id": {
+                            "type": "string"
+                          },
+                          "environment": {
+                            "type": "string",
+                            "enum": [
+                              "live",
+                              "test"
+                            ]
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "confirm_each",
+                              "confirm_exceptions",
+                              "within_mandate"
+                            ],
+                            "description": "`confirm_each`: a person confirms every payment. `confirm_exceptions`: a payment above `exception_amount_minor`, or to a payee never paid, waits for a person. `within_mandate`: the agent pays inside the mandate unconfirmed. No level widens a mandate. A project that never changed it is at `confirm_each`."
+                          },
+                          "exception_amount_minor": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "The threshold of `confirm_exceptions`, in minor units; null at the other levels."
+                          },
+                          "version": {
+                            "type": "integer",
+                            "description": "Send it back on the PUT. 0 for a project that never changed its level."
+                          },
+                          "updated_by": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "The verified person who made the last change."
+                          },
+                          "updated_at": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "available_levels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "confirm_each",
+                                "confirm_exceptions",
+                                "within_mandate"
+                              ]
+                            },
+                            "description": "The levels the project may be set to now. Empty on a live project, where the agent's autonomy is not available yet."
+                          },
+                          "live_activation": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "pending"
+                            ],
+                            "description": "`pending` on a live project; null on a test project."
+                          }
+                        },
+                        "required": [
+                          "project_id",
+                          "environment",
+                          "level",
+                          "exception_amount_minor",
+                          "version",
+                          "updated_by",
+                          "updated_at",
+                          "available_levels",
+                          "live_activation"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "changed",
+                      "autonomy"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "`invalid_body` (`details.issues`), or `autonomy_exception_amount_required`.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body",
+                              "autonomy_exception_amount_required"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "`bearer_token_cannot_manage_autonomy`: an API key or an OAuth token.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "bearer_token_cannot_manage_autonomy"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "`not_found`. Also the answer for an id owned by another organization.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "`autonomy_level_unavailable` or `autonomy_version_conflict`.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "autonomy_level_unavailable",
+                              "autonomy_version_conflict"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "projects:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "projects:write"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/projects/{id}/agent-autonomy/history": {
+        "get": {
+          "summary": "Read the history of the agent's autonomy of a project",
+          "description": "Every change, newest first, at most 50.\n\nSCOPE. A key created with an explicit scope list needs `projects:read`. The dashboard reads it for any member. A cross-tenant id is 404.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "description": "Project id. An id from another organization reads as absent."
+              },
+              "required": true,
+              "description": "Project id. An id from another organization reads as absent.",
+              "name": "id",
+              "in": "path"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "project_id": {
+                        "type": "string"
+                      },
+                      "changes": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "version": {
+                              "type": "integer"
+                            },
+                            "from_level": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "confirm_each",
+                                "confirm_exceptions",
+                                "within_mandate"
+                              ]
+                            },
+                            "to_level": {
+                              "type": "string",
+                              "enum": [
+                                "confirm_each",
+                                "confirm_exceptions",
+                                "within_mandate"
+                              ]
+                            },
+                            "from_exception_amount_minor": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "to_exception_amount_minor": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "changed_by": {
+                              "type": "string"
+                            },
+                            "changed_at": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "version",
+                            "from_level",
+                            "to_level",
+                            "from_exception_amount_minor",
+                            "to_exception_amount_minor",
+                            "changed_by",
+                            "changed_at"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "project_id",
+                      "changes"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "`not_found`. Also the answer for an id owned by another organization.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "projects:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "projects:read"
               ]
             }
           ]

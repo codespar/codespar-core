@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 35dd8de9b12987945fe8f5c8e865fc0997027a19912641e060eb27066168ea09, fetched 2026-10-29T02:48:47.633Z
+// Source: openapi-snapshot.json (sha256 277cd9131ecfc1fd75c36f7b1739d0844b83fe7c4a63816f48566667346dc0a1, fetched 2026-10-30T03:15:26.606Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -323,7 +323,7 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/account/statement", body: null, accept: "application/pdf", requiredQuery: ["from","to"], deprecated: false },
   { method: "post", path: "/v1/shop/agent/purchases", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/purchases/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
-  { method: "get", path: "/v1/shop/agent/instruments", body: null, accept: "application/json", requiredQuery: ["owner"], deprecated: false },
+  { method: "get", path: "/v1/shop/agent/instruments", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/projects", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/projects", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/projects/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
@@ -334,6 +334,9 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/projects/{id}/settings", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "patch", path: "/v1/projects/{id}/settings", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/projects/{id}/settings/history", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/projects/{id}/agent-autonomy", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "put", path: "/v1/projects/{id}/agent-autonomy", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/projects/{id}/agent-autonomy/history", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/sellers", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/sellers/{sellerId}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/sellers/{sellerId}/status", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
