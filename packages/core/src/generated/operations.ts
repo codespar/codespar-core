@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 ceee33204d9ec636547e7745fc7237e68e899b863a766d62bfa2b3ed5aad97d2, fetched 2026-10-27T17:52:30.609Z
+// Source: openapi-snapshot.json (sha256 f266becac406789c5adfc8df79017719c6447954159c23fcf6b28b102b82860b, fetched 2026-10-29T23:51:30.854Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -318,6 +318,7 @@ export const API_OPERATIONS = [
   { method: "patch", path: "/v1/payables/batches/{batchId}/items/{itemId}", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/payables/batches/{batchId}/items", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/payables/batches/{batchId}/pay", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/payables/batches/{batchId}/discard", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/consumers/receipts/{id}/document", body: null, accept: "application/pdf", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/account/statement", body: null, accept: "application/pdf", requiredQuery: ["from","to"], deprecated: false },
   { method: "post", path: "/v1/shop/agent/purchases", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
@@ -333,6 +334,9 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/projects/{id}/settings", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "patch", path: "/v1/projects/{id}/settings", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/projects/{id}/settings/history", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/projects/{id}/agent-autonomy", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "put", path: "/v1/projects/{id}/agent-autonomy", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/projects/{id}/agent-autonomy/history", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/sellers", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/sellers/{sellerId}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/sellers/{sellerId}/status", body: null, accept: "application/json", requiredQuery: [], deprecated: false },

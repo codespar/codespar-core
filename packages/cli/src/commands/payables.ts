@@ -294,3 +294,27 @@ export async function payablesBatchPayCommand(batchId: string, opts: PayOptions)
   }
   emit(batch, opts);
 }
+
+export interface DiscardOptions extends PayablesAuth {
+  confirm?: boolean;
+}
+
+/**
+ * Discard a batch: every item never dispatched leaves it; paid, uncertain
+ * and in-flight items keep their payment. Without `--confirm` it reads the
+ * batch, shows what would be dropped and sends nothing.
+ */
+export async function payablesBatchDiscardCommand(batchId: string, opts: DiscardOptions): Promise<void> {
+  if (!opts.confirm) {
+    const batch = await client(opts).payables.batches.get(batchId);
+    const pending = batch.items.filter((i) => i.payment === null && i.state !== "excluded").length;
+    if (!opts.json) {
+      renderBatch(batch);
+      process.stdout.write("\n");
+    }
+    throw new CliError(
+      `Discarding takes out the ${pending} item(s) never sent; paid, uncertain and in-flight items stay as they are. Pass --confirm to discard. Nothing was sent.`,
+    );
+  }
+  emit(await client(opts).payables.batches.discard(batchId), opts);
+}

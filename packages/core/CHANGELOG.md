@@ -1,6 +1,6 @@
 # @codespar/sdk — CHANGELOG
 
-## 0.16.24 — 2026-10-28
+## 0.16.26 — 2026-10-30
 
 ### Changed
 
@@ -19,6 +19,33 @@
 - Not in this release: the OpenAPI snapshot and the generated operation table
   still say `owner` is required. They are re-read from the served document
   once the API change is deployed.
+## 0.16.25 — 2026-10-29
+
+### Changed
+
+- `session.tools()` reads the tools the session-creation response
+  (`POST /v1/sessions`) carries, when it carries them, and asks
+  `GET /v1/sessions/:id/connections` only when it does not, as before. An
+  empty list on creation is an answer; a non-list is ignored.
+- OpenAPI snapshot refreshed to the served document (sha256 f266becac406,
+  371 operations): `POST /v1/sessions` answers `tools` (ent#2282), plus the
+  operations served since 0.16.24 (among them the project's agent autonomy
+  reads and write); `src/generated/` regenerated from it.
+
+Ships in the same release as 0.16.24 (batch discard), which was not
+published on its own.
+
+## 0.16.24 — 2026-10-28
+
+### Added
+
+- **Discard a batch** (payables contract, "Discard a batch", 28/10/2026):
+  `cs.payables.batches.discard(batchId)` → `POST /v1/payables/batches/:batchId/discard`.
+  Every item never sent leaves the batch (`excluded`) and frees the charge it
+  held; dispatched, uncertain, executed and refused items keep their payment.
+  With nothing sent before, the batch is `canceled` and a later change or pay
+  is a 409 `payable_batch_discarded`. `PayableBatch` gains
+  `discarded: { at, items } | null`.
 
 ## 0.16.23 — 2026-10-27
 

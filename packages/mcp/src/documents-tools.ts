@@ -4,17 +4,20 @@
  * period, through the SDK facades `cs.receipts` and `cs.account`
  * (CONTRATO-documentos).
  *
- * The answer is never bytes in the model's context: with `out` (a local
- * path, this server runs on the person's machine) the file is written there
- * and the tool answers the path, the size and the content hash; without
- * `out` it answers the reference (filename, content type, size, hash) and
- * the authenticated API path the person can fetch. Generating a document
- * never repeats a payment.
+ * The JSON answer is the reference, never bytes: with `out` (a local path,
+ * this server runs on the person's machine) the file is written there and the
+ * tool answers the path, the size and the content hash; without `out` it
+ * answers the reference (filename, content type, size, hash) and the
+ * authenticated API path. Since mcp 0.5.17 the downloaded document also rides
+ * as an MCP content block, as the hosted connector serves it
+ * (document-blocks.ts): a PNG as an image, a PDF as an embedded resource.
+ * Generating a document never repeats a payment.
  */
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { Account, Document, Receipts } from "@codespar/sdk";
 import type { McpToolDefinition } from "./shop-purchase-tools.js";
+import { blockOf, type McpAttachment } from "./document-blocks.js";
 
 export const DOCUMENTS_TOOL_NAME = "codespar_documents";
 
@@ -28,6 +31,7 @@ export function documentsToolDefinition(): McpToolDefinition {
       "(extrato) of a period (from, to as YYYY-MM-DD, at most 92 days, to not after today) as PDF: opening balance, " +
       "inflows, outflows, closing balance, reserves apart. With `out` the file is written to that local path and the " +
       "answer names it; without `out` the answer is the file's reference (name, type, size, sha256) and the API path. " +
+      "The document itself is attached to the result: a PNG as an image, a PDF as an embedded resource. " +
       "Read-only: generating or downloading a document never repeats a payment.",
     inputSchema: {
       type: "object",
@@ -74,6 +78,14 @@ export function documentReference(doc: Document, extra: Record<string, unknown>,
 
 /** Run one action. Throws on a refusal; the API's code is on `err.code`. */
 export async function callDocumentsTool(cs: DocumentsFacades, args: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return (await runDocumentsTool(cs, args)).reference;
+}
+
+/** Run one action and keep the document as its MCP content block (null when it does not fit). */
+export async function runDocumentsTool(
+  cs: DocumentsFacades,
+  args: Record<string, unknown>,
+): Promise<{ reference: Record<string, unknown>; attachment: McpAttachment | null }> {
   const out = typeof args.out === "string" && args.out.trim().length > 0 ? resolve(args.out.trim()) : null;
   switch (args.action) {
     case "receipt": {
@@ -82,11 +94,14 @@ export async function callDocumentsTool(cs: DocumentsFacades, args: Record<strin
       if (format !== "pdf" && format !== "png") throw new Error("format must be pdf or png");
       const doc = await cs.receipts.document(receiptId, { format });
       if (out) await writeFile(out, doc.bytes);
-      return documentReference(
-        doc,
-        { action: "receipt", kind: "receipt", receipt_id: receiptId, format, api_path: `/v1/consumers/receipts/${encodeURIComponent(receiptId)}/document?format=${format}` },
-        out,
-      );
+      return {
+        reference: documentReference(
+          doc,
+          { action: "receipt", kind: "receipt", receipt_id: receiptId, format, api_path: `/v1/consumers/receipts/${encodeURIComponent(receiptId)}/document?format=${format}` },
+          out,
+        ),
+        attachment: blockOf(doc, { kind: "receipt", receipt_id: receiptId }),
+      };
     }
     case "statement": {
       const from = str(args.from, "from");
@@ -94,11 +109,14 @@ export async function callDocumentsTool(cs: DocumentsFacades, args: Record<strin
       const currency = typeof args.currency === "string" && args.currency.length > 0 ? args.currency : undefined;
       const doc = await cs.account.statement({ from, to, ...(currency ? { currency } : {}) });
       if (out) await writeFile(out, doc.bytes);
-      return documentReference(
-        doc,
-        { action: "statement", kind: "statement", from, to, format: "pdf", api_path: `/v1/account/statement?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&format=pdf` },
-        out,
-      );
+      return {
+        reference: documentReference(
+          doc,
+          { action: "statement", kind: "statement", from, to, format: "pdf", api_path: `/v1/account/statement?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&format=pdf` },
+          out,
+        ),
+        attachment: blockOf(doc, { kind: "statement", from, to }),
+      };
     }
     default:
       throw new Error(`unknown action ${String(args.action)} (use receipt | statement)`);

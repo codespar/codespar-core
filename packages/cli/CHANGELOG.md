@@ -1,5 +1,13 @@
 # @codespar/cli — changelog
 
+## 0.22.3 — 2026-10-28
+
+### Added
+
+- **`codespar payables batches discard <batchId> [--confirm]`** drops what was
+  never sent, through `@codespar/sdk` 0.16.24. Without `--confirm` it reads the
+  batch, shows what would leave and sends nothing.
+
 ## 0.22.2 — 2026-10-27
 
 ### Added

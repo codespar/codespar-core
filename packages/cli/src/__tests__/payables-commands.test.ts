@@ -13,6 +13,7 @@ import { join } from "node:path";
 import {
   parseItemSpec,
   payablesBatchCreateCommand,
+  payablesBatchDiscardCommand,
   payablesBatchPayCommand,
   payablesBatchUpdateItemCommand,
   payablesFilesUploadCommand,
@@ -43,6 +44,7 @@ const BATCH = {
   created_at: "2026-10-24T12:00:00.000Z",
   source: "cli",
   conversation_id: null,
+  discarded: null,
 };
 
 interface Seen {
@@ -192,6 +194,19 @@ describe("payables commands", () => {
       mandate_id: "mdt_example",
     });
     expect(seen[0]!.headers["Idempotency-Key"]).toBe("pay:pbat_example:1:hash_v1");
+  });
+
+  it("discard sends nothing without --confirm: it reads the batch and says what would leave", async () => {
+    const err = await payablesBatchDiscardCommand("pbat_example", { ...AUTH }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(CliError);
+    expect(String((err as Error).message)).toMatch(/Pass --confirm to discard\. Nothing was sent\./);
+    expect(seen.map((s) => `${s.method} ${s.path}`)).toEqual(["GET /v1/payables/batches/pbat_example"]);
+  });
+
+  it("discard with --confirm posts an empty object to the discard door", async () => {
+    await payablesBatchDiscardCommand("pbat_example", { ...AUTH, confirm: true });
+    expect(seen.map((s) => `${s.method} ${s.path}`)).toEqual(["POST /v1/payables/batches/pbat_example/discard"]);
+    expect(JSON.parse(String(seen[0]!.body))).toEqual({});
   });
 
   it("pay on a changed list shows the new version and hash, then fails", async () => {

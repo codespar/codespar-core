@@ -66,6 +66,7 @@ BATCH: dict[str, Any] = {
     "created_at": "2026-10-24T12:00:00.000Z",
     "source": "api",
     "conversation_id": None,
+    "discarded": None,
 }
 
 
@@ -193,6 +194,19 @@ async def test_get_update_add_and_pay_paths(httpx_mock: HTTPXMock) -> None:
         "mandate_id": "mdt_example",
     }
     assert reqs[4].headers["idempotency-key"] == "pay:pbat_example:5:hash_v5"
+
+
+async def test_discard_posts_an_empty_object_and_returns_the_batch(httpx_mock: HTTPXMock) -> None:
+    mark = {"at": "2026-10-28T10:00:00.000Z", "items": 1}
+    discarded = {**BATCH, "status": "canceled", "discarded": mark}
+    httpx_mock.add_response(json=discarded)
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        batch = await cs.payables.batches.discard("pbat_example")
+    assert batch == discarded
+    (req,) = httpx_mock.get_requests()
+    assert (req.method, req.url.path) == ("POST", "/v1/payables/batches/pbat_example/discard")
+    assert json.loads(req.content) == {}
+    assert "idempotency-key" not in req.headers
 
 
 async def test_pay_repeats_while_executing_with_items_ready(httpx_mock: HTTPXMock) -> None:

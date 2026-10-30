@@ -54,6 +54,7 @@ const BATCH: PayableBatch = {
   created_at: "2026-10-24T12:00:00.000Z",
   source: "mcp",
   conversation_id: null,
+  discarded: null,
 };
 
 function fakePayables() {
@@ -71,6 +72,7 @@ function fakePayables() {
       updateItem: async (...a: unknown[]) => (calls.push(["updateItem", ...a]), BATCH),
       addItems: async (...a: unknown[]) => (calls.push(["addItems", ...a]), BATCH),
       pay: async (...a: unknown[]) => (calls.push(["pay", ...a]), BATCH),
+      discard: async (...a: unknown[]) => (calls.push(["discard", ...a]), { ...BATCH, status: "canceled", discarded: { at: "2026-10-28T10:00:00.000Z", items: 1 } }),
     },
   } as unknown as Payables;
   return { payables, calls };
@@ -83,8 +85,8 @@ describe("codespar_payables MCP tool", () => {
     expect(local.name).toBe("codespar_payables");
     expect(local.inputSchema.additionalProperties).toBe(false);
     const props = (s: typeof local) => s.inputSchema.properties as Record<string, { enum?: string[] }>;
-    expect(props(local).action!.enum).toEqual(["upload", "create_batch", "get", "update_item", "set_rail", "pay"]);
-    expect(props(hosted).action!.enum).toEqual(["create_batch", "get", "update_item", "set_rail", "pay"]);
+    expect(props(local).action!.enum).toEqual(["upload", "create_batch", "get", "update_item", "set_rail", "pay", "discard"]);
+    expect(props(hosted).action!.enum).toEqual(["create_batch", "get", "update_item", "set_rail", "pay", "discard"]);
     expect(props(hosted).rail!.enum).toEqual(["pix", "boleto"]);
     expect(props(hosted).path).toBeUndefined();
     expect(JSON.stringify(local.inputSchema)).not.toMatch(/"url"/);
@@ -150,6 +152,18 @@ describe("codespar_payables MCP tool", () => {
     await expect(
       callPayablesTool(payables, { action: "pay", batch_id: "pbat_example", list_hash: "h" }, { allowLocalFiles: false }),
     ).rejects.toThrow(/version must be an integer/);
+  });
+
+  it("discard sends nothing without confirm=true; with it, discards and shows the mark", async () => {
+    const { payables, calls } = fakePayables();
+    const asked = (await callPayablesTool(payables, { action: "discard", batch_id: "pbat_example" }, { allowLocalFiles: false })) as Record<string, unknown>;
+    expect(asked.requires_confirmation).toBe(true);
+    expect(String(asked.message)).toMatch(/Nothing was sent\./);
+    expect(calls.map((c) => c[0])).toEqual(["get"]);
+    const done = (await callPayablesTool(payables, { action: "discard", batch_id: "pbat_example", confirm: true }, { allowLocalFiles: false })) as Record<string, unknown>;
+    expect(calls.map((c) => c[0])).toEqual(["get", "discard"]);
+    expect(calls[1]).toEqual(["discard", "pbat_example"]);
+    expect(done).toMatchObject({ status: "canceled", discarded: { items: 1 } });
   });
 
   it("upload reads an accepted local file only when local files are allowed", async () => {

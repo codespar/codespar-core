@@ -42,6 +42,7 @@ describe("codespar payables and its hand-written subgroups", () => {
     const reservadas = payables!.commands.filter((c) => RESERVADAS.some((p) => underPrefix(c.path, p)));
     expect(reservadas.map((c) => c.name).sort()).toEqual(
       [
+        "batches-discard",
         "batches-pay",
         "create-batches",
         "create-batches-items",
