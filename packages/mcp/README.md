@@ -42,6 +42,8 @@ session, and the answer decides what `tools/list` offers:
 |---|---|
 | session | the session's commerce tools (`codespar_pay`, `codespar_charge`, `codespar_discover`, wallet, mandates, Shop purchases) plus `codespar_payables` and `codespar_documents` |
 | `403` (valid key without `sessions:create`) | no session: only `codespar_payables` and `codespar_documents`, which run over REST; a session tool called by name answers that the key lacks `sessions:create` |
+
+A document (`codespar_documents`, or a `codespar_wallet` `receipt_document` / `statement_document`) comes back as its JSON reference plus the document itself: a receipt's PNG as an image block, a PDF as an embedded resource (`codespar://documents/…`), up to 4 MiB.
 | `401` (wrong, revoked or other-environment key) | setup mode |
 
 | Tools | Scope the key needs |

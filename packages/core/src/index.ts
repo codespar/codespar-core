@@ -76,7 +76,7 @@ export type { Account, Document, DocumentFormat, ReceiptDocumentOptions, Receipt
 export { SessionConfigSchema } from "./types.js";
 export { loop } from "./loop.js";
 export { tools, findTools } from "./tools.js";
-export { CodesparApiError, TimeoutError } from "./errors.js";
+export { BEARER_TOKEN_HAS_NO_PERSON, BearerTokenHasNoPersonError, CodesparApiError, TimeoutError } from "./errors.js";
 export type { CodesparApiErrorOptions } from "./errors.js";
 export {
   TOOL_RESULT_CODES,
