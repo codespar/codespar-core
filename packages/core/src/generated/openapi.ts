@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 f266becac406789c5adfc8df79017719c6447954159c23fcf6b28b102b82860b, fetched 2026-10-29T23:51:30.854Z
+// Source: openapi-snapshot.json (sha256 277cd9131ecfc1fd75c36f7b1739d0844b83fe7c4a63816f48566667346dc0a1, fetched 2026-10-30T03:15:26.606Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -45321,7 +45321,7 @@ export interface paths {
                                 run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
                                 awaiting: {
                                     /** @enum {string} */
-                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge";
+                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" | "store_challenge" | "store_cvv_requested";
                                 } | null;
                                 merchant: {
                                     id: string;
@@ -45380,7 +45380,7 @@ export interface paths {
                                 run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
                                 awaiting: {
                                     /** @enum {string} */
-                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge";
+                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" | "store_challenge" | "store_cvv_requested";
                                 } | null;
                                 merchant: {
                                     id: string;
@@ -45570,7 +45570,7 @@ export interface paths {
                                 run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
                                 awaiting: {
                                     /** @enum {string} */
-                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge";
+                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" | "store_challenge" | "store_cvv_requested";
                                 } | null;
                                 merchant: {
                                     id: string;
@@ -45655,16 +45655,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * A person's cards, masked
-         * @description Scope `shop:instruments:read`. Brand and last four of the person's active cards, as references an assistant can name; choosing one stays the person's act at Pagar.
+         * The calling person's cards, masked
+         * @description Brand and last four of the CALLING person's active cards, as references an assistant can name; choosing one stays the person's act at Pagar. The list belongs to a verified person: a project API key or an OAuth token carries no person and is refused `bearer_token_has_no_person` (403), whatever `owner` says. `owner` is deprecated and ignored: it no longer selects another person's cards (Shop v0.3). The 403's `details` say why and what to do, with stable keys: `reason: "bearer_has_no_person"`, `list_belongs_to: "authenticated_person"`, `owner_param: "deprecated_ignored"` and `how_to_list` (the person's own session on the dashboard; an MCP session bound to a person by login arrives with Shop v0.3 increment 5). A client holding only a project key has no way to list cards until then.
          *
          *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
          */
         get: {
             parameters: {
-                query: {
-                    /** @description The person whose masked cards the assistant may reference. */
-                    owner: string;
+                query?: {
+                    /**
+                     * @deprecated
+                     * @description Deprecated and ignored (Shop v0.3): the list is always the authenticated person's own; it no longer selects another person's cards.
+                     */
+                    owner?: string;
                 };
                 header?: never;
                 path?: never;
@@ -45691,27 +45694,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description owner is missing or malformed. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "invalid_query";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description The key does not hold `shop:instruments:read`. */
+                /** @description The bearer carries no verified person, or the key does not hold `shop:instruments:read`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -45719,7 +45702,8 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                code: string;
+                                /** @enum {string} */
+                                code: "bearer_token_has_no_person";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;

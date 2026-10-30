@@ -8,6 +8,8 @@
  * CodeSpar dashboard; no tool here takes or returns a card number, a code, a
  * password or a cookie. Each call needs its delegated scope on the key
  * (`shop:purchases:write`, `shop:purchases:read`, `shop:instruments:read`).
+ * Since Shop v0.3 the card list is the authenticated person's own: with a
+ * project key it answers a text saying so (`INSTRUMENTS_NEED_A_PERSON`).
  */
 import type { Session } from "@codespar/sdk";
 
@@ -58,15 +60,23 @@ export const SHOP_PURCHASE_MCP_TOOLS: readonly McpToolDefinition[] = [
   },
   {
     name: "codespar_shop_instruments",
-    description: "A person's cards as masked references (brand and last four). Choosing one stays the person's act at Pagar. Needs shop:instruments:read.",
-    inputSchema: {
-      type: "object",
-      additionalProperties: false,
-      required: ["owner"],
-      properties: { owner: { type: "string", description: "The person whose masked cards may be referenced." } },
-    },
+    description:
+      "The authenticated person's cards as masked references (brand and last four). Choosing one stays the person's act at Pagar. " +
+      "Needs a session bound to a person: with a project API key the API refuses the list (bearer_token_has_no_person), " +
+      "and this tool says so instead of listing.",
+    inputSchema: { type: "object", additionalProperties: false, properties: {} },
   },
 ];
+
+/**
+ * What `codespar_shop_instruments` answers when the session carries no person
+ * (a project API key): the reason and the way forward, as text the model
+ * relays, not a failure to retry.
+ */
+export const INSTRUMENTS_NEED_A_PERSON =
+  "No cards listed: the card list belongs to the person who is signed in, and this session uses a project key, " +
+  "which carries no person (bearer_token_has_no_person). The person sees their cards on the CodeSpar dashboard and " +
+  "chooses one there when they press Pagar. A session bound to a person (consent by login) arrives with Shop v0.3 increment 5.";
 
 export function isShopPurchaseTool(name: string): boolean {
   return SHOP_PURCHASE_MCP_TOOLS.some((t) => t.name === name);
@@ -89,7 +99,14 @@ export async function callShopPurchaseTool(session: Session, name: string, args:
     case "codespar_shop_purchase_status":
       return session.purchases.get(String(args.purchase_id ?? ""));
     case "codespar_shop_instruments":
-      return session.instruments.list({ owner: String(args.owner ?? "") });
+      try {
+        return await session.instruments.list();
+      } catch (err) {
+        // Shop v0.3: the list is the authenticated person's own. Read by code, not by class, so an
+        // older @codespar/sdk inside the peer range is read the same way.
+        if ((err as { code?: unknown } | null)?.code === "bearer_token_has_no_person") return INSTRUMENTS_NEED_A_PERSON;
+        throw err;
+      }
     default:
       throw new Error(`unknown Shop purchase tool ${name}`);
   }
