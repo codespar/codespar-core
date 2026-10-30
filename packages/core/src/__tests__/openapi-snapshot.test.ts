@@ -69,10 +69,12 @@ describe("src/generated/", () => {
 
   it("names the query parameters the document marks required, and nothing else", () => {
     const byKey = new Map(operationTable(snapshot.document).map((row) => [key(row), row]));
-    expect(byKey.get("GET /v1/shop/agent/instruments")?.requiredQuery).toEqual(["owner"]);
     expect(byKey.get("GET /v1/audit-events/export")?.requiredQuery).toEqual(["from", "to"]);
     // Positive control: an optional query parameter is not listed.
     expect(byKey.get("GET /v1/wallets")?.requiredQuery).toEqual([]);
+    // Shop v0.3 (enterprise #2239): `owner` became optional and deprecated, so
+    // the row that once required it now lists nothing.
+    expect(byKey.get("GET /v1/shop/agent/instruments")?.requiredQuery).toEqual([]);
     expect(requiredQueryParameters({ parameters: [{ in: "query", name: "a", required: false }] })).toEqual([]);
     expect(
       requiredQueryParameters(
