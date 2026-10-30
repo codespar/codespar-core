@@ -29,6 +29,7 @@ import {
   census,
   censusGroup,
   claimingGroup,
+  KEY_REFUSED_OPERATIONS,
   derivedSurface,
   metaToolNames,
 } from "../surface.js";
@@ -128,7 +129,11 @@ describe("CLI surface coverage", () => {
         claimed.set(key, (claimed.get(key) ?? 0) + 1);
       }
     }
-    const expected = OPERATIONS.filter((op) => claimingGroup(op.path) !== undefined);
+    // Minus the operations no key can perform (api-tenancy#2): claimed by a
+    // group, deliberately not offered.
+    const expected = OPERATIONS.filter(
+      (op) => claimingGroup(op.path) !== undefined && !KEY_REFUSED_OPERATIONS.has(`${op.method} ${op.path}`),
+    );
     expect(claimed.size).toBe(expected.length);
     expect([...claimed.values()].filter((n) => n !== 1)).toEqual([]);
   });

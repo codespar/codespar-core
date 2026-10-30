@@ -324,6 +324,34 @@ export function claimingGroup(
   return best;
 }
 
+/**
+ * Operations the served document describes that no API key can perform
+ * (codespar-enterprise api-tenancy#2): administrative routes answer every key
+ * with 403 `admin_session_required`, whatever its scopes, and are done by an
+ * admin on the dashboard. This CLI authenticates with a key, so it does not
+ * offer them. Written as `METHOD path` exactly as the served document spells
+ * the path. Removing them happens AFTER naming, so the commands that stay keep
+ * the names scripts already use (`wallets list-ledger` stays `list-ledger`).
+ */
+export const KEY_REFUSED_OPERATIONS: ReadonlySet<string> = new Set([
+  "post /v1/account/fund/sandbox",
+  "post /v1/account/fund/sandbox/initial",
+  "post /v1/account/fund/sandbox/refill",
+  "post /v1/wallets/{id}/ledger",
+  "post /v1/wallets/{id}/funding-sources",
+  "delete /v1/wallets/{id}/funding-sources/{connection_id}/{currency}",
+  "post /v1/wallets/{id}/recon-anomalies/{aid}",
+  "post /v1/wallets/{id}/statement-import",
+  "post /v1/mcp-servers/platform-fees/sweep",
+  "post /v1/projects",
+  "patch /v1/projects/{id}",
+  "delete /v1/projects/{id}",
+  "post /v1/projects/{id}/archive",
+  "post /v1/projects/{id}/unarchive",
+  "patch /v1/projects/{id}/settings",
+  "get /v1/projects/{id}/settings/history",
+]);
+
 const COLLECTION_VERB: Record<HttpMethod, string> = {
   get: "list",
   post: "create",
@@ -376,7 +404,7 @@ export function deriveGroup(
   const suffixCount = new Map<string, number>();
   for (const p of parsed) suffixCount.set(p.suffix, (suffixCount.get(p.suffix) ?? 0) + 1);
 
-  const commands = parsed.map(({ op, suffix, verb, params }) => {
+  const commands = parsed.filter(({ op }) => !KEY_REFUSED_OPERATIONS.has(`${op.method} ${op.path}`)).map(({ op, suffix, verb, params }) => {
     const bare = suffix === "" || suffix === spec.name;
     const name = bare ? verb : suffixCount.get(suffix) === 1 ? suffix : `${verb}-${suffix}`;
     return {
