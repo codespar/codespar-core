@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 277cd9131ecfc1fd75c36f7b1739d0844b83fe7c4a63816f48566667346dc0a1, fetched 2026-10-30T03:15:26.606Z
+// Source: openapi-snapshot.json (sha256 a9ff2dd3151d6b7d4cd50e289e229f9d42cfc6c71130c17d7ba7ac7a3c3f3dfa, fetched 2026-10-30T11:05:19.286Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -44684,7 +44684,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The dashboard path confirms only as a verified person: the person's session token is missing, invalid or names someone else. An API key never takes this path; it pays with `payables:pay` and a `mandate_id`. */
+                /** @description The dashboard path confirms only as a verified person: the person's session token is missing, invalid or names someone else. An API key never takes this path; it pays with `payables:pay` and a `mandate_id`. `mandate_paused`, `mandate_revoked`, `mandate_expired`: the `mandate_id` a first confirmation names cannot pay; nothing is recorded, and the batch can be confirmed under an active mandate. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -44693,7 +44693,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch";
+                                code: "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "mandate_paused" | "mandate_revoked" | "mandate_expired";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -45273,7 +45273,7 @@ export interface paths {
         put?: never;
         /**
          * Propose a purchase at a supported store (never an order)
-         * @description Scope `shop:purchases:write`. The store, its origin and its prices come from the server's registry and the store's own catalog, never from the request. The same `agent_id` and `idempotency_key` with the same intent answers the same purchase (`idempotent_replay: true`).
+         * @description Scope `shop:purchases:write`. The store, its origin and its prices come from the server's registry and the store's own catalog, never from the request. The same `agent_id` and `idempotency_key` with the same intent answers the same purchase (`idempotent_replay: true`). Instead of `merchant` and `items`, `offer_id` (with an optional `quantity`) names an offer of this key's research: the store and the SKU come from it and the store quotes it again; a moved price or shipping is `offer_stale` (409) and an offer that is a comparison is `offer_not_purchasable` (409), with nothing proposed.
          *
          *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
          */
@@ -45288,11 +45288,17 @@ export interface paths {
                 content: {
                     "application/json": {
                         agent_id: string;
-                        merchant: string;
-                        items: {
+                        /** @description The store id. Required with `items`; absent with `offer_id`. */
+                        merchant?: string;
+                        /** @description The cart by SKU. Required with `merchant`; absent with `offer_id`. */
+                        items?: {
                             sku_id: string;
                             quantity: number;
                         }[];
+                        /** @description Shop v0.3: an offer of this key's research (`POST /v1/shop/agent/research`). The store and the SKU come from it; the store quotes it again. */
+                        offer_id?: string;
+                        /** @description With `offer_id`: how many units (default 1). */
+                        quantity?: number;
                         /**
                          * @default card
                          * @enum {string}
@@ -45460,7 +45466,27 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No mandate permits the store, or the project is not Test. */
+                /** @description The offer is not in this key's research. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "offer_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No mandate permits the store, the project is not Test, or the offer moved or cannot be bought here. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -45469,7 +45495,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "proposal_no_mandate" | "purchase_merchant_unsupported";
+                                code: "proposal_no_mandate" | "purchase_merchant_unsupported" | "offer_stale" | "offer_not_purchasable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -45602,6 +45628,231 @@ export interface paths {
                                     code: string;
                                 } | null;
                                 next_action: string | null;
+                            };
+                        };
+                    };
+                };
+                /** @description The key does not hold `shop:purchases:read`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shop/agent/research": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Research a pedido aberto: offers compared, one recommendation
+         * @description Scope `shop:purchases:write` (a research proposes nothing). The server consults the sources (`registry`, the stores the Shop can buy at; `vtex` and `meli`, comparison only; default `registry` in Test, `vtex` and `meli` in Live), records every offer with its source and `observed_at`, computes each total (price plus shipping), and recommends one principal with reason codes and at most three alternatives. `lowest_price` states the lowest total as "menor preço entre as ofertas consultadas", with the count and window it covers. `decisive_unknowns` lists the only questions that would change the principal. The research belongs to the project: a key carries no person, and never reaches a person's research. An offer older than 15 minutes is `stale`: a purchase from it is quoted again, as every purchase from an offer is.
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description The pedido aberto, as the person said it (e.g. "fone bluetooth"). */
+                        query: string;
+                        criteria?: {
+                            /**
+                             * @description What decides the principal: the lowest total (default) or the fastest delivery.
+                             * @enum {string}
+                             */
+                            priority?: "total" | "eta";
+                            /** @description The most the person wants to pay, shipping included, in centavos. */
+                            max_total_minor?: number;
+                            /** @description Where to look: `registry` (the stores the Shop can buy at), `vtex` and `meli` (comparison only). Default: `registry` in Test, `vtex` and `meli` in Live. */
+                            sources?: ("registry" | "vtex" | "meli")[];
+                            /** @description Offers per source, 1 to 5 (default 5). */
+                            limit?: number;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The research as CONTRATO-I2 describes it: offers, recommendation, sources. */
+                            research: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not hold `shop:purchases:write`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No source of the asked groups exists in this environment. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "research_no_sources";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No source answered, or Shop purchases are off on this deployment. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "research_no_sources" | "shop_purchases_disabled";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shop/agent/research/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a research back
+         * @description Scope `shop:purchases:read`. The research this project's keys ran, with each offer's `stale` computed at the time of the answer.
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The research id (`srr_...`), from `POST /v1/shop/agent/research`. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The research as CONTRATO-I2 describes it: offers, recommendation, sources. */
+                            research: {
+                                [key: string]: unknown;
                             };
                         };
                     };

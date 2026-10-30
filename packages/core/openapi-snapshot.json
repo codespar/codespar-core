@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-10-30T03:15:26.606Z",
-    "sha256": "277cd9131ecfc1fd75c36f7b1739d0844b83fe7c4a63816f48566667346dc0a1",
+    "fetched_at": "2026-10-30T11:05:19.286Z",
+    "sha256": "a9ff2dd3151d6b7d4cd50e289e229f9d42cfc6c71130c17d7ba7ac7a3c3f3dfa",
     "etag": null,
     "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 315,
-    "operations": 371,
+    "paths": 317,
+    "operations": 373,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -107700,7 +107700,7 @@
               }
             },
             "403": {
-              "description": "The dashboard path confirms only as a verified person: the person's session token is missing, invalid or names someone else. An API key never takes this path; it pays with `payables:pay` and a `mandate_id`.",
+              "description": "The dashboard path confirms only as a verified person: the person's session token is missing, invalid or names someone else. An API key never takes this path; it pays with `payables:pay` and a `mandate_id`. `mandate_paused`, `mandate_revoked`, `mandate_expired`: the `mandate_id` a first confirmation names cannot pay; nothing is recorded, and the batch can be confirmed under an active mandate.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -107714,7 +107714,10 @@
                             "enum": [
                               "user_token_required",
                               "user_token_invalid",
-                              "user_token_identity_mismatch"
+                              "user_token_identity_mismatch",
+                              "mandate_paused",
+                              "mandate_revoked",
+                              "mandate_expired"
                             ]
                           },
                           "message": {
@@ -109181,7 +109184,7 @@
       "/v1/shop/agent/purchases": {
         "post": {
           "summary": "Propose a purchase at a supported store (never an order)",
-          "description": "Scope `shop:purchases:write`. The store, its origin and its prices come from the server's registry and the store's own catalog, never from the request. The same `agent_id` and `idempotency_key` with the same intent answers the same purchase (`idempotent_replay: true`).\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
+          "description": "Scope `shop:purchases:write`. The store, its origin and its prices come from the server's registry and the store's own catalog, never from the request. The same `agent_id` and `idempotency_key` with the same intent answers the same purchase (`idempotent_replay: true`). Instead of `merchant` and `items`, `offer_id` (with an optional `quantity`) names an offer of this key's research: the store and the SKU come from it and the store quotes it again; a moved price or shipping is `offer_stale` (409) and an offer that is a comparison is `offer_not_purchasable` (409), with nothing proposed.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
           "requestBody": {
             "content": {
               "application/json": {
@@ -109196,7 +109199,8 @@
                     "merchant": {
                       "type": "string",
                       "minLength": 1,
-                      "maxLength": 64
+                      "maxLength": 64,
+                      "description": "The store id. Required with `items`; absent with `offer_id`."
                     },
                     "items": {
                       "type": "array",
@@ -109221,7 +109225,19 @@
                         "additionalProperties": false
                       },
                       "minItems": 1,
-                      "maxItems": 20
+                      "maxItems": 20,
+                      "description": "The cart by SKU. Required with `merchant`; absent with `offer_id`."
+                    },
+                    "offer_id": {
+                      "type": "string",
+                      "pattern": "^sof_[A-Za-z0-9_-]{16}$",
+                      "description": "Shop v0.3: an offer of this key's research (`POST /v1/shop/agent/research`). The store and the SKU come from it; the store quotes it again."
+                    },
+                    "quantity": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 99,
+                      "description": "With `offer_id`: how many units (default 1)."
                     },
                     "payment_method": {
                       "type": "string",
@@ -109238,8 +109254,6 @@
                   },
                   "required": [
                     "agent_id",
-                    "merchant",
-                    "items",
                     "idempotency_key"
                   ],
                   "additionalProperties": false
@@ -109809,8 +109823,53 @@
                 }
               }
             },
+            "404": {
+              "description": "The offer is not in this key's research.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "offer_not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
             "409": {
-              "description": "No mandate permits the store, or the project is not Test.",
+              "description": "No mandate permits the store, the project is not Test, or the offer moved or cannot be bought here.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -109823,7 +109882,9 @@
                             "type": "string",
                             "enum": [
                               "proposal_no_mandate",
-                              "purchase_merchant_unsupported"
+                              "purchase_merchant_unsupported",
+                              "offer_stale",
+                              "offer_not_purchasable"
                             ]
                           },
                           "message": {
@@ -110189,6 +110250,392 @@
                     },
                     "required": [
                       "purchase"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "The key does not hold `shop:purchases:read`.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "not_found"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "error"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "shop:purchases:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "shop:purchases:read"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/shop/agent/research": {
+        "post": {
+          "summary": "Research a pedido aberto: offers compared, one recommendation",
+          "description": "Scope `shop:purchases:write` (a research proposes nothing). The server consults the sources (`registry`, the stores the Shop can buy at; `vtex` and `meli`, comparison only; default `registry` in Test, `vtex` and `meli` in Live), records every offer with its source and `observed_at`, computes each total (price plus shipping), and recommends one principal with reason codes and at most three alternatives. `lowest_price` states the lowest total as \"menor preço entre as ofertas consultadas\", with the count and window it covers. `decisive_unknowns` lists the only questions that would change the principal. The research belongs to the project: a key carries no person, and never reaches a person's research. An offer older than 15 minutes is `stale`: a purchase from it is quoted again, as every purchase from an offer is.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "query": {
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 200,
+                      "description": "The pedido aberto, as the person said it (e.g. \"fone bluetooth\")."
+                    },
+                    "criteria": {
+                      "type": "object",
+                      "properties": {
+                        "priority": {
+                          "type": "string",
+                          "enum": [
+                            "total",
+                            "eta"
+                          ],
+                          "description": "What decides the principal: the lowest total (default) or the fastest delivery."
+                        },
+                        "max_total_minor": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 100000000,
+                          "description": "The most the person wants to pay, shipping included, in centavos."
+                        },
+                        "sources": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "registry",
+                              "vtex",
+                              "meli"
+                            ]
+                          },
+                          "minItems": 1,
+                          "maxItems": 3,
+                          "description": "Where to look: `registry` (the stores the Shop can buy at), `vtex` and `meli` (comparison only). Default: `registry` in Test, `vtex` and `meli` in Live."
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 5,
+                          "description": "Offers per source, 1 to 5 (default 5)."
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "query"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "research": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "description": "The research as CONTRATO-I2 describes it: offers, recommendation, sources."
+                      }
+                    },
+                    "required": [
+                      "research"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "The body did not match the schema.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "The key does not hold `shop:purchases:write`.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "No source of the asked groups exists in this environment.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "research_no_sources"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "503": {
+              "description": "No source answered, or Shop purchases are off on this deployment.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "research_no_sources",
+                              "shop_purchases_disabled"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "shop:purchases:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "shop:purchases:write"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/shop/agent/research/{id}": {
+        "get": {
+          "summary": "Read a research back",
+          "description": "Scope `shop:purchases:read`. The research this project's keys ran, with each offer's `stale` computed at the time of the answer.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "description": "The research id (`srr_...`), from `POST /v1/shop/agent/research`."
+              },
+              "required": true,
+              "description": "The research id (`srr_...`), from `POST /v1/shop/agent/research`.",
+              "name": "id",
+              "in": "path"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "research": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "description": "The research as CONTRATO-I2 describes it: offers, recommendation, sources."
+                      }
+                    },
+                    "required": [
+                      "research"
                     ]
                   }
                 }

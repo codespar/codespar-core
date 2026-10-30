@@ -175,6 +175,8 @@ const PINNED_COMMANDS = [
   "webhook-deliveries list → GET /v1/webhook-deliveries",
   "shop create-purchases → POST /v1/shop/agent/purchases",
   "shop get-purchases → GET /v1/shop/agent/purchases/{id}",
+  "shop create-research → POST /v1/shop/agent/research",
+  "shop get-research → GET /v1/shop/agent/research/{id}",
   "shop instruments → GET /v1/shop/agent/instruments",
   "collect list-links → GET /v1/collect/links",
   "collect create-links → POST /v1/collect/links",

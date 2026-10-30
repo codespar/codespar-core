@@ -39,6 +39,8 @@ import type {
   AgentPurchase,
   AgentPurchaseCreated,
   AgentPurchaseInput,
+  AgentResearch,
+  AgentResearchInput,
 } from "@codespar/types";
 
 interface SessionDeps {
@@ -447,8 +449,9 @@ export async function createSession(
             headers,
             body: JSON.stringify({
               agent_id: input.agentId,
-              merchant: input.merchant,
-              items: input.items.map((i) => ({ sku_id: i.skuId, quantity: i.quantity })),
+              ...(input.offerId !== undefined
+                ? { offer_id: input.offerId, ...(input.quantity !== undefined ? { quantity: input.quantity } : {}) }
+                : { merchant: input.merchant, items: input.items.map((i) => ({ sku_id: i.skuId, quantity: i.quantity })) }),
               payment_method: input.paymentMethod ?? "card",
               idempotency_key: input.idempotencyKey,
             }),
@@ -470,6 +473,43 @@ export async function createSession(
           async (r) => {
             if (!r.ok) await throwFromResponse(r, "purchases.get");
             return ((await r.json()) as { purchase: AgentPurchase }).purchase;
+          },
+        );
+      },
+    },
+
+    /** Shop v0.3 research (`/v1/shop/agent/research`): offers compared, one recommendation; proposes nothing. */
+    research: {
+      async create(input: AgentResearchInput, opts?: CallOptions): Promise<AgentResearch> {
+        const c = input.criteria;
+        const criteria = c
+          ? {
+              ...(c.priority !== undefined ? { priority: c.priority } : {}),
+              ...(c.maxTotalMinor !== undefined ? { max_total_minor: c.maxTotalMinor } : {}),
+              ...(c.sources !== undefined ? { sources: c.sources } : {}),
+              ...(c.limit !== undefined ? { limit: c.limit } : {}),
+            }
+          : undefined;
+        return await safeFetch(
+          `${baseUrl}/v1/shop/agent/research`,
+          { method: "POST", headers, body: JSON.stringify({ query: input.query, ...(criteria ? { criteria } : {}) }) },
+          "research.create",
+          callOpts(opts),
+          async (r) => {
+            if (!r.ok) await throwFromResponse(r, "research.create");
+            return ((await r.json()) as { research: AgentResearch }).research;
+          },
+        );
+      },
+      async get(researchId: string, opts?: CallOptions): Promise<AgentResearch> {
+        return await safeFetch(
+          `${baseUrl}/v1/shop/agent/research/${encodeURIComponent(researchId)}`,
+          { headers },
+          "research.get",
+          callOpts(opts),
+          async (r) => {
+            if (!r.ok) await throwFromResponse(r, "research.get");
+            return ((await r.json()) as { research: AgentResearch }).research;
           },
         );
       },
