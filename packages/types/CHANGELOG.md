@@ -1,6 +1,6 @@
 # @codespar/types — CHANGELOG
 
-## 0.11.6 — 2026-10-28
+## 0.11.6 — 2026-10-30
 
 ### Changed
 

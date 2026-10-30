@@ -2,10 +2,15 @@
  * Query obrigatória aparece no `--help`, com exemplo.
  *
  * 25/10/2026, exercício da cli 0.20.0 em Test: `codespar shop instruments`
- * respondeu 400 `invalid_query` porque `owner` é query obrigatória de
+ * respondeu 400 `invalid_query` porque `owner` era query obrigatória de
  * `GET /v1/shop/agent/instruments`. O documento servido declarava isso, a
  * referência HTTP mostrava, e o `--help` do comando derivado só oferecia o
  * `-q` genérico. A tabela de operações jogava fora `parameters`.
+ *
+ * Desde o Shop v0.3 (enterprise #2239) `owner` é opcional e obsoleto. O caso
+ * com query obrigatória passa a ser `boletos list` (from_date, to_date), e
+ * `shop instruments` vira controle de que a linha some quando o documento
+ * deixa de exigir a query.
  *
  * ⚠️ CONTROLE POSITIVO: um comando sem query obrigatória NÃO ganha a linha,
  * e ganha o exemplo mesmo assim.
@@ -31,9 +36,16 @@ function ajuda(...args: string[]) {
 
 describe("o --help de um comando derivado", () => {
   it("lista a query obrigatória e dá um exemplo com ela", () => {
+    const texto = ajuda("boletos", "list");
+    expect(texto).toContain("Required query parameters: from_date, to_date (pass each as -q name=value)");
+    expect(texto).toContain("Example:\n  codespar boletos list <consumerId> -q from_date=<from_date> -q to_date=<to_date>");
+  });
+
+  it("tira a linha quando o documento deixa de exigir a query (shop instruments, Shop v0.3)", () => {
     const texto = ajuda("shop", "instruments");
-    expect(texto).toContain("Required query parameters: owner (pass each as -q name=value)");
-    expect(texto).toContain("Example:\n  codespar shop instruments -q owner=<owner>");
+    expect(texto).not.toContain("Required query parameters");
+    expect(texto).toContain("Example:\n  codespar shop instruments");
+    expect(texto).not.toContain("-q owner=<owner>");
   });
 
   it("não inventa a linha para quem não tem query obrigatória, e dá o exemplo com os posicionais", () => {

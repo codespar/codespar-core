@@ -1,5 +1,18 @@
 # @codespar/cli — changelog
 
+## 0.22.4 — 2026-10-30
+
+### Changed
+
+- **`codespar shop instruments` no longer requires `-q owner`** (Shop v0.3,
+  enterprise #2239). The card list is the authenticated person's own; `owner`
+  is deprecated and ignored by the API, so the derived command's `--help` no
+  longer lists it as required. The CLI authenticates with a project API key or
+  an OAuth token, which carry no person, so the API answers 403
+  `bearer_token_has_no_person` and the command prints why. A session bound to a
+  person arrives with Shop v0.3 increment 5.
+- Requires `@codespar/sdk` 0.16.26 (the refreshed operation table).
+
 ## 0.22.3 — 2026-10-28
 
 ### Added

@@ -16,9 +16,12 @@
   and the API's `details`: `reason`, `list_belongs_to`, `owner_param`,
   `how_to_list`), exported with the `BEARER_TOKEN_HAS_NO_PERSON` constant.
   Another 403 (a missing scope) stays the generic `CodesparApiError`.
-- Not in this release: the OpenAPI snapshot and the generated operation table
-  still say `owner` is required. They are re-read from the served document
-  once the API change is deployed.
+- The OpenAPI snapshot is re-read from the served document (enterprise #2239
+  deployed): in the generated client and the operation table,
+  `GET /v1/shop/agent/instruments` no longer requires `owner` (optional and
+  deprecated) and lists the 403 `bearer_token_has_no_person`; a paused
+  purchase's `awaiting.reason` gains `store_challenge` and
+  `store_cvv_requested`.
 ## 0.16.25 — 2026-10-29
 
 ### Changed
