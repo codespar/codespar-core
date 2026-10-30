@@ -81,6 +81,9 @@ interface BackendSessionResponse {
   status: "active" | "closed" | "error";
   created_at: string;
   closed_at: string | null;
+  /** The session's tools, when the API answers them on creation. Absent on an
+   *  API that does not: then `tools()` reads them from the connections route. */
+  tools?: Tool[];
 }
 
 interface BackendConnectionsResponse {
@@ -144,7 +147,10 @@ export async function createSession(
     },
   );
 
-  let cachedTools: Tool[] | null = null;
+  // The creation response's tools, when it carries them, spare the first
+  // `tools()` a round trip; otherwise GET /v1/sessions/:id/connections
+  // answers them, as before.
+  let cachedTools: Tool[] | null = Array.isArray(data.tools) ? data.tools : null;
   let cachedConnections: ServerConnection[] | null = null;
 
   const session = {

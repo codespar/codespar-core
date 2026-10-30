@@ -1,5 +1,24 @@
 # @codespar/mcp — changelog
 
+## 0.5.17 — 2026-10-29
+
+### Added
+
+- Documents reach the client as MCP content, the contract the hosted
+  connector serves: a receipt's PNG as an `image` block and a PDF as an
+  embedded `resource` (`codespar://documents/receipts/<receipt_id>.pdf`,
+  `codespar://documents/statements/<from>_<to>.pdf`), nothing above 4 MiB,
+  and one sentence saying what is attached. Both doors: `codespar_documents`
+  attaches the document it downloaded, and a `codespar_wallet`
+  `receipt_document` / `statement_document` answered through the session
+  fetches its document through the REST door the reference names (the
+  receipt's PNG and PDF, the statement's PDF) with the caller's own key. The
+  JSON reference is unchanged; a client that ignores images or resources
+  reads it as before.
+
+Ships in the same release as 0.5.16 (`codespar_payables` discard) and
+`@codespar/sdk` 0.16.25 (session tools read on creation).
+
 ## 0.5.16 — 2026-10-28
 
 ### Added
