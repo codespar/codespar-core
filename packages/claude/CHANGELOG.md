@@ -1,5 +1,12 @@
 # @codespar/claude — CHANGELOG
 
+## 0.4.8 — 2026-10-29
+
+### Fixed
+
+- O exemplo do README chama `await getTools(session)`. `getTools` é `async`, e o
+  exemplo sem `await` passava uma `Promise` no lugar das ferramentas.
+
 ## 0.4.7 — 2026-09-23
 
 ### Fixed

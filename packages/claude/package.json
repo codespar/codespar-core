@@ -1,6 +1,6 @@
 {
   "name": "@codespar/claude",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "description": "Claude Agent SDK adapter for CodeSpar \u2014 convert MCP tools to Claude tool format",
   "type": "module",
   "main": "./dist/index.js",
