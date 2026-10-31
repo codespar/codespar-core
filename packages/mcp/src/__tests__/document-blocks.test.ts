@@ -182,7 +182,6 @@ describe("a statement's pages as images", () => {
     expect(calls).toHaveLength(1);
   });
 });
-});
 
 describe("a codespar_wallet document action through the session", () => {
   it("a receipt reference fetches and attaches its PNG and its PDF, in that order", async () => {
