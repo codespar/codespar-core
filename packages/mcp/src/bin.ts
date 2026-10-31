@@ -25,7 +25,8 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { callShopPurchaseTool, isShopPurchaseTool } from "./shop-purchase-tools.js";
 import { callPayablesTool, isPayablesTool, payablesErrorText } from "./payables-tools.js";
-import { callDocumentsTool, documentsErrorText, isDocumentsTool, type DocumentsFacades } from "./documents-tools.js";
+import { documentsErrorText, isDocumentsTool, runDocumentsTool, type DocumentsFacades } from "./documents-tools.js";
+import { attachmentsSentence, walletDocumentBlocks } from "./document-blocks.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -158,15 +159,21 @@ async function main(): Promise<void> {
       if (!session) return { content: [{ type: "text", text: NO_SESSION_MESSAGE }], isError: true };
       try {
         const out = await callShopPurchaseTool(session, name, args);
-        return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], isError: false };
+        // A string is already the text to relay (the card list's "needs a person"), not data to serialize.
+        return { content: [{ type: "text", text: typeof out === "string" ? out : JSON.stringify(out, null, 2) }], isError: false };
       } catch (err) {
         return { content: [{ type: "text", text: err instanceof Error ? err.message : String(err) }], isError: true };
       }
     }
     if (documents && isDocumentsTool(name)) {
       try {
-        const out = await callDocumentsTool(documents, args);
-        return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], isError: false };
+        const { reference, attachments, note } = await runDocumentsTool(documents, args);
+        const sentence = [attachmentsSentence(attachments, reference.kind === "statement" ? "statement" : "receipt"), note].filter(Boolean).join(" ");
+        return {
+          content: [{ type: "text", text: `${JSON.stringify(reference, null, 2)}\n\n${sentence}` }, ...attachments],
+          structuredContent: reference,
+          isError: false,
+        };
       } catch (err) {
         return { content: [{ type: "text", text: documentsErrorText(err) }], isError: true };
       }
@@ -187,8 +194,15 @@ async function main(): Promise<void> {
     }
     const result: ToolResult = await session.execute(name, args);
     const payload = result.success ? (result.data ?? result) : result.error;
+    const text = typeof payload === "string" ? payload : JSON.stringify(payload, null, 2);
+    // A codespar_wallet document action answers a reference; the document
+    // itself rides along as the hosted connector serves it (document-blocks.ts).
+    const blocks = result.success && documents ? await walletDocumentBlocks(name, payload, documents) : { attachments: [], kind: null, note: "" };
+    const isDocument = result.success && name === "codespar_wallet" && typeof payload === "object" && payload !== null && "document" in payload;
+    const sentence = [attachmentsSentence(blocks.attachments, blocks.kind ?? "receipt"), blocks.note].filter(Boolean).join(" ");
     return {
-      content: [{ type: "text", text: typeof payload === "string" ? payload : JSON.stringify(payload, null, 2) }],
+      content: [{ type: "text", text: isDocument ? `${text}\n\n${sentence}` : text }, ...blocks.attachments],
+      ...(isDocument && !Array.isArray(payload) ? { structuredContent: payload as Record<string, unknown> } : {}),
       isError: !result.success,
     };
   });

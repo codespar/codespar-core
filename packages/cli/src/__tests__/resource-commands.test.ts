@@ -142,6 +142,7 @@ const PINNED_COMMANDS = [
   "payables update-batches-items → PATCH /v1/payables/batches/{batchId}/items/{itemId}",
   "payables create-batches-items → POST /v1/payables/batches/{batchId}/items",
   "payables batches-pay → POST /v1/payables/batches/{batchId}/pay",
+  "payables batches-discard → POST /v1/payables/batches/{batchId}/discard",
   "test charges-pay → POST /v1/test/charges/{chargeId}/pay",
   "test charges-scenarios → POST /v1/test/charges/{chargeId}/scenarios",
   "test fund → POST /v1/test/fund",
@@ -174,6 +175,8 @@ const PINNED_COMMANDS = [
   "webhook-deliveries list → GET /v1/webhook-deliveries",
   "shop create-purchases → POST /v1/shop/agent/purchases",
   "shop get-purchases → GET /v1/shop/agent/purchases/{id}",
+  "shop create-research → POST /v1/shop/agent/research",
+  "shop get-research → GET /v1/shop/agent/research/{id}",
   "shop instruments → GET /v1/shop/agent/instruments",
   "collect list-links → GET /v1/collect/links",
   "collect create-links → POST /v1/collect/links",
@@ -254,10 +257,12 @@ describe("derived resource commands", () => {
   });
 
   it("carries the query parameters the document marks required, and only those", () => {
-    // GET /v1/shop/agent/instruments answers 400 without `owner` (25/10/2026,
-    // Test exercise of cli 0.20.0): the row has to say so before the wire does.
-    expect(commandNamed("shop", "instruments").requiredQuery).toEqual(["owner"]);
+    // GET /v1/consumers/{consumerId}/dda/boletos requires the date window: the row has to say
+    // so before the wire does (the 25/10/2026 lesson of `shop instruments`).
     expect(commandNamed("boletos", "list").requiredQuery).toEqual(["from_date", "to_date"]);
+    // Shop v0.3 (enterprise #2239): the card list is the authenticated person's
+    // own, and `owner` is deprecated and optional, so the row requires nothing.
+    expect(commandNamed("shop", "instruments").requiredQuery).toEqual([]);
     // Positive control: a command whose operation declares no required query
     // carries an empty list, so the help line does not appear everywhere.
     expect(commandNamed("shop", "get-purchases").requiredQuery).toEqual([]);

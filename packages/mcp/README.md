@@ -42,12 +42,14 @@ session, and the answer decides what `tools/list` offers:
 |---|---|
 | session | the session's commerce tools (`codespar_pay`, `codespar_charge`, `codespar_discover`, wallet, mandates, Shop purchases) plus `codespar_payables` and `codespar_documents` |
 | `403` (valid key without `sessions:create`) | no session: only `codespar_payables` and `codespar_documents`, which run over REST; a session tool called by name answers that the key lacks `sessions:create` |
+
+A document (`codespar_documents`, or a `codespar_wallet` `receipt_document` / `statement_document`) comes back as its JSON reference plus the document itself: a receipt's PNG as an image block, a statement's pages as PNG image blocks (25 lines each, at most 8), a PDF as an embedded resource (`codespar://documents/…`), up to 4 MiB each. A statement page that could not be fetched is named in the text.
 | `401` (wrong, revoked or other-environment key) | setup mode |
 
 | Tools | Scope the key needs |
 |---|---|
 | session tools | `sessions:create` (and `tools:execute` to call them) |
-| `codespar_payables` `upload`, `create_batch`, `get`, `update_item` | `payables:read` / `payables:write` |
+| `codespar_payables` `upload`, `create_batch`, `get`, `update_item`, `set_rail`, `discard` | `payables:read` / `payables:write` |
 | `codespar_payables` `pay` | `payables:pay` |
 
 Inside `codespar_payables`, a `403` is rendered as `insufficient permission (403): …`

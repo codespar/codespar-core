@@ -47,6 +47,7 @@ import {
   payablesBatchCreateCommand,
   payablesBatchGetCommand,
   payablesBatchPayCommand,
+  payablesBatchDiscardCommand,
   payablesBatchUpdateItemCommand,
   payablesFilesUploadCommand,
 } from "./commands/payables.js";
@@ -429,6 +430,15 @@ batches
       await payablesBatchPayCommand(batchId, { ...opts, ...auth, json: rootJsonFlag() });
     },
   );
+
+batches
+  .command("discard <batchId>")
+  .description("Discard what was never sent; paid, uncertain and in-flight items stay. Sends nothing without --confirm")
+  .option("--confirm", "You confirmed: the items never sent leave the batch, and a batch with nothing sent is canceled")
+  .action(async (batchId: string, opts: { confirm?: boolean }) => {
+    const auth = await resolveAuth();
+    await payablesBatchDiscardCommand(batchId, { ...opts, ...auth, json: rootJsonFlag() });
+  });
 
 // ============ pix-keys: the Pix keys of a consumer's own account ============
 // Through `cs.wallet.pixKeys` (commands/pix-keys.ts). The derived `consumers`

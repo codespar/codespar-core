@@ -1,5 +1,101 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.28 — 2026-10-30
+
+### Added
+
+- **The statement as PNG pages**: `cs.account.statement({ from, to, format: "png", page })`
+  → `GET /v1/account/statement?format=png&page=N` (enterprise #2322) answers
+  page N of the statement as an image, the same pages the hosted MCP connector
+  attaches: 25 lines a page, at most 8 pages (the PDF carries every line).
+  `page` is 1-based and defaults to 1; a page past the last is a
+  `CodesparApiError` 404 `statement_page_not_found` whose body carries
+  `{ page, pages }`. A page that is not a whole number from 1, or a `page`
+  without `format: "png"`, is refused locally (`invalid_args`) with no request.
+- `statement()` returns a `StatementDocument`: a `Document` plus `pages`, the
+  statement's page count read from `X-CodeSpar-Document-Pages` (null for the
+  PDF, which has no such header). Exported as a type.
+- OpenAPI snapshot refreshed to the served document (sha256 4ae3274e16aa,
+  373 operations), and `src/generated/` regenerated from it. Besides the
+  statement's `format`/`page`, it picks up what was served since 0.16.27: two
+  `commerce.account_entry_*` events, `client_code`/`deposit_id` on a sandbox
+  fund, `isPoliticallyExposedPerson` on account applications, and the Google
+  connectors on `POST /v1/connections/start`.
+
+### Unchanged
+
+- The PDF is still the default: `statement({ from, to })` sends the same
+  request (`format=pdf`, no `page`) and answers the same document.
+
+## 0.16.27 — 2026-10-30
+
+### Added
+
+- **Shop research** (Shop v0.3, increment 2): `session.research.create({ query, criteria? })`
+  → `POST /v1/shop/agent/research` and `session.research.get(id)` →
+  `GET /v1/shop/agent/research/:id`. A pedido aberto compared across the
+  stores the Shop consults: every offer with its source and `observed_at`,
+  price, shipping, total, delivery days, stock, seller and warranty when the
+  store shows them; one principal recommendation with reason codes and at most
+  three alternatives; `lowest_price` stated as "menor preço entre as ofertas
+  consultadas" with its count and window; and `decisive_unknowns`. Needs
+  `shop:purchases:write` / `shop:purchases:read`. A key's research belongs to
+  the project.
+- `purchases.create` takes `{ offerId, quantity? }` instead of
+  `{ merchant, items }`: the store and the SKU come from the offer and the
+  store quotes it again (`offer_stale`, `offer_not_purchasable`,
+  `offer_not_found` refuse it with nothing proposed).
+
+## 0.16.26 — 2026-10-30
+
+### Changed
+
+- **`session.instruments.list()` reads the authenticated person's cards**
+  (Shop v0.3, enterprise #2239). The API stops letting a project key list the
+  masked cards of any member it names: `GET /v1/shop/agent/instruments`
+  answers 403 `bearer_token_has_no_person` to a project API key or an OAuth
+  token, whatever `owner` says. `list()` takes no argument now; `owner` is
+  optional and deprecated (still sent when given, so an API older than Shop
+  v0.3 keeps answering; a newer one ignores it).
+- That refusal is a typed error: `BearerTokenHasNoPersonError` (a
+  `CodesparApiError` with `status: 403`, `code: "bearer_token_has_no_person"`
+  and the API's `details`: `reason`, `list_belongs_to`, `owner_param`,
+  `how_to_list`), exported with the `BEARER_TOKEN_HAS_NO_PERSON` constant.
+  Another 403 (a missing scope) stays the generic `CodesparApiError`.
+- The OpenAPI snapshot is re-read from the served document (enterprise #2239
+  deployed): in the generated client and the operation table,
+  `GET /v1/shop/agent/instruments` no longer requires `owner` (optional and
+  deprecated) and lists the 403 `bearer_token_has_no_person`; a paused
+  purchase's `awaiting.reason` gains `store_challenge` and
+  `store_cvv_requested`.
+## 0.16.25 — 2026-10-29
+
+### Changed
+
+- `session.tools()` reads the tools the session-creation response
+  (`POST /v1/sessions`) carries, when it carries them, and asks
+  `GET /v1/sessions/:id/connections` only when it does not, as before. An
+  empty list on creation is an answer; a non-list is ignored.
+- OpenAPI snapshot refreshed to the served document (sha256 f266becac406,
+  371 operations): `POST /v1/sessions` answers `tools` (ent#2282), plus the
+  operations served since 0.16.24 (among them the project's agent autonomy
+  reads and write); `src/generated/` regenerated from it.
+
+Ships in the same release as 0.16.24 (batch discard), which was not
+published on its own.
+
+## 0.16.24 — 2026-10-28
+
+### Added
+
+- **Discard a batch** (payables contract, "Discard a batch", 28/10/2026):
+  `cs.payables.batches.discard(batchId)` → `POST /v1/payables/batches/:batchId/discard`.
+  Every item never sent leaves the batch (`excluded`) and frees the charge it
+  held; dispatched, uncertain, executed and refused items keep their payment.
+  With nothing sent before, the batch is `canceled` and a later change or pay
+  is a 409 `payable_batch_discarded`. `PayableBatch` gains
+  `discarded: { at, items } | null`.
+
 ## 0.16.23 — 2026-10-27
 
 ### Added

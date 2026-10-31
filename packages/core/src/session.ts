@@ -2,7 +2,7 @@
  * Session implementation for the CodeSpar managed runtime.
  */
 
-import { CodesparApiError, networkErrorToApiError, throwFromResponse, TimeoutError } from "./errors.js";
+import { CodesparApiError, networkErrorToApiError, throwFromInstrumentsResponse, throwFromResponse, TimeoutError } from "./errors.js";
 import type { SessionConfig, Tool, CallOptions } from "./types.js";
 import { fetchWithTimeout, validateTimeout } from "./internal/fetch.js";
 import { mergeSignals } from "./internal/abort.js";
@@ -39,6 +39,8 @@ import type {
   AgentPurchase,
   AgentPurchaseCreated,
   AgentPurchaseInput,
+  AgentResearch,
+  AgentResearchInput,
 } from "@codespar/types";
 
 interface SessionDeps {
@@ -81,6 +83,9 @@ interface BackendSessionResponse {
   status: "active" | "closed" | "error";
   created_at: string;
   closed_at: string | null;
+  /** The session's tools, when the API answers them on creation. Absent on an
+   *  API that does not: then `tools()` reads them from the connections route. */
+  tools?: Tool[];
 }
 
 interface BackendConnectionsResponse {
@@ -144,7 +149,10 @@ export async function createSession(
     },
   );
 
-  let cachedTools: Tool[] | null = null;
+  // The creation response's tools, when it carries them, spare the first
+  // `tools()` a round trip; otherwise GET /v1/sessions/:id/connections
+  // answers them, as before.
+  let cachedTools: Tool[] | null = Array.isArray(data.tools) ? data.tools : null;
   let cachedConnections: ServerConnection[] | null = null;
 
   const session = {
@@ -441,8 +449,9 @@ export async function createSession(
             headers,
             body: JSON.stringify({
               agent_id: input.agentId,
-              merchant: input.merchant,
-              items: input.items.map((i) => ({ sku_id: i.skuId, quantity: i.quantity })),
+              ...(input.offerId !== undefined
+                ? { offer_id: input.offerId, ...(input.quantity !== undefined ? { quantity: input.quantity } : {}) }
+                : { merchant: input.merchant, items: input.items.map((i) => ({ sku_id: i.skuId, quantity: i.quantity })) }),
               payment_method: input.paymentMethod ?? "card",
               idempotency_key: input.idempotencyKey,
             }),
@@ -469,17 +478,61 @@ export async function createSession(
       },
     },
 
-    /** A person's cards as masked references (`shop:instruments:read`). */
-    instruments: {
-      async list(opts: { owner: string } & CallOptions): Promise<AgentInstrument[]> {
-        const { owner, ...rest } = opts;
+    /** Shop v0.3 research (`/v1/shop/agent/research`): offers compared, one recommendation; proposes nothing. */
+    research: {
+      async create(input: AgentResearchInput, opts?: CallOptions): Promise<AgentResearch> {
+        const c = input.criteria;
+        const criteria = c
+          ? {
+              ...(c.priority !== undefined ? { priority: c.priority } : {}),
+              ...(c.maxTotalMinor !== undefined ? { max_total_minor: c.maxTotalMinor } : {}),
+              ...(c.sources !== undefined ? { sources: c.sources } : {}),
+              ...(c.limit !== undefined ? { limit: c.limit } : {}),
+            }
+          : undefined;
         return await safeFetch(
-          `${baseUrl}/v1/shop/agent/instruments?owner=${encodeURIComponent(owner)}`,
+          `${baseUrl}/v1/shop/agent/research`,
+          { method: "POST", headers, body: JSON.stringify({ query: input.query, ...(criteria ? { criteria } : {}) }) },
+          "research.create",
+          callOpts(opts),
+          async (r) => {
+            if (!r.ok) await throwFromResponse(r, "research.create");
+            return ((await r.json()) as { research: AgentResearch }).research;
+          },
+        );
+      },
+      async get(researchId: string, opts?: CallOptions): Promise<AgentResearch> {
+        return await safeFetch(
+          `${baseUrl}/v1/shop/agent/research/${encodeURIComponent(researchId)}`,
+          { headers },
+          "research.get",
+          callOpts(opts),
+          async (r) => {
+            if (!r.ok) await throwFromResponse(r, "research.get");
+            return ((await r.json()) as { research: AgentResearch }).research;
+          },
+        );
+      },
+    },
+
+    /**
+     * The authenticated person's cards as masked references
+     * (`shop:instruments:read`). A credential with no person (a project key,
+     * an OAuth token) gets `BearerTokenHasNoPersonError` (Shop v0.3). `owner`
+     * is deprecated: still sent when given, so an API older than Shop v0.3
+     * keeps answering, and ignored by a newer one.
+     */
+    instruments: {
+      async list(opts: { owner?: string } & CallOptions = {}): Promise<AgentInstrument[]> {
+        const { owner, ...rest } = opts;
+        const query = owner ? `?owner=${encodeURIComponent(owner)}` : "";
+        return await safeFetch(
+          `${baseUrl}/v1/shop/agent/instruments${query}`,
           { headers },
           "instruments.list",
           callOpts(rest),
           async (r) => {
-            if (!r.ok) await throwFromResponse(r, "instruments.list");
+            if (!r.ok) await throwFromInstrumentsResponse(r, "instruments.list");
             return ((await r.json()) as { instruments: AgentInstrument[] }).instruments;
           },
         );

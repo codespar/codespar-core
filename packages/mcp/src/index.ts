@@ -34,7 +34,7 @@ export {
   projectBatch,
   type PayablesToolOptions,
 } from "./payables-tools.js";
-export { SHOP_PURCHASE_MCP_TOOLS, callShopPurchaseTool, isShopPurchaseTool, type McpToolDefinition } from "./shop-purchase-tools.js";
+export { INSTRUMENTS_NEED_A_PERSON, SHOP_PURCHASE_MCP_TOOLS, callShopPurchaseTool, isShopPurchaseTool, type McpToolDefinition } from "./shop-purchase-tools.js";
 
 export interface McpConfig {
   url: string;

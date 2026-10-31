@@ -218,24 +218,107 @@ export interface Session extends SessionBase {
     get(purchaseId: string, opts?: CallOptions): Promise<AgentPurchase>;
   };
   /**
-   * A person's cards as masked references (`shop:instruments:read`): brand and
-   * last four, never a number. Choosing one stays the person's act at Pagar.
+   * Shop v0.3 research (`/v1/shop/agent/research`): a pedido aberto compared
+   * across the consulted stores, with the server's recommendation. Proposes
+   * nothing. Needs `shop:purchases:write` to run and `shop:purchases:read` to
+   * read back. Optional: a runtime without the Shop omits it.
+   */
+  research?: {
+    create(input: AgentResearchInput, opts?: CallOptions): Promise<AgentResearch>;
+    get(researchId: string, opts?: CallOptions): Promise<AgentResearch>;
+  };
+  /**
+   * The AUTHENTICATED person's cards as masked references
+   * (`shop:instruments:read`): brand and last four, never a number. Choosing
+   * one stays the person's act at Pagar. Since Shop v0.3 the list belongs to
+   * the person behind the credential: a project API key or an OAuth token
+   * carries no person and is refused 403 `bearer_token_has_no_person`
+   * (`BearerTokenHasNoPersonError` in the SDK). A session bound to a person
+   * (MCP consent by login) arrives with Shop v0.3 increment 5.
    */
   instruments?: {
-    list(opts: { owner: string } & CallOptions): Promise<AgentInstrument[]>;
+    list(opts?: {
+      /** @deprecated Ignored by the API since Shop v0.3: it no longer selects another person's cards. */
+      owner?: string;
+    } & CallOptions): Promise<AgentInstrument[]>;
   };
   mcp?: { url: string; headers: Record<string, string> };
 }
 
 /* ── Shop v0.2 delegated purchases (wire shape, /v1/shop/agent) ──── */
 
-export interface AgentPurchaseInput {
+/**
+ * A purchase by store and SKUs, or (Shop v0.3) by an offer of this key's
+ * research: then the store and the SKU come from the offer and the store
+ * quotes it again (`offer_stale` when the price or the shipping moved).
+ */
+export type AgentPurchaseInput = {
   agentId: string;
-  merchant: string;
-  items: { skuId: string; quantity: number }[];
   paymentMethod?: "card" | "store_on_file";
   /** The same key with the same intent answers the same purchase. */
   idempotencyKey: string;
+} & (
+  | { merchant: string; items: { skuId: string; quantity: number }[]; offerId?: never; quantity?: never }
+  | { offerId: string; quantity?: number; merchant?: never; items?: never }
+);
+
+/* ── Shop v0.3 research (wire shape, /v1/shop/agent/research) ──── */
+
+export interface AgentResearchInput {
+  /** The pedido aberto, 2 to 200 characters. */
+  query: string;
+  criteria?: {
+    priority?: "total" | "eta";
+    /** Shipping included, in centavos. */
+    maxTotalMinor?: number;
+    sources?: ("registry" | "vtex" | "meli")[];
+    /** Offers per source, 1 to 5. */
+    limit?: number;
+  };
+}
+
+export interface AgentResearchOffer {
+  id: string;
+  position: number;
+  merchant: { id: string; name: string };
+  source: { kind: "store_catalog" | "vtex_catalog" | "marketplace_search"; origin: string | null; path: string | null };
+  observed_at: string;
+  stale: boolean;
+  sku: string;
+  title: string;
+  seller: string | null;
+  price_minor: number | null;
+  shipping_minor: number | null;
+  total_minor: number | null;
+  eta_days: number | null;
+  availability: "in_stock" | "out_of_stock" | "unknown";
+  stock: number | null;
+  warranty_text: string | null;
+  purchasable: boolean;
+  not_purchasable_reason: "merchant_not_in_registry" | "out_of_stock" | "price_unknown" | "shipping_unknown" | null;
+}
+
+export interface AgentResearch {
+  id: string;
+  state: "completed" | "partial";
+  query: string;
+  criteria: Record<string, unknown>;
+  conversation_id: string | null;
+  created_at: string;
+  expires_at: string;
+  sources: { source: string; kind: string; state: "answered" | "failed"; offers: number }[];
+  warnings: "research_partial"[];
+  offers: AgentResearchOffer[];
+  recommendation: {
+    id: string;
+    outcome: "recommended" | "no_purchasable_offer" | "no_offer_within_budget";
+    principal_offer_id: string | null;
+    alternative_offer_ids: string[];
+    reason_codes: Record<string, string[]>;
+    lowest_price: { phrase: "menor preço entre as ofertas consultadas"; offer_id: string; total_minor: number; offers_consulted: number; observed_from: string; observed_to: string } | null;
+    decisive_unknowns: { key: "priority"; options: { value: "total" | "eta"; offer_id: string }[] }[];
+    scope: { offers_consulted: number; sources: number; window: { from: string; to: string } | null };
+  };
 }
 
 /** A purchase as an external assistant may read it: references and states only. */

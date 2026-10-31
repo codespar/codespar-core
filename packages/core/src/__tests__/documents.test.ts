@@ -109,6 +109,40 @@ describe("cs.account.statement", () => {
     expect(seen[0]!.url).toBe(`${BASE}/v1/account/statement?from=2026-09-01&to=2026-09-30&format=pdf`);
     expect(doc.filename).toBe("extrato-2026-09-01-2026-09-30.pdf");
     expect(doc.sha256).toBe("b".repeat(64));
+    expect(doc.pages).toBeNull();
+  });
+
+  it("png: one page by its number, image/png accepted, the page count read from X-CodeSpar-Document-Pages", async () => {
+    const cs = install();
+    answer = () => {
+      const r = binary(PNG, "image/png", "extrato-2026-09-01-2026-09-30-p2.png", "c".repeat(64));
+      r.headers.set("x-codespar-document-pages", "3");
+      return r;
+    };
+    const doc = await cs.account.statement({ from: "2026-09-01", to: "2026-09-30", format: "png", page: 2 });
+    expect(seen[0]!.url).toBe(`${BASE}/v1/account/statement?from=2026-09-01&to=2026-09-30&format=png&page=2`);
+    expect(seen[0]!.headers["accept"]).toContain("image/png");
+    expect(doc.contentType).toBe("image/png");
+    expect(doc.filename).toBe("extrato-2026-09-01-2026-09-30-p2.png");
+    expect(doc.pages).toBe(3);
+    expect(Array.from(doc.bytes)).toEqual(Array.from(PNG));
+  });
+
+  it("png without a page asks for page 1; without a count header, pages is null", async () => {
+    const cs = install();
+    answer = () => new Response(body(PNG), { status: 200, headers: { "content-type": "image/png" } });
+    const doc = await cs.account.statement({ from: "2026-09-01", to: "2026-09-30", format: "png", currency: "BRL" });
+    expect(seen[0]!.url).toBe(`${BASE}/v1/account/statement?from=2026-09-01&to=2026-09-30&format=png&page=1&currency=BRL`);
+    expect(doc.filename).toBe("extrato-2026-09-01-2026-09-30-p1.png");
+    expect(doc.pages).toBeNull();
+  });
+
+  it("a page past the end: CodesparApiError 404 statement_page_not_found with the page asked and the count", async () => {
+    const cs = install();
+    answer = () => refusal(404, "statement_page_not_found", { page: 4, pages: 3 });
+    const err = await cs.account.statement({ from: "2026-09-01", to: "2026-09-30", format: "png", page: 4 }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(CodesparApiError);
+    expect(err).toMatchObject({ status: 404, code: "statement_page_not_found", body: { error: { details: { page: 4, pages: 3 } } } });
   });
 
   it("carries the currency when given, and relays the period refusal", async () => {
@@ -119,9 +153,13 @@ describe("cs.account.statement", () => {
     expect(err).toMatchObject({ status: 400, code: "statement_period_invalid" });
   });
 
-  it("refuses locally without from/to", () => {
+  it("refuses locally without from/to, a format it does not know, or a page that is not a whole number from 1 with png", () => {
     const cs = install();
+    const period = { from: "2026-09-01", to: "2026-09-30" };
     expect(() => cs.account.statement({ from: "", to: "2026-09-30" })).toThrow(CodesparApiError);
+    expect(() => cs.account.statement({ ...period, format: "docx" as "pdf" })).toThrow(CodesparApiError);
+    for (const page of [0, -1, 1.5, Number.NaN]) expect(() => cs.account.statement({ ...period, format: "png", page })).toThrow(CodesparApiError);
+    expect(() => cs.account.statement({ ...period, page: 2 })).toThrow(/with format png/);
     expect(seen).toHaveLength(0);
   });
 });

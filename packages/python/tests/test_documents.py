@@ -151,6 +151,84 @@ def test_statement_falls_back_to_its_own_filename(httpx_mock: HTTPXMock) -> None
     assert doc["sha256"] is None
 
 
+def test_statement_pdf_has_no_page_count(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{BASE}/v1/account/statement?from=2026-09-01&to=2026-09-30&format=pdf",
+        **_binary(PDF, "application/pdf", "extrato-2026-09-01-2026-09-30.pdf"),
+    )
+    cs = CodeSpar(api_key="csk_test_example", base_url=BASE)
+    try:
+        doc = cs.account.statement("2026-09-01", "2026-09-30")
+    finally:
+        cs.close()
+    assert doc["pages"] is None
+
+
+async def test_statement_png_page_reads_the_page_count_async(httpx_mock: HTTPXMock) -> None:
+    response = _binary(PNG, "image/png", "extrato-2026-09-01-2026-09-30-p2.png")
+    response["headers"]["x-codespar-document-pages"] = "3"
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{BASE}/v1/account/statement?from=2026-09-01&to=2026-09-30&format=png&page=2",
+        **response,
+    )
+    async with AsyncCodeSpar(api_key="csk_test_example", base_url=BASE) as cs:
+        doc = await cs.account.statement("2026-09-01", "2026-09-30", format="png", page=2)
+    assert "image/png" in httpx_mock.get_requests()[0].headers["accept"]
+    assert doc["content_type"] == "image/png"
+    assert doc["filename"] == "extrato-2026-09-01-2026-09-30-p2.png"
+    assert doc["pages"] == 3
+    assert doc["bytes"] == PNG
+
+
+def test_statement_png_defaults_to_page_one(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{BASE}/v1/account/statement?from=2026-09-01&to=2026-09-30&format=png&page=1",
+        content=PNG,
+        headers={"content-type": "image/png"},
+    )
+    cs = CodeSpar(api_key="csk_test_example", base_url=BASE)
+    try:
+        doc = cs.account.statement("2026-09-01", "2026-09-30", format="png")
+    finally:
+        cs.close()
+    assert doc["filename"] == "extrato-2026-09-01-2026-09-30-p1.png"
+    assert doc["pages"] is None
+
+
+def test_statement_page_past_the_end_is_an_api_error(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{BASE}/v1/account/statement?from=2026-09-01&to=2026-09-30&format=png&page=4",
+        **_refusal(404, "statement_page_not_found", page=4, pages=3),
+    )
+    cs = CodeSpar(api_key="csk_test_example", base_url=BASE)
+    try:
+        with pytest.raises(ApiError) as info:
+            cs.account.statement("2026-09-01", "2026-09-30", format="png", page=4)
+    finally:
+        cs.close()
+    assert info.value.status == 404
+    assert info.value.code == "statement_page_not_found"
+
+
+def test_statement_local_refusals_send_nothing(httpx_mock: HTTPXMock) -> None:
+    cs = CodeSpar(api_key="csk_test_example", base_url=BASE)
+    try:
+        for page in (0, -1, True):
+            with pytest.raises(ApiError):
+                cs.account.statement("2026-09-01", "2026-09-30", format="png", page=page)
+        with pytest.raises(ApiError):
+            cs.account.statement("2026-09-01", "2026-09-30", page=2)
+        with pytest.raises(ApiError):
+            cs.account.statement("2026-09-01", "2026-09-30", format="docx")  # type: ignore[arg-type]
+    finally:
+        cs.close()
+    assert httpx_mock.get_requests() == []
+
+
 def test_filename_from_disposition() -> None:
     assert (
         filename_from_disposition('attachment; filename="comprovante-rcpt_x.pdf"')

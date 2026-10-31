@@ -1,5 +1,21 @@
 # @codespar/types — CHANGELOG
 
+## 0.11.7 — 2026-10-30
+
+### Added
+
+- `Session.research?` with `AgentResearchInput`, `AgentResearch` and
+  `AgentResearchOffer` (Shop v0.3 research, `/v1/shop/agent/research`).
+- `AgentPurchaseInput` is a union: `{ merchant, items }` or `{ offerId, quantity? }`.
+
+## 0.11.6 — 2026-10-30
+
+### Changed
+
+- `Session.instruments.list(opts?)`: `owner` is optional and deprecated (Shop
+  v0.3, enterprise #2239). The list is the authenticated person's own; a
+  credential with no person gets 403 `bearer_token_has_no_person`.
+
 ## 0.11.5 — 2026-10-23
 
 ### Added

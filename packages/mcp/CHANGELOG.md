@@ -1,5 +1,82 @@
 # @codespar/mcp — changelog
 
+## 0.5.20 — 2026-10-30
+
+### Added
+
+- **A statement rides as its pages** (through `@codespar/sdk` 0.16.28): both
+  doors (`codespar_documents` action=statement and a `codespar_wallet`
+  `statement_document`) attach the statement's pages as PNG `image` blocks
+  before the PDF, the order the hosted connector serves: the text, the page
+  images in page order, then the PDF as the embedded resource it already was.
+  Page 1 is fetched first and its `X-CodeSpar-Document-Pages` says how many
+  follow, at most 8, one request at a time. The sentence names them
+  (`The statement pages (3 PNG images) and the PDF are attached to this result.`).
+- A page that fails does not take the others with it: the text names each
+  page that is not attached and why (the API's code, e.g.
+  `statement_page_not_found`), and `codespar_documents` adds the same in its
+  reference as `page_images: { pages, attached, missing }`.
+- Document results carry `structuredContent`: the reference for
+  `codespar_documents`, the tool's output for a `codespar_wallet` document
+  action, as the hosted connector does.
+
+### Unchanged
+
+- The statement's PDF is fetched as before; `out` still writes the PDF. With
+  an `@codespar/sdk` older than 0.16.28 inside the peer range, only page 1
+  comes as an image (that SDK reads no page count).
+
+## 0.5.19 — 2026-10-30
+
+### Added
+
+- `codespar_shop_research` and `codespar_shop_research_status` (Shop v0.3
+  research, through `@codespar/sdk` 0.16.27 `session.research`).
+- `codespar_shop_purchase_propose` takes `offer_id` (and `quantity`) instead of
+  `merchant` and `items`.
+
+## 0.5.18 — 2026-10-30
+
+### Changed
+
+- **`codespar_shop_instruments` names nobody** (Shop v0.3, enterprise #2239):
+  its input schema has no `owner` (an empty, closed object), and it lists the
+  authenticated person's cards. With a project key the API refuses the list
+  (`bearer_token_has_no_person`); the tool then answers a text saying why and
+  what to do (`INSTRUMENTS_NEED_A_PERSON`: the person sees their cards on the
+  dashboard; a session bound to a person by login arrives with Shop v0.3
+  increment 5), instead of an error to retry. The refusal is read by its code,
+  so an older `@codespar/sdk` inside the peer range behaves the same.
+- A Shop purchase tool that answers a string is relayed as that text, not as
+  a JSON-quoted string.
+## 0.5.17 — 2026-10-29
+
+### Added
+
+- Documents reach the client as MCP content, the contract the hosted
+  connector serves: a receipt's PNG as an `image` block and a PDF as an
+  embedded `resource` (`codespar://documents/receipts/<receipt_id>.pdf`,
+  `codespar://documents/statements/<from>_<to>.pdf`), nothing above 4 MiB,
+  and one sentence saying what is attached. Both doors: `codespar_documents`
+  attaches the document it downloaded, and a `codespar_wallet`
+  `receipt_document` / `statement_document` answered through the session
+  fetches its document through the REST door the reference names (the
+  receipt's PNG and PDF, the statement's PDF) with the caller's own key. The
+  JSON reference is unchanged; a client that ignores images or resources
+  reads it as before.
+
+Ships in the same release as 0.5.16 (`codespar_payables` discard) and
+`@codespar/sdk` 0.16.25 (session tools read on creation).
+
+## 0.5.16 — 2026-10-28
+
+### Added
+
+- `codespar_payables` gains `action: "discard"`, in two steps: without
+  `confirm` it reads the batch and answers `requires_confirmation` with how many
+  items would leave (nothing is sent); with `confirm: true` it discards through
+  `@codespar/sdk` 0.16.24. The projection carries `discarded`.
+
 ## 0.5.15 — 2026-10-28
 
 ### Fixed

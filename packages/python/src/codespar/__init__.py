@@ -36,6 +36,7 @@ from .documents import (
     Document,
     DocumentFormat,
     Receipts,
+    StatementDocument,
     filename_from_disposition,
 )
 from .errors import (
@@ -53,6 +54,7 @@ from .payables import (
     PayableBatch,
     PayableBatchConfirmation,
     PayableBatchCreated,
+    PayableBatchDiscarded,
     PayableBatchItem,
     PayableBatchItemCheck,
     PayableBatchItemDocument,
@@ -184,7 +186,7 @@ from .wallet import (
     WalletPixKeys,
 )
 
-__version__ = "0.16.0"
+__version__ = "0.16.2"
 
 __all__ = [
     "APPROVAL_REQUIRED",
@@ -258,6 +260,7 @@ __all__ = [
     "PayableBatch",
     "PayableBatchConfirmation",
     "PayableBatchCreated",
+    "PayableBatchDiscarded",
     "PayableBatchItem",
     "PayableBatchItemCheck",
     "PayableBatchItemDocument",
@@ -322,6 +325,7 @@ __all__ = [
     "ShopSearchResult",
     "ShopStatusResult",
     "ShopVariant",
+    "StatementDocument",
     "StreamError",
     # Streaming events
     "StreamEvent",

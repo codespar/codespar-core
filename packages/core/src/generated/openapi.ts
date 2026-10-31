@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 ceee33204d9ec636547e7745fc7237e68e899b863a766d62bfa2b3ed5aad97d2, fetched 2026-10-27T17:52:30.609Z
+// Source: openapi-snapshot.json (sha256 4ae3274e16aa0655cacab1b3a1f0c1fbe8ad710fe2c0184c9b0aa816fdd0095c, fetched 2026-10-31T00:54:41.356Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -935,7 +935,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Session"];
+                        "application/json": components["schemas"]["CreatedSession"];
                     };
                 };
                 /** @description Bad Request — schema failure, or an unknown server id. */
@@ -1613,7 +1613,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
                         event: string;
                         server_id?: string;
                         /**
@@ -1767,7 +1767,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
                         event: string;
                         server_id?: string;
                         /**
@@ -3843,6 +3843,10 @@ export interface paths {
                                 balance_minor: string;
                                 available_minor: string;
                             };
+                            /** @description A bound customer account's credit: the clientCode sent to the provider, also the FUND's external_ref. */
+                            client_code?: string | null;
+                            /** @description A bound customer account's credit: the provider's id of that credit. */
+                            deposit_id?: string | null;
                         };
                     };
                 };
@@ -3871,6 +3875,10 @@ export interface paths {
                                 balance_minor: string;
                                 available_minor: string;
                             };
+                            /** @description A bound customer account's credit: the clientCode sent to the provider, also the FUND's external_ref. */
+                            client_code?: string | null;
+                            /** @description A bound customer account's credit: the provider's id of that credit. */
+                            deposit_id?: string | null;
                         };
                     };
                 };
@@ -10022,7 +10030,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /**
-                         * @description The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. Passed through as an object: the handler does not validate it field by field here, and whatever the provider refuses comes back in the provider's own refusal. Two exceptions are checked before anything is sent: the document's check digits, and, for a natural person (CPF) in a live project, `financialDetails` = `{ declaredIncome, occupation, netWorth }` in the provider's codes. That is the titular's own declaration, and CodeSpar never fills it in for them.
+                         * @description The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. Passed through as an object: the handler does not validate it field by field here, and whatever the provider refuses comes back in the provider's own refusal. Two exceptions are checked before anything is sent: the document's check digits, and, for a natural person (CPF) in a live project, `financialDetails` = `{ declaredIncome, occupation, netWorth }` in the provider's codes, and `isPoliticallyExposedPerson` as `true` or `false`. Those are the titular's own declarations, and CodeSpar never fills them in for them (a value of `isPoliticallyExposedPerson` that is not a boolean is refused in any project).
                          *
                          *     `files` (A5b): the documents, `[{ type, data }]`, `data` a URL the provider downloads, valid for at least one hour, PDF/PNG/JPEG (CONTRATO_SOCIAL is PDF). Natural person: RG/CNH/RNE and SELFIE; legal person: also CONTRATO_SOCIAL, and PROCURACAO_PODERES when an owner is a REPRESENTANTE. Checked before anything is sent. A test project that sends none gets the Test sample documents; a live project never does, and a live request naming a sample document is refused.
                          */
@@ -10091,7 +10099,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The body did not match the schema, the document did not pass the check, or a natural person's onboarding in a live project came without `buyer.financialDetails` (one issue per missing code, its `path` naming it) — `invalid_body`. Or the documents were refused before sending (A5b): `onboarding_sample_file_in_live` for a live request naming a Test sample document or a public specimen, `onboarding_files_invalid` for a malformed `files` list, a format the provider does not take, or a missing required document. BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`. */
+                /** @description The body did not match the schema, the document did not pass the check, or a natural person's onboarding in a live project came without `buyer.financialDetails` (one issue per missing code, its `path` naming it) or without `buyer.isPoliticallyExposedPerson` as a boolean (its own issue) — `invalid_body`. Or the documents were refused before sending (A5b): `onboarding_sample_file_in_live` for a live request naming a Test sample document or a public specimen, `onboarding_files_invalid` for a malformed `files` list, a format the provider does not take, or a missing required document. BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -14058,7 +14066,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Conflict. `no_onchain_wallet`: the wallet is not consumer-scoped and has no withdrawal path at all. `no_funding_source`: the rail has no active funding source to cash out through. `withdrawal_in_progress` and `withdrawal_failed`: the idempotency key is already spent — see the note above. `insufficient_funds`: the wallet does not hold the amount, caught by the balance invariant rather than by a pre-check, so it can also surface after the hold is attempted. `no_default_project`: the paying organization has no default project for the mandate to settle into. */
+                /** @description Conflict. `no_onchain_wallet`: the wallet is not consumer-scoped and has no withdrawal path at all. `no_funding_source`: the rail has no active funding source to cash out through. `withdrawal_in_progress` and `withdrawal_failed`: the idempotency key is already spent — see the note above. `insufficient_funds`: the wallet does not hold the amount, caught by the balance invariant rather than by a pre-check, so it can also surface after the hold is attempted. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -14067,7 +14075,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_onchain_wallet" | "no_funding_source" | "withdrawal_in_progress" | "withdrawal_failed" | "insufficient_funds" | "no_default_project";
+                                code: "no_onchain_wallet" | "no_funding_source" | "withdrawal_in_progress" | "withdrawal_failed" | "insufficient_funds";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -16689,6 +16697,8 @@ export interface paths {
          *     `link_token` is the same value as the `state` parameter inside `authorize_url`; it is single use and expires at `expires_at`, ten minutes out. `redirect_uri` must be https and is where the callback sends the browser back, with `status=connected&connection_id=…`, `status=denied&error=…` or `status=error&error=…` appended.
          *
          *     `POST /v1/connect/start` is the same handler on a second path. A provider with no OAuth configuration is 404; a missing platform client credential is 500, which is our seeding defect and not the caller's error. Both bodies are bare `{ error, … }`, not the `error.code` envelope.
+         *
+         *     **A person's own Google account** (`server_id` `google-calendar`, `google-drive` or `gmail`) is connected for its owner only. The owner is the signed-in person whose session token the dashboard forwards (`x-codespar-user-token`), and `user_id` must name that person; an API key or an OAuth token carries no person and is refused `bearer_token_has_no_person` (403). The connector asks for its own scopes, so `scopes` is refused (400 `invalid_body`). The consent asks for offline access, always shows Google's consent screen and keeps earlier grants. Test and Live projects both use the real Google: there is no Google sandbox, and the data is the person's own. These refusals use the `error.code` envelope. Off on the deployment, the three answer `connector_disabled` (503).
          */
         post: {
             parameters: {
@@ -16745,6 +16755,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Google connectors only: no verified person rides on the request, the session token does not verify or names someone else, `user_id` is not the signed-in person, or the person is not a member of the organization. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "bearer_token_has_no_person" | "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "not_a_member";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
                 /** @description The provider has no OAuth configuration in the catalog. */
                 404: {
                     headers: {
@@ -16785,6 +16815,26 @@ export interface paths {
                             /** @enum {string} */
                             error: "oauth_client_not_configured";
                             message: string;
+                        };
+                    };
+                };
+                /** @description Google connectors only: they are switched off on this deployment. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "connector_disabled" | "user_token_verification_unconfigured";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
                         };
                     };
                 };
@@ -28217,6 +28267,23 @@ export interface paths {
                                 detail: string;
                                 at: string;
                             }[];
+                            /** @description On this point read only: who was paid, as the receipt document prints it under "Para". Read-side, outside the sealed fields. Fields the payment did not record are null, never backfilled. */
+                            payee: {
+                                name: string | null;
+                                /**
+                                 * @description Where `name` came from. `dict` and `credit_party`: the provider's answer about the destination when the money went out; `destination` and `proof`: the rail's resolution recorded with the payable or the payment; `supplier`, `br_code` and `seller`: a name someone declared (the document, the QR Code's merchant, the store), never a confirmed payee.
+                                 * @enum {string|null}
+                                 */
+                                name_source: "dict" | "credit_party" | "destination" | "proof" | "supplier" | "br_code" | "seller" | null;
+                                /** @description A CPF masked as `***.951.767-**`, a CNPJ whole. */
+                                document_masked: string | null;
+                                /** @description From the provider's answer only (the participant's name). */
+                                institution: string | null;
+                                /** @description From the provider's answer only; null when it gave no account. */
+                                branch: string | null;
+                                /** @description From the provider's answer only; null when it gave none or gave it fully masked. */
+                                account: string | null;
+                            } | null;
                         };
                     };
                 };
@@ -38106,11 +38173,18 @@ export interface paths {
                                     /** @description The pending approval that holds this payment, while a person decides. */
                                     approval_id?: string;
                                     /**
-                                     * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                     * @description What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal.
                                      * @enum {string}
                                      */
                                     settled_against?: "document_line" | "sandbox_fixture";
                                     document_amount_minor?: number;
+                                    /**
+                                     * @description Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid.
+                                     * @enum {boolean}
+                                     */
+                                    original_document_settled?: false;
+                                    /** @description The person's words for a substituted test payment (`settled_against: sandbox_fixture`). */
+                                    settlement_note?: string;
                                     mandate_id: string;
                                     /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
                                     attempt_id: string;
@@ -38973,11 +39047,18 @@ export interface paths {
                                 /** @description The pending approval that holds this payment, while a person decides. */
                                 approval_id?: string;
                                 /**
-                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal.
                                  * @enum {string}
                                  */
                                 settled_against?: "document_line" | "sandbox_fixture";
                                 document_amount_minor?: number;
+                                /**
+                                 * @description Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid.
+                                 * @enum {boolean}
+                                 */
+                                original_document_settled?: false;
+                                /** @description The person's words for a substituted test payment (`settled_against: sandbox_fixture`). */
+                                settlement_note?: string;
                                 mandate_id: string;
                                 /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
                                 attempt_id: string;
@@ -39480,11 +39561,18 @@ export interface paths {
                                 /** @description The pending approval that holds this payment, while a person decides. */
                                 approval_id?: string;
                                 /**
-                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal.
                                  * @enum {string}
                                  */
                                 settled_against?: "document_line" | "sandbox_fixture";
                                 document_amount_minor?: number;
+                                /**
+                                 * @description Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid.
+                                 * @enum {boolean}
+                                 */
+                                original_document_settled?: false;
+                                /** @description The person's words for a substituted test payment (`settled_against: sandbox_fixture`). */
+                                settlement_note?: string;
                                 mandate_id: string;
                                 /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
                                 attempt_id: string;
@@ -40146,11 +40234,18 @@ export interface paths {
                                 /** @description The pending approval that holds this payment, while a person decides. */
                                 approval_id?: string;
                                 /**
-                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal.
                                  * @enum {string}
                                  */
                                 settled_against?: "document_line" | "sandbox_fixture";
                                 document_amount_minor?: number;
+                                /**
+                                 * @description Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid.
+                                 * @enum {boolean}
+                                 */
+                                original_document_settled?: false;
+                                /** @description The person's words for a substituted test payment (`settled_against: sandbox_fixture`). */
+                                settlement_note?: string;
                                 mandate_id: string;
                                 /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
                                 attempt_id: string;
@@ -40653,11 +40748,18 @@ export interface paths {
                                 /** @description The pending approval that holds this payment, while a person decides. */
                                 approval_id?: string;
                                 /**
-                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal.
                                  * @enum {string}
                                  */
                                 settled_against?: "document_line" | "sandbox_fixture";
                                 document_amount_minor?: number;
+                                /**
+                                 * @description Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid.
+                                 * @enum {boolean}
+                                 */
+                                original_document_settled?: false;
+                                /** @description The person's words for a substituted test payment (`settled_against: sandbox_fixture`). */
+                                settlement_note?: string;
                                 mandate_id: string;
                                 /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
                                 attempt_id: string;
@@ -41391,11 +41493,18 @@ export interface paths {
                                 /** @description The pending approval that holds this payment, while a person decides. */
                                 approval_id?: string;
                                 /**
-                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal.
                                  * @enum {string}
                                  */
                                 settled_against?: "document_line" | "sandbox_fixture";
                                 document_amount_minor?: number;
+                                /**
+                                 * @description Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid.
+                                 * @enum {boolean}
+                                 */
+                                original_document_settled?: false;
+                                /** @description The person's words for a substituted test payment (`settled_against: sandbox_fixture`). */
+                                settlement_note?: string;
                                 mandate_id: string;
                                 /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
                                 attempt_id: string;
@@ -41986,11 +42095,18 @@ export interface paths {
                                 /** @description The pending approval that holds this payment, while a person decides. */
                                 approval_id?: string;
                                 /**
-                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal.
                                  * @enum {string}
                                  */
                                 settled_against?: "document_line" | "sandbox_fixture";
                                 document_amount_minor?: number;
+                                /**
+                                 * @description Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid.
+                                 * @enum {boolean}
+                                 */
+                                original_document_settled?: false;
+                                /** @description The person's words for a substituted test payment (`settled_against: sandbox_fixture`). */
+                                settlement_note?: string;
                                 mandate_id: string;
                                 /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
                                 attempt_id: string;
@@ -42177,7 +42293,7 @@ export interface paths {
          *
          *     **A policy approval holds the payable.** When the durable policy engine routes the spend to a person (403 `policy_denied` with `approval_id`), the payable leaves READY under that approval (`payment.state = awaiting_approval`, `payment.approval_id`); `/pay` answers `payable_payment_pending_approval` until it is decided. The approved execution pays the attempt and records the outcome on the payable; a denied or expired approval is released by the next `/pay`, which asks the gate again.
          *
-         *     **Test projects settle the sandbox fixture.** A boleto in a test project is settled against Celcoin's sandbox fixture, not the document's line (spec §18): `payment.settled_against = sandbox_fixture`, `payment.document_amount_minor` keeps what the document quoted, and the receipt's delivery reference ends in `;settled_against:sandbox_fixture`. Live projects are untouched.
+         *     **Test projects: the document's own line first, a substituted test payment otherwise.** A boleto in a test project is settled as its own line when the sandbox knows it. When it does not, a test line (the sandbox fixture) is paid in its place, and only at the confirmed amount: a fixture of another amount is refused `sandbox_fixture_amount_mismatch` (409) before anything is held. A substituted payment says so: `payment.settled_against = sandbox_fixture`, `payment.original_document_settled = false`, `payment.settlement_note` in the person's words, `payment.document_amount_minor` keeps what the document quoted, and the receipt's delivery reference ends in `;settled_against:sandbox_fixture`. It is never the settlement of the original document, even at an equal amount. Live projects are untouched.
          *
          *     Scope: `payables:pay`. The mandate must be one of this organization's consumers' and its `merchant_allowlist` must name the boleto's digitable line.
          */
@@ -42664,11 +42780,18 @@ export interface paths {
                                 /** @description The pending approval that holds this payment, while a person decides. */
                                 approval_id?: string;
                                 /**
-                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project: the boleto is settled against Celcoin's sandbox fixture, not the document's line (spec v0.4 §18), and `document_amount_minor` keeps what the document's own line quoted.
+                                 * @description What the provider was asked to settle. `sandbox_fixture` only in a test project whose sandbox did not know the document's line: a test line was paid in its place, at the confirmed amount (another amount is refused before anything is held), and `document_amount_minor` keeps what the document's own line quoted. It is a substituted test payment, never the settlement of the original document, even when the two amounts are equal.
                                  * @enum {string}
                                  */
                                 settled_against?: "document_line" | "sandbox_fixture";
                                 document_amount_minor?: number;
+                                /**
+                                 * @description Present, and false, only with `settled_against: sandbox_fixture`: the original document was not paid.
+                                 * @enum {boolean}
+                                 */
+                                original_document_settled?: false;
+                                /** @description The person's words for a substituted test payment (`settled_against: sandbox_fixture`). */
+                                settlement_note?: string;
                                 mandate_id: string;
                                 /** @description Derived from the payable id, the quote and the try; never the cycle's default. */
                                 attempt_id: string;
@@ -43195,156 +43318,11 @@ export interface paths {
                                 confirmed_at: string;
                                 mandate_id: string;
                             } | null;
-                            items: {
-                                /** @description `pbl_` + 16 characters: the payable's id, derived from the batch and the item's content. */
-                                item_id: string;
-                                /** @description Display order. Not part of the identity: reordering never makes another item. */
-                                position: number;
-                                origin: {
-                                    file_id: string | null;
-                                    page: number | null;
-                                    row: number | null;
-                                    /** @enum {string} */
-                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
-                                };
-                                /**
-                                 * @description The chosen way, when the item has two; the only way otherwise.
-                                 * @enum {string|null}
-                                 */
-                                rail: "boleto" | "pix" | null;
-                                /**
-                                 * @description `default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`.
-                                 * @enum {string}
-                                 */
-                                rail_chosen_by: "default" | "person" | "integration";
-                                /** @description 1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill. */
-                                ways: {
-                                    /** @enum {string} */
-                                    rail: "pix" | "boleto";
-                                    origin: {
-                                        page: number | null;
-                                        /** @enum {string} */
-                                        kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
-                                    };
-                                    /** @description This way's resolved destination, when the rail answered. */
-                                    destination: {
-                                        /** @enum {string} */
-                                        kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
-                                        /** @description The boleto line or the Pix key, masked. */
-                                        display: string;
-                                        /** @description From the rail (the boleto registration, the DICT owner); never from the document. */
-                                        beneficiary_name: string | null;
-                                        /** @description From the rail, masked. */
-                                        beneficiary_document_masked: string | null;
-                                        /** @description YYYY-MM-DD from the rail, or null. */
-                                        due_date: string | null;
-                                        /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
-                                        beneficiary_institution?: string | null;
-                                        /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
-                                        key?: string | null;
-                                    } | null;
-                                    /** @description Why this way cannot be paid now, or null when it can. */
-                                    unavailable: {
-                                        /** @enum {string} */
-                                        code: "br_code_expired" | "br_code_not_found" | "boleto_expired" | "boleto_refused" | "rail_unavailable" | "no_sandbox_fixture";
-                                        /** @description In the person's words; never a provider's name or body. */
-                                        message: string;
-                                    } | null;
-                                }[];
-                                document: {
-                                    /** @description From a closed catalog of document kinds ("DARE-SP", "Nota Fiscal", ...). */
-                                    title: string | null;
-                                    /** @description The text after a beneficiary/issuer label on the page, when it has one. */
-                                    issuer: string | null;
-                                    /** @description YYYY-MM-DD from a labelled date, else the boleto's own due factor. */
-                                    due_date: string | null;
-                                    /** @description The boleto's effective value or a static BR Code's amount; never loose text. */
-                                    amount_minor: number | null;
-                                } | null;
-                                /** @enum {string} */
-                                state: "needs_complement" | "resolving" | "ready" | "excluded" | "rejected" | "dispatching" | "executed" | "refused" | "uncertain";
-                                missing: ("amount" | "destination" | "pix_key_owner_confirmation" | "rail")[];
-                                destination: {
-                                    /** @enum {string} */
-                                    kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
-                                    /** @description The boleto line or the Pix key, masked. */
-                                    display: string;
-                                    /** @description From the rail (the boleto registration, the DICT owner); never from the document. */
-                                    beneficiary_name: string | null;
-                                    /** @description From the rail, masked. */
-                                    beneficiary_document_masked: string | null;
-                                    /** @description YYYY-MM-DD from the rail, or null. */
-                                    due_date: string | null;
-                                    /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
-                                    beneficiary_institution?: string | null;
-                                    /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
-                                    key?: string | null;
-                                } | null;
-                                amount_minor: number | null;
-                                /** @enum {string|null} */
-                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | "document" | null;
-                                description: string | null;
-                                reference: string | null;
-                                checks: {
-                                    /** @enum {string} */
-                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable";
-                                    /** @enum {string} */
-                                    status: "pass" | "fail" | "warn";
-                                    message: string;
-                                    /** @description True when a test project's own responder answered the consult behind this check, not the rail. */
-                                    simulated?: boolean;
-                                }[];
-                                payment: {
-                                    /** @enum {string} */
-                                    state: "executed" | "refused" | "uncertain";
-                                    attempt_id: string | null;
-                                    receipt_id: string | null;
-                                    end_to_end_id: string | null;
-                                    refusal: {
-                                        code: string;
-                                        message: string;
-                                    } | null;
-                                } | null;
-                            }[];
-                            created_at: string;
-                            /** @enum {string} */
-                            source: "api" | "chat" | "dashboard" | "cli" | "mcp";
-                            conversation_id: string | null;
-                            /** @description True when this answers an earlier call with the same Idempotency-Key. */
-                            idempotent_replay: boolean;
-                        };
-                    };
-                };
-                /** @description OK */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @description `pbat_` followed by 20 characters. */
-                            batch_id: string;
-                            /** @enum {string} */
-                            status: "reviewing" | "ready" | "confirmed" | "executing" | "completed" | "partially_completed" | "failed" | "canceled";
-                            /** @description Bumps on every change to the list. A confirmation binds to one version. */
-                            version: number;
-                            /** @description SHA-256 over the canonical list: for each non-excluded item in `item_id` order `item_id|rail|destination id|amount_minor|currency`, then the total. Send it back on pay. */
-                            list_hash: string;
-                            /** @enum {string} */
-                            currency: "BRL";
-                            totals: {
+                            /** @description Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments. */
+                            discarded: {
+                                at: string;
+                                /** @description Items the discard took out; each is `excluded` and was never dispatched. */
                                 items: number;
-                                payable_items: number;
-                                excluded: number;
-                                amount_minor: number;
-                            };
-                            confirmation: {
-                                version: number;
-                                list_hash: string;
-                                /** @description `user_…` (a verified person) or `api_key:<key id>`. */
-                                confirmed_by: string;
-                                confirmed_at: string;
-                                mandate_id: string;
                             } | null;
                             items: {
                                 /** @description `pbl_` + 16 characters: the payable's id, derived from the batch and the item's content. */
@@ -43438,7 +43416,7 @@ export interface paths {
                                 reference: string | null;
                                 checks: {
                                     /** @enum {string} */
-                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable";
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable" | "pix_destination_unverified";
                                     /** @enum {string} */
                                     status: "pass" | "fail" | "warn";
                                     message: string;
@@ -43455,6 +43433,181 @@ export interface paths {
                                         code: string;
                                         message: string;
                                     } | null;
+                                    /** @description TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount. */
+                                    test_substitution?: {
+                                        /** @enum {string} */
+                                        settled_against: "sandbox_fixture";
+                                        /** @enum {boolean} */
+                                        original_document_settled: false;
+                                        document_amount_minor: number | null;
+                                        note: string;
+                                    };
+                                } | null;
+                            }[];
+                            created_at: string;
+                            /** @enum {string} */
+                            source: "api" | "chat" | "dashboard" | "cli" | "mcp";
+                            conversation_id: string | null;
+                            /** @description True when this answers an earlier call with the same Idempotency-Key. */
+                            idempotent_replay: boolean;
+                        };
+                    };
+                };
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `pbat_` followed by 20 characters. */
+                            batch_id: string;
+                            /** @enum {string} */
+                            status: "reviewing" | "ready" | "confirmed" | "executing" | "completed" | "partially_completed" | "failed" | "canceled";
+                            /** @description Bumps on every change to the list. A confirmation binds to one version. */
+                            version: number;
+                            /** @description SHA-256 over the canonical list: for each non-excluded item in `item_id` order `item_id|rail|destination id|amount_minor|currency`, then the total. Send it back on pay. */
+                            list_hash: string;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            totals: {
+                                items: number;
+                                payable_items: number;
+                                excluded: number;
+                                amount_minor: number;
+                            };
+                            confirmation: {
+                                version: number;
+                                list_hash: string;
+                                /** @description `user_…` (a verified person) or `api_key:<key id>`. */
+                                confirmed_by: string;
+                                confirmed_at: string;
+                                mandate_id: string;
+                            } | null;
+                            /** @description Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments. */
+                            discarded: {
+                                at: string;
+                                /** @description Items the discard took out; each is `excluded` and was never dispatched. */
+                                items: number;
+                            } | null;
+                            items: {
+                                /** @description `pbl_` + 16 characters: the payable's id, derived from the batch and the item's content. */
+                                item_id: string;
+                                /** @description Display order. Not part of the identity: reordering never makes another item. */
+                                position: number;
+                                origin: {
+                                    file_id: string | null;
+                                    page: number | null;
+                                    row: number | null;
+                                    /** @enum {string} */
+                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
+                                };
+                                /**
+                                 * @description The chosen way, when the item has two; the only way otherwise.
+                                 * @enum {string|null}
+                                 */
+                                rail: "boleto" | "pix" | null;
+                                /**
+                                 * @description `default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`.
+                                 * @enum {string}
+                                 */
+                                rail_chosen_by: "default" | "person" | "integration";
+                                /** @description 1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill. */
+                                ways: {
+                                    /** @enum {string} */
+                                    rail: "pix" | "boleto";
+                                    origin: {
+                                        page: number | null;
+                                        /** @enum {string} */
+                                        kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
+                                    };
+                                    /** @description This way's resolved destination, when the rail answered. */
+                                    destination: {
+                                        /** @enum {string} */
+                                        kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
+                                        /** @description The boleto line or the Pix key, masked. */
+                                        display: string;
+                                        /** @description From the rail (the boleto registration, the DICT owner); never from the document. */
+                                        beneficiary_name: string | null;
+                                        /** @description From the rail, masked. */
+                                        beneficiary_document_masked: string | null;
+                                        /** @description YYYY-MM-DD from the rail, or null. */
+                                        due_date: string | null;
+                                        /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                        beneficiary_institution?: string | null;
+                                        /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                        key?: string | null;
+                                    } | null;
+                                    /** @description Why this way cannot be paid now, or null when it can. */
+                                    unavailable: {
+                                        /** @enum {string} */
+                                        code: "br_code_expired" | "br_code_not_found" | "boleto_expired" | "boleto_refused" | "rail_unavailable" | "no_sandbox_fixture";
+                                        /** @description In the person's words; never a provider's name or body. */
+                                        message: string;
+                                    } | null;
+                                }[];
+                                document: {
+                                    /** @description From a closed catalog of document kinds ("DARE-SP", "Nota Fiscal", ...). */
+                                    title: string | null;
+                                    /** @description The text after a beneficiary/issuer label on the page, when it has one. */
+                                    issuer: string | null;
+                                    /** @description YYYY-MM-DD from a labelled date, else the boleto's own due factor. */
+                                    due_date: string | null;
+                                    /** @description The boleto's effective value or a static BR Code's amount; never loose text. */
+                                    amount_minor: number | null;
+                                } | null;
+                                /** @enum {string} */
+                                state: "needs_complement" | "resolving" | "ready" | "excluded" | "rejected" | "dispatching" | "executed" | "refused" | "uncertain";
+                                missing: ("amount" | "destination" | "pix_key_owner_confirmation" | "rail")[];
+                                destination: {
+                                    /** @enum {string} */
+                                    kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
+                                    /** @description The boleto line or the Pix key, masked. */
+                                    display: string;
+                                    /** @description From the rail (the boleto registration, the DICT owner); never from the document. */
+                                    beneficiary_name: string | null;
+                                    /** @description From the rail, masked. */
+                                    beneficiary_document_masked: string | null;
+                                    /** @description YYYY-MM-DD from the rail, or null. */
+                                    due_date: string | null;
+                                    /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                    beneficiary_institution?: string | null;
+                                    /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                    key?: string | null;
+                                } | null;
+                                amount_minor: number | null;
+                                /** @enum {string|null} */
+                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | "document" | null;
+                                description: string | null;
+                                reference: string | null;
+                                checks: {
+                                    /** @enum {string} */
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable" | "pix_destination_unverified";
+                                    /** @enum {string} */
+                                    status: "pass" | "fail" | "warn";
+                                    message: string;
+                                    /** @description True when a test project's own responder answered the consult behind this check, not the rail. */
+                                    simulated?: boolean;
+                                }[];
+                                payment: {
+                                    /** @enum {string} */
+                                    state: "executed" | "refused" | "uncertain";
+                                    attempt_id: string | null;
+                                    receipt_id: string | null;
+                                    end_to_end_id: string | null;
+                                    refusal: {
+                                        code: string;
+                                        message: string;
+                                    } | null;
+                                    /** @description TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount. */
+                                    test_substitution?: {
+                                        /** @enum {string} */
+                                        settled_against: "sandbox_fixture";
+                                        /** @enum {boolean} */
+                                        original_document_settled: false;
+                                        document_amount_minor: number | null;
+                                        note: string;
+                                    };
                                 } | null;
                             }[];
                             created_at: string;
@@ -43592,6 +43745,12 @@ export interface paths {
                                 confirmed_at: string;
                                 mandate_id: string;
                             } | null;
+                            /** @description Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments. */
+                            discarded: {
+                                at: string;
+                                /** @description Items the discard took out; each is `excluded` and was never dispatched. */
+                                items: number;
+                            } | null;
                             items: {
                                 /** @description `pbl_` + 16 characters: the payable's id, derived from the batch and the item's content. */
                                 item_id: string;
@@ -43684,7 +43843,7 @@ export interface paths {
                                 reference: string | null;
                                 checks: {
                                     /** @enum {string} */
-                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable";
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable" | "pix_destination_unverified";
                                     /** @enum {string} */
                                     status: "pass" | "fail" | "warn";
                                     message: string;
@@ -43701,6 +43860,15 @@ export interface paths {
                                         code: string;
                                         message: string;
                                     } | null;
+                                    /** @description TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount. */
+                                    test_substitution?: {
+                                        /** @enum {string} */
+                                        settled_against: "sandbox_fixture";
+                                        /** @enum {boolean} */
+                                        original_document_settled: false;
+                                        document_amount_minor: number | null;
+                                        note: string;
+                                    };
                                 } | null;
                             }[];
                             created_at: string;
@@ -43822,6 +43990,12 @@ export interface paths {
                                 confirmed_at: string;
                                 mandate_id: string;
                             } | null;
+                            /** @description Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments. */
+                            discarded: {
+                                at: string;
+                                /** @description Items the discard took out; each is `excluded` and was never dispatched. */
+                                items: number;
+                            } | null;
                             items: {
                                 /** @description `pbl_` + 16 characters: the payable's id, derived from the batch and the item's content. */
                                 item_id: string;
@@ -43914,7 +44088,7 @@ export interface paths {
                                 reference: string | null;
                                 checks: {
                                     /** @enum {string} */
-                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable";
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable" | "pix_destination_unverified";
                                     /** @enum {string} */
                                     status: "pass" | "fail" | "warn";
                                     message: string;
@@ -43931,6 +44105,15 @@ export interface paths {
                                         code: string;
                                         message: string;
                                     } | null;
+                                    /** @description TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount. */
+                                    test_substitution?: {
+                                        /** @enum {string} */
+                                        settled_against: "sandbox_fixture";
+                                        /** @enum {boolean} */
+                                        original_document_settled: false;
+                                        document_amount_minor: number | null;
+                                        note: string;
+                                    };
                                 } | null;
                             }[];
                             created_at: string;
@@ -43980,7 +44163,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `payable_batch_version_conflict`: `expected_version` is stale; `details.batch` is the current batch. `payable_batch_locked`: the batch was confirmed. `payable_item_rail_unavailable`: `rail` names a way the item does not have, or one that is unavailable (`details.unavailable` says why, `details.ways` lists the item's ways). */
+                /** @description `payable_batch_version_conflict`: `expected_version` is stale; `details.batch` is the current batch. `payable_batch_locked`: the batch was confirmed. `payable_item_rail_unavailable`: `rail` names a way the item does not have, or one that is unavailable (`details.unavailable` says why, `details.ways` lists the item's ways). `payable_batch_discarded`: the batch was discarded. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -43989,7 +44172,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "payable_batch_version_conflict" | "payable_batch_locked" | "payable_item_rail_unavailable";
+                                code: "payable_batch_version_conflict" | "payable_batch_locked" | "payable_item_rail_unavailable" | "payable_batch_discarded";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -44101,6 +44284,12 @@ export interface paths {
                                 confirmed_at: string;
                                 mandate_id: string;
                             } | null;
+                            /** @description Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments. */
+                            discarded: {
+                                at: string;
+                                /** @description Items the discard took out; each is `excluded` and was never dispatched. */
+                                items: number;
+                            } | null;
                             items: {
                                 /** @description `pbl_` + 16 characters: the payable's id, derived from the batch and the item's content. */
                                 item_id: string;
@@ -44193,7 +44382,7 @@ export interface paths {
                                 reference: string | null;
                                 checks: {
                                     /** @enum {string} */
-                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable";
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable" | "pix_destination_unverified";
                                     /** @enum {string} */
                                     status: "pass" | "fail" | "warn";
                                     message: string;
@@ -44210,6 +44399,15 @@ export interface paths {
                                         code: string;
                                         message: string;
                                     } | null;
+                                    /** @description TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount. */
+                                    test_substitution?: {
+                                        /** @enum {string} */
+                                        settled_against: "sandbox_fixture";
+                                        /** @enum {boolean} */
+                                        original_document_settled: false;
+                                        document_amount_minor: number | null;
+                                        note: string;
+                                    };
                                 } | null;
                             }[];
                             created_at: string;
@@ -44259,7 +44457,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Stale `expected_version` (current batch in `details.batch`), or the batch was confirmed. */
+                /** @description Stale `expected_version` (current batch in `details.batch`), or the batch was confirmed or discarded. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -44268,7 +44466,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "payable_batch_version_conflict" | "payable_batch_locked";
+                                code: "payable_batch_version_conflict" | "payable_batch_locked" | "payable_batch_discarded";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -44383,6 +44581,12 @@ export interface paths {
                                 confirmed_at: string;
                                 mandate_id: string;
                             } | null;
+                            /** @description Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments. */
+                            discarded: {
+                                at: string;
+                                /** @description Items the discard took out; each is `excluded` and was never dispatched. */
+                                items: number;
+                            } | null;
                             items: {
                                 /** @description `pbl_` + 16 characters: the payable's id, derived from the batch and the item's content. */
                                 item_id: string;
@@ -44475,7 +44679,7 @@ export interface paths {
                                 reference: string | null;
                                 checks: {
                                     /** @enum {string} */
-                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable";
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable" | "pix_destination_unverified";
                                     /** @enum {string} */
                                     status: "pass" | "fail" | "warn";
                                     message: string;
@@ -44492,6 +44696,15 @@ export interface paths {
                                         code: string;
                                         message: string;
                                     } | null;
+                                    /** @description TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount. */
+                                    test_substitution?: {
+                                        /** @enum {string} */
+                                        settled_against: "sandbox_fixture";
+                                        /** @enum {boolean} */
+                                        original_document_settled: false;
+                                        document_amount_minor: number | null;
+                                        note: string;
+                                    };
                                 } | null;
                             }[];
                             created_at: string;
@@ -44521,7 +44734,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The dashboard path confirms only as a verified person: the person's session token is missing, invalid or names someone else. An API key never takes this path; it pays with `payables:pay` and a `mandate_id`. */
+                /** @description The dashboard path confirms only as a verified person: the person's session token is missing, invalid or names someone else. An API key never takes this path; it pays with `payables:pay` and a `mandate_id`. `mandate_paused`, `mandate_revoked`, `mandate_expired`: the `mandate_id` a first confirmation names cannot pay; nothing is recorded, and the batch can be confirmed under an active mandate. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -44530,7 +44743,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch";
+                                code: "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "mandate_paused" | "mandate_revoked" | "mandate_expired";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -44561,7 +44774,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `version`/`list_hash` are not the current list's; `details.batch` is the current batch. */
+                /** @description `payable_batch_version_mismatch`: `version`/`list_hash` are not the current list's; `details.batch` is the current batch. `payable_batch_discarded`: the batch was discarded. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -44570,7 +44783,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "payable_batch_version_mismatch";
+                                code: "payable_batch_version_mismatch" | "payable_batch_discarded";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -44609,6 +44822,250 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/payables/batches/{batchId}/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Discard what was never dispatched
+         * @description Takes out of the list every item never dispatched (`needs_complement`, `resolving`, `ready`, `rejected`, including items a large batch has not reached yet): each becomes `excluded`, and the charge it held is free for a new batch. Items already dispatched, awaiting an approval, `uncertain`, `executed` or `refused` stay exactly as they are; a discard never stops or reverses money already in motion, and a later pay call with the same confirmation dispatches nothing new.
+         *
+         *     With nothing dispatched before, the batch becomes `canceled`: no change, add or pay is taken after (`payable_batch_discarded`). After a partial execution, `status` is the one the remaining items give. `discarded` records when and how many. Discarding again answers the batch as it is.
+         *
+         *     Scope: `payables:write`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    batchId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `pbat_` followed by 20 characters. */
+                            batch_id: string;
+                            /** @enum {string} */
+                            status: "reviewing" | "ready" | "confirmed" | "executing" | "completed" | "partially_completed" | "failed" | "canceled";
+                            /** @description Bumps on every change to the list. A confirmation binds to one version. */
+                            version: number;
+                            /** @description SHA-256 over the canonical list: for each non-excluded item in `item_id` order `item_id|rail|destination id|amount_minor|currency`, then the total. Send it back on pay. */
+                            list_hash: string;
+                            /** @enum {string} */
+                            currency: "BRL";
+                            totals: {
+                                items: number;
+                                payable_items: number;
+                                excluded: number;
+                                amount_minor: number;
+                            };
+                            confirmation: {
+                                version: number;
+                                list_hash: string;
+                                /** @description `user_…` (a verified person) or `api_key:<key id>`. */
+                                confirmed_by: string;
+                                confirmed_at: string;
+                                mandate_id: string;
+                            } | null;
+                            /** @description Set once the batch was discarded (`POST .../discard`). With nothing dispatched before, the status is `canceled`; after a partial execution the status is computed from the items that remain, which kept their payments. */
+                            discarded: {
+                                at: string;
+                                /** @description Items the discard took out; each is `excluded` and was never dispatched. */
+                                items: number;
+                            } | null;
+                            items: {
+                                /** @description `pbl_` + 16 characters: the payable's id, derived from the batch and the item's content. */
+                                item_id: string;
+                                /** @description Display order. Not part of the identity: reordering never makes another item. */
+                                position: number;
+                                origin: {
+                                    file_id: string | null;
+                                    page: number | null;
+                                    row: number | null;
+                                    /** @enum {string} */
+                                    kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
+                                };
+                                /**
+                                 * @description The chosen way, when the item has two; the only way otherwise.
+                                 * @enum {string|null}
+                                 */
+                                rail: "boleto" | "pix" | null;
+                                /**
+                                 * @description `default` until a person (dashboard, chat) or an integration (API key) chooses with `PATCH { rail }`.
+                                 * @enum {string}
+                                 */
+                                rail_chosen_by: "default" | "person" | "integration";
+                                /** @description 1 or 2 entries, in order of preference. Two when one page printed a boleto and a Pix code for the same bill. */
+                                ways: {
+                                    /** @enum {string} */
+                                    rail: "pix" | "boleto";
+                                    origin: {
+                                        page: number | null;
+                                        /** @enum {string} */
+                                        kind: "boleto_line" | "br_code" | "pix_key" | "qr_image" | "barcode_image" | "csv_row" | "manual" | "document";
+                                    };
+                                    /** @description This way's resolved destination, when the rail answered. */
+                                    destination: {
+                                        /** @enum {string} */
+                                        kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
+                                        /** @description The boleto line or the Pix key, masked. */
+                                        display: string;
+                                        /** @description From the rail (the boleto registration, the DICT owner); never from the document. */
+                                        beneficiary_name: string | null;
+                                        /** @description From the rail, masked. */
+                                        beneficiary_document_masked: string | null;
+                                        /** @description YYYY-MM-DD from the rail, or null. */
+                                        due_date: string | null;
+                                        /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                        beneficiary_institution?: string | null;
+                                        /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                        key?: string | null;
+                                    } | null;
+                                    /** @description Why this way cannot be paid now, or null when it can. */
+                                    unavailable: {
+                                        /** @enum {string} */
+                                        code: "br_code_expired" | "br_code_not_found" | "boleto_expired" | "boleto_refused" | "rail_unavailable" | "no_sandbox_fixture";
+                                        /** @description In the person's words; never a provider's name or body. */
+                                        message: string;
+                                    } | null;
+                                }[];
+                                document: {
+                                    /** @description From a closed catalog of document kinds ("DARE-SP", "Nota Fiscal", ...). */
+                                    title: string | null;
+                                    /** @description The text after a beneficiary/issuer label on the page, when it has one. */
+                                    issuer: string | null;
+                                    /** @description YYYY-MM-DD from a labelled date, else the boleto's own due factor. */
+                                    due_date: string | null;
+                                    /** @description The boleto's effective value or a static BR Code's amount; never loose text. */
+                                    amount_minor: number | null;
+                                } | null;
+                                /** @enum {string} */
+                                state: "needs_complement" | "resolving" | "ready" | "excluded" | "rejected" | "dispatching" | "executed" | "refused" | "uncertain";
+                                missing: ("amount" | "destination" | "pix_key_owner_confirmation" | "rail")[];
+                                destination: {
+                                    /** @enum {string} */
+                                    kind: "boleto" | "pix_key" | "br_code_static" | "br_code_dynamic";
+                                    /** @description The boleto line or the Pix key, masked. */
+                                    display: string;
+                                    /** @description From the rail (the boleto registration, the DICT owner); never from the document. */
+                                    beneficiary_name: string | null;
+                                    /** @description From the rail, masked. */
+                                    beneficiary_document_masked: string | null;
+                                    /** @description YYYY-MM-DD from the rail, or null. */
+                                    due_date: string | null;
+                                    /** @description The payee's institution name, when the resolution returns one (v1.1 rule 6b); null or absent otherwise. */
+                                    beneficiary_institution?: string | null;
+                                    /** @description A Pix destination's FULL key (the DICT key, or the key a dynamic code decoded to), for the person's confirmation step only (v1.1 rule 6b): the person checks it against the document. Lists, logs, Gastos and the model's note keep `display`. Null for a boleto. */
+                                    key?: string | null;
+                                } | null;
+                                amount_minor: number | null;
+                                /** @enum {string|null} */
+                                amount_source: "rail_quote" | "br_code" | "stated_by_person" | "csv" | "document" | null;
+                                description: string | null;
+                                reference: string | null;
+                                checks: {
+                                    /** @enum {string} */
+                                    code: "carrier_check_digits" | "duplicate_in_batch" | "duplicate_document" | "amount_matches_rail" | "due_date_state" | "pix_key_resolved" | "amount_matches_document" | "rail_switched" | "ways_amount_mismatch" | "ways_unavailable" | "pix_destination_unverified";
+                                    /** @enum {string} */
+                                    status: "pass" | "fail" | "warn";
+                                    message: string;
+                                    /** @description True when a test project's own responder answered the consult behind this check, not the rail. */
+                                    simulated?: boolean;
+                                }[];
+                                payment: {
+                                    /** @enum {string} */
+                                    state: "executed" | "refused" | "uncertain";
+                                    attempt_id: string | null;
+                                    receipt_id: string | null;
+                                    end_to_end_id: string | null;
+                                    refusal: {
+                                        code: string;
+                                        message: string;
+                                    } | null;
+                                    /** @description TEST only, when the sandbox did not know the document's line and a test line was paid in its place: a substituted test payment, not the settlement of the original document, even at an equal amount. */
+                                    test_substitution?: {
+                                        /** @enum {string} */
+                                        settled_against: "sandbox_fixture";
+                                        /** @enum {boolean} */
+                                        original_document_settled: false;
+                                        document_amount_minor: number | null;
+                                        note: string;
+                                    };
+                                } | null;
+                            }[];
+                            created_at: string;
+                            /** @enum {string} */
+                            source: "api" | "chat" | "dashboard" | "cli" | "mcp";
+                            conversation_id: string | null;
+                        };
+                    };
+                };
+                /** @description The body is not an empty object. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No batch with this id in this project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "payable_batch_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/consumers/receipts/{id}/document": {
         parameters: {
             query?: never;
@@ -44618,7 +45075,7 @@ export interface paths {
         };
         /**
          * The payment receipt (comprovante) of a sealed receipt, as PDF or PNG
-         * @description Composes the comprovante of the payment the receipt seals (state and amount, who received, who paid, who authorized, the end-to-end id and the receipt id) and renders it. `format=pdf` is one page of 600x828 px; `format=png` is the same page at 2x (1200x1656), for sharing as an image.
+         * @description Composes the comprovante of the payment the receipt seals (state and amount; who received: name, masked document, institution, branch and account as the provider resolved them when the payment went out, and the Pix key or a shortened copia-e-cola; who paid: name, masked document, institution, branch and account; who authorized; the end-to-end id and the receipt id) and renders it. A CPF is masked as a bank receipt masks it (`***.951.767-**`); a field the payment did not record is left out, never backfilled. Institution, branch and account come only from the provider's answer about the destination. A name someone declared (the QR Code's merchant, the document's supplier, the store) is printed on its own labeled row, never as the confirmed payee. `format=pdf` is one page of 600x828 px; `format=png` is the same page at 2x (1200x1656), for sharing as an image.
          *
          *     Read-only: generating or downloading a document never repeats or touches the payment. Served only when the payment is in a final confirmed state (its attempt is `settled`); otherwise 409 `document_not_final` with the attempt's status. A Test project's document carries the chip "Ambiente de teste" once. Deterministic: the same receipt gives the same document content, and the `X-CodeSpar-Document-Sha256` header is its hash.
          *
@@ -44749,12 +45206,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The account statement (extrato) of a period, as PDF
+         * The account statement (extrato) of a period, as PDF or one page as PNG
          * @description The statement of the project's account over `[from, to]` (calendar days in America/Sao_Paulo, inclusive, at most 92 days, `to` not after today): holder, document, institution, agency and account; opening balance, inflows, outflows and closing balance over the BOOKED balance (the ledger kinds that move it: fund, debit, fee, reverse); reserves (holds open at the end of the period) shown apart and outside the balance identity; one row per balance-moving entry, newest first; A4, paginated, the column header on every page.
          *
          *     `closing = opening + inflows - outflows` is asserted in code against an independent aggregate: a period that does not reconcile answers 500 `statement_not_reconciled` and no document. The wallet set is the one the account balances sum (a Test project with a bound account: that account's wallet), so the closing balance at `to = today` equals the account's booked balance.
          *
-         *     Read-only; nothing is cached. `format=pdf` only. The Wallet's CSV export is unchanged and separate.
+         *     `format=png&page=N` answers ONE page of the same statement as an image (1-based, 25 lines a page, at most 8 pages; the PDF carries every line), the pages the hosted MCP connector attaches, so a client that does not render an embedded PDF reads it. Its `X-CodeSpar-Document-Pages` header says how many pages there are, and a page out of range answers 404 `statement_page_not_found` with `details.pages`.
+         *
+         *     Read-only; nothing is cached. The Wallet's CSV export is unchanged and separate.
          */
         get: {
             parameters: {
@@ -44763,8 +45222,10 @@ export interface paths {
                     from: string;
                     /** @description Last day, inclusive; not after today; at most 92 days after `from`. */
                     to: string;
-                    /** @description `pdf` only in this delivery. */
-                    format?: "pdf";
+                    /** @description `pdf` (default): the whole period. `png`: ONE page of the statement as an image, chosen by `page`, the same pages the hosted MCP connector attaches (25 lines each, at most 8 pages; the PDF carries every line). */
+                    format?: "pdf" | "png";
+                    /** @description With `format=png`: the page, 1-based. The answer's `X-CodeSpar-Document-Pages` header says how many there are. */
+                    page?: number;
                     /** @description The ledger currency (default BRL). */
                     currency?: string;
                 };
@@ -44774,18 +45235,21 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description The statement. */
+                /** @description The statement (PDF), or one page of it (PNG, with `X-CodeSpar-Document-Pages`). */
                 200: {
                     headers: {
                         /** @description SHA-256 of the document's structured content (the model the template renders). The same receipt answers the same value on every call. */
                         "X-CodeSpar-Document-Sha256"?: string;
+                        /** @description With `format=png`: how many pages the statement has as images. */
+                        "X-CodeSpar-Document-Pages"?: string;
                         [name: string]: unknown;
                     };
                     content: {
                         "application/pdf": string;
+                        "image/png": string;
                     };
                 };
-                /** @description `format` is not `pdf` (`document_format_invalid`); or the period is malformed, `from` is after `to`, `to` is after today, or the span exceeds the maximum (`statement_period_invalid`, `details.reason`). */
+                /** @description `format` is neither `pdf` nor `png` (`document_format_invalid`); `page` is not a whole number of 1 or more (`statement_page_invalid`); or the period is malformed, `from` is after `to`, `to` is after today, or the span exceeds the maximum (`statement_period_invalid`, `details.reason`). */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -44794,7 +45258,27 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "document_format_invalid" | "statement_period_invalid";
+                                code: "document_format_invalid" | "statement_page_invalid" | "statement_period_invalid";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description With `format=png`: `page` is beyond the statement's pages (`details.pages`). */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "statement_page_not_found";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -44866,7 +45350,7 @@ export interface paths {
         put?: never;
         /**
          * Propose a purchase at a supported store (never an order)
-         * @description Scope `shop:purchases:write`. The store, its origin and its prices come from the server's registry and the store's own catalog, never from the request. The same `agent_id` and `idempotency_key` with the same intent answers the same purchase (`idempotent_replay: true`).
+         * @description Scope `shop:purchases:write`. The store, its origin and its prices come from the server's registry and the store's own catalog, never from the request. The same `agent_id` and `idempotency_key` with the same intent answers the same purchase (`idempotent_replay: true`). Instead of `merchant` and `items`, `offer_id` (with an optional `quantity`) names an offer of this key's research: the store and the SKU come from it and the store quotes it again; a moved price or shipping is `offer_stale` (409) and an offer that is a comparison is `offer_not_purchasable` (409), with nothing proposed.
          *
          *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
          */
@@ -44881,11 +45365,17 @@ export interface paths {
                 content: {
                     "application/json": {
                         agent_id: string;
-                        merchant: string;
-                        items: {
+                        /** @description The store id. Required with `items`; absent with `offer_id`. */
+                        merchant?: string;
+                        /** @description The cart by SKU. Required with `merchant`; absent with `offer_id`. */
+                        items?: {
                             sku_id: string;
                             quantity: number;
                         }[];
+                        /** @description Shop v0.3: an offer of this key's research (`POST /v1/shop/agent/research`). The store and the SKU come from it; the store quotes it again. */
+                        offer_id?: string;
+                        /** @description With `offer_id`: how many units (default 1). */
+                        quantity?: number;
                         /**
                          * @default card
                          * @enum {string}
@@ -44914,7 +45404,7 @@ export interface paths {
                                 run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
                                 awaiting: {
                                     /** @enum {string} */
-                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge";
+                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" | "store_challenge" | "store_cvv_requested";
                                 } | null;
                                 merchant: {
                                     id: string;
@@ -44973,7 +45463,7 @@ export interface paths {
                                 run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
                                 awaiting: {
                                     /** @enum {string} */
-                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge";
+                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" | "store_challenge" | "store_cvv_requested";
                                 } | null;
                                 merchant: {
                                     id: string;
@@ -45053,7 +45543,27 @@ export interface paths {
                         };
                     };
                 };
-                /** @description No mandate permits the store, or the project is not Test. */
+                /** @description The offer is not in this key's research. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "offer_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No mandate permits the store, the project is not Test, or the offer moved or cannot be bought here. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -45062,7 +45572,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "proposal_no_mandate" | "purchase_merchant_unsupported";
+                                code: "proposal_no_mandate" | "purchase_merchant_unsupported" | "offer_stale" | "offer_not_purchasable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -45163,7 +45673,7 @@ export interface paths {
                                 run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
                                 awaiting: {
                                     /** @enum {string} */
-                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge";
+                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" | "store_challenge" | "store_cvv_requested";
                                 } | null;
                                 merchant: {
                                     id: string;
@@ -45240,6 +45750,231 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/shop/agent/research": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Research a pedido aberto: offers compared, one recommendation
+         * @description Scope `shop:purchases:write` (a research proposes nothing). The server consults the sources (`registry`, the stores the Shop can buy at; `vtex` and `meli`, comparison only; default `registry` in Test, `vtex` and `meli` in Live), records every offer with its source and `observed_at`, computes each total (price plus shipping), and recommends one principal with reason codes and at most three alternatives. `lowest_price` states the lowest total as "menor preço entre as ofertas consultadas", with the count and window it covers. `decisive_unknowns` lists the only questions that would change the principal. The research belongs to the project: a key carries no person, and never reaches a person's research. An offer older than 15 minutes is `stale`: a purchase from it is quoted again, as every purchase from an offer is.
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description The pedido aberto, as the person said it (e.g. "fone bluetooth"). */
+                        query: string;
+                        criteria?: {
+                            /**
+                             * @description What decides the principal: the lowest total (default) or the fastest delivery.
+                             * @enum {string}
+                             */
+                            priority?: "total" | "eta";
+                            /** @description The most the person wants to pay, shipping included, in centavos. */
+                            max_total_minor?: number;
+                            /** @description Where to look: `registry` (the stores the Shop can buy at), `vtex` and `meli` (comparison only). Default: `registry` in Test, `vtex` and `meli` in Live. */
+                            sources?: ("registry" | "vtex" | "meli")[];
+                            /** @description Offers per source, 1 to 5 (default 5). */
+                            limit?: number;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The research as CONTRATO-I2 describes it: offers, recommendation, sources. */
+                            research: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not hold `shop:purchases:write`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No source of the asked groups exists in this environment. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "research_no_sources";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No source answered, or Shop purchases are off on this deployment. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "research_no_sources" | "shop_purchases_disabled";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shop/agent/research/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a research back
+         * @description Scope `shop:purchases:read`. The research this project's keys ran, with each offer's `stale` computed at the time of the answer.
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The research id (`srr_...`), from `POST /v1/shop/agent/research`. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The research as CONTRATO-I2 describes it: offers, recommendation, sources. */
+                            research: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+                /** @description The key does not hold `shop:purchases:read`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/shop/agent/instruments": {
         parameters: {
             query?: never;
@@ -45248,16 +45983,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * A person's cards, masked
-         * @description Scope `shop:instruments:read`. Brand and last four of the person's active cards, as references an assistant can name; choosing one stays the person's act at Pagar.
+         * The calling person's cards, masked
+         * @description Brand and last four of the CALLING person's active cards, as references an assistant can name; choosing one stays the person's act at Pagar. The list belongs to a verified person: a project API key or an OAuth token carries no person and is refused `bearer_token_has_no_person` (403), whatever `owner` says. `owner` is deprecated and ignored: it no longer selects another person's cards (Shop v0.3). The 403's `details` say why and what to do, with stable keys: `reason: "bearer_has_no_person"`, `list_belongs_to: "authenticated_person"`, `owner_param: "deprecated_ignored"` and `how_to_list` (the person's own session on the dashboard; an MCP session bound to a person by login arrives with Shop v0.3 increment 5). A client holding only a project key has no way to list cards until then.
          *
          *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
          */
         get: {
             parameters: {
-                query: {
-                    /** @description The person whose masked cards the assistant may reference. */
-                    owner: string;
+                query?: {
+                    /**
+                     * @deprecated
+                     * @description Deprecated and ignored (Shop v0.3): the list is always the authenticated person's own; it no longer selects another person's cards.
+                     */
+                    owner?: string;
                 };
                 header?: never;
                 path?: never;
@@ -45284,27 +46022,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description owner is missing or malformed. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "invalid_query";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description The key does not hold `shop:instruments:read`. */
+                /** @description The bearer carries no verified person, or the key does not hold `shop:instruments:read`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -45312,7 +46030,8 @@ export interface paths {
                     content: {
                         "application/json": {
                             error: {
-                                code: string;
+                                /** @enum {string} */
+                                code: "bearer_token_has_no_person";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -46198,6 +46917,315 @@ export interface paths {
                         "application/json": {
                             error: {
                                 code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/projects/{id}/agent-autonomy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the agent's autonomy of a project
+         * @description How much the project's agent may pay without a person, inside its mandate, and the levels it may be set to now.
+         *
+         *     SCOPE. A key created with an explicit scope list needs `projects:read`. The dashboard reads it for any member. A cross-tenant id is 404.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Project id. An id from another organization reads as absent. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            project_id: string;
+                            /** @enum {string} */
+                            environment: "live" | "test";
+                            /**
+                             * @description `confirm_each`: a person confirms every payment. `confirm_exceptions`: a payment above `exception_amount_minor`, or to a payee never paid, waits for a person. `within_mandate`: the agent pays inside the mandate unconfirmed. No level widens a mandate. A project that never changed it is at `confirm_each`.
+                             * @enum {string}
+                             */
+                            level: "confirm_each" | "confirm_exceptions" | "within_mandate";
+                            /** @description The threshold of `confirm_exceptions`, in minor units; null at the other levels. */
+                            exception_amount_minor: number | null;
+                            /** @description Send it back on the PUT. 0 for a project that never changed its level. */
+                            version: number;
+                            /** @description The verified person who made the last change. */
+                            updated_by: string | null;
+                            updated_at: string | null;
+                            /** @description The levels the project may be set to now. Empty on a live project, where the agent's autonomy is not available yet. */
+                            available_levels: ("confirm_each" | "confirm_exceptions" | "within_mandate")[];
+                            /**
+                             * @description `pending` on a live project; null on a test project.
+                             * @enum {string|null}
+                             */
+                            live_activation: "pending" | null;
+                        };
+                    };
+                };
+                /** @description `not_found`. Also the answer for an id owned by another organization. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Change the agent's autonomy of a project
+         * @description ONLY a verified person with the organization role `admin` or `owner`, through the dashboard. An API key or an OAuth token is refused with 403 `bearer_token_cannot_manage_autonomy`, whatever its scopes: no agent and no integration changes how much it may pay unconfirmed.
+         *
+         *     Compare-and-set: send the `version` you read. A stale one is 409 `autonomy_version_conflict` with the current `details.version`. The same level and threshold again answer `changed: false` and write nothing. Every change is recorded in the history and in the organization's audit chain (`agent_autonomy.changed`), in the same transaction.
+         *
+         *     A level outside `available_levels` is 409 `autonomy_level_unavailable`; a live project has none available yet. `confirm_exceptions` takes `exception_amount_minor` (a positive integer), and without it the answer is 400 `autonomy_exception_amount_required`. The new level applies to payments gated after it; nothing pending changes.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Project id. An id from another organization reads as absent. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        level: "confirm_each" | "confirm_exceptions" | "within_mandate";
+                        exception_amount_minor?: number | null;
+                        version: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            changed: boolean;
+                            autonomy: {
+                                project_id: string;
+                                /** @enum {string} */
+                                environment: "live" | "test";
+                                /**
+                                 * @description `confirm_each`: a person confirms every payment. `confirm_exceptions`: a payment above `exception_amount_minor`, or to a payee never paid, waits for a person. `within_mandate`: the agent pays inside the mandate unconfirmed. No level widens a mandate. A project that never changed it is at `confirm_each`.
+                                 * @enum {string}
+                                 */
+                                level: "confirm_each" | "confirm_exceptions" | "within_mandate";
+                                /** @description The threshold of `confirm_exceptions`, in minor units; null at the other levels. */
+                                exception_amount_minor: number | null;
+                                /** @description Send it back on the PUT. 0 for a project that never changed its level. */
+                                version: number;
+                                /** @description The verified person who made the last change. */
+                                updated_by: string | null;
+                                updated_at: string | null;
+                                /** @description The levels the project may be set to now. Empty on a live project, where the agent's autonomy is not available yet. */
+                                available_levels: ("confirm_each" | "confirm_exceptions" | "within_mandate")[];
+                                /**
+                                 * @description `pending` on a live project; null on a test project.
+                                 * @enum {string|null}
+                                 */
+                                live_activation: "pending" | null;
+                            };
+                        };
+                    };
+                };
+                /** @description `invalid_body` (`details.issues`), or `autonomy_exception_amount_required`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "autonomy_exception_amount_required";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `bearer_token_cannot_manage_autonomy`: an API key or an OAuth token. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "bearer_token_cannot_manage_autonomy";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `not_found`. Also the answer for an id owned by another organization. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `autonomy_level_unavailable` or `autonomy_version_conflict`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "autonomy_level_unavailable" | "autonomy_version_conflict";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/projects/{id}/agent-autonomy/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the history of the agent's autonomy of a project
+         * @description Every change, newest first, at most 50.
+         *
+         *     SCOPE. A key created with an explicit scope list needs `projects:read`. The dashboard reads it for any member. A cross-tenant id is 404.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Project id. An id from another organization reads as absent. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            project_id: string;
+                            changes: {
+                                version: number;
+                                /** @enum {string|null} */
+                                from_level: "confirm_each" | "confirm_exceptions" | "within_mandate" | null;
+                                /** @enum {string} */
+                                to_level: "confirm_each" | "confirm_exceptions" | "within_mandate";
+                                from_exception_amount_minor: number | null;
+                                to_exception_amount_minor: number | null;
+                                changed_by: string;
+                                changed_at: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description `not_found`. Also the answer for an id owned by another organization. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -51571,6 +52599,30 @@ export interface components {
             /** @description Whether the dashboard can connect this provider itself: a credential form with at least one field that `POST /v1/connections` accepts, or an oauth provider with an authorization config. False for `none`, which needs no connection, for a form type whose catalog row declares no refs, and for Coinbase CDP (`cdp`, `jwt_ecdsa`) while the deployment holds CDP self-serve connect. */
             connectable: boolean;
         };
+        CreatedSession: {
+            /** @description `ses_`-prefixed */
+            id: string;
+            org_id: string;
+            project_id: string;
+            user_id: string;
+            servers: string[];
+            /** @enum {string} */
+            status: "active" | "closed" | "error";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            closed_at?: string | null;
+            /** @description The meta-tools this session exposes (catalog-wide), as GET /v1/sessions/{id}/connections lists them. A tool listed here is not an authorization for each of its actions: every execution still checks the action's own scope and answers `forbidden` naming it when the key lacks it. */
+            tools: {
+                name: string;
+                description: string;
+                input_schema: {
+                    [key: string]: unknown;
+                };
+                /** @enum {string} */
+                server: "codespar";
+            }[];
+        };
         SpendOutcome: {
             /** @enum {string} */
             status: "completed";
@@ -51587,8 +52639,13 @@ export interface components {
                 amountMinor: number;
                 rail: string;
                 provider: string;
-                /** @description False when the adapter is a mock or a staging stub. True when real money left. */
+                /** @description False when the adapter is a mock or a staging stub, or when a Celcoin Pix, boleto or TED was accepted and its settlement not yet confirmed (`settlement: "pending"`). True when real money left and, on those rails, the provider confirmed it. */
                 moneyMoved: boolean;
+                /**
+                 * @description Celcoin Pix, boleto and TED only: what the provider stated about the settlement. `confirmed` inside the rail's poll window, or `pending`: accepted, not confirmed, and the money may still move or come back. A pending Pix or TED is closed by the provider's webhook, and a repeat of the spend then answers `confirmed` (or `failed`: accepted, then rejected). Absent on every other rail.
+                 * @enum {string}
+                 */
+                settlement?: "confirmed" | "pending" | "failed";
                 adapter: string;
             };
             wallet: {

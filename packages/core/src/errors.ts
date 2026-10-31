@@ -111,6 +111,44 @@ export async function throwFromResponse(
   });
 }
 
+/** The code the Shop's card list answers when the credential carries no person (Shop v0.3). */
+export const BEARER_TOKEN_HAS_NO_PERSON = "bearer_token_has_no_person" as const;
+
+/**
+ * `instruments.list` with a credential that carries no person (Shop v0.3):
+ * the card list is the authenticated person's own, and a project API key or
+ * an OAuth token names nobody. Nothing a retry with the same credential can
+ * fix: the cards are read in the person's own session (the dashboard), or,
+ * once it exists, through a session bound to a person (MCP consent by login,
+ * Shop v0.3 increment 5). `details` are the API's stable keys (`reason`,
+ * `list_belongs_to`, `owner_param`, `how_to_list`).
+ */
+export class BearerTokenHasNoPersonError extends CodesparApiError {
+  readonly details: Record<string, unknown>;
+
+  constructor(what: string, body: unknown) {
+    super(
+      `${what} failed: 403 ${BEARER_TOKEN_HAS_NO_PERSON} — the card list belongs to the authenticated person, and this credential (a project API key or an OAuth token) carries no person. ` +
+        "Read the cards in the person's own session; a session bound to a person (MCP consent by login) arrives with Shop v0.3 increment 5.",
+      { status: 403, code: BEARER_TOKEN_HAS_NO_PERSON, body },
+    );
+    Object.setPrototypeOf(this, BearerTokenHasNoPersonError.prototype);
+    this.name = "BearerTokenHasNoPersonError";
+    const err = body && typeof body === "object" ? (body as { error?: { details?: unknown } }).error : undefined;
+    this.details = err?.details && typeof err.details === "object" ? (err.details as Record<string, unknown>) : {};
+  }
+}
+
+/** Read `instruments.list`'s refusal: the typed error for a credential with no person, the generic one otherwise. */
+export async function throwFromInstrumentsResponse(response: Response, what: string): Promise<never> {
+  if (response.status === 403) {
+    const raw = await response.clone().text();
+    const { body, parsed } = parseErrorPayload(raw);
+    if (parsed.code === BEARER_TOKEN_HAS_NO_PERSON) throw new BearerTokenHasNoPersonError(what, body);
+  }
+  return throwFromResponse(response, what);
+}
+
 /**
  * Convert a `fetch` rejection (network error, abort, DNS, TLS, etc.)
  * into a CodesparApiError with `status: 0`. Preserves the underlying
