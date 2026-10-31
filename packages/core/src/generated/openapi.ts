@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 a9ff2dd3151d6b7d4cd50e289e229f9d42cfc6c71130c17d7ba7ac7a3c3f3dfa, fetched 2026-10-30T11:05:19.286Z
+// Source: openapi-snapshot.json (sha256 4ae3274e16aa0655cacab1b3a1f0c1fbe8ad710fe2c0184c9b0aa816fdd0095c, fetched 2026-10-31T00:54:41.356Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -1613,7 +1613,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
                         event: string;
                         server_id?: string;
                         /**
@@ -1767,7 +1767,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
                         event: string;
                         server_id?: string;
                         /**
@@ -3843,6 +3843,10 @@ export interface paths {
                                 balance_minor: string;
                                 available_minor: string;
                             };
+                            /** @description A bound customer account's credit: the clientCode sent to the provider, also the FUND's external_ref. */
+                            client_code?: string | null;
+                            /** @description A bound customer account's credit: the provider's id of that credit. */
+                            deposit_id?: string | null;
                         };
                     };
                 };
@@ -3871,6 +3875,10 @@ export interface paths {
                                 balance_minor: string;
                                 available_minor: string;
                             };
+                            /** @description A bound customer account's credit: the clientCode sent to the provider, also the FUND's external_ref. */
+                            client_code?: string | null;
+                            /** @description A bound customer account's credit: the provider's id of that credit. */
+                            deposit_id?: string | null;
                         };
                     };
                 };
@@ -10022,7 +10030,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /**
-                         * @description The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. Passed through as an object: the handler does not validate it field by field here, and whatever the provider refuses comes back in the provider's own refusal. Two exceptions are checked before anything is sent: the document's check digits, and, for a natural person (CPF) in a live project, `financialDetails` = `{ declaredIncome, occupation, netWorth }` in the provider's codes. That is the titular's own declaration, and CodeSpar never fills it in for them.
+                         * @description The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. Passed through as an object: the handler does not validate it field by field here, and whatever the provider refuses comes back in the provider's own refusal. Two exceptions are checked before anything is sent: the document's check digits, and, for a natural person (CPF) in a live project, `financialDetails` = `{ declaredIncome, occupation, netWorth }` in the provider's codes, and `isPoliticallyExposedPerson` as `true` or `false`. Those are the titular's own declarations, and CodeSpar never fills them in for them (a value of `isPoliticallyExposedPerson` that is not a boolean is refused in any project).
                          *
                          *     `files` (A5b): the documents, `[{ type, data }]`, `data` a URL the provider downloads, valid for at least one hour, PDF/PNG/JPEG (CONTRATO_SOCIAL is PDF). Natural person: RG/CNH/RNE and SELFIE; legal person: also CONTRATO_SOCIAL, and PROCURACAO_PODERES when an owner is a REPRESENTANTE. Checked before anything is sent. A test project that sends none gets the Test sample documents; a live project never does, and a live request naming a sample document is refused.
                          */
@@ -10091,7 +10099,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The body did not match the schema, the document did not pass the check, or a natural person's onboarding in a live project came without `buyer.financialDetails` (one issue per missing code, its `path` naming it) — `invalid_body`. Or the documents were refused before sending (A5b): `onboarding_sample_file_in_live` for a live request naming a Test sample document or a public specimen, `onboarding_files_invalid` for a malformed `files` list, a format the provider does not take, or a missing required document. BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`. */
+                /** @description The body did not match the schema, the document did not pass the check, or a natural person's onboarding in a live project came without `buyer.financialDetails` (one issue per missing code, its `path` naming it) or without `buyer.isPoliticallyExposedPerson` as a boolean (its own issue) — `invalid_body`. Or the documents were refused before sending (A5b): `onboarding_sample_file_in_live` for a live request naming a Test sample document or a public specimen, `onboarding_files_invalid` for a malformed `files` list, a format the provider does not take, or a missing required document. BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -16689,6 +16697,8 @@ export interface paths {
          *     `link_token` is the same value as the `state` parameter inside `authorize_url`; it is single use and expires at `expires_at`, ten minutes out. `redirect_uri` must be https and is where the callback sends the browser back, with `status=connected&connection_id=…`, `status=denied&error=…` or `status=error&error=…` appended.
          *
          *     `POST /v1/connect/start` is the same handler on a second path. A provider with no OAuth configuration is 404; a missing platform client credential is 500, which is our seeding defect and not the caller's error. Both bodies are bare `{ error, … }`, not the `error.code` envelope.
+         *
+         *     **A person's own Google account** (`server_id` `google-calendar`, `google-drive` or `gmail`) is connected for its owner only. The owner is the signed-in person whose session token the dashboard forwards (`x-codespar-user-token`), and `user_id` must name that person; an API key or an OAuth token carries no person and is refused `bearer_token_has_no_person` (403). The connector asks for its own scopes, so `scopes` is refused (400 `invalid_body`). The consent asks for offline access, always shows Google's consent screen and keeps earlier grants. Test and Live projects both use the real Google: there is no Google sandbox, and the data is the person's own. These refusals use the `error.code` envelope. Off on the deployment, the three answer `connector_disabled` (503).
          */
         post: {
             parameters: {
@@ -16745,6 +16755,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Google connectors only: no verified person rides on the request, the session token does not verify or names someone else, `user_id` is not the signed-in person, or the person is not a member of the organization. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "bearer_token_has_no_person" | "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "not_a_member";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
                 /** @description The provider has no OAuth configuration in the catalog. */
                 404: {
                     headers: {
@@ -16785,6 +16815,26 @@ export interface paths {
                             /** @enum {string} */
                             error: "oauth_client_not_configured";
                             message: string;
+                        };
+                    };
+                };
+                /** @description Google connectors only: they are switched off on this deployment. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "connector_disabled" | "user_token_verification_unconfigured";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
                         };
                     };
                 };
@@ -45156,12 +45206,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The account statement (extrato) of a period, as PDF
+         * The account statement (extrato) of a period, as PDF or one page as PNG
          * @description The statement of the project's account over `[from, to]` (calendar days in America/Sao_Paulo, inclusive, at most 92 days, `to` not after today): holder, document, institution, agency and account; opening balance, inflows, outflows and closing balance over the BOOKED balance (the ledger kinds that move it: fund, debit, fee, reverse); reserves (holds open at the end of the period) shown apart and outside the balance identity; one row per balance-moving entry, newest first; A4, paginated, the column header on every page.
          *
          *     `closing = opening + inflows - outflows` is asserted in code against an independent aggregate: a period that does not reconcile answers 500 `statement_not_reconciled` and no document. The wallet set is the one the account balances sum (a Test project with a bound account: that account's wallet), so the closing balance at `to = today` equals the account's booked balance.
          *
-         *     Read-only; nothing is cached. `format=pdf` only. The Wallet's CSV export is unchanged and separate.
+         *     `format=png&page=N` answers ONE page of the same statement as an image (1-based, 25 lines a page, at most 8 pages; the PDF carries every line), the pages the hosted MCP connector attaches, so a client that does not render an embedded PDF reads it. Its `X-CodeSpar-Document-Pages` header says how many pages there are, and a page out of range answers 404 `statement_page_not_found` with `details.pages`.
+         *
+         *     Read-only; nothing is cached. The Wallet's CSV export is unchanged and separate.
          */
         get: {
             parameters: {
@@ -45170,8 +45222,10 @@ export interface paths {
                     from: string;
                     /** @description Last day, inclusive; not after today; at most 92 days after `from`. */
                     to: string;
-                    /** @description `pdf` only in this delivery. */
-                    format?: "pdf";
+                    /** @description `pdf` (default): the whole period. `png`: ONE page of the statement as an image, chosen by `page`, the same pages the hosted MCP connector attaches (25 lines each, at most 8 pages; the PDF carries every line). */
+                    format?: "pdf" | "png";
+                    /** @description With `format=png`: the page, 1-based. The answer's `X-CodeSpar-Document-Pages` header says how many there are. */
+                    page?: number;
                     /** @description The ledger currency (default BRL). */
                     currency?: string;
                 };
@@ -45181,18 +45235,21 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description The statement. */
+                /** @description The statement (PDF), or one page of it (PNG, with `X-CodeSpar-Document-Pages`). */
                 200: {
                     headers: {
                         /** @description SHA-256 of the document's structured content (the model the template renders). The same receipt answers the same value on every call. */
                         "X-CodeSpar-Document-Sha256"?: string;
+                        /** @description With `format=png`: how many pages the statement has as images. */
+                        "X-CodeSpar-Document-Pages"?: string;
                         [name: string]: unknown;
                     };
                     content: {
                         "application/pdf": string;
+                        "image/png": string;
                     };
                 };
-                /** @description `format` is not `pdf` (`document_format_invalid`); or the period is malformed, `from` is after `to`, `to` is after today, or the span exceeds the maximum (`statement_period_invalid`, `details.reason`). */
+                /** @description `format` is neither `pdf` nor `png` (`document_format_invalid`); `page` is not a whole number of 1 or more (`statement_page_invalid`); or the period is malformed, `from` is after `to`, `to` is after today, or the span exceeds the maximum (`statement_period_invalid`, `details.reason`). */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -45201,7 +45258,27 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "document_format_invalid" | "statement_period_invalid";
+                                code: "document_format_invalid" | "statement_page_invalid" | "statement_period_invalid";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description With `format=png`: `page` is beyond the statement's pages (`details.pages`). */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "statement_page_not_found";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -52562,8 +52639,13 @@ export interface components {
                 amountMinor: number;
                 rail: string;
                 provider: string;
-                /** @description False when the adapter is a mock or a staging stub. True when real money left. */
+                /** @description False when the adapter is a mock or a staging stub, or when a Celcoin Pix, boleto or TED was accepted and its settlement not yet confirmed (`settlement: "pending"`). True when real money left and, on those rails, the provider confirmed it. */
                 moneyMoved: boolean;
+                /**
+                 * @description Celcoin Pix, boleto and TED only: what the provider stated about the settlement. `confirmed` inside the rail's poll window, or `pending`: accepted, not confirmed, and the money may still move or come back. A pending Pix or TED is closed by the provider's webhook, and a repeat of the spend then answers `confirmed` (or `failed`: accepted, then rejected). Absent on every other rail.
+                 * @enum {string}
+                 */
+                settlement?: "confirmed" | "pending" | "failed";
                 adapter: string;
             };
             wallet: {

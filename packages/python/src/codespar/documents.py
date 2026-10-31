@@ -2,7 +2,7 @@
 ``cs.receipts`` and ``cs.account`` — documents on demand.
 
 The payment receipt (comprovante) of a sealed receipt, as PDF or PNG, and
-the account statement (extrato) of a period, as PDF. Mirrors ``cs.receipts``
+the account statement (extrato) of a period, as PDF or as PNG pages. Mirrors ``cs.receipts``
 and ``cs.account`` in the TypeScript SDK (CONTRATO-documentos, 26/10/2026).
 
 Both are reads: generating or downloading a document never repeats a
@@ -39,6 +39,15 @@ class Document(TypedDict):
     sha256: str | None
 
 
+class StatementDocument(Document):
+    """A statement: for a PNG page, ``pages`` is how many PNG pages it has.
+
+    Read from ``X-CodeSpar-Document-Pages``; None for the PDF, which has no such header.
+    """
+
+    pages: int | None
+
+
 _DISPOSITION = re.compile(r"filename\*?=(?:UTF-8'')?\"?([^\";]+)\"?", re.IGNORECASE)
 
 
@@ -55,6 +64,13 @@ def filename_from_disposition(header: str | None) -> str | None:
     if not name or "/" in name or "\\" in name:
         return None
     return name
+
+
+def _pages(header: str | None) -> int | None:
+    if header is None or not header.strip().isdigit():
+        return None
+    n = int(header)
+    return n if n >= 1 else None
 
 
 def _document(response: httpx.Response, fallback_name: str, accept: str) -> Document:
@@ -121,13 +137,18 @@ class AsyncAccount:
         from_date: str,
         to_date: str,
         *,
-        format: Literal["pdf"] = "pdf",
+        format: DocumentFormat = "pdf",
+        page: int | None = None,
         currency: str | None = None,
         timeout: float | None = None,
-    ) -> Document:
+    ) -> StatementDocument:
         """The extrato of the project's account over ``[from_date, to_date]``.
 
         Calendar days as ``YYYY-MM-DD``, ``to_date`` inclusive, at most 92 days.
+        ``pdf`` (default) is the whole period; ``png`` is ONE page as an image,
+        chosen by ``page`` (1-based, default 1; 25 lines a page, at most 8
+        pages). ``pages`` on the answer says how many there are; a page past
+        the last raises 404 ``statement_page_not_found``.
         """
         if not from_date or not to_date:
             raise ApiError(
@@ -135,19 +156,42 @@ class AsyncAccount:
                 status=0,
                 code="invalid_args",
             )
+        if format not in ("pdf", "png"):
+            raise ApiError(
+                "account.statement: format must be pdf or png", status=0, code="invalid_args"
+            )
+        if page is not None and (
+            format != "png" or isinstance(page, bool) or not isinstance(page, int) or page < 1
+        ):
+            raise ApiError(
+                "account.statement: page is a whole number, 1 or more, with format png",
+                status=0,
+                code="invalid_args",
+            )
         query = {"from": from_date, "to": to_date, "format": format}
+        if format == "png":
+            query["page"] = str(page or 1)
         if currency:
             query["currency"] = currency
         path = f"/v1/account/statement?{urlencode(query)}"
+        accept = "application/pdf" if format == "pdf" else "image/png"
         response = await request_bytes(
             self._client,
             path,
             api_key=self._api_key,
             project_id=self._project_id,
-            accept="application/pdf",
+            accept=accept,
             timeout=timeout,
         )
-        return _document(response, f"extrato-{from_date}-{to_date}.pdf", "application/pdf")
+        name = (
+            f"extrato-{from_date}-{to_date}.pdf"
+            if format == "pdf"
+            else f"extrato-{from_date}-{to_date}-p{page or 1}.png"
+        )
+        doc = _document(response, name, accept)
+        return StatementDocument(
+            **doc, pages=_pages(response.headers.get("x-codespar-document-pages"))
+        )
 
 
 class Receipts:
@@ -175,12 +219,13 @@ class Account:
         from_date: str,
         to_date: str,
         *,
-        format: Literal["pdf"] = "pdf",
+        format: DocumentFormat = "pdf",
+        page: int | None = None,
         currency: str | None = None,
         timeout: float | None = None,
-    ) -> Document:
+    ) -> StatementDocument:
         return self._runner.run(
             self._inner.statement(
-                from_date, to_date, format=format, currency=currency, timeout=timeout
+                from_date, to_date, format=format, page=page, currency=currency, timeout=timeout
             )
         )

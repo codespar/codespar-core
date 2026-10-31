@@ -1,5 +1,32 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.28 — 2026-10-30
+
+### Added
+
+- **The statement as PNG pages**: `cs.account.statement({ from, to, format: "png", page })`
+  → `GET /v1/account/statement?format=png&page=N` (enterprise #2322) answers
+  page N of the statement as an image, the same pages the hosted MCP connector
+  attaches: 25 lines a page, at most 8 pages (the PDF carries every line).
+  `page` is 1-based and defaults to 1; a page past the last is a
+  `CodesparApiError` 404 `statement_page_not_found` whose body carries
+  `{ page, pages }`. A page that is not a whole number from 1, or a `page`
+  without `format: "png"`, is refused locally (`invalid_args`) with no request.
+- `statement()` returns a `StatementDocument`: a `Document` plus `pages`, the
+  statement's page count read from `X-CodeSpar-Document-Pages` (null for the
+  PDF, which has no such header). Exported as a type.
+- OpenAPI snapshot refreshed to the served document (sha256 4ae3274e16aa,
+  373 operations), and `src/generated/` regenerated from it. Besides the
+  statement's `format`/`page`, it picks up what was served since 0.16.27: two
+  `commerce.account_entry_*` events, `client_code`/`deposit_id` on a sandbox
+  fund, `isPoliticallyExposedPerson` on account applications, and the Google
+  connectors on `POST /v1/connections/start`.
+
+### Unchanged
+
+- The PDF is still the default: `statement({ from, to })` sends the same
+  request (`format=pdf`, no `page`) and answers the same document.
+
 ## 0.16.27 — 2026-10-30
 
 ### Added

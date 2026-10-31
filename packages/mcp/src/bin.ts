@@ -167,10 +167,11 @@ async function main(): Promise<void> {
     }
     if (documents && isDocumentsTool(name)) {
       try {
-        const { reference, attachment } = await runDocumentsTool(documents, args);
-        const attachments = attachment ? [attachment] : [];
+        const { reference, attachments, note } = await runDocumentsTool(documents, args);
+        const sentence = [attachmentsSentence(attachments, reference.kind === "statement" ? "statement" : "receipt"), note].filter(Boolean).join(" ");
         return {
-          content: [{ type: "text", text: `${JSON.stringify(reference, null, 2)}\n\n${attachmentsSentence(attachments)}` }, ...attachments],
+          content: [{ type: "text", text: `${JSON.stringify(reference, null, 2)}\n\n${sentence}` }, ...attachments],
+          structuredContent: reference,
           isError: false,
         };
       } catch (err) {
@@ -196,10 +197,12 @@ async function main(): Promise<void> {
     const text = typeof payload === "string" ? payload : JSON.stringify(payload, null, 2);
     // A codespar_wallet document action answers a reference; the document
     // itself rides along as the hosted connector serves it (document-blocks.ts).
-    const attachments = result.success && documents ? await walletDocumentBlocks(name, payload, documents) : [];
+    const blocks = result.success && documents ? await walletDocumentBlocks(name, payload, documents) : { attachments: [], kind: null, note: "" };
     const isDocument = result.success && name === "codespar_wallet" && typeof payload === "object" && payload !== null && "document" in payload;
+    const sentence = [attachmentsSentence(blocks.attachments, blocks.kind ?? "receipt"), blocks.note].filter(Boolean).join(" ");
     return {
-      content: [{ type: "text", text: isDocument ? `${text}\n\n${attachmentsSentence(attachments)}` : text }, ...attachments],
+      content: [{ type: "text", text: isDocument ? `${text}\n\n${sentence}` : text }, ...blocks.attachments],
+      ...(isDocument && !Array.isArray(payload) ? { structuredContent: payload as Record<string, unknown> } : {}),
       isError: !result.success,
     };
   });
