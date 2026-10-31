@@ -1,4 +1,6 @@
-node_modules/
+# No trailing slash: "node_modules/" matches directories only, so a worktree's node_modules
+# SYMLINK (a file to git) was not ignored and core#225 committed three of them.
+node_modules
 dist/
 .turbo/
 *.tsbuildinfo
