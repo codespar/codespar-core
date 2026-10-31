@@ -7,7 +7,7 @@ import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { Document } from "@codespar/sdk";
+import type { Document, StatementDocument } from "@codespar/sdk";
 import { callDocumentsTool, documentsErrorText, documentsToolDefinition, isDocumentsTool } from "../documents-tools.js";
 
 const PDF = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]);
@@ -23,9 +23,10 @@ function facades(calls: unknown[][]) {
       },
     },
     account: {
-      async statement(opts: { from: string; to: string; currency?: string }) {
+      async statement(opts: { from: string; to: string; currency?: string; format?: "pdf" | "png"; page?: number }): Promise<StatementDocument> {
         calls.push(["account.statement", opts]);
-        return doc(`extrato-${opts.from}-${opts.to}.pdf`, "application/pdf");
+        if (opts.format === "png") return { ...doc(`extrato-${opts.from}-${opts.to}-p${opts.page}.png`, "image/png"), pages: 1 };
+        return { ...doc(`extrato-${opts.from}-${opts.to}.pdf`, "application/pdf"), pages: null };
       },
     },
   };
@@ -68,10 +69,13 @@ describe("codespar_documents", () => {
     expect(readFileSync(target).equals(Buffer.from(PDF))).toBe(true);
   });
 
-  it("statement: from/to through the facade, currency when given", async () => {
+  it("statement: from/to through the facade, currency when given; the PDF first, then its page images", async () => {
     const calls: unknown[][] = [];
     const out = await callDocumentsTool(facades(calls), { action: "statement", from: "2026-09-01", to: "2026-09-30", currency: "BRL" });
-    expect(calls).toEqual([["account.statement", { from: "2026-09-01", to: "2026-09-30", currency: "BRL" }]]);
+    expect(calls).toEqual([
+      ["account.statement", { from: "2026-09-01", to: "2026-09-30", currency: "BRL" }],
+      ["account.statement", { from: "2026-09-01", to: "2026-09-30", currency: "BRL", format: "png", page: 1 }],
+    ]);
     expect(out).toMatchObject({ action: "statement", kind: "statement", from: "2026-09-01", to: "2026-09-30", format: "pdf", filename: "extrato-2026-09-01-2026-09-30.pdf", api_path: "/v1/account/statement?from=2026-09-01&to=2026-09-30&format=pdf" });
   });
 

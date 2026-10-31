@@ -71,7 +71,7 @@ export type {
 export { PIX_KEY_DELETE_CONSEQUENCE, PixKeyDeleteNotConfirmedError } from "./wallet.js";
 export type { Wallet, WalletPixKeys } from "./wallet.js";
 export { filenameFromDisposition } from "./documents.js";
-export type { Account, Document, DocumentFormat, ReceiptDocumentOptions, Receipts, StatementOptions } from "./documents.js";
+export type { Account, Document, DocumentFormat, ReceiptDocumentOptions, Receipts, StatementDocument, StatementOptions } from "./documents.js";
 
 export { SessionConfigSchema } from "./types.js";
 export { loop } from "./loop.js";

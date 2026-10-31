@@ -1,5 +1,31 @@
 # @codespar/mcp — changelog
 
+## 0.5.20 — 2026-10-30
+
+### Added
+
+- **A statement rides as its pages** (through `@codespar/sdk` 0.16.28): both
+  doors (`codespar_documents` action=statement and a `codespar_wallet`
+  `statement_document`) attach the statement's pages as PNG `image` blocks
+  before the PDF, the order the hosted connector serves: the text, the page
+  images in page order, then the PDF as the embedded resource it already was.
+  Page 1 is fetched first and its `X-CodeSpar-Document-Pages` says how many
+  follow, at most 8, one request at a time. The sentence names them
+  (`The statement pages (3 PNG images) and the PDF are attached to this result.`).
+- A page that fails does not take the others with it: the text names each
+  page that is not attached and why (the API's code, e.g.
+  `statement_page_not_found`), and `codespar_documents` adds the same in its
+  reference as `page_images: { pages, attached, missing }`.
+- Document results carry `structuredContent`: the reference for
+  `codespar_documents`, the tool's output for a `codespar_wallet` document
+  action, as the hosted connector does.
+
+### Unchanged
+
+- The statement's PDF is fetched as before; `out` still writes the PDF. With
+  an `@codespar/sdk` older than 0.16.28 inside the peer range, only page 1
+  comes as an image (that SDK reads no page count).
+
 ## 0.5.19 — 2026-10-30
 
 ### Added

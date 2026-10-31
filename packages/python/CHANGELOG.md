@@ -1,5 +1,20 @@
 # codespar (Python SDK) — CHANGELOG
 
+## 0.16.2
+
+The statement as PNG pages, in parity with `@codespar/sdk` 0.16.28.
+
+### Added
+
+- `cs.account.statement(from_date, to_date, format="png", page=N)` →
+  `GET /v1/account/statement?format=png&page=N`: page N of the statement as an
+  image (25 lines a page, at most 8 pages; the PDF carries every line). `page`
+  defaults to 1; a page past the last raises `ApiError` 404
+  `statement_page_not_found`. A `page` that is not an int from 1, or a `page`
+  without `format="png"`, raises `invalid_args` with no request.
+- `statement()` returns `StatementDocument` (a `Document` plus `pages`, read from
+  `X-CodeSpar-Document-Pages`; None for the PDF), exported from `codespar`.
+
 ## 0.16.1
 
 Discard a batch, in parity with `@codespar/sdk` 0.16.24.

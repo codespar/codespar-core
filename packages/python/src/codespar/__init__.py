@@ -36,6 +36,7 @@ from .documents import (
     Document,
     DocumentFormat,
     Receipts,
+    StatementDocument,
     filename_from_disposition,
 )
 from .errors import (
@@ -185,7 +186,7 @@ from .wallet import (
     WalletPixKeys,
 )
 
-__version__ = "0.16.1"
+__version__ = "0.16.2"
 
 __all__ = [
     "APPROVAL_REQUIRED",
@@ -324,6 +325,7 @@ __all__ = [
     "ShopSearchResult",
     "ShopStatusResult",
     "ShopVariant",
+    "StatementDocument",
     "StreamError",
     # Streaming events
     "StreamEvent",

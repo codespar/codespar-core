@@ -1,10 +1,11 @@
 /**
  * Documents on demand (CONTRATO-documentos, 26/10/2026): the payment receipt
  * (comprovante) of a sealed receipt, as PDF or PNG, and the account
- * statement (extrato) of a period, as PDF.
+ * statement (extrato) of a period, as PDF or as PNG pages.
  *
- *   cs.receipts.document(receiptId, { format })   GET /v1/consumers/receipts/:id/document
- *   cs.account.statement({ from, to })              GET /v1/account/statement
+ *   cs.receipts.document(receiptId, { format })          GET /v1/consumers/receipts/:id/document
+ *   cs.account.statement({ from, to })                     GET /v1/account/statement
+ *   cs.account.statement({ from, to, format: "png", page }) GET /v1/account/statement?format=png&page=N
  *
  * Both are reads: generating or downloading a document never repeats a
  * payment. The API serves a receipt document only for a confirmed payment
@@ -39,10 +40,22 @@ export interface StatementOptions extends CallOptions {
   from: string;
   /** Last day, inclusive; not after today; at most 92 days after `from`. */
   to: string;
-  /** `pdf` only in this delivery. */
-  format?: "pdf";
+  /**
+   * `pdf` (default): the whole period. `png`: ONE page of the statement as an
+   * image, chosen by `page` (25 lines a page, at most 8 pages; the PDF carries
+   * every line). `pages` on the answer says how many there are.
+   */
+  format?: DocumentFormat;
+  /** With `format: "png"`: the page, 1-based (default 1). Past the last page: 404 `statement_page_not_found` with `{ page, pages }`. */
+  page?: number;
   /** The ledger currency (default BRL). */
   currency?: string;
+}
+
+/** A statement: for a PNG page, `pages` is how many PNG pages the statement has (`X-CodeSpar-Document-Pages`). */
+export interface StatementDocument extends Document {
+  /** Null for the PDF (the server sends no pages header for it). */
+  pages: number | null;
 }
 
 export interface Receipts {
@@ -51,8 +64,8 @@ export interface Receipts {
 }
 
 export interface Account {
-  /** `GET /v1/account/statement`: the extrato of the project's account over `[from, to]`. */
-  statement(opts: StatementOptions): Promise<Document>;
+  /** `GET /v1/account/statement`: the extrato of the project's account over `[from, to]`, as PDF or one PNG page. */
+  statement(opts: StatementOptions): Promise<StatementDocument>;
 }
 
 interface DocumentsDeps {
@@ -70,11 +83,16 @@ export function filenameFromDisposition(header: string | null): string | null {
   return name && !/[\\/]/.test(name) ? name : null;
 }
 
+function pagesHeader(header: string | null): number | null {
+  const n = header === null ? NaN : Number(header);
+  return Number.isInteger(n) && n >= 1 ? n : null;
+}
+
 export function createDocuments(deps: DocumentsDeps): { receipts: Receipts; account: Account } {
   const auth: Record<string, string> = { Authorization: `Bearer ${deps.apiKey}` };
   if (deps.projectId) auth["x-codespar-project"] = deps.projectId;
 
-  async function download(what: string, url: string, fallbackName: string, accept: string, opts: CallOptions | undefined): Promise<Document> {
+  async function download(what: string, url: string, fallbackName: string, accept: string, opts: CallOptions | undefined): Promise<StatementDocument> {
     try {
       return await fetchWithTimeout(
         url,
@@ -88,6 +106,7 @@ export function createDocuments(deps: DocumentsDeps): { receipts: Receipts; acco
             contentType: r.headers.get("content-type")?.split(";")[0]?.trim() ?? accept,
             filename: filenameFromDisposition(r.headers.get("content-disposition")) ?? fallbackName,
             sha256: r.headers.get("x-codespar-document-sha256"),
+            pages: pagesHeader(r.headers.get("x-codespar-document-pages")),
           };
         },
       );
@@ -106,16 +125,25 @@ export function createDocuments(deps: DocumentsDeps): { receipts: Receipts; acco
         const format: DocumentFormat = opts?.format ?? "pdf";
         if (format !== "pdf" && format !== "png") throw new CodesparApiError("receipts.document: format must be pdf or png", { status: 0, code: "invalid_args" });
         const url = `${deps.baseUrl}/v1/consumers/receipts/${encodeURIComponent(receiptId)}/document?format=${format}`;
-        return download("receipts.document", url, `comprovante-${receiptId}.${format}`, format === "pdf" ? "application/pdf" : "image/png", opts);
+        return download("receipts.document", url, `comprovante-${receiptId}.${format}`, format === "pdf" ? "application/pdf" : "image/png", opts).then(
+          ({ pages: _pages, ...doc }) => doc,
+        );
       },
     },
     account: {
       statement(opts) {
         if (!opts?.from || !opts.to) throw new CodesparApiError("account.statement: from and to are required (YYYY-MM-DD)", { status: 0, code: "invalid_args" });
-        const q = new URLSearchParams({ from: opts.from, to: opts.to, format: opts.format ?? "pdf" });
+        const format: DocumentFormat = opts.format ?? "pdf";
+        if (format !== "pdf" && format !== "png") throw new CodesparApiError("account.statement: format must be pdf or png", { status: 0, code: "invalid_args" });
+        if (opts.page !== undefined && (format !== "png" || !Number.isInteger(opts.page) || opts.page < 1)) {
+          throw new CodesparApiError("account.statement: page is a whole number, 1 or more, with format png", { status: 0, code: "invalid_args" });
+        }
+        const q = new URLSearchParams({ from: opts.from, to: opts.to, format });
+        if (format === "png") q.set("page", String(opts.page ?? 1));
         if (opts.currency) q.set("currency", opts.currency);
         const url = `${deps.baseUrl}/v1/account/statement?${q.toString()}`;
-        return download("account.statement", url, `extrato-${opts.from}-${opts.to}.pdf`, "application/pdf", opts);
+        if (format === "pdf") return download("account.statement", url, `extrato-${opts.from}-${opts.to}.pdf`, "application/pdf", opts);
+        return download("account.statement", url, `extrato-${opts.from}-${opts.to}-p${opts.page ?? 1}.png`, "image/png", opts);
       },
     },
   };
