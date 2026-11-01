@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { ApiClient } from "../api.js";
 import { CliError } from "../config.js";
 import { info, json, success } from "../output.js";
@@ -7,6 +8,7 @@ interface SpendCommandOptions {
   payee: string;
   amount: string;
   agent: string;
+  attemptId?: string;
   apiKey: string;
   baseUrl: string;
   project?: string;
@@ -23,6 +25,11 @@ interface SpendCommandOptions {
  *   - Pix key / BR Code  → Pix (pix-celcoin / PSP)
  *   - EVM address        → direct USDC transfer on Base (CDP)
  *   - http(s) URL        → x402 pay-per-call (USDC on Base, settled on-chain)
+ *
+ * Every spend names its `attempt_id`, the key that makes a retry the SAME
+ * payment. A Live project refuses a spend without one (`attempt_id_required`,
+ * enterprise #2378). With no `--attempt-id` one is generated and printed, so
+ * a run whose answer was lost is retried with that id and is not paid twice.
  */
 export async function spendCommand(opts: SpendCommandOptions): Promise<void> {
   if (!opts.mandate) throw new CliError("--mandate <id> is required.");
@@ -37,6 +44,11 @@ export async function spendCommand(opts: SpendCommandOptions): Promise<void> {
   }
   if (!opts.agent) throw new CliError("--agent <id> is required.");
 
+  const attemptId = opts.attemptId?.trim() || `cli_${randomUUID()}`;
+  if (!opts.json && !opts.attemptId?.trim()) {
+    info(`attempt id ${attemptId}: to retry this same payment, pass --attempt-id ${attemptId}`);
+  }
+
   const client = new ApiClient({
     apiKey: opts.apiKey,
     baseUrl: opts.baseUrl,
@@ -45,7 +57,7 @@ export async function spendCommand(opts: SpendCommandOptions): Promise<void> {
 
   const result = await client.post("/v1/consumers/mandates/{id}/spend", {
     path: { id: opts.mandate },
-    body: { amount_minor: amountMinor, payee: opts.payee, agent_id: opts.agent },
+    body: { amount_minor: amountMinor, payee: opts.payee, agent_id: opts.agent, attempt_id: attemptId },
   });
 
   if (opts.json) {

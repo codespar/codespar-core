@@ -722,8 +722,9 @@ program
   .requiredOption("-p, --payee <payee>", "Pix key, EVM address, or x402 resource URL")
   .requiredOption("-a, --amount <minor>", "Amount in minor units (cents)")
   .requiredOption("--agent <id>", "Agent id making the spend")
+  .option("--attempt-id <id>", "Idempotency key: reuse it to retry the same payment (generated and printed if omitted)")
   .action(
-    async (opts: { mandate: string; payee: string; amount: string; agent: string }) => {
+    async (opts: { mandate: string; payee: string; amount: string; agent: string; attemptId?: string }) => {
       const auth = await resolveAuth();
       await spendCommand({
         ...opts,
