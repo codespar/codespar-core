@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { ApiClient } from "../api.js";
 import { CliError } from "../config.js";
-import { info, json, success } from "../output.js";
+import { info, json, setRecovery, success } from "../output.js";
 
 interface SpendCommandOptions {
   mandate: string;
@@ -45,7 +45,11 @@ export async function spendCommand(opts: SpendCommandOptions): Promise<void> {
   if (!opts.agent) throw new CliError("--agent <id> is required.");
 
   const attemptId = opts.attemptId?.trim() || `cli_${randomUUID()}`;
-  if (!opts.json && !opts.attemptId?.trim()) {
+  // Recorded before the call, so any failure (an API refusal, a timeout, a
+  // dropped connection) hands it back: on stderr for a person, and as
+  // `error.attempt_id` in the --json error document for a script.
+  setRecovery({ attempt_id: attemptId });
+  if (!opts.attemptId?.trim()) {
     info(`attempt id ${attemptId}: to retry this same payment, pass --attempt-id ${attemptId}`);
   }
 

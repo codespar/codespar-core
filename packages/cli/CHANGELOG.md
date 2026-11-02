@@ -8,7 +8,9 @@
   whose answer was lost and was repeated paid twice, and a Live project now
   refuses a spend without one (`attempt_id_required`, codespar-enterprise
   #2378). `--attempt-id <id>` is sent verbatim; without it a `cli_<uuid>` is
-  generated and printed with how to retry the same payment.
+  generated and printed with how to retry the same payment. The id is also
+  in the `--json` error document (`error.attempt_id`) of any failure, so a
+  script whose answer was lost retries with it instead of paying again.
 
 ## 0.22.5 — 2026-10-30
 

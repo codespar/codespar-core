@@ -54,7 +54,7 @@ import {
 import { pixKeysDeleteCommand, pixKeysListCommand, pixKeysRegisterCommand } from "./commands/pix-keys.js";
 import { accountStatementCommand, receiptsDocumentCommand } from "./commands/documents.js";
 import { derivedSurface, metaToolNames, underPrefix } from "./surface.js";
-import { c, json } from "./output.js";
+import { c, json, recoveryFields } from "./output.js";
 import { printBanner } from "./banner.js";
 import { VERSION } from "./version.js";
 
@@ -986,7 +986,7 @@ async function main() {
     message: string,
     extra: Record<string, unknown> = {},
   ): void => {
-    if (hasJsonFlag) json({ error: { kind, message, ...extra } });
+    if (hasJsonFlag) json({ error: { kind, message, ...extra, ...recoveryFields() } });
   };
 
   try {
