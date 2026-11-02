@@ -84,6 +84,21 @@ export function jsonLine(value: unknown): void {
   process.stdout.write(JSON.stringify(value) + "\n");
 }
 
+/**
+ * What a failed command must hand back so the caller can retry the SAME
+ * operation: `codespar spend` records its `attempt_id` here before it calls the
+ * API, and the `--json` error document carries it (`error.attempt_id`). Without
+ * it a script whose answer was lost (timeout, dropped connection) only had a
+ * generated id it never saw, and a retry with a new one is a second payment.
+ */
+const recovery: Record<string, unknown> = {};
+export function setRecovery(fields: Record<string, unknown>): void {
+  Object.assign(recovery, fields);
+}
+export function recoveryFields(): Record<string, unknown> {
+  return { ...recovery };
+}
+
 /** Info message to stderr (keeps stdout clean for scripting). */
 export function info(msg: string): void {
   process.stderr.write(`${c.blue("ℹ")} ${msg}\n`);
