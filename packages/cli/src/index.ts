@@ -54,7 +54,7 @@ import {
 import { pixKeysDeleteCommand, pixKeysListCommand, pixKeysRegisterCommand } from "./commands/pix-keys.js";
 import { accountStatementCommand, receiptsDocumentCommand } from "./commands/documents.js";
 import { derivedSurface, metaToolNames, underPrefix } from "./surface.js";
-import { c, json } from "./output.js";
+import { c, json, recoveryFields } from "./output.js";
 import { printBanner } from "./banner.js";
 import { VERSION } from "./version.js";
 
@@ -722,8 +722,9 @@ program
   .requiredOption("-p, --payee <payee>", "Pix key, EVM address, or x402 resource URL")
   .requiredOption("-a, --amount <minor>", "Amount in minor units (cents)")
   .requiredOption("--agent <id>", "Agent id making the spend")
+  .option("--attempt-id <id>", "Idempotency key: reuse it to retry the same payment (generated and printed if omitted)")
   .action(
-    async (opts: { mandate: string; payee: string; amount: string; agent: string }) => {
+    async (opts: { mandate: string; payee: string; amount: string; agent: string; attemptId?: string }) => {
       const auth = await resolveAuth();
       await spendCommand({
         ...opts,
@@ -985,7 +986,7 @@ async function main() {
     message: string,
     extra: Record<string, unknown> = {},
   ): void => {
-    if (hasJsonFlag) json({ error: { kind, message, ...extra } });
+    if (hasJsonFlag) json({ error: { kind, message, ...extra, ...recoveryFields() } });
   };
 
   try {
