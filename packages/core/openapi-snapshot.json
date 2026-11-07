@@ -1,8 +1,8 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-11-07T22:14:34.465Z",
-    "sha256": "e663353c1254c82455e896a78160504feee3e39654456d7e0a869aa02a67fb58",
+    "fetched_at": "2026-11-07T22:49:28.730Z",
+    "sha256": "84e5aabf9ee26b8d2fafcff96e9cbb1eb81e0bde785a866c35758c9a61bb5a4f",
     "etag": null,
     "last_modified": null,
     "info": {
@@ -111457,12 +111457,7 @@
                             "properties": {
                               "code": {
                                 "type": "string",
-                                "enum": [
-                                  "commitment_terms_changed",
-                                  "offer_stale",
-                                  "data_call_refused",
-                                  "data_provider_unavailable"
-                                ]
+                                "description": "commitment_terms_changed, data_call_refused, a mandate's or the Wallet's code: an unknown one is shown as a neutral text with the code."
                               },
                               "detail": {
                                 "type": "string"
@@ -111853,12 +111848,7 @@
                             "properties": {
                               "code": {
                                 "type": "string",
-                                "enum": [
-                                  "commitment_terms_changed",
-                                  "offer_stale",
-                                  "data_call_refused",
-                                  "data_provider_unavailable"
-                                ]
+                                "description": "commitment_terms_changed, data_call_refused, a mandate's or the Wallet's code: an unknown one is shown as a neutral text with the code."
                               },
                               "detail": {
                                 "type": "string"
@@ -112046,7 +112036,7 @@
               }
             },
             "409": {
-              "description": "No mandate permits the provider, or the project is not a Test one.",
+              "description": "No mandate permits the provider, the project is not a Test one, or the idempotency key drafted from another offer.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -112059,7 +112049,8 @@
                             "type": "string",
                             "enum": [
                               "proposal_no_mandate",
-                              "data_call_live_unavailable"
+                              "data_call_live_unavailable",
+                              "idempotency_key_reused"
                             ]
                           },
                           "message": {
@@ -112548,12 +112539,7 @@
                             "properties": {
                               "code": {
                                 "type": "string",
-                                "enum": [
-                                  "commitment_terms_changed",
-                                  "offer_stale",
-                                  "data_call_refused",
-                                  "data_provider_unavailable"
-                                ]
+                                "description": "commitment_terms_changed, data_call_refused, a mandate's or the Wallet's code: an unknown one is shown as a neutral text with the code."
                               },
                               "detail": {
                                 "type": "string"

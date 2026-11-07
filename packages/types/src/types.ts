@@ -317,7 +317,8 @@ export interface DataCall {
   commitment: { state: "not_started" | "claimed" | "dispatching" | "settled" | "uncertain" | "failed" | "cancelled"; attempt_id?: string; call_id?: string; at?: string };
   payment: { state: "none" | "held" | "debited" | "released"; held_minor?: number; debited_minor?: number; released_minor?: number; receipt_id?: string };
   confirmation: { state: "none" | "pending" | "confirmed" | "failed"; at?: string; source?: string; result_ref?: string };
-  error?: { code: "commitment_terms_changed" | "offer_stale" | "data_call_refused" | "data_provider_unavailable"; detail?: string };
+  /** Why it ended without a call, or was refused: `commitment_terms_changed`, `data_call_refused`, a mandate's or the Wallet's code, ... */
+  error?: { code: string; detail?: string };
   actions: { execute: boolean; cancel: boolean; requote: boolean };
 }
 
