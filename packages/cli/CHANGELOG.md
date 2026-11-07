@@ -1,5 +1,15 @@
 # @codespar/cli — changelog
 
+## Unreleased
+
+### Added
+
+- Derived commands `shop create-data-calls`, `shop get-data-calls` and
+  `shop data-calls-execute` (Shop G3.1). Their exit code is the outcome: 0
+  confirmed, 10 pending (the person still runs it), 20 refused by the API
+  (`person_required` included), 30 failure, 40 uncertain (an effect may have
+  happened). Every other command keeps exit 1 for any failure.
+
 ## 0.22.6 — 2026-11-01
 
 ### Fixed

@@ -236,6 +236,17 @@ export interface Session extends SessionBase {
    * (`BearerTokenHasNoPersonError` in the SDK). A session bound to a person
    * (MCP consent by login) arrives with Shop v0.3 increment 5.
    */
+  /**
+   * Shop G3.1 data calls (`/v1/shop/agent/data-calls`): draft one from a
+   * `data_service` offer of a research, and read it, the four states apart.
+   * A key never runs it: `execute` answers `person_required` (403).
+   * Optional: a runtime without the Shop omits it.
+   */
+  dataCalls?: {
+    create(input: DataCallCreateInput, opts?: CallOptions): Promise<DataCallCreated>;
+    get(proposalId: string, opts?: CallOptions): Promise<DataCall>;
+    execute(proposalId: string, opts?: CallOptions): Promise<never>;
+  };
   instruments?: {
     list(opts?: {
       /** @deprecated Ignored by the API since Shop v0.3: it no longer selects another person's cards. */
@@ -267,14 +278,62 @@ export type AgentPurchaseInput = {
 export interface AgentResearchInput {
   /** The pedido aberto, 2 to 200 characters. */
   query: string;
+  /** `product` (default), `service_plan`, `reservation`, or `data_service` (a per-call data service, Shop G3.1). */
+  taskKind?: "product" | "service_plan" | "reservation" | "data_service";
   criteria?: {
     priority?: "total" | "eta";
     /** Shipping included, in centavos. */
     maxTotalMinor?: number;
-    sources?: ("registry" | "vtex" | "meli")[];
+    sources?: ("registry" | "vtex" | "meli" | "web" | "data")[];
     /** Offers per source, 1 to 5. */
     limit?: number;
+    /** `taskKind: "data_service"`: the call's params, and the provider's SKU when named. */
+    dataService?: { params: Record<string, string>; sku?: string };
   };
+}
+
+/* ── Shop G3.1 data calls (`/v1/shop/agent/data-calls`) ── */
+
+/** A data call as the API answers it (`DataCallView`), the four states apart. */
+export interface DataCall {
+  proposal_id: string;
+  run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
+  awaiting: { reason: string; cause: string | null } | null;
+  offer: {
+    offer_id: string;
+    offer_kind: "data_service";
+    merchant_name: string;
+    title: string;
+    attributes: { coverage: string; refresh: string; license: string; unit: "call"; params: Record<string, string>; offer_version: number; terms_hash: string };
+    cost_lines: { kind: "call"; label: string; unit_minor: number; quantity: 1; amount_minor: number }[];
+    total_minor: number;
+    currency: "BRL";
+    observed_at: string;
+    valid_until: string;
+    source: { kind: "data_catalog" };
+  };
+  quotation: { state: "valid" | "stale" | "changed"; total_minor: number; previous_total_minor?: number; observed_at: string; valid_until: string };
+  authorization: { state: "needed" | "awaiting_approval" | "authorized" | "refused" | "expired"; amount_max_minor: number; approval_id?: string; expires_at?: string };
+  commitment: { state: "not_started" | "claimed" | "dispatching" | "settled" | "uncertain" | "failed" | "cancelled"; attempt_id?: string; call_id?: string; at?: string };
+  payment: { state: "none" | "held" | "debited" | "released"; held_minor?: number; debited_minor?: number; released_minor?: number; receipt_id?: string };
+  confirmation: { state: "none" | "pending" | "confirmed" | "failed"; at?: string; source?: string; result_ref?: string };
+  error?: { code: "commitment_terms_changed" | "offer_stale" | "data_call_refused" | "data_provider_unavailable"; detail?: string };
+  actions: { execute: boolean; cancel: boolean; requote: boolean };
+}
+
+/** `POST /v1/shop/agent/data-calls`: the draft, and whether the same idempotency key had drafted it already. */
+export interface DataCallCreated {
+  data_call: DataCall;
+  idempotent_replay: boolean;
+}
+
+export interface DataCallCreateInput {
+  /** The assistant (agent) the draft is made for: its mandate over the provider is the one used. */
+  agentId: string;
+  /** A `data_service` offer of this key's research (`sof_...`). */
+  offerId: string;
+  /** 8 to 128 of `[A-Za-z0-9_.:-]`: the same key answers the same draft. */
+  idempotencyKey: string;
 }
 
 export interface AgentResearchOffer {

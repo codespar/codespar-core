@@ -1,5 +1,12 @@
 # @codespar/types — CHANGELOG
 
+## Unreleased
+
+### Added
+
+- `DataCall`, `DataCallCreated`, `DataCallCreateInput` and `Session.dataCalls`
+  (Shop G3.1); `AgentResearchInput.taskKind` and `criteria.dataService`.
+
 ## 0.11.7 — 2026-10-30
 
 ### Added

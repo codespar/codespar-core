@@ -12,6 +12,8 @@ describe("Shop purchase MCP tools", () => {
     expect(SHOP_PURCHASE_MCP_TOOLS.map((t) => t.name)).toEqual([
       "codespar_shop_purchase_propose",
       "codespar_shop_research",
+      "codespar_shop_data_call_draft",
+      "codespar_shop_data_call_status",
       "codespar_shop_research_status",
       "codespar_shop_purchase_status",
       "codespar_shop_instruments",
@@ -84,5 +86,31 @@ describe("Shop purchase MCP tools", () => {
     expect(calls[2]).toEqual(["research.get", "srr_AbCdEfGhIjKlMnOp"]);
     await callShopPurchaseTool(session, "codespar_shop_purchase_propose", { agent_id: "ag", offer_id: "sof_AbCdEfGhIjKlMnOp", quantity: 2, idempotency_key: "idem_0002" });
     expect(calls[3]).toEqual(["create", { agentId: "ag", offerId: "sof_AbCdEfGhIjKlMnOp", quantity: 2, idempotencyKey: "idem_0002" }]);
+  });
+
+  it("Shop G3.1: a data-service research, a draft from its offer and a read; no run tool exists", async () => {
+    const calls: unknown[] = [];
+    const session = {
+      research: {
+        create: async (i: unknown) => (calls.push(["research.create", i]), { id: "srr_x" }),
+        get: async () => ({}),
+      },
+      dataCalls: {
+        create: async (i: unknown) => (calls.push(["dataCalls.create", i]), { data_call: {}, idempotent_replay: false }),
+        get: async (id: string) => (calls.push(["dataCalls.get", id]), {}),
+        execute: async () => {
+          throw new Error("never called");
+        },
+      },
+      purchases: { create: async () => ({}), get: async () => ({}) },
+      instruments: { list: async () => [] },
+    } as never;
+    await callShopPurchaseTool(session, "codespar_shop_research", { query: "consulta de CNPJ", task_kind: "data_service", data_service_params: { cnpj: "11222333000181" } });
+    expect(calls[0]).toEqual(["research.create", { query: "consulta de CNPJ", taskKind: "data_service", criteria: { dataService: { params: { cnpj: "11222333000181" } } } }]);
+    await callShopPurchaseTool(session, "codespar_shop_data_call_draft", { agent_id: "ag", offer_id: "sof_AbCdEfGhIjKlMnOp", idempotency_key: "idem_0003" });
+    expect(calls[1]).toEqual(["dataCalls.create", { agentId: "ag", offerId: "sof_AbCdEfGhIjKlMnOp", idempotencyKey: "idem_0003" }]);
+    await callShopPurchaseTool(session, "codespar_shop_data_call_status", { proposal_id: "prp_AbCdEfGhIjKlMnOp" });
+    expect(calls[2]).toEqual(["dataCalls.get", "prp_AbCdEfGhIjKlMnOp"]);
+    expect(SHOP_PURCHASE_MCP_TOOLS.some((t) => /execute|run/.test(t.name))).toBe(false);
   });
 });

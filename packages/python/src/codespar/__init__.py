@@ -29,6 +29,15 @@ from __future__ import annotations
 from ._async_client import AsyncCodeSpar
 from ._async_session import AsyncSession
 from ._sync_client import CodeSpar, Session
+from .data_calls import (
+    AsyncDataCalls,
+    AsyncResearch,
+    DataCall,
+    DataCallCreated,
+    DataCalls,
+    Research,
+    data_call_outcome,
+)
 from .documents import (
     Account,
     AsyncAccount,
@@ -204,8 +213,10 @@ __all__ = [
     "AssistantTextEvent",
     "AsyncAccount",
     "AsyncCodeSpar",
+    "AsyncDataCalls",
     "AsyncPayables",
     "AsyncReceipts",
+    "AsyncResearch",
     "AsyncSession",
     "AsyncWallet",
     "AsyncWalletPixKeys",
@@ -229,6 +240,9 @@ __all__ = [
     "ConnectionWizardInstructions",
     "ConnectionWizardOptions",
     "ConnectionWizardResult",
+    "DataCall",
+    "DataCallCreated",
+    "DataCalls",
     # Tool discovery (codespar_discover)
     "DiscoverOptions",
     "DiscoverPlanStep",
@@ -296,6 +310,7 @@ __all__ = [
     "ReceiptQuote",
     "Receipts",
     "RequiredSecret",
+    "Research",
     "SearchStrategy",
     "SendResult",
     "ServerConnection",
@@ -351,6 +366,7 @@ __all__ = [
     # Version
     "__version__",
     "assert_exhaustive_tool_result",
+    "data_call_outcome",
     "filename_from_disposition",
     "is_approval_required",
     "is_mocks_engine_error",

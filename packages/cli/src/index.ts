@@ -43,6 +43,7 @@ import {
   showMetaToolCommand,
 } from "./commands/meta-tool.js";
 import { runResourceCommand } from "./commands/resource.js";
+import { exitCodeForFailure, outcomeExitCodesOn } from "./exit-codes.js";
 import {
   payablesBatchCreateCommand,
   payablesBatchGetCommand,
@@ -1021,12 +1022,12 @@ async function main() {
         ...(err.code === undefined ? {} : { code: err.code }),
         ...(err.body === undefined ? {} : { body: err.body }),
       });
-      process.exit(1);
+      process.exit(outcomeExitCodesOn() ? exitCodeForFailure(err.status === undefined || err.status === 0 ? "network" : "api", err.status) : 1);
     }
     if (err instanceof TimeoutError) {
       process.stderr.write(`${c.red("✗")} ${err.message}\n`);
       falhou("timeout", err.message);
-      process.exit(1);
+      process.exit(outcomeExitCodesOn() ? exitCodeForFailure("timeout") : 1);
     }
     // Unexpected error — show stack so we can debug.
     process.stderr.write(`${c.red("✗ internal error:")}\n`);

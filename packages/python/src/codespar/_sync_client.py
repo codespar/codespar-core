@@ -22,6 +22,7 @@ from typing import Any, TypeVar
 from ._async_client import AsyncCodeSpar
 from ._async_session import AsyncSession
 from ._http import normalize_timeout
+from .data_calls import DataCalls, Research
 from .documents import Account, Receipts
 from .errors import ConfigError
 from .payables import Payables
@@ -343,6 +344,11 @@ class CodeSpar:
         self.payables = Payables(self._async.payables, self._runner)
         #: A consumer's own account: ``wallet.pix_keys`` over ``/v1/consumers/:id/pix-keys``.
         self.wallet = Wallet(self._async.wallet, self._runner)
+        #: Shop research (``/v1/shop/agent/research``): offers compared, one recommendation.
+        self.research = Research(self._async.research, self._runner)
+        #: Shop G3.1 data calls (``/v1/shop/agent/data-calls``):
+        #: a key drafts and reads; the person runs.
+        self.data_calls = DataCalls(self._async.data_calls, self._runner)
         #: The receipt document (comprovante) of a payment
         #: (``/v1/consumers/receipts/:id/document``).
         self.receipts = Receipts(self._async.receipts, self._runner)

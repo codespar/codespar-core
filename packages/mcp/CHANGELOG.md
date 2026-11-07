@@ -1,5 +1,13 @@
 # @codespar/mcp — changelog
 
+## Unreleased
+
+### Added
+
+- `codespar_shop_data_call_draft` and `codespar_shop_data_call_status`, and
+  `task_kind: "data_service"` on `codespar_shop_research` (Shop G3.1). There is
+  no run tool: running a data call is the person's authorization.
+
 ## 0.5.20 — 2026-10-30
 
 ### Added
