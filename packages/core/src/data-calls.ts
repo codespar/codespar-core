@@ -18,10 +18,32 @@
 
 import { CodesparApiError, networkErrorToApiError, throwFromResponse, TimeoutError } from "./errors.js";
 import { fetchWithTimeout } from "./internal/fetch.js";
-import type { DataCall, DataCallCreated, DataCallCreateInput } from "@codespar/types";
+import type { DataCall, DataCallCreated, DataCallCreateInput, DataCallNextAction, DataCallRead } from "@codespar/types";
 import type { CallOptions } from "./types.js";
 
-export type { DataCall, DataCallCreated, DataCallCreateInput };
+export type { DataCall, DataCallCreated, DataCallCreateInput, DataCallNextAction, DataCallRead };
+
+/**
+ * A key asked to run a data call: the API refused it (`person_required`, 403) and handed the protected action.
+ * `nextAction.url` is the call's card on the dashboard, behind the person's sign-in. Nothing was run. Hand the url to
+ * the person, then read the call by id (`get`) until `dataCallOutcome` is no longer `pending`.
+ */
+export class DataCallNeedsPersonError extends CodesparApiError {
+  readonly nextAction: DataCallNextAction | null;
+  constructor(cause: CodesparApiError, nextAction: DataCallNextAction | null) {
+    super(cause.message, { status: cause.status, code: cause.code, body: cause.body, cause });
+    Object.setPrototypeOf(this, DataCallNeedsPersonError.prototype);
+    this.name = "DataCallNeedsPersonError";
+    this.nextAction = nextAction;
+  }
+}
+
+/** The protected action in a `person_required` refusal's details, or null. */
+export function nextActionOfError(err: unknown): DataCallNextAction | null {
+  const body = (err as { body?: unknown } | null)?.body as { error?: { details?: { next_action?: unknown } } } | undefined;
+  const n = body?.error?.details?.next_action as DataCallNextAction | undefined;
+  return n && n.kind === "person_authorization" && typeof n.url === "string" ? n : null;
+}
 
 interface DataCallsDeps {
   baseUrl: string;
@@ -51,11 +73,15 @@ export function dataCallOutcome(d: DataCall): DataCallOutcome {
 export interface DataCalls {
   /** `POST /v1/shop/agent/data-calls`: draft a data call from a `data_service` offer. Nothing is reserved or sent. */
   create(input: DataCallCreateInput, opts?: CallOptions): Promise<DataCallCreated>;
-  /** `GET /v1/shop/agent/data-calls/:id`: where it stands, the four states apart. */
-  get(proposalId: string, opts?: CallOptions): Promise<DataCall>;
   /**
-   * `POST /v1/shop/agent/data-calls/:id/execute`: always refused for a key (`person_required`, 403), thrown as
-   * `CodesparApiError`. Present so the refusal is explicit, never a silent no-op.
+   * `GET /v1/shop/agent/data-calls/:id`: where it stands, the four states apart, and `next_action` while it waits for
+   * the person. A call sent and not known yet is reconciled on this read, never resent: read the same id again,
+   * across restarts, until it is no longer pending.
+   */
+  get(proposalId: string, opts?: CallOptions): Promise<DataCallRead>;
+  /**
+   * `POST /v1/shop/agent/data-calls/:id/execute`: always refused for a key, thrown as `DataCallNeedsPersonError`
+   * carrying `nextAction` (the person's protected action). Present so the refusal is explicit, never a silent no-op.
    */
   execute(proposalId: string, opts?: CallOptions): Promise<never>;
 }
@@ -95,11 +121,15 @@ export function createDataCalls(deps: DataCallsDeps): DataCalls {
       );
     },
     async get(proposalId, opts) {
-      const r = await call<{ data_call: DataCall }>("dataCalls.get", one(proposalId), { method: "GET", headers: { ...auth, Accept: "application/json" } }, opts);
-      return r.data_call;
+      return call<DataCallRead>("dataCalls.get", one(proposalId), { method: "GET", headers: { ...auth, Accept: "application/json" } }, opts);
     },
     async execute(proposalId, opts) {
-      await call<unknown>("dataCalls.execute", `${one(proposalId)}/execute`, { method: "POST", headers: { ...auth, Accept: "application/json" } }, opts);
+      try {
+        await call<unknown>("dataCalls.execute", `${one(proposalId)}/execute`, { method: "POST", headers: { ...auth, Accept: "application/json" } }, opts);
+      } catch (err) {
+        if (err instanceof CodesparApiError && err.code === "person_required") throw new DataCallNeedsPersonError(err, nextActionOfError(err));
+        throw err;
+      }
       // The route never answers 2xx for a key; reaching here means the API changed under this client.
       throw new Error("dataCalls.execute: the API answered a key's run without person_required; refusing to treat it as run");
     },

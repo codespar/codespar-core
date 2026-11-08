@@ -111,6 +111,19 @@ export const SHOP_PURCHASE_MCP_TOOLS: readonly McpToolDefinition[] = [
     },
   },
   {
+    name: "codespar_shop_data_call_request_authorization",
+    description:
+      "Ask for a drafted data call to be run. This key never runs it: the answer is the protected action for the person, " +
+      "a link to the call's card on the CodeSpar dashboard behind their own sign-in. Give the person the link, then follow " +
+      "the call with codespar_shop_data_call_status (by id, across restarts) until it is confirmed. Needs shop:purchases:write.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["proposal_id"],
+      properties: { proposal_id: { type: "string", pattern: "^prp_[A-Za-z0-9_-]{16}$" } },
+    },
+  },
+  {
     name: "codespar_shop_data_call_status",
     description:
       "Where a data call stands, the four states apart: an uncertain call (sent, outcome not known yet) is reconciled by " +
@@ -220,6 +233,23 @@ export async function callShopPurchaseTool(session: Session, name: string, args:
     case "codespar_shop_data_call_draft":
       if (!session.dataCalls) throw new Error("this runtime does not offer Shop data calls");
       return session.dataCalls.create({ agentId: String(args.agent_id ?? ""), offerId: String(args.offer_id ?? ""), idempotencyKey: String(args.idempotency_key ?? "") });
+    case "codespar_shop_data_call_request_authorization": {
+      if (!session.dataCalls) throw new Error("this runtime does not offer Shop data calls");
+      try {
+        await session.dataCalls.execute(String(args.proposal_id ?? ""));
+      } catch (err) {
+        // Read by code and shape, so an older @codespar/sdk inside the peer range is read the same way.
+        const body = (err as { code?: unknown; body?: { error?: { details?: { next_action?: { url?: unknown } } } } } | null) ?? null;
+        const url = body?.body?.error?.details?.next_action?.url;
+        if (body?.code === "person_required") {
+          return typeof url === "string"
+            ? `This call waits for the person: they open ${url}, sign in and run it on its card. Then follow it with codespar_shop_data_call_status.`
+            : "This call cannot be run now (it already ran, or can no longer run); read it with codespar_shop_data_call_status.";
+        }
+        throw err;
+      }
+      throw new Error("the API ran a data call for a key; refusing to report it as run");
+    }
     case "codespar_shop_data_call_status":
       if (!session.dataCalls) throw new Error("this runtime does not offer Shop data calls");
       return session.dataCalls.get(String(args.proposal_id ?? ""));

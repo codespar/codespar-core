@@ -128,4 +128,7 @@ export async function runResourceCommand(
   }
   info(`${command.method.toUpperCase()} ${command.path}`);
   renderResult(result);
+  // While a data call waits for the person: the protected action, for them to open (criterion 5).
+  const next = (result as { next_action?: { url?: unknown } | null } | null)?.next_action;
+  if (dataCall && next && typeof next.url === "string") info(`A pessoa executa esta consulta em: ${next.url}`);
 }

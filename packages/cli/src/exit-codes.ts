@@ -13,7 +13,7 @@
  * Every other command keeps exit 1 for any failure: a command opts in, so
  * a script that already branches on 1 never sees its meaning change.
  */
-import { dataCallOutcome, type DataCall } from "@codespar/sdk";
+import { dataCallOutcome, nextActionOfError, type DataCall } from "@codespar/sdk";
 
 export const EXIT = { ok: 0, pending: 10, refused: 20, failed: 30, uncertain: 40, usage: 1 } as const;
 
@@ -50,6 +50,15 @@ export function exitCodeForDataCall(view: DataCall): number {
     case "uncertain":
       return EXIT.uncertain;
   }
+}
+
+/**
+ * A refusal that hands the person's protected action (criterion 5: a key asked to run a data call): the step is
+ * pending on the person, not refused. Returns the url to print, or null.
+ */
+export function pendingOnPerson(err: unknown): string | null {
+  if (!policy.on || (err as { code?: unknown } | null)?.code !== "person_required") return null;
+  return nextActionOfError(err)?.url ?? null;
 }
 
 /** The code of a failure of an opted-in command: the API's refusal, a server error, the network or a timeout. */

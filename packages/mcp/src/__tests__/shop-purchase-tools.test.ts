@@ -13,6 +13,7 @@ describe("Shop purchase MCP tools", () => {
       "codespar_shop_purchase_propose",
       "codespar_shop_research",
       "codespar_shop_data_call_draft",
+      "codespar_shop_data_call_request_authorization",
       "codespar_shop_data_call_status",
       "codespar_shop_research_status",
       "codespar_shop_purchase_status",
@@ -99,7 +100,10 @@ describe("Shop purchase MCP tools", () => {
         create: async (i: unknown) => (calls.push(["dataCalls.create", i]), { data_call: {}, idempotent_replay: false }),
         get: async (id: string) => (calls.push(["dataCalls.get", id]), {}),
         execute: async () => {
-          throw new Error("never called");
+          throw Object.assign(new Error("person_required"), {
+            code: "person_required",
+            body: { error: { details: { next_action: { url: "https://codespar.dev/dashboard/shop/data-calls/prp_AbCdEfGhIjKlMnOp" } } } },
+          });
         },
       },
       purchases: { create: async () => ({}), get: async () => ({}) },
@@ -112,5 +116,7 @@ describe("Shop purchase MCP tools", () => {
     await callShopPurchaseTool(session, "codespar_shop_data_call_status", { proposal_id: "prp_AbCdEfGhIjKlMnOp" });
     expect(calls[2]).toEqual(["dataCalls.get", "prp_AbCdEfGhIjKlMnOp"]);
     expect(SHOP_PURCHASE_MCP_TOOLS.some((t) => /execute|run/.test(t.name))).toBe(false);
+    const asked = await callShopPurchaseTool(session, "codespar_shop_data_call_request_authorization", { proposal_id: "prp_AbCdEfGhIjKlMnOp" });
+    expect(asked).toContain("https://codespar.dev/dashboard/shop/data-calls/prp_AbCdEfGhIjKlMnOp");
   });
 });

@@ -70,11 +70,50 @@ class DataCall(TypedDict, total=False):
     actions: dict[str, bool]
 
 
-class DataCallCreated(TypedDict):
-    """``POST /v1/shop/agent/data-calls``."""
+class DataCallNextAction(TypedDict):
+    """The protected action while a call waits for the person: its card, behind their sign-in."""
+
+    kind: Literal["person_authorization"]
+    url: str
+    proposal_id: str
+    description: str
+
+
+class DataCallRead(TypedDict):
+    """``GET /v1/shop/agent/data-calls/:id``: the call and its protected action.
+
+    ``next_action`` is set while the call waits for the person, None otherwise.
+    """
 
     data_call: DataCall
+    next_action: DataCallNextAction | None
+
+
+class DataCallCreated(DataCallRead):
+    """``POST /v1/shop/agent/data-calls``."""
+
     idempotent_replay: bool
+
+
+def next_action_of(err: BaseException) -> DataCallNextAction | None:
+    """The protected action in a ``person_required`` refusal (``ApiError``), or None."""
+    if (
+        not isinstance(err, ApiError)
+        or err.code != "person_required"
+        or not isinstance(err.body, dict)
+    ):
+        return None
+    error = err.body.get("error")
+    details = error.get("details") if isinstance(error, dict) else None
+    action = details.get("next_action") if isinstance(details, dict) else None
+    if (
+        isinstance(action, dict)
+        and action.get("kind") == "person_authorization"
+        and isinstance(action.get("url"), str)
+    ):
+        result: DataCallNextAction = action  # type: ignore[assignment]
+        return result
+    return None
 
 
 def data_call_outcome(d: DataCall) -> DataCallOutcome:
@@ -167,18 +206,22 @@ class AsyncDataCalls(_Rest):
         )
         return data
 
-    async def get(self, proposal_id: str, *, timeout: float | None = None) -> DataCall:
-        """``GET /v1/shop/agent/data-calls/:id``: where it stands, the four states apart."""
-        data = await self._call(
+    async def get(self, proposal_id: str, *, timeout: float | None = None) -> DataCallRead:
+        """``GET /v1/shop/agent/data-calls/:id``: where it stands, the four states apart.
+
+        An uncertain call is reconciled on this read, never resent: read the same id
+        again, across restarts, until it is no longer pending.
+        """
+        data: DataCallRead = await self._call(
             "GET", f"/v1/shop/agent/data-calls/{quote(proposal_id, safe='')}", timeout=timeout
         )
-        call: DataCall = data["data_call"]
-        return call
+        return data
 
     async def execute(self, proposal_id: str, *, timeout: float | None = None) -> DataCall:
         """``POST /v1/shop/agent/data-calls/:id/execute``: always refused for a key.
 
-        The API answers ``person_required`` (403).
+        The API answers ``person_required`` (403) with the person's protected action:
+        ``next_action_of(err)`` reads it from the raised ``ApiError``.
 
         Raises ``ApiError``; present so the refusal is explicit, never a silent no-op.
         """
@@ -237,7 +280,7 @@ class DataCalls:
             )
         )
 
-    def get(self, proposal_id: str, *, timeout: float | None = None) -> DataCall:
+    def get(self, proposal_id: str, *, timeout: float | None = None) -> DataCallRead:
         return self._runner.run(self._inner.get(proposal_id, timeout=timeout))
 
     def execute(self, proposal_id: str, *, timeout: float | None = None) -> DataCall:

@@ -4,7 +4,7 @@
  * uses them; every other command keeps exit 1 for any failure.
  */
 import { afterEach, describe, expect, it } from "vitest";
-import { EXIT, exitCodeForDataCall, exitCodeForFailure, outcomeExitCodesOn, resetExitPolicy, useOutcomeExitCodes } from "../exit-codes.js";
+import { EXIT, exitCodeForDataCall, exitCodeForFailure, outcomeExitCodesOn, pendingOnPerson, resetExitPolicy, useOutcomeExitCodes } from "../exit-codes.js";
 
 afterEach(() => resetExitPolicy());
 
@@ -51,5 +51,22 @@ describe("exit codes of a failure", () => {
     useOutcomeExitCodes({ effect: true });
     expect(exitCodeForFailure("timeout")).toBe(EXIT.uncertain);
     expect(exitCodeForFailure("network")).toBe(EXIT.uncertain);
+  });
+});
+
+describe("a key asked to run a data call: pending on the person, with their protected action", () => {
+  const refusal = (url?: string) =>
+    Object.assign(new Error("person_required"), { code: "person_required", status: 403, body: { error: { code: "person_required", details: url ? { next_action: { kind: "person_authorization", url } } : {} } } });
+
+  it("an opted-in command gets the url to print (and exits pending)", () => {
+    useOutcomeExitCodes({ effect: true });
+    expect(pendingOnPerson(refusal("https://codespar.dev/dashboard/shop/data-calls/prp_x"))).toBe("https://codespar.dev/dashboard/shop/data-calls/prp_x");
+  });
+
+  it("without the protected action, or outside an opted-in command, it is a plain refusal", () => {
+    useOutcomeExitCodes({ effect: true });
+    expect(pendingOnPerson(refusal())).toBeNull();
+    resetExitPolicy();
+    expect(pendingOnPerson(refusal("https://codespar.dev/dashboard/shop/data-calls/prp_x"))).toBeNull();
   });
 });

@@ -70,8 +70,8 @@ export type {
 } from "./types.js";
 export { PIX_KEY_DELETE_CONSEQUENCE, PixKeyDeleteNotConfirmedError } from "./wallet.js";
 export type { Wallet, WalletPixKeys } from "./wallet.js";
-export { dataCallOutcome } from "./data-calls.js";
-export type { DataCall, DataCallCreated, DataCallCreateInput, DataCallOutcome, DataCalls } from "./data-calls.js";
+export { dataCallOutcome, DataCallNeedsPersonError, nextActionOfError } from "./data-calls.js";
+export type { DataCall, DataCallCreated, DataCallCreateInput, DataCallNextAction, DataCallOutcome, DataCallRead, DataCalls } from "./data-calls.js";
 export { filenameFromDisposition } from "./documents.js";
 export type { Account, Document, DocumentFormat, ReceiptDocumentOptions, Receipts, StatementDocument, StatementOptions } from "./documents.js";
 

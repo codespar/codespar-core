@@ -244,7 +244,7 @@ export interface Session extends SessionBase {
    */
   dataCalls?: {
     create(input: DataCallCreateInput, opts?: CallOptions): Promise<DataCallCreated>;
-    get(proposalId: string, opts?: CallOptions): Promise<DataCall>;
+    get(proposalId: string, opts?: CallOptions): Promise<DataCallRead>;
     execute(proposalId: string, opts?: CallOptions): Promise<never>;
   };
   instruments?: {
@@ -322,9 +322,25 @@ export interface DataCall {
   actions: { execute: boolean; cancel: boolean; requote: boolean };
 }
 
-/** `POST /v1/shop/agent/data-calls`: the draft, and whether the same idempotency key had drafted it already. */
-export interface DataCallCreated {
+/**
+ * The protected action while a data call waits for the person (criterion 5): the call's card on the dashboard,
+ * behind the person's own sign-in. Only the call's id is in the url. Hand it to the person; then read the call by id.
+ */
+export interface DataCallNextAction {
+  kind: "person_authorization";
+  url: string;
+  proposal_id: string;
+  description: string;
+}
+
+/** `GET /v1/shop/agent/data-calls/:id`: the call, and while it waits for the person, the protected action. */
+export interface DataCallRead {
   data_call: DataCall;
+  next_action: DataCallNextAction | null;
+}
+
+/** `POST /v1/shop/agent/data-calls`: the draft, its protected action, and whether the same idempotency key had drafted it already. */
+export interface DataCallCreated extends DataCallRead {
   idempotent_replay: boolean;
 }
 

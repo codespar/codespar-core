@@ -12,11 +12,13 @@ import json
 import pytest
 from pytest_httpx import HTTPXMock
 
-from codespar import ApiError, AsyncCodeSpar, CodeSpar, data_call_outcome
+from codespar import ApiError, AsyncCodeSpar, CodeSpar, data_call_outcome, next_action_of
 
 BASE = "https://api.codespar.dev"
 PID = "prp_AbCdEfGhIjKlMnOp"
 OFFER = "sof_AbCdEfGhIjKlMnOp"
+URL = f"https://codespar.dev/dashboard/shop/data-calls/{PID}"
+NEXT = {"kind": "person_authorization", "url": URL, "proposal_id": PID, "description": "x"}
 VIEW = {
     "proposal_id": PID,
     "run_state": "ready",
@@ -45,7 +47,9 @@ async def test_research_of_a_data_service_and_a_draft_from_its_offer(httpx_mock:
         status_code=201,
     )
     httpx_mock.add_response(
-        method="GET", url=f"{BASE}/v1/shop/agent/data-calls/{PID}", json={"data_call": VIEW}
+        method="GET",
+        url=f"{BASE}/v1/shop/agent/data-calls/{PID}",
+        json={"data_call": VIEW, "next_action": NEXT},
     )
     async with AsyncCodeSpar(api_key="csk_test_x") as cs:
         research = await cs.research.create(
@@ -58,7 +62,7 @@ async def test_research_of_a_data_service_and_a_draft_from_its_offer(httpx_mock:
         )
         read = await cs.data_calls.get(PID)
     assert created == {"data_call": VIEW, "idempotent_replay": False}
-    assert read == VIEW
+    assert read == {"data_call": VIEW, "next_action": NEXT}
     r, d, _ = httpx_mock.get_requests()
     assert json.loads(r.content) == {
         "query": "consulta de CNPJ",
@@ -81,6 +85,7 @@ async def test_a_keys_execute_is_person_required_never_a_run(httpx_mock: HTTPXMo
             "error": {
                 "code": "person_required",
                 "message": "running a data call is the person's authorization",
+                "details": {"next_action": NEXT},
             }
         },
         status_code=403,
@@ -90,14 +95,18 @@ async def test_a_keys_execute_is_person_required_never_a_run(httpx_mock: HTTPXMo
             await cs.data_calls.execute(PID)
     assert caught.value.status == 403
     assert caught.value.code == "person_required"
+    action = next_action_of(caught.value)
+    assert action is not None and action["url"] == URL
 
 
 def test_the_sync_client_reads_the_same_wire(httpx_mock: HTTPXMock) -> None:
     httpx_mock.add_response(
-        method="GET", url=f"{BASE}/v1/shop/agent/data-calls/{PID}", json={"data_call": VIEW}
+        method="GET",
+        url=f"{BASE}/v1/shop/agent/data-calls/{PID}",
+        json={"data_call": VIEW, "next_action": NEXT},
     )
     with CodeSpar(api_key="csk_test_x") as cs:
-        assert cs.data_calls.get(PID) == VIEW
+        assert cs.data_calls.get(PID)["data_call"] == VIEW
 
 
 def test_the_outcome_reads_the_four_states_apart() -> None:
