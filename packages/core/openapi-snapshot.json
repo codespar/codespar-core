@@ -1,8 +1,8 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-11-07T22:49:28.730Z",
-    "sha256": "84e5aabf9ee26b8d2fafcff96e9cbb1eb81e0bde785a866c35758c9a61bb5a4f",
+    "fetched_at": "2026-11-08T03:49:09.330Z",
+    "sha256": "5495b828036f355738c4b07d426b7e2b15208b9005d6c0324f621d79956348e3",
     "etag": null,
     "last_modified": null,
     "info": {
@@ -111088,7 +111088,7 @@
       "/v1/shop/agent/data-calls": {
         "post": {
           "summary": "Draft a data call from a data_service offer (never run)",
-          "description": "Scope `shop:purchases:write`. Shop G3.1: `offer_id` names a `data_service` offer of this key's research (`POST /v1/shop/agent/research` with `task_kind: \"data_service\"`). The provider quotes the call again and the call is drafted at those terms under the agent's mandate; nothing is reserved or sent. The answer shows the four states apart: quotation, authorization, commitment (the call), payment (Wallet) and the provider's confirmation. The same `agent_id` and `idempotency_key` answer the same draft (`idempotent_replay: true`). Running it is the person's authorization: a key never runs it (`POST .../execute` answers `person_required`). Test projects only.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
+          "description": "Scope `shop:purchases:write`. Shop G3.1: `offer_id` names a `data_service` offer of this key's research (`POST /v1/shop/agent/research` with `task_kind: \"data_service\"`). The provider quotes the call again and the call is drafted at those terms under the agent's mandate; nothing is reserved or sent. The answer shows the four states apart: quotation, authorization, commitment (the call), payment (Wallet) and the provider's confirmation. The same `agent_id` and `idempotency_key` answer the same draft (`idempotent_replay: true`). Running it is the person's authorization: a key never runs it. While it waits for the person, `next_action` is the protected action to hand them: `{ kind: \"person_authorization\", url }`, the call's card on the dashboard behind their sign-in (only the call's id is in the url). Test projects only.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
           "requestBody": {
             "content": {
               "application/json": {
@@ -111500,12 +111500,43 @@
                           "actions"
                         ]
                       },
+                      "next_action": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "person_authorization"
+                            ]
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "The call's card on the dashboard, behind the person's sign-in; only the call's id is in it."
+                          },
+                          "proposal_id": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "url",
+                          "proposal_id",
+                          "description"
+                        ]
+                      },
                       "idempotent_replay": {
                         "type": "boolean"
                       }
                     },
                     "required": [
                       "data_call",
+                      "next_action",
                       "idempotent_replay"
                     ]
                   }
@@ -111891,12 +111922,43 @@
                           "actions"
                         ]
                       },
+                      "next_action": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "person_authorization"
+                            ]
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "The call's card on the dashboard, behind the person's sign-in; only the call's id is in it."
+                          },
+                          "proposal_id": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "url",
+                          "proposal_id",
+                          "description"
+                        ]
+                      },
                       "idempotent_replay": {
                         "type": "boolean"
                       }
                     },
                     "required": [
                       "data_call",
+                      "next_action",
                       "idempotent_replay"
                     ]
                   }
@@ -112189,7 +112251,7 @@
       "/v1/shop/agent/data-calls/{id}": {
         "get": {
           "summary": "Read a data call back",
-          "description": "Scope `shop:purchases:read`. The data call with its four states apart, as the Shop's card shows it.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
+          "description": "Scope `shop:purchases:read`. The data call with its four states apart, as the Shop's card shows it. A call sent and not known yet is reconciled by the provider's lookup on this read, never resent: read the same id again, across restarts, until `confirmation.state` is `confirmed` (or the call failed). `next_action` while it waits for the person.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
           "parameters": [
             {
               "schema": {
@@ -112581,10 +112643,41 @@
                           "confirmation",
                           "actions"
                         ]
+                      },
+                      "next_action": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "person_authorization"
+                            ]
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "The call's card on the dashboard, behind the person's sign-in; only the call's id is in it."
+                          },
+                          "proposal_id": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "url",
+                          "proposal_id",
+                          "description"
+                        ]
                       }
                     },
                     "required": [
-                      "data_call"
+                      "data_call",
+                      "next_action"
                     ]
                   }
                 }
@@ -112667,7 +112760,7 @@
       "/v1/shop/agent/data-calls/{id}/execute": {
         "post": {
           "summary": "Run a data call: always refused for a key",
-          "description": "Scope `shop:purchases:write`. Running a data call reserves the Wallet and makes the provider's call: that is the person's authorization, and a key never gives it. This route always answers `person_required` (403); the person runs the call in the Shop (Executar consulta) or through an MCP client with their login.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
+          "description": "Scope `shop:purchases:write`. Running a data call reserves the Wallet and makes the provider's call: that is the person's authorization, and a key never gives it. This route always answers `person_required` (403), with `details.next_action` (the protected action: the call's card on the dashboard, behind the person's sign-in) and `details.data_call`. The person runs it there, or through an MCP client with their full-access login; then read it back by id.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
           "parameters": [
             {
               "schema": {
@@ -112682,7 +112775,7 @@
           ],
           "responses": {
             "403": {
-              "description": "A key never runs a data call.",
+              "description": "A key never runs a data call; `details.next_action` is the person's way.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -112721,6 +112814,27 @@
                     "required": [
                       "error",
                       "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "not_found"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "error"
                     ]
                   }
                 }

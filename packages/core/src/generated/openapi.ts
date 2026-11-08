@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 84e5aabf9ee26b8d2fafcff96e9cbb1eb81e0bde785a866c35758c9a61bb5a4f, fetched 2026-11-07T22:49:28.730Z
+// Source: openapi-snapshot.json (sha256 5495b828036f355738c4b07d426b7e2b15208b9005d6c0324f621d79956348e3, fetched 2026-11-08T03:49:09.330Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -46034,7 +46034,7 @@ export interface paths {
         put?: never;
         /**
          * Draft a data call from a data_service offer (never run)
-         * @description Scope `shop:purchases:write`. Shop G3.1: `offer_id` names a `data_service` offer of this key's research (`POST /v1/shop/agent/research` with `task_kind: "data_service"`). The provider quotes the call again and the call is drafted at those terms under the agent's mandate; nothing is reserved or sent. The answer shows the four states apart: quotation, authorization, commitment (the call), payment (Wallet) and the provider's confirmation. The same `agent_id` and `idempotency_key` answer the same draft (`idempotent_replay: true`). Running it is the person's authorization: a key never runs it (`POST .../execute` answers `person_required`). Test projects only.
+         * @description Scope `shop:purchases:write`. Shop G3.1: `offer_id` names a `data_service` offer of this key's research (`POST /v1/shop/agent/research` with `task_kind: "data_service"`). The provider quotes the call again and the call is drafted at those terms under the agent's mandate; nothing is reserved or sent. The answer shows the four states apart: quotation, authorization, commitment (the call), payment (Wallet) and the provider's confirmation. The same `agent_id` and `idempotency_key` answer the same draft (`idempotent_replay: true`). Running it is the person's authorization: a key never runs it. While it waits for the person, `next_action` is the protected action to hand them: `{ kind: "person_authorization", url }`, the call's card on the dashboard behind their sign-in (only the call's id is in the url). Test projects only.
          *
          *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
          */
@@ -46166,6 +46166,14 @@ export interface paths {
                                     requote: boolean;
                                 };
                             };
+                            next_action: {
+                                /** @enum {string} */
+                                kind: "person_authorization";
+                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's id is in it. */
+                                url: string;
+                                proposal_id: string;
+                                description: string;
+                            } | null;
                             idempotent_replay: boolean;
                         };
                     };
@@ -46280,6 +46288,14 @@ export interface paths {
                                     requote: boolean;
                                 };
                             };
+                            next_action: {
+                                /** @enum {string} */
+                                kind: "person_authorization";
+                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's id is in it. */
+                                url: string;
+                                proposal_id: string;
+                                description: string;
+                            } | null;
                             idempotent_replay: boolean;
                         };
                     };
@@ -46420,7 +46436,7 @@ export interface paths {
         };
         /**
          * Read a data call back
-         * @description Scope `shop:purchases:read`. The data call with its four states apart, as the Shop's card shows it.
+         * @description Scope `shop:purchases:read`. The data call with its four states apart, as the Shop's card shows it. A call sent and not known yet is reconciled by the provider's lookup on this read, never resent: read the same id again, across restarts, until `confirmation.state` is `confirmed` (or the call failed). `next_action` while it waits for the person.
          *
          *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
          */
@@ -46546,6 +46562,14 @@ export interface paths {
                                     requote: boolean;
                                 };
                             };
+                            next_action: {
+                                /** @enum {string} */
+                                kind: "person_authorization";
+                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's id is in it. */
+                                url: string;
+                                proposal_id: string;
+                                description: string;
+                            } | null;
                         };
                     };
                 };
@@ -46601,7 +46625,7 @@ export interface paths {
         put?: never;
         /**
          * Run a data call: always refused for a key
-         * @description Scope `shop:purchases:write`. Running a data call reserves the Wallet and makes the provider's call: that is the person's authorization, and a key never gives it. This route always answers `person_required` (403); the person runs the call in the Shop (Executar consulta) or through an MCP client with their login.
+         * @description Scope `shop:purchases:write`. Running a data call reserves the Wallet and makes the provider's call: that is the person's authorization, and a key never gives it. This route always answers `person_required` (403), with `details.next_action` (the protected action: the call's card on the dashboard, behind the person's sign-in) and `details.data_call`. The person runs it there, or through an MCP client with their full-access login; then read it back by id.
          *
          *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
          */
@@ -46617,7 +46641,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description A key never runs a data call. */
+                /** @description A key never runs a data call; `details.next_action` is the person's way. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -46634,6 +46658,18 @@ export interface paths {
                             };
                             /** @description Echoes the `X-Request-Id` header when the request carried one. */
                             request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
                         };
                     };
                 };
