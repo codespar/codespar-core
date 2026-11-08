@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 5495b828036f355738c4b07d426b7e2b15208b9005d6c0324f621d79956348e3, fetched 2026-11-08T03:49:09.330Z
+// Source: openapi-snapshot.json (sha256 336015728bcef0492980f7a93de26a69c7d5c45cd0205a3eadbe316149d31e9b, fetched 2026-11-08T06:08:25.993Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -46034,7 +46034,7 @@ export interface paths {
         put?: never;
         /**
          * Draft a data call from a data_service offer (never run)
-         * @description Scope `shop:purchases:write`. Shop G3.1: `offer_id` names a `data_service` offer of this key's research (`POST /v1/shop/agent/research` with `task_kind: "data_service"`). The provider quotes the call again and the call is drafted at those terms under the agent's mandate; nothing is reserved or sent. The answer shows the four states apart: quotation, authorization, commitment (the call), payment (Wallet) and the provider's confirmation. The same `agent_id` and `idempotency_key` answer the same draft (`idempotent_replay: true`). Running it is the person's authorization: a key never runs it. While it waits for the person, `next_action` is the protected action to hand them: `{ kind: "person_authorization", url }`, the call's card on the dashboard behind their sign-in (only the call's id is in the url). Test projects only.
+         * @description Scope `shop:purchases:write`. Shop G3.1: `offer_id` names a `data_service` offer of this key's research (`POST /v1/shop/agent/research` with `task_kind: "data_service"`). The provider quotes the call again and the call is drafted at those terms under the agent's mandate; nothing is reserved or sent. The answer shows the four states apart: quotation, authorization, commitment (the call), payment (Wallet) and the provider's confirmation. The same `agent_id` and `idempotency_key` answer the same draft (`idempotent_replay: true`). Running it is the person's authorization: a key never runs it. While it waits for the person, `next_action` is the protected action to hand them: `{ kind: "person_authorization", url }`, the call's card on the dashboard behind their sign-in (only the call's and the project's ids are in the url). Test projects only.
          *
          *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
          */
@@ -46169,7 +46169,7 @@ export interface paths {
                             next_action: {
                                 /** @enum {string} */
                                 kind: "person_authorization";
-                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's id is in it. */
+                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's and the project's ids are in it. */
                                 url: string;
                                 proposal_id: string;
                                 description: string;
@@ -46291,7 +46291,7 @@ export interface paths {
                             next_action: {
                                 /** @enum {string} */
                                 kind: "person_authorization";
-                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's id is in it. */
+                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's and the project's ids are in it. */
                                 url: string;
                                 proposal_id: string;
                                 description: string;
@@ -46565,7 +46565,7 @@ export interface paths {
                             next_action: {
                                 /** @enum {string} */
                                 kind: "person_authorization";
-                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's id is in it. */
+                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's and the project's ids are in it. */
                                 url: string;
                                 proposal_id: string;
                                 description: string;
