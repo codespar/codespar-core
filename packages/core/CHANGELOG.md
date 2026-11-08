@@ -1,5 +1,22 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.29 — 2026-11-08
+
+### Added
+
+- **Shop G3.1 data calls**: `cs.dataCalls` (and `session.dataCalls`) over
+  `/v1/shop/agent/data-calls`: `create({ agentId, offerId, idempotencyKey })`
+  drafts a data call from a `data_service` offer of a research, `get(id)` reads
+  it with the four states apart (quotation, authorization, commitment, payment,
+  confirmation), and `execute(id)` surfaces the API's `person_required` (403):
+  a key never runs a data call, the person does. `dataCallOutcome(view)` reads
+  one word (`succeeded`, `pending`, `refused`, `failed`, `uncertain`).
+- `session.research.create` takes `taskKind` (`data_service` among them) and
+  `criteria.dataService { params, sku? }`.
+- OpenAPI snapshot: the three data-call operations and the research body with
+  `task_kind`, from the enterprise routes of Shop G3.1 (served once they are
+  deployed; `spec:check` compares the served document then).
+
 ## 0.16.28 — 2026-10-30
 
 ### Added

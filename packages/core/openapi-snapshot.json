@@ -1,16 +1,16 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-10-31T00:54:41.356Z",
-    "sha256": "4ae3274e16aa0655cacab1b3a1f0c1fbe8ad710fe2c0184c9b0aa816fdd0095c",
+    "fetched_at": "2026-11-08T06:08:25.993Z",
+    "sha256": "336015728bcef0492980f7a93de26a69c7d5c45cd0205a3eadbe316149d31e9b",
     "etag": null,
     "last_modified": null,
     "info": {
       "title": "CodeSpar AgentGate API",
       "version": "0.3.0"
     },
-    "paths": 317,
-    "operations": 373,
+    "paths": 320,
+    "operations": 376,
     "generator": "openapi-typescript@7.13.0"
   },
   "document": {
@@ -110547,6 +110547,16 @@
                       "maxLength": 200,
                       "description": "The pedido aberto, as the person said it (e.g. \"fone bluetooth\")."
                     },
+                    "task_kind": {
+                      "type": "string",
+                      "enum": [
+                        "product",
+                        "service_plan",
+                        "reservation",
+                        "data_service"
+                      ],
+                      "description": "product (default), service_plan, reservation or data_service (a per-call data service, executed by a data call)."
+                    },
                     "criteria": {
                       "type": "object",
                       "properties": {
@@ -110571,18 +110581,176 @@
                             "enum": [
                               "registry",
                               "vtex",
-                              "meli"
+                              "meli",
+                              "web",
+                              "data"
                             ]
                           },
                           "minItems": 1,
-                          "maxItems": 3,
-                          "description": "Where to look: `registry` (the stores the Shop can buy at), `vtex` and `meli` (comparison only). Default: `registry` in Test, `vtex` and `meli` in Live."
+                          "maxItems": 5,
+                          "description": "Where to look: `registry` (the stores the Shop can buy at), `vtex` and `meli` (comparison only), `web` (the origins named in sources.origins), `data` (the data-service providers, for task_kind data_service). Default: `registry` in Test, `vtex` and `meli` in Live; `data` for a data service."
                         },
                         "limit": {
                           "type": "integer",
                           "minimum": 1,
                           "maximum": 5,
                           "description": "Offers per source, 1 to 5 (default 5)."
+                        },
+                        "reservation": {
+                          "type": "object",
+                          "properties": {
+                            "check_in": {
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                              "description": "Check-in day, YYYY-MM-DD (São Paulo)."
+                            },
+                            "check_out": {
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                              "description": "Check-out day, YYYY-MM-DD, after check_in."
+                            },
+                            "occupants": {
+                              "type": "object",
+                              "properties": {
+                                "adults": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 10
+                                },
+                                "children": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 10
+                                }
+                              },
+                              "required": [
+                                "adults"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "location": {
+                              "type": "string",
+                              "minLength": 2,
+                              "maxLength": 120,
+                              "description": "Where, as the person said it."
+                            }
+                          },
+                          "required": [
+                            "check_in",
+                            "check_out",
+                            "occupants"
+                          ],
+                          "additionalProperties": false,
+                          "description": "task_kind reservation: check_in, check_out, occupants, location."
+                        },
+                        "service_plan": {
+                          "type": "object",
+                          "properties": {
+                            "licenses": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 10000,
+                              "description": "How many seats or licenses."
+                            },
+                            "period": {
+                              "type": "string",
+                              "enum": [
+                                "monthly",
+                                "annual"
+                              ],
+                              "description": "The billing period to compare on."
+                            }
+                          },
+                          "required": [
+                            "licenses",
+                            "period"
+                          ],
+                          "additionalProperties": false,
+                          "description": "task_kind service_plan: licenses and period."
+                        },
+                        "data_service": {
+                          "type": "object",
+                          "properties": {
+                            "params": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "description": "The call's params, e.g. { cnpj: \"11222333000181\" }."
+                            },
+                            "sku": {
+                              "type": "string",
+                              "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+                              "description": "The provider's SKU, when the person named one."
+                            }
+                          },
+                          "required": [
+                            "params"
+                          ],
+                          "additionalProperties": false,
+                          "description": "task_kind data_service: the call's params, and the SKU when the person named one."
+                        },
+                        "required": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "free_cancellation",
+                              "breakfast_included",
+                              "invoice",
+                              "refundable",
+                              "location"
+                            ]
+                          },
+                          "maxItems": 5,
+                          "description": "Conditions an offer must state to be compared: an offer that does not state one is left out, with the reason."
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "sources": {
+                      "type": "object",
+                      "properties": {
+                        "groups": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "registry",
+                              "vtex",
+                              "meli",
+                              "web",
+                              "data"
+                            ]
+                          },
+                          "minItems": 1,
+                          "maxItems": 5
+                        },
+                        "origins": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "origin": {
+                                "type": "string",
+                                "maxLength": 300,
+                                "description": "https://host of a site to consult, as the person or you named it."
+                              },
+                              "start_path": {
+                                "type": "string",
+                                "maxLength": 200,
+                                "description": "The path to start at; default /."
+                              }
+                            },
+                            "required": [
+                              "origin"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 1,
+                          "maxItems": 5
                         }
                       },
                       "additionalProperties": false
@@ -110912,6 +111080,1772 @@
             {
               "bearerAuth": [
                 "shop:purchases:read"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/shop/agent/data-calls": {
+        "post": {
+          "summary": "Draft a data call from a data_service offer (never run)",
+          "description": "Scope `shop:purchases:write`. Shop G3.1: `offer_id` names a `data_service` offer of this key's research (`POST /v1/shop/agent/research` with `task_kind: \"data_service\"`). The provider quotes the call again and the call is drafted at those terms under the agent's mandate; nothing is reserved or sent. The answer shows the four states apart: quotation, authorization, commitment (the call), payment (Wallet) and the provider's confirmation. The same `agent_id` and `idempotency_key` answer the same draft (`idempotent_replay: true`). Running it is the person's authorization: a key never runs it. While it waits for the person, `next_action` is the protected action to hand them: `{ kind: \"person_authorization\", url }`, the call's card on the dashboard behind their sign-in (only the call's and the project's ids are in the url). Test projects only.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agent_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "offer_id": {
+                      "type": "string",
+                      "pattern": "^sof_[A-Za-z0-9_-]{16}$",
+                      "description": "A data_service offer of this key's research (`POST /v1/shop/agent/research`, task_kind data_service)."
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_.:-]{8,128}$"
+                    }
+                  },
+                  "required": [
+                    "agent_id",
+                    "offer_id",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "data_call": {
+                        "type": "object",
+                        "properties": {
+                          "proposal_id": {
+                            "type": "string",
+                            "description": "The data call's proposal id (`prp_...`)."
+                          },
+                          "run_state": {
+                            "type": "string",
+                            "enum": [
+                              "ready",
+                              "awaiting_user",
+                              "running",
+                              "interrupted",
+                              "completed",
+                              "cancelled"
+                            ]
+                          },
+                          "awaiting": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "reason": {
+                                "type": "string"
+                              },
+                              "cause": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "reason",
+                              "cause"
+                            ]
+                          },
+                          "offer": {
+                            "type": "object",
+                            "properties": {
+                              "offer_id": {
+                                "type": "string"
+                              },
+                              "offer_kind": {
+                                "type": "string",
+                                "enum": [
+                                  "data_service"
+                                ]
+                              },
+                              "merchant_name": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "attributes": {
+                                "type": "object",
+                                "properties": {
+                                  "coverage": {
+                                    "type": "string"
+                                  },
+                                  "refresh": {
+                                    "type": "string"
+                                  },
+                                  "license": {
+                                    "type": "string"
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "call"
+                                    ]
+                                  },
+                                  "params": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "offer_version": {
+                                    "type": "integer"
+                                  },
+                                  "terms_hash": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "coverage",
+                                  "refresh",
+                                  "license",
+                                  "unit",
+                                  "params",
+                                  "offer_version",
+                                  "terms_hash"
+                                ]
+                              },
+                              "cost_lines": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": [
+                                        "call"
+                                      ]
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "unit_minor": {
+                                      "type": "integer"
+                                    },
+                                    "quantity": {
+                                      "type": "number",
+                                      "enum": [
+                                        1
+                                      ]
+                                    },
+                                    "amount_minor": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "label",
+                                    "unit_minor",
+                                    "quantity",
+                                    "amount_minor"
+                                  ]
+                                }
+                              },
+                              "total_minor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "enum": [
+                                  "BRL"
+                                ]
+                              },
+                              "observed_at": {
+                                "type": "string"
+                              },
+                              "valid_until": {
+                                "type": "string"
+                              },
+                              "source": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "data_catalog"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "offer_id",
+                              "offer_kind",
+                              "merchant_name",
+                              "title",
+                              "attributes",
+                              "cost_lines",
+                              "total_minor",
+                              "currency",
+                              "observed_at",
+                              "valid_until",
+                              "source"
+                            ]
+                          },
+                          "quotation": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "valid",
+                                  "stale",
+                                  "changed"
+                                ]
+                              },
+                              "total_minor": {
+                                "type": "integer"
+                              },
+                              "previous_total_minor": {
+                                "type": "integer"
+                              },
+                              "observed_at": {
+                                "type": "string"
+                              },
+                              "valid_until": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state",
+                              "total_minor",
+                              "observed_at",
+                              "valid_until"
+                            ]
+                          },
+                          "authorization": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "needed",
+                                  "awaiting_approval",
+                                  "authorized",
+                                  "refused",
+                                  "expired"
+                                ]
+                              },
+                              "amount_max_minor": {
+                                "type": "integer"
+                              },
+                              "approval_id": {
+                                "type": "string"
+                              },
+                              "expires_at": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state",
+                              "amount_max_minor"
+                            ]
+                          },
+                          "commitment": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "not_started",
+                                  "claimed",
+                                  "dispatching",
+                                  "settled",
+                                  "uncertain",
+                                  "failed",
+                                  "cancelled"
+                                ],
+                                "description": "The call at the provider. `uncertain`: sent and not known yet; the read reconciles it by lookup, never by a resend."
+                              },
+                              "attempt_id": {
+                                "type": "string"
+                              },
+                              "call_id": {
+                                "type": "string"
+                              },
+                              "at": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state"
+                            ]
+                          },
+                          "payment": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "none",
+                                  "held",
+                                  "debited",
+                                  "released"
+                                ],
+                                "description": "The Wallet: the ceiling held, then the observed amount debited and the rest released."
+                              },
+                              "held_minor": {
+                                "type": "integer"
+                              },
+                              "debited_minor": {
+                                "type": "integer"
+                              },
+                              "released_minor": {
+                                "type": "integer"
+                              },
+                              "receipt_id": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state"
+                            ]
+                          },
+                          "confirmation": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "none",
+                                  "pending",
+                                  "confirmed",
+                                  "failed"
+                                ],
+                                "description": "The provider's result: `confirmed` only with its call id and result ref."
+                              },
+                              "at": {
+                                "type": "string"
+                              },
+                              "source": {
+                                "type": "string"
+                              },
+                              "result_ref": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state"
+                            ]
+                          },
+                          "error": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "description": "commitment_terms_changed, data_call_refused, a mandate's or the Wallet's code: an unknown one is shown as a neutral text with the code."
+                              },
+                              "detail": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "code"
+                            ]
+                          },
+                          "actions": {
+                            "type": "object",
+                            "properties": {
+                              "execute": {
+                                "type": "boolean"
+                              },
+                              "cancel": {
+                                "type": "boolean"
+                              },
+                              "requote": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "execute",
+                              "cancel",
+                              "requote"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "proposal_id",
+                          "run_state",
+                          "awaiting",
+                          "offer",
+                          "quotation",
+                          "authorization",
+                          "commitment",
+                          "payment",
+                          "confirmation",
+                          "actions"
+                        ]
+                      },
+                      "next_action": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "person_authorization"
+                            ]
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "The call's card on the dashboard, behind the person's sign-in; only the call's and the project's ids are in it."
+                          },
+                          "proposal_id": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "url",
+                          "proposal_id",
+                          "description"
+                        ]
+                      },
+                      "idempotent_replay": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "data_call",
+                      "next_action",
+                      "idempotent_replay"
+                    ]
+                  }
+                }
+              }
+            },
+            "201": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "data_call": {
+                        "type": "object",
+                        "properties": {
+                          "proposal_id": {
+                            "type": "string",
+                            "description": "The data call's proposal id (`prp_...`)."
+                          },
+                          "run_state": {
+                            "type": "string",
+                            "enum": [
+                              "ready",
+                              "awaiting_user",
+                              "running",
+                              "interrupted",
+                              "completed",
+                              "cancelled"
+                            ]
+                          },
+                          "awaiting": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "reason": {
+                                "type": "string"
+                              },
+                              "cause": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "reason",
+                              "cause"
+                            ]
+                          },
+                          "offer": {
+                            "type": "object",
+                            "properties": {
+                              "offer_id": {
+                                "type": "string"
+                              },
+                              "offer_kind": {
+                                "type": "string",
+                                "enum": [
+                                  "data_service"
+                                ]
+                              },
+                              "merchant_name": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "attributes": {
+                                "type": "object",
+                                "properties": {
+                                  "coverage": {
+                                    "type": "string"
+                                  },
+                                  "refresh": {
+                                    "type": "string"
+                                  },
+                                  "license": {
+                                    "type": "string"
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "call"
+                                    ]
+                                  },
+                                  "params": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "offer_version": {
+                                    "type": "integer"
+                                  },
+                                  "terms_hash": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "coverage",
+                                  "refresh",
+                                  "license",
+                                  "unit",
+                                  "params",
+                                  "offer_version",
+                                  "terms_hash"
+                                ]
+                              },
+                              "cost_lines": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": [
+                                        "call"
+                                      ]
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "unit_minor": {
+                                      "type": "integer"
+                                    },
+                                    "quantity": {
+                                      "type": "number",
+                                      "enum": [
+                                        1
+                                      ]
+                                    },
+                                    "amount_minor": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "label",
+                                    "unit_minor",
+                                    "quantity",
+                                    "amount_minor"
+                                  ]
+                                }
+                              },
+                              "total_minor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "enum": [
+                                  "BRL"
+                                ]
+                              },
+                              "observed_at": {
+                                "type": "string"
+                              },
+                              "valid_until": {
+                                "type": "string"
+                              },
+                              "source": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "data_catalog"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "offer_id",
+                              "offer_kind",
+                              "merchant_name",
+                              "title",
+                              "attributes",
+                              "cost_lines",
+                              "total_minor",
+                              "currency",
+                              "observed_at",
+                              "valid_until",
+                              "source"
+                            ]
+                          },
+                          "quotation": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "valid",
+                                  "stale",
+                                  "changed"
+                                ]
+                              },
+                              "total_minor": {
+                                "type": "integer"
+                              },
+                              "previous_total_minor": {
+                                "type": "integer"
+                              },
+                              "observed_at": {
+                                "type": "string"
+                              },
+                              "valid_until": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state",
+                              "total_minor",
+                              "observed_at",
+                              "valid_until"
+                            ]
+                          },
+                          "authorization": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "needed",
+                                  "awaiting_approval",
+                                  "authorized",
+                                  "refused",
+                                  "expired"
+                                ]
+                              },
+                              "amount_max_minor": {
+                                "type": "integer"
+                              },
+                              "approval_id": {
+                                "type": "string"
+                              },
+                              "expires_at": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state",
+                              "amount_max_minor"
+                            ]
+                          },
+                          "commitment": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "not_started",
+                                  "claimed",
+                                  "dispatching",
+                                  "settled",
+                                  "uncertain",
+                                  "failed",
+                                  "cancelled"
+                                ],
+                                "description": "The call at the provider. `uncertain`: sent and not known yet; the read reconciles it by lookup, never by a resend."
+                              },
+                              "attempt_id": {
+                                "type": "string"
+                              },
+                              "call_id": {
+                                "type": "string"
+                              },
+                              "at": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state"
+                            ]
+                          },
+                          "payment": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "none",
+                                  "held",
+                                  "debited",
+                                  "released"
+                                ],
+                                "description": "The Wallet: the ceiling held, then the observed amount debited and the rest released."
+                              },
+                              "held_minor": {
+                                "type": "integer"
+                              },
+                              "debited_minor": {
+                                "type": "integer"
+                              },
+                              "released_minor": {
+                                "type": "integer"
+                              },
+                              "receipt_id": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state"
+                            ]
+                          },
+                          "confirmation": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "none",
+                                  "pending",
+                                  "confirmed",
+                                  "failed"
+                                ],
+                                "description": "The provider's result: `confirmed` only with its call id and result ref."
+                              },
+                              "at": {
+                                "type": "string"
+                              },
+                              "source": {
+                                "type": "string"
+                              },
+                              "result_ref": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state"
+                            ]
+                          },
+                          "error": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "description": "commitment_terms_changed, data_call_refused, a mandate's or the Wallet's code: an unknown one is shown as a neutral text with the code."
+                              },
+                              "detail": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "code"
+                            ]
+                          },
+                          "actions": {
+                            "type": "object",
+                            "properties": {
+                              "execute": {
+                                "type": "boolean"
+                              },
+                              "cancel": {
+                                "type": "boolean"
+                              },
+                              "requote": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "execute",
+                              "cancel",
+                              "requote"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "proposal_id",
+                          "run_state",
+                          "awaiting",
+                          "offer",
+                          "quotation",
+                          "authorization",
+                          "commitment",
+                          "payment",
+                          "confirmation",
+                          "actions"
+                        ]
+                      },
+                      "next_action": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "person_authorization"
+                            ]
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "The call's card on the dashboard, behind the person's sign-in; only the call's and the project's ids are in it."
+                          },
+                          "proposal_id": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "url",
+                          "proposal_id",
+                          "description"
+                        ]
+                      },
+                      "idempotent_replay": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "data_call",
+                      "next_action",
+                      "idempotent_replay"
+                    ]
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "The body did not match the schema.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "invalid_body"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "The key does not hold `shop:purchases:write`.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "The offer is not in this key's research.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "offer_not_found"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "No mandate permits the provider, the project is not a Test one, or the idempotency key drafted from another offer.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "proposal_no_mandate",
+                              "data_call_live_unavailable",
+                              "idempotency_key_reused"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "The offer is not a data service, the provider refuses the call, or the agent is not registered.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "offer_not_data_service",
+                              "data_call_refused",
+                              "agent_not_registered"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "503": {
+              "description": "The provider did not answer, or Shop purchases are off on this deployment.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "data_provider_unavailable",
+                              "shop_purchases_disabled"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "shop:purchases:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "shop:purchases:write"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/shop/agent/data-calls/{id}": {
+        "get": {
+          "summary": "Read a data call back",
+          "description": "Scope `shop:purchases:read`. The data call with its four states apart, as the Shop's card shows it. A call sent and not known yet is reconciled by the provider's lookup on this read, never resent: read the same id again, across restarts, until `confirmation.state` is `confirmed` (or the call failed). `next_action` while it waits for the person.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "description": "The data call id (`prp_...`), from `POST /v1/shop/agent/data-calls`."
+              },
+              "required": true,
+              "description": "The data call id (`prp_...`), from `POST /v1/shop/agent/data-calls`.",
+              "name": "id",
+              "in": "path"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "data_call": {
+                        "type": "object",
+                        "properties": {
+                          "proposal_id": {
+                            "type": "string",
+                            "description": "The data call's proposal id (`prp_...`)."
+                          },
+                          "run_state": {
+                            "type": "string",
+                            "enum": [
+                              "ready",
+                              "awaiting_user",
+                              "running",
+                              "interrupted",
+                              "completed",
+                              "cancelled"
+                            ]
+                          },
+                          "awaiting": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "reason": {
+                                "type": "string"
+                              },
+                              "cause": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "reason",
+                              "cause"
+                            ]
+                          },
+                          "offer": {
+                            "type": "object",
+                            "properties": {
+                              "offer_id": {
+                                "type": "string"
+                              },
+                              "offer_kind": {
+                                "type": "string",
+                                "enum": [
+                                  "data_service"
+                                ]
+                              },
+                              "merchant_name": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "attributes": {
+                                "type": "object",
+                                "properties": {
+                                  "coverage": {
+                                    "type": "string"
+                                  },
+                                  "refresh": {
+                                    "type": "string"
+                                  },
+                                  "license": {
+                                    "type": "string"
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "call"
+                                    ]
+                                  },
+                                  "params": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "offer_version": {
+                                    "type": "integer"
+                                  },
+                                  "terms_hash": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "coverage",
+                                  "refresh",
+                                  "license",
+                                  "unit",
+                                  "params",
+                                  "offer_version",
+                                  "terms_hash"
+                                ]
+                              },
+                              "cost_lines": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": [
+                                        "call"
+                                      ]
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "unit_minor": {
+                                      "type": "integer"
+                                    },
+                                    "quantity": {
+                                      "type": "number",
+                                      "enum": [
+                                        1
+                                      ]
+                                    },
+                                    "amount_minor": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "label",
+                                    "unit_minor",
+                                    "quantity",
+                                    "amount_minor"
+                                  ]
+                                }
+                              },
+                              "total_minor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "enum": [
+                                  "BRL"
+                                ]
+                              },
+                              "observed_at": {
+                                "type": "string"
+                              },
+                              "valid_until": {
+                                "type": "string"
+                              },
+                              "source": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "data_catalog"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "offer_id",
+                              "offer_kind",
+                              "merchant_name",
+                              "title",
+                              "attributes",
+                              "cost_lines",
+                              "total_minor",
+                              "currency",
+                              "observed_at",
+                              "valid_until",
+                              "source"
+                            ]
+                          },
+                          "quotation": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "valid",
+                                  "stale",
+                                  "changed"
+                                ]
+                              },
+                              "total_minor": {
+                                "type": "integer"
+                              },
+                              "previous_total_minor": {
+                                "type": "integer"
+                              },
+                              "observed_at": {
+                                "type": "string"
+                              },
+                              "valid_until": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state",
+                              "total_minor",
+                              "observed_at",
+                              "valid_until"
+                            ]
+                          },
+                          "authorization": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "needed",
+                                  "awaiting_approval",
+                                  "authorized",
+                                  "refused",
+                                  "expired"
+                                ]
+                              },
+                              "amount_max_minor": {
+                                "type": "integer"
+                              },
+                              "approval_id": {
+                                "type": "string"
+                              },
+                              "expires_at": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state",
+                              "amount_max_minor"
+                            ]
+                          },
+                          "commitment": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "not_started",
+                                  "claimed",
+                                  "dispatching",
+                                  "settled",
+                                  "uncertain",
+                                  "failed",
+                                  "cancelled"
+                                ],
+                                "description": "The call at the provider. `uncertain`: sent and not known yet; the read reconciles it by lookup, never by a resend."
+                              },
+                              "attempt_id": {
+                                "type": "string"
+                              },
+                              "call_id": {
+                                "type": "string"
+                              },
+                              "at": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state"
+                            ]
+                          },
+                          "payment": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "none",
+                                  "held",
+                                  "debited",
+                                  "released"
+                                ],
+                                "description": "The Wallet: the ceiling held, then the observed amount debited and the rest released."
+                              },
+                              "held_minor": {
+                                "type": "integer"
+                              },
+                              "debited_minor": {
+                                "type": "integer"
+                              },
+                              "released_minor": {
+                                "type": "integer"
+                              },
+                              "receipt_id": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state"
+                            ]
+                          },
+                          "confirmation": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "none",
+                                  "pending",
+                                  "confirmed",
+                                  "failed"
+                                ],
+                                "description": "The provider's result: `confirmed` only with its call id and result ref."
+                              },
+                              "at": {
+                                "type": "string"
+                              },
+                              "source": {
+                                "type": "string"
+                              },
+                              "result_ref": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "state"
+                            ]
+                          },
+                          "error": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "description": "commitment_terms_changed, data_call_refused, a mandate's or the Wallet's code: an unknown one is shown as a neutral text with the code."
+                              },
+                              "detail": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "code"
+                            ]
+                          },
+                          "actions": {
+                            "type": "object",
+                            "properties": {
+                              "execute": {
+                                "type": "boolean"
+                              },
+                              "cancel": {
+                                "type": "boolean"
+                              },
+                              "requote": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "execute",
+                              "cancel",
+                              "requote"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "proposal_id",
+                          "run_state",
+                          "awaiting",
+                          "offer",
+                          "quotation",
+                          "authorization",
+                          "commitment",
+                          "payment",
+                          "confirmation",
+                          "actions"
+                        ]
+                      },
+                      "next_action": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "person_authorization"
+                            ]
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "The call's card on the dashboard, behind the person's sign-in; only the call's and the project's ids are in it."
+                          },
+                          "proposal_id": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "url",
+                          "proposal_id",
+                          "description"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "data_call",
+                      "next_action"
+                    ]
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "The key does not hold `shop:purchases:read`.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "not_found"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "error"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "shop:purchases:read",
+          "security": [
+            {
+              "bearerAuth": [
+                "shop:purchases:read"
+              ]
+            }
+          ]
+        }
+      },
+      "/v1/shop/agent/data-calls/{id}/execute": {
+        "post": {
+          "summary": "Run a data call: always refused for a key",
+          "description": "Scope `shop:purchases:write`. Running a data call reserves the Wallet and makes the provider's call: that is the person's authorization, and a key never gives it. This route always answers `person_required` (403), with `details.next_action` (the protected action: the call's card on the dashboard, behind the person's sign-in) and `details.data_call`. The person runs it there, or through an MCP client with their full-access login; then read it back by id.\n\n**What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.",
+          "parameters": [
+            {
+              "schema": {
+                "type": "string",
+                "description": "The data call id (`prp_...`)."
+              },
+              "required": true,
+              "description": "The data call id (`prp_...`).",
+              "name": "id",
+              "in": "path"
+            }
+          ],
+          "responses": {
+            "403": {
+              "description": "A key never runs a data call; `details.next_action` is the person's way.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "person_required"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "message"
+                        ]
+                      },
+                      "request_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "Echoes the `X-Request-Id` header when the request carried one."
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "request_id"
+                    ]
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Not Found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "enum": [
+                          "not_found"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "error"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "x-codespar-scope": "shop:purchases:write",
+          "security": [
+            {
+              "bearerAuth": [
+                "shop:purchases:write"
               ]
             }
           ]

@@ -43,6 +43,7 @@ import {
   showMetaToolCommand,
 } from "./commands/meta-tool.js";
 import { runResourceCommand } from "./commands/resource.js";
+import { EXIT, exitCodeForFailure, outcomeExitCodesOn, pendingOnPerson } from "./exit-codes.js";
 import {
   payablesBatchCreateCommand,
   payablesBatchGetCommand,
@@ -1011,6 +1012,14 @@ async function main() {
     // The generated REST client answers with its own error types. Print the
     // API's message and body verbatim — an exit code plus a stack trace
     // would hide the one thing the caller needs, which is what the API said.
+    // A data call a key asked to run: the person's protected action, printed for them; pending, not refused.
+    const personUrl = err instanceof CodesparApiError ? pendingOnPerson(err) : null;
+    if (personUrl) {
+      process.stderr.write(`${c.yellow("…")} A pessoa precisa executar esta consulta: ${personUrl}\n`);
+      if (hasJsonFlag) json({ pending: { kind: "person_authorization", url: personUrl, code: (err as CodesparApiError).code } });
+      else process.stdout.write(`${personUrl}\n`);
+      process.exit(EXIT.pending);
+    }
     if (err instanceof CodesparApiError) {
       process.stderr.write(`${c.red("✗")} ${err.message}\n`);
       if (err.body !== undefined && !hasJsonFlag) {
@@ -1021,12 +1030,12 @@ async function main() {
         ...(err.code === undefined ? {} : { code: err.code }),
         ...(err.body === undefined ? {} : { body: err.body }),
       });
-      process.exit(1);
+      process.exit(outcomeExitCodesOn() ? exitCodeForFailure(err.status === undefined || err.status === 0 ? "network" : "api", err.status) : 1);
     }
     if (err instanceof TimeoutError) {
       process.stderr.write(`${c.red("✗")} ${err.message}\n`);
       falhou("timeout", err.message);
-      process.exit(1);
+      process.exit(outcomeExitCodesOn() ? exitCodeForFailure("timeout") : 1);
     }
     // Unexpected error — show stack so we can debug.
     process.stderr.write(`${c.red("✗ internal error:")}\n`);

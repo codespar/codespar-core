@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 4ae3274e16aa0655cacab1b3a1f0c1fbe8ad710fe2c0184c9b0aa816fdd0095c, fetched 2026-10-31T00:54:41.356Z
+// Source: openapi-snapshot.json (sha256 336015728bcef0492980f7a93de26a69c7d5c45cd0205a3eadbe316149d31e9b, fetched 2026-11-08T06:08:25.993Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -45777,6 +45777,11 @@ export interface paths {
                     "application/json": {
                         /** @description The pedido aberto, as the person said it (e.g. "fone bluetooth"). */
                         query: string;
+                        /**
+                         * @description product (default), service_plan, reservation or data_service (a per-call data service, executed by a data call).
+                         * @enum {string}
+                         */
+                        task_kind?: "product" | "service_plan" | "reservation" | "data_service";
                         criteria?: {
                             /**
                              * @description What decides the principal: the lowest total (default) or the fastest delivery.
@@ -45785,10 +45790,53 @@ export interface paths {
                             priority?: "total" | "eta";
                             /** @description The most the person wants to pay, shipping included, in centavos. */
                             max_total_minor?: number;
-                            /** @description Where to look: `registry` (the stores the Shop can buy at), `vtex` and `meli` (comparison only). Default: `registry` in Test, `vtex` and `meli` in Live. */
-                            sources?: ("registry" | "vtex" | "meli")[];
+                            /** @description Where to look: `registry` (the stores the Shop can buy at), `vtex` and `meli` (comparison only), `web` (the origins named in sources.origins), `data` (the data-service providers, for task_kind data_service). Default: `registry` in Test, `vtex` and `meli` in Live; `data` for a data service. */
+                            sources?: ("registry" | "vtex" | "meli" | "web" | "data")[];
                             /** @description Offers per source, 1 to 5 (default 5). */
                             limit?: number;
+                            /** @description task_kind reservation: check_in, check_out, occupants, location. */
+                            reservation?: {
+                                /** @description Check-in day, YYYY-MM-DD (São Paulo). */
+                                check_in: string;
+                                /** @description Check-out day, YYYY-MM-DD, after check_in. */
+                                check_out: string;
+                                occupants: {
+                                    adults: number;
+                                    children?: number;
+                                };
+                                /** @description Where, as the person said it. */
+                                location?: string;
+                            };
+                            /** @description task_kind service_plan: licenses and period. */
+                            service_plan?: {
+                                /** @description How many seats or licenses. */
+                                licenses: number;
+                                /**
+                                 * @description The billing period to compare on.
+                                 * @enum {string}
+                                 */
+                                period: "monthly" | "annual";
+                            };
+                            /** @description task_kind data_service: the call's params, and the SKU when the person named one. */
+                            data_service?: {
+                                /** @description The call's params, e.g. { cnpj: "11222333000181" }. */
+                                params: {
+                                    [key: string]: string;
+                                };
+                                /** @description The provider's SKU, when the person named one. */
+                                sku?: string;
+                            };
+                            /** @description Conditions an offer must state to be compared: an offer that does not state one is left out, with the reason. */
+                            required?: ("free_cancellation" | "breakfast_included" | "invoice" | "refundable" | "location")[];
+                        };
+                        sources?: {
+                            groups?: ("registry" | "vtex" | "meli" | "web" | "data")[];
+                            origins?: {
+                                /** @description https://host of a site to consult, as the person or you named it. */
+                                origin: string;
+                                /** @description The path to start at; default /. */
+                                start_path?: string;
+                            }[];
                         };
                     };
                 };
@@ -45969,6 +46017,664 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shop/agent/data-calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft a data call from a data_service offer (never run)
+         * @description Scope `shop:purchases:write`. Shop G3.1: `offer_id` names a `data_service` offer of this key's research (`POST /v1/shop/agent/research` with `task_kind: "data_service"`). The provider quotes the call again and the call is drafted at those terms under the agent's mandate; nothing is reserved or sent. The answer shows the four states apart: quotation, authorization, commitment (the call), payment (Wallet) and the provider's confirmation. The same `agent_id` and `idempotency_key` answer the same draft (`idempotent_replay: true`). Running it is the person's authorization: a key never runs it. While it waits for the person, `next_action` is the protected action to hand them: `{ kind: "person_authorization", url }`, the call's card on the dashboard behind their sign-in (only the call's and the project's ids are in the url). Test projects only.
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        agent_id: string;
+                        /** @description A data_service offer of this key's research (`POST /v1/shop/agent/research`, task_kind data_service). */
+                        offer_id: string;
+                        idempotency_key: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data_call: {
+                                /** @description The data call's proposal id (`prp_...`). */
+                                proposal_id: string;
+                                /** @enum {string} */
+                                run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
+                                awaiting: {
+                                    reason: string;
+                                    cause: string | null;
+                                } | null;
+                                offer: {
+                                    offer_id: string;
+                                    /** @enum {string} */
+                                    offer_kind: "data_service";
+                                    merchant_name: string;
+                                    title: string;
+                                    attributes: {
+                                        coverage: string;
+                                        refresh: string;
+                                        license: string;
+                                        /** @enum {string} */
+                                        unit: "call";
+                                        params: {
+                                            [key: string]: string;
+                                        };
+                                        offer_version: number;
+                                        terms_hash: string;
+                                    };
+                                    cost_lines: {
+                                        /** @enum {string} */
+                                        kind: "call";
+                                        label: string;
+                                        unit_minor: number;
+                                        /** @enum {number} */
+                                        quantity: 1;
+                                        amount_minor: number;
+                                    }[];
+                                    total_minor: number;
+                                    /** @enum {string} */
+                                    currency: "BRL";
+                                    observed_at: string;
+                                    valid_until: string;
+                                    source: {
+                                        /** @enum {string} */
+                                        kind: "data_catalog";
+                                    };
+                                };
+                                quotation: {
+                                    /** @enum {string} */
+                                    state: "valid" | "stale" | "changed";
+                                    total_minor: number;
+                                    previous_total_minor?: number;
+                                    observed_at: string;
+                                    valid_until: string;
+                                };
+                                authorization: {
+                                    /** @enum {string} */
+                                    state: "needed" | "awaiting_approval" | "authorized" | "refused" | "expired";
+                                    amount_max_minor: number;
+                                    approval_id?: string;
+                                    expires_at?: string;
+                                };
+                                commitment: {
+                                    /**
+                                     * @description The call at the provider. `uncertain`: sent and not known yet; the read reconciles it by lookup, never by a resend.
+                                     * @enum {string}
+                                     */
+                                    state: "not_started" | "claimed" | "dispatching" | "settled" | "uncertain" | "failed" | "cancelled";
+                                    attempt_id?: string;
+                                    call_id?: string;
+                                    at?: string;
+                                };
+                                payment: {
+                                    /**
+                                     * @description The Wallet: the ceiling held, then the observed amount debited and the rest released.
+                                     * @enum {string}
+                                     */
+                                    state: "none" | "held" | "debited" | "released";
+                                    held_minor?: number;
+                                    debited_minor?: number;
+                                    released_minor?: number;
+                                    receipt_id?: string;
+                                };
+                                confirmation: {
+                                    /**
+                                     * @description The provider's result: `confirmed` only with its call id and result ref.
+                                     * @enum {string}
+                                     */
+                                    state: "none" | "pending" | "confirmed" | "failed";
+                                    at?: string;
+                                    source?: string;
+                                    result_ref?: string;
+                                };
+                                error?: {
+                                    /** @description commitment_terms_changed, data_call_refused, a mandate's or the Wallet's code: an unknown one is shown as a neutral text with the code. */
+                                    code: string;
+                                    detail?: string;
+                                };
+                                actions: {
+                                    execute: boolean;
+                                    cancel: boolean;
+                                    requote: boolean;
+                                };
+                            };
+                            next_action: {
+                                /** @enum {string} */
+                                kind: "person_authorization";
+                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's and the project's ids are in it. */
+                                url: string;
+                                proposal_id: string;
+                                description: string;
+                            } | null;
+                            idempotent_replay: boolean;
+                        };
+                    };
+                };
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data_call: {
+                                /** @description The data call's proposal id (`prp_...`). */
+                                proposal_id: string;
+                                /** @enum {string} */
+                                run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
+                                awaiting: {
+                                    reason: string;
+                                    cause: string | null;
+                                } | null;
+                                offer: {
+                                    offer_id: string;
+                                    /** @enum {string} */
+                                    offer_kind: "data_service";
+                                    merchant_name: string;
+                                    title: string;
+                                    attributes: {
+                                        coverage: string;
+                                        refresh: string;
+                                        license: string;
+                                        /** @enum {string} */
+                                        unit: "call";
+                                        params: {
+                                            [key: string]: string;
+                                        };
+                                        offer_version: number;
+                                        terms_hash: string;
+                                    };
+                                    cost_lines: {
+                                        /** @enum {string} */
+                                        kind: "call";
+                                        label: string;
+                                        unit_minor: number;
+                                        /** @enum {number} */
+                                        quantity: 1;
+                                        amount_minor: number;
+                                    }[];
+                                    total_minor: number;
+                                    /** @enum {string} */
+                                    currency: "BRL";
+                                    observed_at: string;
+                                    valid_until: string;
+                                    source: {
+                                        /** @enum {string} */
+                                        kind: "data_catalog";
+                                    };
+                                };
+                                quotation: {
+                                    /** @enum {string} */
+                                    state: "valid" | "stale" | "changed";
+                                    total_minor: number;
+                                    previous_total_minor?: number;
+                                    observed_at: string;
+                                    valid_until: string;
+                                };
+                                authorization: {
+                                    /** @enum {string} */
+                                    state: "needed" | "awaiting_approval" | "authorized" | "refused" | "expired";
+                                    amount_max_minor: number;
+                                    approval_id?: string;
+                                    expires_at?: string;
+                                };
+                                commitment: {
+                                    /**
+                                     * @description The call at the provider. `uncertain`: sent and not known yet; the read reconciles it by lookup, never by a resend.
+                                     * @enum {string}
+                                     */
+                                    state: "not_started" | "claimed" | "dispatching" | "settled" | "uncertain" | "failed" | "cancelled";
+                                    attempt_id?: string;
+                                    call_id?: string;
+                                    at?: string;
+                                };
+                                payment: {
+                                    /**
+                                     * @description The Wallet: the ceiling held, then the observed amount debited and the rest released.
+                                     * @enum {string}
+                                     */
+                                    state: "none" | "held" | "debited" | "released";
+                                    held_minor?: number;
+                                    debited_minor?: number;
+                                    released_minor?: number;
+                                    receipt_id?: string;
+                                };
+                                confirmation: {
+                                    /**
+                                     * @description The provider's result: `confirmed` only with its call id and result ref.
+                                     * @enum {string}
+                                     */
+                                    state: "none" | "pending" | "confirmed" | "failed";
+                                    at?: string;
+                                    source?: string;
+                                    result_ref?: string;
+                                };
+                                error?: {
+                                    /** @description commitment_terms_changed, data_call_refused, a mandate's or the Wallet's code: an unknown one is shown as a neutral text with the code. */
+                                    code: string;
+                                    detail?: string;
+                                };
+                                actions: {
+                                    execute: boolean;
+                                    cancel: boolean;
+                                    requote: boolean;
+                                };
+                            };
+                            next_action: {
+                                /** @enum {string} */
+                                kind: "person_authorization";
+                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's and the project's ids are in it. */
+                                url: string;
+                                proposal_id: string;
+                                description: string;
+                            } | null;
+                            idempotent_replay: boolean;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not hold `shop:purchases:write`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The offer is not in this key's research. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "offer_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No mandate permits the provider, the project is not a Test one, or the idempotency key drafted from another offer. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "proposal_no_mandate" | "data_call_live_unavailable" | "idempotency_key_reused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The offer is not a data service, the provider refuses the call, or the agent is not registered. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "offer_not_data_service" | "data_call_refused" | "agent_not_registered";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider did not answer, or Shop purchases are off on this deployment. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "data_provider_unavailable" | "shop_purchases_disabled";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shop/agent/data-calls/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a data call back
+         * @description Scope `shop:purchases:read`. The data call with its four states apart, as the Shop's card shows it. A call sent and not known yet is reconciled by the provider's lookup on this read, never resent: read the same id again, across restarts, until `confirmation.state` is `confirmed` (or the call failed). `next_action` while it waits for the person.
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The data call id (`prp_...`), from `POST /v1/shop/agent/data-calls`. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data_call: {
+                                /** @description The data call's proposal id (`prp_...`). */
+                                proposal_id: string;
+                                /** @enum {string} */
+                                run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
+                                awaiting: {
+                                    reason: string;
+                                    cause: string | null;
+                                } | null;
+                                offer: {
+                                    offer_id: string;
+                                    /** @enum {string} */
+                                    offer_kind: "data_service";
+                                    merchant_name: string;
+                                    title: string;
+                                    attributes: {
+                                        coverage: string;
+                                        refresh: string;
+                                        license: string;
+                                        /** @enum {string} */
+                                        unit: "call";
+                                        params: {
+                                            [key: string]: string;
+                                        };
+                                        offer_version: number;
+                                        terms_hash: string;
+                                    };
+                                    cost_lines: {
+                                        /** @enum {string} */
+                                        kind: "call";
+                                        label: string;
+                                        unit_minor: number;
+                                        /** @enum {number} */
+                                        quantity: 1;
+                                        amount_minor: number;
+                                    }[];
+                                    total_minor: number;
+                                    /** @enum {string} */
+                                    currency: "BRL";
+                                    observed_at: string;
+                                    valid_until: string;
+                                    source: {
+                                        /** @enum {string} */
+                                        kind: "data_catalog";
+                                    };
+                                };
+                                quotation: {
+                                    /** @enum {string} */
+                                    state: "valid" | "stale" | "changed";
+                                    total_minor: number;
+                                    previous_total_minor?: number;
+                                    observed_at: string;
+                                    valid_until: string;
+                                };
+                                authorization: {
+                                    /** @enum {string} */
+                                    state: "needed" | "awaiting_approval" | "authorized" | "refused" | "expired";
+                                    amount_max_minor: number;
+                                    approval_id?: string;
+                                    expires_at?: string;
+                                };
+                                commitment: {
+                                    /**
+                                     * @description The call at the provider. `uncertain`: sent and not known yet; the read reconciles it by lookup, never by a resend.
+                                     * @enum {string}
+                                     */
+                                    state: "not_started" | "claimed" | "dispatching" | "settled" | "uncertain" | "failed" | "cancelled";
+                                    attempt_id?: string;
+                                    call_id?: string;
+                                    at?: string;
+                                };
+                                payment: {
+                                    /**
+                                     * @description The Wallet: the ceiling held, then the observed amount debited and the rest released.
+                                     * @enum {string}
+                                     */
+                                    state: "none" | "held" | "debited" | "released";
+                                    held_minor?: number;
+                                    debited_minor?: number;
+                                    released_minor?: number;
+                                    receipt_id?: string;
+                                };
+                                confirmation: {
+                                    /**
+                                     * @description The provider's result: `confirmed` only with its call id and result ref.
+                                     * @enum {string}
+                                     */
+                                    state: "none" | "pending" | "confirmed" | "failed";
+                                    at?: string;
+                                    source?: string;
+                                    result_ref?: string;
+                                };
+                                error?: {
+                                    /** @description commitment_terms_changed, data_call_refused, a mandate's or the Wallet's code: an unknown one is shown as a neutral text with the code. */
+                                    code: string;
+                                    detail?: string;
+                                };
+                                actions: {
+                                    execute: boolean;
+                                    cancel: boolean;
+                                    requote: boolean;
+                                };
+                            };
+                            next_action: {
+                                /** @enum {string} */
+                                kind: "person_authorization";
+                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's and the project's ids are in it. */
+                                url: string;
+                                proposal_id: string;
+                                description: string;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description The key does not hold `shop:purchases:read`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shop/agent/data-calls/{id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run a data call: always refused for a key
+         * @description Scope `shop:purchases:write`. Running a data call reserves the Wallet and makes the provider's call: that is the person's authorization, and a key never gives it. This route always answers `person_required` (403), with `details.next_action` (the protected action: the call's card on the dashboard, behind the person's sign-in) and `details.data_call`. The person runs it there, or through an MCP client with their full-access login; then read it back by id.
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The data call id (`prp_...`). */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description A key never runs a data call; `details.next_action` is the person's way. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "person_required";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;

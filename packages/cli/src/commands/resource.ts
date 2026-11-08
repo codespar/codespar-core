@@ -3,6 +3,10 @@ import { CliError } from "../config.js";
 import { info, json, renderResult } from "../output.js";
 import { resolveOptionalInput } from "./meta-input.js";
 import type { DerivedCommand } from "../surface.js";
+import { exitCodeForDataCall, useOutcomeExitCodes } from "../exit-codes.js";
+
+/** The data-call routes answer an outcome: their commands exit with its code (exit-codes.ts). */
+const DATA_CALLS_PATH = "/v1/shop/agent/data-calls";
 
 export interface ResourceCommandOptions {
   apiKey: string;
@@ -106,6 +110,8 @@ export async function runResourceCommand(
     ...(timeout !== undefined ? { timeout } : {}),
   });
 
+  if (command.path.startsWith(DATA_CALLS_PATH)) useOutcomeExitCodes({ effect: command.path.endsWith("/execute") });
+
   const api = cs.api as unknown as UntypedApi;
   const result = await api.request(command.method, command.path, {
     path: bindPathParams(command, opts.args),
@@ -113,10 +119,16 @@ export async function runResourceCommand(
     ...(body !== undefined ? { body } : {}),
   });
 
+  const dataCall = command.path.startsWith(DATA_CALLS_PATH) ? (result as { data_call?: Parameters<typeof exitCodeForDataCall>[0] } | null)?.data_call : undefined;
+  if (dataCall) process.exitCode = exitCodeForDataCall(dataCall);
+
   if (opts.json) {
     json(result ?? null);
     return;
   }
   info(`${command.method.toUpperCase()} ${command.path}`);
   renderResult(result);
+  // While a data call waits for the person: the protected action, for them to open (criterion 5).
+  const next = (result as { next_action?: { url?: unknown } | null } | null)?.next_action;
+  if (dataCall && next && typeof next.url === "string") info(`A pessoa executa esta consulta em: ${next.url}`);
 }
