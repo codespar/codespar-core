@@ -1,6 +1,6 @@
 # @codespar/mcp — changelog
 
-## Unreleased
+## 0.5.21 — 2026-11-08
 
 ### Added
 

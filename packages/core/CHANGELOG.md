@@ -1,6 +1,6 @@
 # @codespar/sdk — CHANGELOG
 
-## Unreleased
+## 0.16.29 — 2026-11-08
 
 ### Added
 

@@ -1,6 +1,6 @@
 # @codespar/cli — changelog
 
-## Unreleased
+## 0.22.7 — 2026-11-08
 
 ### Added
 

@@ -1,6 +1,6 @@
 # @codespar/types — CHANGELOG
 
-## Unreleased
+## 0.11.8 — 2026-11-08
 
 ### Added
 
