@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 4ae3274e16aa0655cacab1b3a1f0c1fbe8ad710fe2c0184c9b0aa816fdd0095c, fetched 2026-10-31T00:54:41.356Z
+// Source: openapi-snapshot.json (sha256 b9b057565a31502b762e37b6c0c713984543f48a2425e34729bf1332afa34cfb, fetched 2026-11-11T11:18:25.811Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -1613,7 +1613,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, api_key.mandate_bound, api_key.mandate_unbound, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.failed, commerce.charge.paid, commerce.charge.payment_notified, commerce.charge.payment_received, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.pix_key_registered, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
                         event: string;
                         server_id?: string;
                         /**
@@ -1767,7 +1767,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.paid, commerce.charge.payment_notified, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, api_key.mandate_bound, api_key.mandate_unbound, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.failed, commerce.charge.paid, commerce.charge.payment_notified, commerce.charge.payment_received, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.pix_key_registered, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
                         event: string;
                         server_id?: string;
                         /**
@@ -2626,7 +2626,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** @description Post a ledger entry. Admin role. Idempotent on (wallet_id, attempt_id, kind) and (wallet_id, kind, external_ref). Returns 200 with the prior row on retry, 201 on fresh insert. `kind=fund` is accepted only in a test project; in a live project it is refused with 409 `fund_requires_test_project` and nothing is written, because a live wallet is credited only by a real Pix, TED or provider receipt. */
+        /** @description Post a ledger entry. Admin role. Idempotent on (wallet_id, attempt_id, kind) and (wallet_id, kind, external_ref). Returns 200 with the prior row on retry, 201 on fresh insert. `kind=fund` is accepted only in a test project; in a live project it is refused with 409 `fund_requires_test_project` and nothing is written, because a live wallet is credited only by a real Pix, TED or provider receipt. A `reverse` names the entry it reverses in `metadata.reverses` and a `release` the hold it releases in `metadata.hold_ref` (ledger ids of this wallet, same currency, with the sign that undoes it, and an `attempt_id`); without one it is refused with 400 `ledger_entry_reference_required`. In a live project a `reverse` that would raise the available balance is refused with 409 `reverse_requires_test_project`. */
         post: {
             parameters: {
                 query?: never;
@@ -2660,6 +2660,26 @@ export interface paths {
                         "application/json": components["schemas"]["WalletLedgerEntry"];
                     };
                 };
+                /** @description A `reverse` or `release` that names no entry; nothing was written. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ledger_entry_reference_required";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
                 /** @description Not Found */
                 404: {
                     headers: {
@@ -2672,7 +2692,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description A `fund` in a live project, posted with an API key; nothing was written. */
+                /** @description A `fund`, or a `reverse` that would raise available, in a live project; a reverse or release whose named entry is not this wallet's or whose amount does not undo it; nothing was written. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -2681,7 +2701,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "fund_requires_test_project";
+                                code: "fund_requires_test_project" | "reverse_requires_test_project" | "ledger_entry_reference_invalid" | "ledger_entry_reference_mismatch" | "reverse_exceeds_original" | "hold_already_resolved";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -3246,6 +3266,8 @@ export interface paths {
          * Account balances, per currency
          * @description The sum of the balance caches of every non-closed wallet in the caller's project, one row per currency. `held_minor` is `balance_minor − available_minor`, the money open holds reserve. `open_holds` counts HOLD entries that no release or debit settles yet, paired by `metadata.hold_ref`, by `withdrawal_id` for owner withdrawals, or by `attempt_id` — the same pairing the hold sweeper uses.
          *
+         *     `currencies` is the ACCOUNT's money (`account`): every wallet in Live and where the own Test account rule does not apply; that account's wallet for a Test project with its own bound account; none (an empty list, never a zero) for a Test project the rule reaches with no account yet. The simulator's residue there is `simulator_legacy`, apart, with its totals.
+         *
          *     Scoped to the organization AND the project: another project's wallets are in no sum.
          */
         get: {
@@ -3265,9 +3287,23 @@ export interface paths {
                     content: {
                         "application/json": {
                             project_id: string;
+                            /** @description Managed USDC addresses for the wallets included in this account's balance; absent on older APIs. */
+                            usdc_accounts?: {
+                                wallet_id: string;
+                                display_name?: string;
+                                /** @enum {string} */
+                                network: "base" | "base-sepolia";
+                                address: string | null;
+                                /** @enum {string} */
+                                state: "queued" | "syncing" | "ready" | "needs_attention";
+                                faucet: string | null;
+                                reason: string | null;
+                                checked_at: string | null;
+                            }[];
+                            /** @description The account's money only. Empty when `account.exists` is false (a Test project with no own account yet): the simulator's residue is never presented as the account's balance, nor as a zero one; it is in `simulator_legacy`. */
                             currencies: {
                                 currency: string;
-                                /** @description Σ wallet_balances.balance_minor over the project's non-closed wallets; for a Test project with its own bound account, over that account's wallet only (the simulator's legacy balance stays in the ledger, out of the sum). */
+                                /** @description Σ wallet_balances.balance_minor over the ACCOUNT's non-closed wallets: every wallet of the project in Live and where `account.applies` is false; for a Test project with its own bound account, that account's wallet only. */
                                 balance_minor: string;
                                 /** @description Σ wallet_balances.available_minor over the same wallets. */
                                 available_minor: string;
@@ -3276,6 +3312,32 @@ export interface paths {
                                 /** @description HOLD entries no release or debit settles yet. */
                                 open_holds: number;
                             }[];
+                            /** @description Which money `currencies` is (Fabiano 21/10, 02/11): the same cut as the ledger's running balance and the statement document. */
+                            account: {
+                                /** @description The own Test account rule reaches this project: Test, the switch reaching its org, not a proof project. */
+                                applies: boolean;
+                                /** @description There is an account whose money `currencies` shows. False only where the rule applies and no account is bound yet. */
+                                exists: boolean;
+                                /** @description The wallets `currencies` sums: the source of this figure. Another answer naming one of these wallets (the Shop chat's `wallet_id`) reads the same money; one naming another wallet reads another source, never to be added to this one. */
+                                wallet_ids: string[];
+                                /** @description With its own bound account: that account's consumer. Null otherwise. */
+                                consumer_id: string | null;
+                                /** @description With its own bound account: that account's funding source. Null otherwise. */
+                                funding_source_id: string | null;
+                            };
+                            /** @description Where the rule applies: the project's other wallets (the simulator's residue, its legacy test funding among it), per currency, apart from the account's. Detail to consult, never available money of the account. Null where the rule does not apply or there is none. No entry is changed. */
+                            simulator_legacy: {
+                                /** @enum {string} */
+                                origin: "simulator";
+                                /** @description The wallets of the residue: its source, apart from `account.wallet_ids`. */
+                                wallet_ids: string[];
+                                currencies: {
+                                    currency: string;
+                                    balance_minor: string;
+                                    available_minor: string;
+                                    held_minor: string;
+                                }[];
+                            } | null;
                             /** Format: date-time */
                             as_of: string;
                         };
@@ -3312,7 +3374,7 @@ export interface paths {
          *
          *     `reverses`, on a REVERSE entry, is the id of the entry it reverses when that entry is in this project; null on every other kind.
          *
-         *     `agent_id` is resolved through the entry's consumer mandate, else, on the FUND of a Pix charge a receive proposal sent, that proposal's agent, else the wallet's agent. `balance_after_minor` is the running BOOKED balance of the project in the entry's currency, over every entry and not only the filtered ones: holds and releases leave it unchanged, as they leave `balance_minor` unchanged. At the newest entry it equals the sum of `balance_minor` over the project's wallets in that currency.
+         *     `agent_id` is resolved through the entry's consumer mandate, else, on the FUND of a Pix charge a receive proposal sent, that proposal's agent, else the wallet's agent. `balance_after_minor` is the running BOOKED balance in the entry's currency over the same wallets as GET /v1/account/balances, over every entry and not only the filtered ones: holds and releases leave it unchanged, as they leave `balance_minor` unchanged. At the newest entry it equals the sum of `balance_minor` over those wallets. For a Test project with its own bound account only that account's wallet counts, and for one with no account yet none does: an entry of another wallet (the simulator's, its legacy test funding among it) is listed with its origin, `outside_account_balance` true, and the simulator's own running balance at that point.
          */
         get: {
             parameters: {
@@ -3389,12 +3451,40 @@ export interface paths {
                                 /** @description metadata.phase as the writer stamped it: which step of that writer posted the entry. With `source`, it names the entry: `consumer-payments` + `settle-fund` is a payment's settlement FUND, `+ settle-debit` its DEBIT. A phase is only unique within its source. Open vocabulary; null when the writer stamped none. */
                                 phase: string | null;
                                 /**
-                                 * @description "codespar_simulator" on the hold and the debit of a demonstration payment, settled on the CodeSpar simulator ("Simulado pela CodeSpar"); "celcoin_sandbox" on those of a payment of the restricted integrated proof, made at the Celcoin sandbox ("Integrado (sandbox Celcoin)"); null on every other entry.
+                                 * @description "codespar_simulator" on the hold and the debit of a demonstration payment, settled on the CodeSpar simulator ("Simulado pela CodeSpar"); "provider_sandbox" on those of a payment made at a provider's sandbox (`executor_provider` names it); null on every other entry. Test only: no real money either way.
                                  * @enum {string|null}
                                  */
-                                executor: "codespar_simulator" | "celcoin_sandbox" | null;
-                                /** @description Running BOOKED balance of the project in this currency right after this entry: Σ amount_minor of every fund/debit/fee/reverse entry up to and including it, in id order; hold, release and reconcile entries repeat the previous value. Equals Σ balance_minor at the head (= available + held). */
+                                executor: "codespar_simulator" | "provider_sandbox" | null;
+                                /**
+                                 * @description ent#1983: the concrete provider behind `executor` ("celcoin" for `provider_sandbox`), resolved by the server; null for the simulator and every other entry.
+                                 * @enum {string|null}
+                                 */
+                                executor_provider: "celcoin" | null;
+                                /** @description On a payment's DEBIT: who it credited. From what the provider answered about the destination when the money went out (`payee_name_source` `dict` or `credit_party`), else the merchant name a paid QR Code declared (`br_code`: the QR's own words, not a confirmed payee). Null otherwise, and on a payment sealed before the provider's answer was recorded: never inferred. */
+                                payee_name: string | null;
+                                /**
+                                 * @description Where `payee_name` came from.
+                                 * @enum {string|null}
+                                 */
+                                payee_name_source: "dict" | "credit_party" | "br_code" | null;
+                                /** @description On a payment's DEBIT: who triggered the tool call that made the payment (its `actor`, 0408), found by the call's own attempt or receipt id. Null when no recorded call matches: a payment from the dashboard's own buttons, or one made before 0408. Never filled in from the mandate's agent. */
+                                triggered_by: {
+                                    /**
+                                     * @description How the caller authenticated: an OAuth connection (an MCP client), an API key, or the platform's service key (the dashboard).
+                                     * @enum {string}
+                                     */
+                                    via: "oauth" | "bearer" | "service";
+                                    /** @description On `oauth`: the name the OAuth client declared about itself at dynamic registration. Self-declared, never verified. */
+                                    client_name_declared?: string | null;
+                                    /** @description On `oauth`: the client id, last four characters only. */
+                                    client_id_masked?: string | null;
+                                    /** @description On `bearer`: the API key id, last four characters only. */
+                                    key_id_masked?: string | null;
+                                } | null;
+                                /** @description Running BOOKED balance in this currency right after this entry, over the same wallets as GET /v1/account/balances: Σ amount_minor of every fund/debit/fee/reverse entry of those wallets up to and including it, in id order; hold, release and reconcile entries repeat the previous value. Equals Σ balance_minor at the head (= available + held). Each entry runs in its own scope (Fabiano 21/10, 02/11): the account's wallets as GET /v1/account/balances cuts them, or, on an entry with `outside_account_balance` true, the simulator's residue's own running balance at that point (never the account's, never an invented 0). */
                                 balance_after_minor: string;
+                                /** @description True on an entry of a wallet GET /v1/account/balances does not sum: the simulator's residue (its legacy test funding among it) of a Test project with its own bound account, or every entry of one the own-account rule reaches with no account yet. Shown with its own origin, never counted in the account's balance; false everywhere else. */
+                                outside_account_balance: boolean;
                             }[];
                             next_before: string | null;
                         };
@@ -3577,6 +3667,13 @@ export interface paths {
                                 last_activity_at: string | null;
                                 /** @description session_tool_calls in the window, in this project, of the sessions the agent opened (`sessions.agent_did`). A session opened without an agent counts for nobody. */
                                 tool_calls: number;
+                                /** @description The part of `spent_minor` that an external OAuth connection (an MCP client) paid under this agent's mandate, by the connection's declared name: the tool call that made the payment carries the connection (0408). Not this agent's own act; empty when none, and for payments made before 0408. */
+                                via_connections: {
+                                    /** @description The OAuth client's name as it declared it at dynamic registration; never verified. */
+                                    client_name_declared: string | null;
+                                    spent_minor: string;
+                                    payments: number;
+                                }[];
                             }[];
                         };
                     };
@@ -3733,10 +3830,15 @@ export interface paths {
                                 /** @description The ledger DEBIT of a settled payment, the id GET /v1/account/ledger shows. */
                                 debit_entry_id: string | null;
                                 /**
-                                 * @description "codespar_simulator" when the payment was a demonstration settled on the CodeSpar simulator ("Simulado pela CodeSpar"); "celcoin_sandbox" when it ran in the restricted integrated proof, at the Celcoin sandbox ("Integrado (sandbox Celcoin)"); null for every other payment. What the payment recorded when it ran.
+                                 * @description "codespar_simulator" when the payment was a demonstration settled on the CodeSpar simulator ("Simulado pela CodeSpar"); "provider_sandbox" when it ran at a provider's sandbox (`executor_provider` names it); null for every other payment. What the payment recorded when it ran. Test only: no real money either way.
                                  * @enum {string|null}
                                  */
-                                executor: "codespar_simulator" | "celcoin_sandbox" | null;
+                                executor: "codespar_simulator" | "provider_sandbox" | null;
+                                /**
+                                 * @description ent#1983: the concrete provider behind `executor` ("celcoin" for `provider_sandbox`), resolved by the server; null for the simulator and every other entry.
+                                 * @enum {string|null}
+                                 */
+                                executor_provider: "celcoin" | null;
                                 /** Format: date-time */
                                 created_at: string;
                                 /** Format: date-time */
@@ -3791,7 +3893,7 @@ export interface paths {
          *
          *     `target` picks the wallet. `account` (the default) is the project's account wallet, created on first use: the account Wallet shows it, but no agent spends from it. `consumer` is the consumer wallet a mandate spend reserves and debits: `mandate_id`'s consumer, else `consumer_id`, else the one consumer the organization's active BRL mandates name; none or several answer `test_funding_target_required` with the candidates. Naming `mandate_id` or `consumer_id` implies `consumer`. A consumer wallet created here starts with exactly the amount funded.
          *
-         *     At most 1000000 centavos per call. `idempotency_key` is required: the same key with the same amount and wallet answers the first entry with 200 and `idempotent_replay: true`; with another amount or wallet, `idempotency_key_conflict`. Requires an admin or owner (`x-codespar-user` on the dashboard path).
+         *     At most 1000000 centavos per call. `idempotency_key` is required: the same key with the same amount and wallet answers the first entry with 200 and `idempotent_replay: true`; with another amount or wallet, `idempotency_key_conflict`. An admin or owner performs it from the dashboard; an API key is refused with 403 `admin_session_required`, whatever its scopes.
          *
          *     A Test project with its own bound provider account (`payments` active) is credited THERE instead: the amount goes to the bound account, claimed before it is sent and copied into the binding consumer's wallet ledger (`consumer_id` names it), with no platform total. An earlier credit still in flight or whose result is unknown blocks the next (`sandbox_funding_open_claim`); a platform guard's refusal before the send answers `sandbox_funding_refused` (422), a provider refusal `sandbox_funding_failed`.
          */
@@ -3902,7 +4004,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The acting member is below admin, or the dashboard forwarded no member. */
+                /** @description The acting member is below admin, the dashboard forwarded no member, or the credential is an API key (`admin_session_required`: this is administrative, whatever the key's scopes). */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -4161,7 +4263,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The acting member is below admin, or the dashboard forwarded no member. */
+                /** @description The acting member is below admin, the dashboard forwarded no member, or the credential is an API key (`admin_session_required`: this is administrative, whatever the key's scopes). */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -4327,10 +4429,15 @@ export interface paths {
                                 /** @description The dashboard assistant conversation this session belongs to (the Shop's or the Playground chat's); null otherwise. */
                                 conversation_id: string | null;
                                 /**
-                                 * @description "codespar_simulator" when this session's payments were demonstrations settled on the CodeSpar simulator ("Simulado pela CodeSpar"); "celcoin_sandbox" when they ran in the restricted integrated proof, at the Celcoin sandbox ("Integrado (sandbox Celcoin)"); null otherwise.
+                                 * @description "codespar_simulator" when this session's payments were demonstrations settled on the CodeSpar simulator ("Simulado pela CodeSpar"); "provider_sandbox" when they ran at a provider's sandbox (`executor_provider` names it); null otherwise. Test only: no real money either way.
                                  * @enum {string|null}
                                  */
-                                executor: "codespar_simulator" | "celcoin_sandbox" | null;
+                                executor: "codespar_simulator" | "provider_sandbox" | null;
+                                /**
+                                 * @description ent#1983: the concrete provider behind `executor` ("celcoin" for `provider_sandbox`); null otherwise.
+                                 * @enum {string|null}
+                                 */
+                                executor_provider: "celcoin" | null;
                             }[];
                             next_before: string | null;
                             /** @description Sessions matching the filters, cursor aside. */
@@ -4377,7 +4484,7 @@ export interface paths {
         };
         /**
          * The first-access guide's progress for the project
-         * @description Three steps, read in one call. `agent`: the organization has a registered agent other than a Playground scene's own; `in_project` says whether one of them works in this project (an active mandate funds it). `scenario`: a session of this project recorded a tool call; the first one names the session and, for a Playground session, its scene. `result`: money moved under a mandate in this project (the first debit); test funding is not a result. Read-only. `project_id`, when sent, must be the project the request resolved to, or the answer is 404.
+         * @description Three steps, read in one call. `agent`: the organization has a registered agent other than a Playground scene's own; `in_project` says whether one of them works in this project (an active mandate funds it). `scenario`: a session of this project recorded a tool call; the first one names the session and, for a Playground session, its scene. `result`: money moved under a mandate in this project (the first debit); test funding is not a result. Added for the new guide, each derived from the server's own records, with a `state` (done, pending, or unverified when the read failed: `done` is then null, never a false nobody read): `receive` (the first Collect payment confirmed by the provider, in the ledger, with its signed receipt; test funding, the initial credit included, never counts; the same source as the first receipt's `project_has_confirmed_receipt`), `shop_payment` (the Shop assistant's first settled, debited and receipted payment), `approval` (a person's first decision on a proposal parked above the mandate's limit) and `connect` (a valid connection from its own state: an unexpired, unrevoked OAuth grant under a live key, else an API key used at least once and not revoked). Read-only. `project_id`, when sent, must be the project the request resolved to, or the answer is 404.
          */
         get: {
             parameters: {
@@ -4431,6 +4538,88 @@ export interface paths {
                                  */
                                 at: string | null;
                             };
+                            receive: {
+                                /**
+                                 * @description done: the fact is there. pending: read, and it is not. unverified: the read failed; `done` is then null.
+                                 * @enum {string}
+                                 */
+                                state: "done" | "pending" | "unverified";
+                                /** @description Null only when `state` is unverified. */
+                                done: boolean | null;
+                                /**
+                                 * Format: date-time
+                                 * @description When the first confirmed Collect payment was paid.
+                                 */
+                                at: string | null;
+                                charge_id: string | null;
+                                receipt_id: string | null;
+                                ledger_entry_id: string | null;
+                            };
+                            shop_payment: {
+                                /**
+                                 * @description done: the fact is there. pending: read, and it is not. unverified: the read failed; `done` is then null.
+                                 * @enum {string}
+                                 */
+                                state: "done" | "pending" | "unverified";
+                                /** @description Null only when `state` is unverified. */
+                                done: boolean | null;
+                                /**
+                                 * @description Where the money came from. wallet_*: a Wallet debit the provider settled. external_card / store_on_file: the store's order, no Wallet leg and no settlement claimed.
+                                 * @enum {string|null}
+                                 */
+                                origin: "wallet_pix" | "wallet_boleto" | "external_card" | "store_on_file" | null;
+                                /**
+                                 * Format: date-time
+                                 * @description wallet_*: when the debit posted. External: when the store's order closed the attempt.
+                                 */
+                                at: string | null;
+                                proposal_id: string | null;
+                                mandate_id: string | null;
+                                /** @description The Wallet payment's receipt; null for an external purchase, whose receipt is its order record. */
+                                receipt_id: string | null;
+                                /** @description Null when the origin does not go through the Wallet. */
+                                ledger_entry_id: string | null;
+                                /** @description The store's order id, for an external purchase. */
+                                order_id: string | null;
+                            };
+                            approval: {
+                                /**
+                                 * @description done: the fact is there. pending: read, and it is not. unverified: the read failed; `done` is then null.
+                                 * @enum {string}
+                                 */
+                                state: "done" | "pending" | "unverified";
+                                /** @description Null only when `state` is unverified. */
+                                done: boolean | null;
+                                /**
+                                 * Format: date-time
+                                 * @description When a person first decided a proposal parked above the mandate's limit.
+                                 */
+                                at: string | null;
+                                proposal_id: string | null;
+                                /** @enum {string|null} */
+                                decision: "approved" | "denied" | null;
+                                /** @description The receipt of the approved payment, once it was paid. */
+                                receipt_id: string | null;
+                            };
+                            connect: {
+                                /**
+                                 * @description done: the fact is there. pending: read, and it is not. unverified: the read failed; `done` is then null.
+                                 * @enum {string}
+                                 */
+                                state: "done" | "pending" | "unverified";
+                                /** @description Null only when `state` is unverified. */
+                                done: boolean | null;
+                                /**
+                                 * Format: date-time
+                                 * @description OAuth: when the live refresh token was issued (each refresh rotates it). A key: its last use (a key records no other).
+                                 */
+                                at: string | null;
+                                /** @enum {string|null} */
+                                via: "oauth" | "bearer" | null;
+                                /** @description The name the OAuth client declared at registration; never verified. */
+                                client_name_declared: string | null;
+                                key_id_masked: string | null;
+                            };
                         };
                     };
                 };
@@ -4478,6 +4667,150 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/onboarding/first-receive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The project's first test receipt (the guide's Receber R$ 10)
+         * @description Read-only. The project's first-receive obligation is a Collect link under the reference `codespar_first_receive` (version 1), R$ 10,00, paid by the platform's Test payer. States, from Collect's records, never a clock: `not_started` (no link, or no attempt), `creating_charge` (the charge waits for its copia-e-cola), `paying` (open, the Test payer has not taken it: a POST pays it), `awaiting_confirmation` (the payer took it, or a payment is not yet confirmed with its receipt), `received` (`paid_confirmed`, in the ledger, with its signed receipt; the only state that says received), `failed` (`refusal.retriable` says whether a POST starts again, on the same link), `blocked` (a precondition is missing; nothing is created).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            object: "first_receive";
+                            /** @enum {string} */
+                            state: "not_started" | "creating_charge" | "paying" | "awaiting_confirmation" | "received" | "failed" | "blocked";
+                            /** @description Always 1000 (R$ 10,00): the server's, never the request's. */
+                            amount_minor: number;
+                            link_id: string | null;
+                            attempt_id: string | null;
+                            charge_id: string | null;
+                            /** @description Only in `received`: confirmed by the provider (D-A), with its ledger entry and signed receipt. */
+                            payment: {
+                                payment_id: string;
+                                /** @enum {string} */
+                                status: "paid_confirmed";
+                                receipt_id: string;
+                                ledger_entry_id: string;
+                                /** Format: date-time */
+                                paid_at: string;
+                            } | null;
+                            /** @description In `blocked` and `failed`. */
+                            refusal: {
+                                /** @description blocked: not_test, collect_off, receive_unavailable, insufficient_role. failed: the Collect or test-pay code. */
+                                code: string;
+                                message: string;
+                                /** @description Whether a POST may start again; false needs something else first (the refusal says what). */
+                                retriable: boolean;
+                                next_action?: string;
+                            } | null;
+                            /** @description Any confirmed Collect receipt of the project, from this link or another: the guide's first step is done. */
+                            project_has_confirmed_receipt: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Take the project's first test receipt one step further
+         * @description No body. Idempotent: a repeated click, a refresh or a timeout resumes the same obligation, never a second link, attempt or payment. From where the records are: creates or answers the referenced link, publishes it, asks it for an attempt, or has the Test payer pay the open attempt (one payment per charge). The copia-e-cola arrives after the POST, so the answer is often `creating_charge`; once the GET reads `paying`, one more POST pays it. Test projects only; an admin's or the owner's act from the dashboard, or the project's own key. Answers the GET's view. States, from Collect's records, never a clock: `not_started` (no link, or no attempt), `creating_charge` (the charge waits for its copia-e-cola), `paying` (open, the Test payer has not taken it: a POST pays it), `awaiting_confirmation` (the payer took it, or a payment is not yet confirmed with its receipt), `received` (`paid_confirmed`, in the ledger, with its signed receipt; the only state that says received), `failed` (`refusal.retriable` says whether a POST starts again, on the same link), `blocked` (a precondition is missing; nothing is created).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            object: "first_receive";
+                            /** @enum {string} */
+                            state: "not_started" | "creating_charge" | "paying" | "awaiting_confirmation" | "received" | "failed" | "blocked";
+                            /** @description Always 1000 (R$ 10,00): the server's, never the request's. */
+                            amount_minor: number;
+                            link_id: string | null;
+                            attempt_id: string | null;
+                            charge_id: string | null;
+                            /** @description Only in `received`: confirmed by the provider (D-A), with its ledger entry and signed receipt. */
+                            payment: {
+                                payment_id: string;
+                                /** @enum {string} */
+                                status: "paid_confirmed";
+                                receipt_id: string;
+                                ledger_entry_id: string;
+                                /** Format: date-time */
+                                paid_at: string;
+                            } | null;
+                            /** @description In `blocked` and `failed`. */
+                            refusal: {
+                                /** @description blocked: not_test, collect_off, receive_unavailable, insufficient_role. failed: the Collect or test-pay code. */
+                                code: string;
+                                message: string;
+                                /** @description Whether a POST may start again; false needs something else first (the refusal says what). */
+                                retriable: boolean;
+                                next_action?: string;
+                            } | null;
+                            /** @description Any confirmed Collect receipt of the project, from this link or another: the guide's first step is done. */
+                            project_has_confirmed_receipt: boolean;
+                        };
+                    };
+                };
+                /** @description A body was sent: amount, receiver and payer are the server's. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -4567,7 +4900,7 @@ export interface paths {
         put?: never;
         /**
          * Refill the test balance (test projects only, confirmed)
-         * @description Brings the project's test balance (available + held, every wallet) back up to 10000 centavos, crediting only the difference to the account wallet; a balance already there answers 200 with `refilled: false` and credits nothing. At most 3 refills per São Paulo calendar day per project; the credit and the quota use are one row in one transaction, and a refill that credits nothing uses no quota. Adicionar fundos is a separate action and never counts. An explicit, confirmed act of a person: the body must be `{ "confirm": true }`. The entry is test funding (`test_funding_kind: refill`) and never money received. Admin or owner.
+         * @description Brings the project's test balance (available + held, every wallet) back up to 10000 centavos, crediting only the difference to the account wallet; a balance already there answers 200 with `refilled: false` and credits nothing. At most 3 refills per São Paulo calendar day per project; the credit and the quota use are one row in one transaction, and a refill that credits nothing uses no quota. Adicionar fundos is a separate action and never counts. An explicit, confirmed act of a person: the body must be `{ "confirm": true }`. The entry is test funding (`test_funding_kind: refill`) and never money received. Admin or owner, from the dashboard; an API key is refused with 403 `admin_session_required`.
          *
          *     A Test project with its own bound provider account (`payments` active) refills THAT account: its balance is read at the provider and only the difference to the target is credited there, claimed before it is sent, with NO daily quota (`refill.daily_limit` and `left_today` null). An unreadable balance credits nothing (502 `test_funding_failed`).
          */
@@ -4714,7 +5047,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The acting member is below admin, or the dashboard forwarded no member. */
+                /** @description The acting member is below admin, the dashboard forwarded no member, or the credential is an API key (`admin_session_required`: this is administrative, whatever the key's scopes). */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -7510,6 +7843,2361 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ofb/sweeping/consents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List sweeping consents
+         * @description The project's sweeping consents, most recent first, as stored: the list does not call the provider.
+         *
+         *     Requires the `consents:read` scope.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    consumer_id?: string;
+                    status?: "pending" | "authorised" | "consumed" | "revoked" | "rejected" | "expired" | "canceled" | "failed";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            sweep_consents: {
+                                /** @description `ofb_`-prefixed. Also the external id the provider keeps for this authorisation. */
+                                id: string;
+                                consumer_id: string;
+                                wallet_id: string | null;
+                                /** @description The consumer's `pix-celcoin` funding source the sweep lands in. */
+                                funding_source_id: string | null;
+                                /** @description The provider's id for the consumer's bank, as passed when the consent was opened. */
+                                participant_id: string;
+                                /** @enum {string} */
+                                provider: "iniciador" | "celcoin-itp";
+                                /**
+                                 * @description `pending` until the consumer approves at their bank, then `authorised`. Terminal: `consumed`, `revoked` (after approval), `rejected` (refused or rejected before approval), `expired`, `canceled` (the provider canceled it, or it failed while being opened) and `failed` (a provider error). It only moves forward.
+                                 * @enum {string}
+                                 */
+                                status: "pending" | "authorised" | "consumed" | "revoked" | "rejected" | "expired" | "canceled" | "failed";
+                                /** @description Where the consumer approves the consent at their bank. Present while `pending` only; open it once. */
+                                authorisation_url: string | null;
+                                /** @description The account the bank authorised the pulls from, as the provider reports it. Null until `authorised`. */
+                                debtor: {
+                                    ispb: string | null;
+                                    account_masked: string | null;
+                                } | null;
+                                /** @description The limits as the bank stated them on approval, in centavos. Null until `authorised`. */
+                                limits: {
+                                    total_minor: number | null;
+                                    per_transaction_minor: number | null;
+                                } | null;
+                                created_at: string;
+                                authorized_at: string | null;
+                                expires_at: string | null;
+                                revoked_at: string | null;
+                                consumed_at: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description The query did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Open a sweeping consent
+         * @description Opens a sweeping authorisation at the provider for a consumer's own bank account, to be pulled into their own Celcoin account (`funding_source_id`). The consumer approves it once at their bank, at `authorisation_url`; after that, pulls need no per-payment approval within the bank's limits.
+         *
+         *     The consent is written before the provider is called. If the provider fails while it is being opened, the consent is answered as an error and kept as `canceled`.
+         *
+         *     Requires the `consents:write` scope. Test projects only.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        consumer_id: string;
+                        wallet_id: string;
+                        funding_source_id: string;
+                        /** Format: uuid */
+                        participant_id: string;
+                        /**
+                         * @default [
+                         *       "manual"
+                         *     ]
+                         */
+                        triggers?: ("manual" | "automatic")[];
+                        /** @default {} */
+                        limits?: {
+                            total_minor?: number;
+                            per_transaction_minor?: number;
+                        };
+                        /** Format: date-time */
+                        expires_at?: string;
+                        /** Format: uri */
+                        redirect_url?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `ofb_`-prefixed. Also the external id the provider keeps for this authorisation. */
+                            id: string;
+                            consumer_id: string;
+                            wallet_id: string | null;
+                            /** @description The consumer's `pix-celcoin` funding source the sweep lands in. */
+                            funding_source_id: string | null;
+                            /** @description The provider's id for the consumer's bank, as passed when the consent was opened. */
+                            participant_id: string;
+                            /** @enum {string} */
+                            provider: "iniciador" | "celcoin-itp";
+                            /**
+                             * @description `pending` until the consumer approves at their bank, then `authorised`. Terminal: `consumed`, `revoked` (after approval), `rejected` (refused or rejected before approval), `expired`, `canceled` (the provider canceled it, or it failed while being opened) and `failed` (a provider error). It only moves forward.
+                             * @enum {string}
+                             */
+                            status: "pending" | "authorised" | "consumed" | "revoked" | "rejected" | "expired" | "canceled" | "failed";
+                            /** @description Where the consumer approves the consent at their bank. Present while `pending` only; open it once. */
+                            authorisation_url: string | null;
+                            /** @description The account the bank authorised the pulls from, as the provider reports it. Null until `authorised`. */
+                            debtor: {
+                                ispb: string | null;
+                                account_masked: string | null;
+                            } | null;
+                            /** @description The limits as the bank stated them on approval, in centavos. Null until `authorised`. */
+                            limits: {
+                                total_minor: number | null;
+                                per_transaction_minor: number | null;
+                            } | null;
+                            created_at: string;
+                            authorized_at: string | null;
+                            expires_at: string | null;
+                            revoked_at: string | null;
+                            consumed_at: string | null;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description This project already holds an open sweeping consent for this consumer at this bank (`consent_active_for_consumer`), or another project of the organization does (`bank_consent_held_elsewhere`). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "consent_active_for_consumer" | "bank_consent_held_elsewhere";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not live, or the destination cannot receive a sweep. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live" | "sweep_destination_unresolved";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider refused the call. `details.provider_code` is the provider's own error code; terminal for this request. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sweep_provider_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider gave no definite answer (`sweep_provider_ambiguous`, retriable), the platform has no active trigger of a requested kind (`sweep_trigger_unavailable`), the deployment has no sweeping provider (`ofb_adapter_unavailable`) or another request holds this grant's lock (`consent_lock_timeout`, retriable). */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sweep_provider_ambiguous" | "sweep_trigger_unavailable" | "ofb_adapter_unavailable" | "consent_lock_timeout";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ofb/sweeping/consents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read one sweeping consent
+         * @description While the consent is `pending` or `authorised`, the provider is read and the consent moves forward with it; a terminal consent is answered as stored.
+         *
+         *     Requires the `consents:read` scope.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description `ofb_`-prefixed sweeping consent id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `ofb_`-prefixed. Also the external id the provider keeps for this authorisation. */
+                            id: string;
+                            consumer_id: string;
+                            wallet_id: string | null;
+                            /** @description The consumer's `pix-celcoin` funding source the sweep lands in. */
+                            funding_source_id: string | null;
+                            /** @description The provider's id for the consumer's bank, as passed when the consent was opened. */
+                            participant_id: string;
+                            /** @enum {string} */
+                            provider: "iniciador" | "celcoin-itp";
+                            /**
+                             * @description `pending` until the consumer approves at their bank, then `authorised`. Terminal: `consumed`, `revoked` (after approval), `rejected` (refused or rejected before approval), `expired`, `canceled` (the provider canceled it, or it failed while being opened) and `failed` (a provider error). It only moves forward.
+                             * @enum {string}
+                             */
+                            status: "pending" | "authorised" | "consumed" | "revoked" | "rejected" | "expired" | "canceled" | "failed";
+                            /** @description Where the consumer approves the consent at their bank. Present while `pending` only; open it once. */
+                            authorisation_url: string | null;
+                            /** @description The account the bank authorised the pulls from, as the provider reports it. Null until `authorised`. */
+                            debtor: {
+                                ispb: string | null;
+                                account_masked: string | null;
+                            } | null;
+                            /** @description The limits as the bank stated them on approval, in centavos. Null until `authorised`. */
+                            limits: {
+                                total_minor: number | null;
+                                per_transaction_minor: number | null;
+                            } | null;
+                            created_at: string;
+                            authorized_at: string | null;
+                            expires_at: string | null;
+                            revoked_at: string | null;
+                            consumed_at: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found. No sweeping consent with this id in the caller's project. A data-sharing consent's id answers here too. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The project is live. Sweeping serves test projects only, against the provider's sandbox (`details.reason` `live_not_enabled`). */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider refused the call. `details.provider_code` is the provider's own error code; terminal for this request. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sweep_provider_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No definite answer: the provider did not answer, answered a status this API does not map yet (`sweep_provider_ambiguous`, retriable with the same request), or the deployment cannot reach a sweeping provider (`ofb_adapter_unavailable`). */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sweep_provider_ambiguous" | "ofb_adapter_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ofb/sweeping/consents/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke a sweeping consent
+         * @description Reads the provider first, then rejects a consent still awaiting approval (`rejected`) or revokes an authorised one (`revoked`).
+         *
+         *     Requires the `consents:write` scope.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description `ofb_`-prefixed sweeping consent id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `ofb_`-prefixed. Also the external id the provider keeps for this authorisation. */
+                            id: string;
+                            consumer_id: string;
+                            wallet_id: string | null;
+                            /** @description The consumer's `pix-celcoin` funding source the sweep lands in. */
+                            funding_source_id: string | null;
+                            /** @description The provider's id for the consumer's bank, as passed when the consent was opened. */
+                            participant_id: string;
+                            /** @enum {string} */
+                            provider: "iniciador" | "celcoin-itp";
+                            /**
+                             * @description `pending` until the consumer approves at their bank, then `authorised`. Terminal: `consumed`, `revoked` (after approval), `rejected` (refused or rejected before approval), `expired`, `canceled` (the provider canceled it, or it failed while being opened) and `failed` (a provider error). It only moves forward.
+                             * @enum {string}
+                             */
+                            status: "pending" | "authorised" | "consumed" | "revoked" | "rejected" | "expired" | "canceled" | "failed";
+                            /** @description Where the consumer approves the consent at their bank. Present while `pending` only; open it once. */
+                            authorisation_url: string | null;
+                            /** @description The account the bank authorised the pulls from, as the provider reports it. Null until `authorised`. */
+                            debtor: {
+                                ispb: string | null;
+                                account_masked: string | null;
+                            } | null;
+                            /** @description The limits as the bank stated them on approval, in centavos. Null until `authorised`. */
+                            limits: {
+                                total_minor: number | null;
+                                per_transaction_minor: number | null;
+                            } | null;
+                            created_at: string;
+                            authorized_at: string | null;
+                            expires_at: string | null;
+                            revoked_at: string | null;
+                            consumed_at: string | null;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found. No sweeping consent with this id in the caller's project. A data-sharing consent's id answers here too. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The consent is already terminal, or is still being opened at the provider (`details.in_flight`). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "illegal_transition";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The project is live. Sweeping serves test projects only, against the provider's sandbox (`details.reason` `live_not_enabled`). */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider refused the call. `details.provider_code` is the provider's own error code; terminal for this request. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sweep_provider_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No definite answer: the provider did not answer, answered a status this API does not map yet (`sweep_provider_ambiguous`, retriable with the same request), or the deployment cannot reach a sweeping provider (`ofb_adapter_unavailable`). */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sweep_provider_ambiguous" | "ofb_adapter_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ofb/sweeping/pulls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List sweeping pulls
+         * @description The project's sweeping pulls, most recent first, as stored: the list does not call the provider.
+         *
+         *     Requires the `wallets:read` scope.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    consent_id?: string;
+                    status?: "pending" | "settling" | "completed" | "rejected" | "expired" | "canceled" | "failed" | "unknown";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            sweep_pulls: {
+                                /** @description `swp_`-prefixed. */
+                                id: string;
+                                /** @description The `ofb_`-prefixed sweeping consent the pull ran under. */
+                                consent_id: string;
+                                consumer_id: string;
+                                wallet_id: string;
+                                /** @enum {string} */
+                                provider: "iniciador" | "celcoin-itp";
+                                /** @description In centavos. */
+                                amount_minor: number;
+                                currency: string;
+                                /**
+                                 * @description `pending` while the provider processes it, `settling` once the Pix is on its way, then a terminal `completed`, `rejected`, `expired`, `canceled` (the provider refused it when it was sent) or `failed` (the provider reported an error). `unknown`: no definite answer yet; retry the create with the same `Idempotency-Key`. It only moves forward.
+                                 * @enum {string}
+                                 */
+                                status: "pending" | "settling" | "completed" | "rejected" | "expired" | "canceled" | "failed" | "unknown";
+                                /** @description The provider's own status, as it reported it. On a read, a status this API does not map yet is shown here while `status` stays as stored. */
+                                provider_status: string | null;
+                                /** @description The Pix end-to-end id, once the provider reports it. */
+                                end_to_end_id: string | null;
+                                /** @description The provider's error code, or why the pull has no definite answer. */
+                                error_code: string | null;
+                                /** @description Always `false` for now: a pull `completed` at the provider is not yet credited in the wallet. */
+                                credited: boolean;
+                                /** @description `true` when the answer is a pull an earlier request with the same key created. */
+                                replayed: boolean;
+                                created_at: string;
+                                updated_at: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description The query did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not carry the `wallets:read` scope. Bare body; nothing was read or written. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "forbidden";
+                            message: string;
+                            /** @enum {number} */
+                            status: 403;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Pull Pix under a sweeping consent
+         * @description Pulls `amount_minor` from the consumer's bank account into their own Celcoin account, under an `authorised` sweeping consent opened with the `automatic` trigger. No user is present: the pull needs no approval at the bank within the limits the bank set on the consent.
+         *
+         *     The consent is read at the provider first, and the amount is checked against the bank's per-transaction limit before the pull is sent. The pull is written before the provider is called.
+         *
+         *     A pull moves money, so the `Idempotency-Key` header is required. The same key with the same body answers the pull the first request created, never a second one; when that request got no definite answer, the retry looks the pull up at the provider and sends it again only when the provider has none.
+         *
+         *     Requires the `wallets:admin` scope. Test projects only.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Required. Send the same key on every retry of the same pull. */
+                    "Idempotency-Key": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        consent_id: string;
+                        amount_minor: number;
+                        risk_signals: {
+                            /** @enum {string} */
+                            type: "AUTOMATIC";
+                            /** Format: date-time */
+                            last_login_date_time: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description A replay: the same `Idempotency-Key` and body as an earlier request, answered with the pull it created (`replayed: true`). */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `swp_`-prefixed. */
+                            id: string;
+                            /** @description The `ofb_`-prefixed sweeping consent the pull ran under. */
+                            consent_id: string;
+                            consumer_id: string;
+                            wallet_id: string;
+                            /** @enum {string} */
+                            provider: "iniciador" | "celcoin-itp";
+                            /** @description In centavos. */
+                            amount_minor: number;
+                            currency: string;
+                            /**
+                             * @description `pending` while the provider processes it, `settling` once the Pix is on its way, then a terminal `completed`, `rejected`, `expired`, `canceled` (the provider refused it when it was sent) or `failed` (the provider reported an error). `unknown`: no definite answer yet; retry the create with the same `Idempotency-Key`. It only moves forward.
+                             * @enum {string}
+                             */
+                            status: "pending" | "settling" | "completed" | "rejected" | "expired" | "canceled" | "failed" | "unknown";
+                            /** @description The provider's own status, as it reported it. On a read, a status this API does not map yet is shown here while `status` stays as stored. */
+                            provider_status: string | null;
+                            /** @description The Pix end-to-end id, once the provider reports it. */
+                            end_to_end_id: string | null;
+                            /** @description The provider's error code, or why the pull has no definite answer. */
+                            error_code: string | null;
+                            /** @description Always `false` for now: a pull `completed` at the provider is not yet credited in the wallet. */
+                            credited: boolean;
+                            /** @description `true` when the answer is a pull an earlier request with the same key created. */
+                            replayed: boolean;
+                            created_at: string;
+                            updated_at: string;
+                        };
+                    };
+                };
+                /** @description The pull was written and sent to the provider. */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `swp_`-prefixed. */
+                            id: string;
+                            /** @description The `ofb_`-prefixed sweeping consent the pull ran under. */
+                            consent_id: string;
+                            consumer_id: string;
+                            wallet_id: string;
+                            /** @enum {string} */
+                            provider: "iniciador" | "celcoin-itp";
+                            /** @description In centavos. */
+                            amount_minor: number;
+                            currency: string;
+                            /**
+                             * @description `pending` while the provider processes it, `settling` once the Pix is on its way, then a terminal `completed`, `rejected`, `expired`, `canceled` (the provider refused it when it was sent) or `failed` (the provider reported an error). `unknown`: no definite answer yet; retry the create with the same `Idempotency-Key`. It only moves forward.
+                             * @enum {string}
+                             */
+                            status: "pending" | "settling" | "completed" | "rejected" | "expired" | "canceled" | "failed" | "unknown";
+                            /** @description The provider's own status, as it reported it. On a read, a status this API does not map yet is shown here while `status` stays as stored. */
+                            provider_status: string | null;
+                            /** @description The Pix end-to-end id, once the provider reports it. */
+                            end_to_end_id: string | null;
+                            /** @description The provider's error code, or why the pull has no definite answer. */
+                            error_code: string | null;
+                            /** @description Always `false` for now: a pull `completed` at the provider is not yet credited in the wallet. */
+                            credited: boolean;
+                            /** @description `true` when the answer is a pull an earlier request with the same key created. */
+                            replayed: boolean;
+                            created_at: string;
+                            updated_at: string;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema, the `Idempotency-Key` header is missing (`sweep_idempotency_key_required`) or longer than 255 characters (`invalid_idempotency_key`). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "sweep_idempotency_key_required" | "invalid_idempotency_key";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not carry the `wallets:admin` scope. Bare body; nothing was read or written. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "forbidden";
+                            message: string;
+                            /** @enum {number} */
+                            status: 403;
+                        };
+                    };
+                };
+                /** @description Not Found. No sweeping consent with this id in the caller's project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The consent cannot carry a pull now (`sweep_consent_not_authorised`), the key already created a pull with another consent or amount (`idempotency_key_conflict`), or another request with this key is still sending it (`sweep_pull_in_flight`, retriable). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sweep_consent_not_authorised" | "idempotency_key_conflict" | "sweep_pull_in_flight";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not live, above one of the bank's limits (`details.limit`: `per_transaction`, or `total` counted over the consent's earlier pulls that may move money; `details.reason` `limit_unreadable` when a limit exists and cannot be read), or the consent has no automatic trigger. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live" | "sweep_limit_exceeded" | "sweep_trigger_not_on_consent";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider refused the pull. `details.provider_code` is the provider's own error code; the pull is kept as `canceled` and terminal for this key. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sweep_provider_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No definite answer from the provider (`sweep_provider_ambiguous`): the pull is kept as `unknown`; retry the same request with the same `Idempotency-Key`. A refused re-send of a pull whose first answer was lost is answered this way too (`details.resend_refused`). Or the deployment cannot reach a sweeping provider (`ofb_adapter_unavailable`). */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sweep_provider_ambiguous" | "ofb_adapter_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ofb/sweeping/pulls/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read one sweeping pull
+         * @description While the pull is not terminal, the provider is read and the pull moves forward with it; a terminal pull is answered as stored. A read never sends a pull again: that is the create retry's job.
+         *
+         *     Requires the `wallets:read` scope.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description `swp_`-prefixed sweeping pull id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `swp_`-prefixed. */
+                            id: string;
+                            /** @description The `ofb_`-prefixed sweeping consent the pull ran under. */
+                            consent_id: string;
+                            consumer_id: string;
+                            wallet_id: string;
+                            /** @enum {string} */
+                            provider: "iniciador" | "celcoin-itp";
+                            /** @description In centavos. */
+                            amount_minor: number;
+                            currency: string;
+                            /**
+                             * @description `pending` while the provider processes it, `settling` once the Pix is on its way, then a terminal `completed`, `rejected`, `expired`, `canceled` (the provider refused it when it was sent) or `failed` (the provider reported an error). `unknown`: no definite answer yet; retry the create with the same `Idempotency-Key`. It only moves forward.
+                             * @enum {string}
+                             */
+                            status: "pending" | "settling" | "completed" | "rejected" | "expired" | "canceled" | "failed" | "unknown";
+                            /** @description The provider's own status, as it reported it. On a read, a status this API does not map yet is shown here while `status` stays as stored. */
+                            provider_status: string | null;
+                            /** @description The Pix end-to-end id, once the provider reports it. */
+                            end_to_end_id: string | null;
+                            /** @description The provider's error code, or why the pull has no definite answer. */
+                            error_code: string | null;
+                            /** @description Always `false` for now: a pull `completed` at the provider is not yet credited in the wallet. */
+                            credited: boolean;
+                            /** @description `true` when the answer is a pull an earlier request with the same key created. */
+                            replayed: boolean;
+                            created_at: string;
+                            updated_at: string;
+                        };
+                    };
+                };
+                /** @description The key does not carry the `wallets:read` scope. Bare body; nothing was read or written. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "forbidden";
+                            message: string;
+                            /** @enum {number} */
+                            status: 403;
+                        };
+                    };
+                };
+                /** @description Not Found. No sweeping pull with this id in the caller's project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The project is live. Sweeping serves test projects only, against the provider's sandbox (`details.reason` `live_not_enabled`). */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider refused the read. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sweep_provider_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No definite answer from the provider (`sweep_provider_ambiguous`, retriable), or the deployment cannot reach a sweeping provider (`ofb_adapter_unavailable`). */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "sweep_provider_ambiguous" | "ofb_adapter_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ofb/jsr/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List JSR enrollments
+         * @description The project's enrollments, most recent first, as stored.
+         *
+         *     Requires the `consents:read` scope.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    consumer_id?: string;
+                    status?: "pending" | "authorised" | "revoked" | "rejected" | "expired" | "canceled";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            jsr_enrollments: {
+                                /** @description `ofb_`-prefixed. */
+                                id: string;
+                                consumer_id: string;
+                                wallet_id: string | null;
+                                funding_source_id: string | null;
+                                /** @description The bank, as the provider's participant id. */
+                                participant_id: string;
+                                /** @enum {string} */
+                                provider: "iniciador";
+                                /**
+                                 * @description `pending` until the person registers the passkey on the hosted page, then `authorised`; terminal `rejected` (not registered in its window, or revoked before it was), `revoked`, `expired`, or `canceled` (the provider failed while it was being opened). It only moves forward.
+                                 * @enum {string}
+                                 */
+                                status: "pending" | "authorised" | "revoked" | "rejected" | "expired" | "canceled";
+                                /** @description The bank account the enrollment is bound to, once authorised. */
+                                debtor: {
+                                    ispb: string | null;
+                                    account_masked: string | null;
+                                } | null;
+                                /** @description The bank's per-transaction limit in centavos, as the provider reports it. The bank enforces it. */
+                                bank_transaction_limit_minor: number | null;
+                                created_at: string;
+                                authorized_at: string | null;
+                                expires_at: string | null;
+                                revoked_at: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description The query did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not carry the `consents:read` scope. Bare body; nothing was read or written. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "forbidden";
+                            message: string;
+                            /** @enum {number} */
+                            status: 403;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Register a passkey for Pix com biometria
+         * @description Opens an enrollment at the bank for the consumer's own account and answers `approval_url`, the hosted page where the person registers a passkey on their device. The page expires about a minute after it is made: call this only with the person about to open it, and open a new enrollment if it expired (the old one ends `rejected` on its own). It carries a credential of its own: hand it to the person and to no log. The API keeps it nowhere.
+         *
+         *     Requires the `consents:write` scope. Test projects only.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        consumer_id: string;
+                        wallet_id: string;
+                        funding_source_id: string;
+                        /** Format: uuid */
+                        participant_id: string;
+                        device_context: {
+                            os_version: string;
+                            user_time_zone_offset: string;
+                            language: string;
+                            screen_dimensions: {
+                                width: number;
+                                height: number;
+                            };
+                            /** Format: date */
+                            account_tenure: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description The enrollment, `pending`, with the page to open now. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `ofb_`-prefixed. */
+                            id: string;
+                            consumer_id: string;
+                            wallet_id: string | null;
+                            funding_source_id: string | null;
+                            /** @description The bank, as the provider's participant id. */
+                            participant_id: string;
+                            /** @enum {string} */
+                            provider: "iniciador";
+                            /**
+                             * @description `pending` until the person registers the passkey on the hosted page, then `authorised`; terminal `rejected` (not registered in its window, or revoked before it was), `revoked`, `expired`, or `canceled` (the provider failed while it was being opened). It only moves forward.
+                             * @enum {string}
+                             */
+                            status: "pending" | "authorised" | "revoked" | "rejected" | "expired" | "canceled";
+                            /** @description The bank account the enrollment is bound to, once authorised. */
+                            debtor: {
+                                ispb: string | null;
+                                account_masked: string | null;
+                            } | null;
+                            /** @description The bank's per-transaction limit in centavos, as the provider reports it. The bank enforces it. */
+                            bank_transaction_limit_minor: number | null;
+                            created_at: string;
+                            authorized_at: string | null;
+                            expires_at: string | null;
+                            revoked_at: string | null;
+                            /** @description It carries a credential of its own: hand it to the person and to no log. The API keeps it nowhere. */
+                            approval_url: string;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not carry the `consents:write` scope. Bare body; nothing was read or written. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "forbidden";
+                            message: string;
+                            /** @enum {number} */
+                            status: 403;
+                        };
+                    };
+                };
+                /** @description Not live, or the destination cannot receive a payment (`jsr_destination_unresolved`, `details.reason`). */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live" | "jsr_destination_unresolved";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider refused (`jsr_provider_refused`). `details.provider_code` is its own code; its free text is never relayed. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "jsr_provider_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No definite answer from the provider (`jsr_provider_ambiguous`), or the deployment has no JSR provider credentials (`ofb_adapter_unavailable`). */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "jsr_provider_ambiguous" | "ofb_adapter_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ofb/jsr/enrollments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read one JSR enrollment
+         * @description While not terminal, the provider is read and the enrollment moves forward with it.
+         *
+         *     Requires the `consents:read` scope.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `ofb_`-prefixed. */
+                            id: string;
+                            consumer_id: string;
+                            wallet_id: string | null;
+                            funding_source_id: string | null;
+                            /** @description The bank, as the provider's participant id. */
+                            participant_id: string;
+                            /** @enum {string} */
+                            provider: "iniciador";
+                            /**
+                             * @description `pending` until the person registers the passkey on the hosted page, then `authorised`; terminal `rejected` (not registered in its window, or revoked before it was), `revoked`, `expired`, or `canceled` (the provider failed while it was being opened). It only moves forward.
+                             * @enum {string}
+                             */
+                            status: "pending" | "authorised" | "revoked" | "rejected" | "expired" | "canceled";
+                            /** @description The bank account the enrollment is bound to, once authorised. */
+                            debtor: {
+                                ispb: string | null;
+                                account_masked: string | null;
+                            } | null;
+                            /** @description The bank's per-transaction limit in centavos, as the provider reports it. The bank enforces it. */
+                            bank_transaction_limit_minor: number | null;
+                            created_at: string;
+                            authorized_at: string | null;
+                            expires_at: string | null;
+                            revoked_at: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not carry the `consents:read` scope. Bare body; nothing was read or written. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "forbidden";
+                            message: string;
+                            /** @enum {number} */
+                            status: 403;
+                        };
+                    };
+                };
+                /** @description No JSR enrollment with this id in the caller's project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The project is live. JSR serves test projects only, against the provider's sandbox (`details.reason` `live_not_enabled`). */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider refused (`jsr_provider_refused`). `details.provider_code` is its own code; its free text is never relayed. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "jsr_provider_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No definite answer from the provider (`jsr_provider_ambiguous`), or the deployment has no JSR provider credentials (`ofb_adapter_unavailable`). */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "jsr_provider_ambiguous" | "ofb_adapter_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ofb/jsr/enrollments/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke a JSR enrollment
+         * @description Revokes the enrollment at the provider, then here: `revoked`, or `rejected` for one never authorised. Deleting the passkey on the device does not revoke it.
+         *
+         *     Requires the `consents:write` scope.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Recorded on this API's own consent event. Not sent to the provider: no reason field of its revoke is known. */
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `ofb_`-prefixed. */
+                            id: string;
+                            consumer_id: string;
+                            wallet_id: string | null;
+                            funding_source_id: string | null;
+                            /** @description The bank, as the provider's participant id. */
+                            participant_id: string;
+                            /** @enum {string} */
+                            provider: "iniciador";
+                            /**
+                             * @description `pending` until the person registers the passkey on the hosted page, then `authorised`; terminal `rejected` (not registered in its window, or revoked before it was), `revoked`, `expired`, or `canceled` (the provider failed while it was being opened). It only moves forward.
+                             * @enum {string}
+                             */
+                            status: "pending" | "authorised" | "revoked" | "rejected" | "expired" | "canceled";
+                            /** @description The bank account the enrollment is bound to, once authorised. */
+                            debtor: {
+                                ispb: string | null;
+                                account_masked: string | null;
+                            } | null;
+                            /** @description The bank's per-transaction limit in centavos, as the provider reports it. The bank enforces it. */
+                            bank_transaction_limit_minor: number | null;
+                            created_at: string;
+                            authorized_at: string | null;
+                            expires_at: string | null;
+                            revoked_at: string | null;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not carry the `consents:write` scope. Bare body; nothing was read or written. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "forbidden";
+                            message: string;
+                            /** @enum {number} */
+                            status: 403;
+                        };
+                    };
+                };
+                /** @description No JSR enrollment with this id in the caller's project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Terminal already, or still being opened (`details.in_flight`). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "illegal_transition";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The project is live. JSR serves test projects only, against the provider's sandbox (`details.reason` `live_not_enabled`). */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider refused (`jsr_provider_refused`). `details.provider_code` is its own code; its free text is never relayed. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "jsr_provider_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No definite answer from the provider (`jsr_provider_ambiguous`), or the deployment has no JSR provider credentials (`ofb_adapter_unavailable`). */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "jsr_provider_ambiguous" | "ofb_adapter_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ofb/jsr/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List JSR payments
+         * @description The project's JSR payments, most recent first, as stored; no signing page.
+         *
+         *     Requires the `wallets:read` scope.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    enrollment_id?: string;
+                    status?: "pending" | "settling" | "completed" | "rejected" | "expired" | "canceled" | "failed" | "unknown";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            jsr_payments: {
+                                /** @description `swp_`-prefixed: a JSR payment is a pull, credited as one. */
+                                id: string;
+                                enrollment_id: string;
+                                consumer_id: string;
+                                wallet_id: string;
+                                /** @enum {string} */
+                                provider: "iniciador";
+                                /** @description In centavos. */
+                                amount_minor: number;
+                                currency: string;
+                                /**
+                                 * @description `pending` until the person signs it and the bank settles it, then `completed`; `rejected` when nobody signed it in time (`signature_timed_out`) or the bank refused it; `canceled` when the provider refused the create. `unknown`: no definite answer, or bound to another enrollment (`needs_human`).
+                                 * @enum {string}
+                                 */
+                                status: "pending" | "settling" | "completed" | "rejected" | "expired" | "canceled" | "failed" | "unknown";
+                                provider_status: string | null;
+                                /** @description The Pix end-to-end id. Assigned at create, so a rejected payment has one too: only `completed` moved money. */
+                                end_to_end_id: string | null;
+                                error_code: string | null;
+                                /** @description The bank ended it because the person did not sign within about ten minutes (TIMEOUT_CONSENTIMENTO). */
+                                signature_timed_out: boolean;
+                                /** @description A person must check it at the provider: it is never sent again. */
+                                needs_human: boolean;
+                                /** @description The hosted page where the person signs this payment with the passkey, while it waits for that. Handed only to a key with `wallets:admin`. It carries a credential of its own: hand it to the person and to no log. The API keeps it nowhere. */
+                                approval_url: string | null;
+                                /** @description The payment waits for a signature, and the key reading it lacks `wallets:admin`: the signing page authorises a debit, so it is not handed to a read-only key. */
+                                approval_url_withheld: boolean;
+                                /** @description Always `false` for now: a completed payment is not yet credited in the wallet. */
+                                credited: boolean;
+                                replayed: boolean;
+                                created_at: string;
+                                updated_at: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description The query did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not carry the `wallets:read` scope. Bare body; nothing was read or written. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "forbidden";
+                            message: string;
+                            /** @enum {number} */
+                            status: 403;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Pay from the consumer's bank with Pix com biometria
+         * @description Creates a Pix from the consumer's bank account into their own Celcoin account under an `authorised` enrollment, and answers `approval_url`, the hosted page where the person signs it with the passkey. Unsigned, the bank ends it `rejected` in about ten minutes (`signature_timed_out`); it is never sent again, and a new approval is a new payment with a new key.
+         *
+         *     The provider binds a payment to the holder's newest authorised enrollment at that bank. A payment is refused before it is sent unless the named enrollment is that one (`jsr_enrollment_not_newest`), and one bound to another anyway is kept with `needs_human`, its page withheld (`jsr_enrollment_mismatch`).
+         *
+         *     The `Idempotency-Key` header is required. It carries a credential of its own: hand it to the person and to no log. The API keeps it nowhere.
+         *
+         *     Requires the `wallets:admin` scope. Test projects only.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Required. The same key on every retry of the same payment. */
+                    "Idempotency-Key": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        enrollment_id: string;
+                        amount_minor: number;
+                        description?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description A replay of the payment the same key created (`replayed: true`). */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `swp_`-prefixed: a JSR payment is a pull, credited as one. */
+                            id: string;
+                            enrollment_id: string;
+                            consumer_id: string;
+                            wallet_id: string;
+                            /** @enum {string} */
+                            provider: "iniciador";
+                            /** @description In centavos. */
+                            amount_minor: number;
+                            currency: string;
+                            /**
+                             * @description `pending` until the person signs it and the bank settles it, then `completed`; `rejected` when nobody signed it in time (`signature_timed_out`) or the bank refused it; `canceled` when the provider refused the create. `unknown`: no definite answer, or bound to another enrollment (`needs_human`).
+                             * @enum {string}
+                             */
+                            status: "pending" | "settling" | "completed" | "rejected" | "expired" | "canceled" | "failed" | "unknown";
+                            provider_status: string | null;
+                            /** @description The Pix end-to-end id. Assigned at create, so a rejected payment has one too: only `completed` moved money. */
+                            end_to_end_id: string | null;
+                            error_code: string | null;
+                            /** @description The bank ended it because the person did not sign within about ten minutes (TIMEOUT_CONSENTIMENTO). */
+                            signature_timed_out: boolean;
+                            /** @description A person must check it at the provider: it is never sent again. */
+                            needs_human: boolean;
+                            /** @description The hosted page where the person signs this payment with the passkey, while it waits for that. Handed only to a key with `wallets:admin`. It carries a credential of its own: hand it to the person and to no log. The API keeps it nowhere. */
+                            approval_url: string | null;
+                            /** @description The payment waits for a signature, and the key reading it lacks `wallets:admin`: the signing page authorises a debit, so it is not handed to a read-only key. */
+                            approval_url_withheld: boolean;
+                            /** @description Always `false` for now: a completed payment is not yet credited in the wallet. */
+                            credited: boolean;
+                            replayed: boolean;
+                            created_at: string;
+                            updated_at: string;
+                        };
+                    };
+                };
+                /** @description The payment was written and created at the provider; the person signs it at `approval_url`. */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `swp_`-prefixed: a JSR payment is a pull, credited as one. */
+                            id: string;
+                            enrollment_id: string;
+                            consumer_id: string;
+                            wallet_id: string;
+                            /** @enum {string} */
+                            provider: "iniciador";
+                            /** @description In centavos. */
+                            amount_minor: number;
+                            currency: string;
+                            /**
+                             * @description `pending` until the person signs it and the bank settles it, then `completed`; `rejected` when nobody signed it in time (`signature_timed_out`) or the bank refused it; `canceled` when the provider refused the create. `unknown`: no definite answer, or bound to another enrollment (`needs_human`).
+                             * @enum {string}
+                             */
+                            status: "pending" | "settling" | "completed" | "rejected" | "expired" | "canceled" | "failed" | "unknown";
+                            provider_status: string | null;
+                            /** @description The Pix end-to-end id. Assigned at create, so a rejected payment has one too: only `completed` moved money. */
+                            end_to_end_id: string | null;
+                            error_code: string | null;
+                            /** @description The bank ended it because the person did not sign within about ten minutes (TIMEOUT_CONSENTIMENTO). */
+                            signature_timed_out: boolean;
+                            /** @description A person must check it at the provider: it is never sent again. */
+                            needs_human: boolean;
+                            /** @description The hosted page where the person signs this payment with the passkey, while it waits for that. Handed only to a key with `wallets:admin`. It carries a credential of its own: hand it to the person and to no log. The API keeps it nowhere. */
+                            approval_url: string | null;
+                            /** @description The payment waits for a signature, and the key reading it lacks `wallets:admin`: the signing page authorises a debit, so it is not handed to a read-only key. */
+                            approval_url_withheld: boolean;
+                            /** @description Always `false` for now: a completed payment is not yet credited in the wallet. */
+                            credited: boolean;
+                            replayed: boolean;
+                            created_at: string;
+                            updated_at: string;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema, or the `Idempotency-Key` header is missing (`jsr_idempotency_key_required`) or too long (`invalid_idempotency_key`). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "jsr_idempotency_key_required" | "invalid_idempotency_key";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not carry the `wallets:admin` scope. Bare body; nothing was read or written. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "forbidden";
+                            message: string;
+                            /** @enum {number} */
+                            status: 403;
+                        };
+                    };
+                };
+                /** @description No JSR enrollment with this id in the caller's project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The enrollment cannot carry a payment (`jsr_enrollment_not_authorised`), is not the one the provider would bind it to (`jsr_enrollment_not_newest`), the provider bound it to another (`jsr_enrollment_mismatch`, `needs_human`), the key created another payment (`idempotency_key_conflict`), is still sending it (`jsr_payment_in_flight`), or sent it with no definite answer (`jsr_payment_unresolved`, `needs_human`). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "jsr_enrollment_not_authorised" | "jsr_enrollment_not_newest" | "jsr_enrollment_mismatch" | "idempotency_key_conflict" | "jsr_payment_in_flight" | "jsr_payment_unresolved";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not live, above a limit (`jsr_limit_exceeded`: the test ceiling of R$ 100 per payment and R$ 1.000 per enrollment, `details.source` `platform_test`, or the bank's per-transaction limit, `bank`), or the destination cannot receive it (`jsr_destination_unresolved`). */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live" | "jsr_limit_exceeded" | "jsr_destination_unresolved";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider refused (`jsr_provider_refused`). `details.provider_code` is its own code; its free text is never relayed. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "jsr_provider_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No definite answer from the provider (`jsr_provider_ambiguous`), or the deployment has no JSR provider credentials (`ofb_adapter_unavailable`). */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "jsr_provider_ambiguous" | "ofb_adapter_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ofb/jsr/payments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read one JSR payment
+         * @description While not terminal, the provider is read and the payment moves forward with it. While the payment waits for the signature, `approval_url` is the signing page again for a key with `wallets:admin`; a key with only `wallets:read` gets `approval_url: null` and `approval_url_withheld: true`. A payment left `pending` with no provider id past the longest a create can take is parked `unknown` with `error_code` `lost_send` and `needs_human`.
+         *
+         *     Requires the `wallets:read` scope.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `swp_`-prefixed: a JSR payment is a pull, credited as one. */
+                            id: string;
+                            enrollment_id: string;
+                            consumer_id: string;
+                            wallet_id: string;
+                            /** @enum {string} */
+                            provider: "iniciador";
+                            /** @description In centavos. */
+                            amount_minor: number;
+                            currency: string;
+                            /**
+                             * @description `pending` until the person signs it and the bank settles it, then `completed`; `rejected` when nobody signed it in time (`signature_timed_out`) or the bank refused it; `canceled` when the provider refused the create. `unknown`: no definite answer, or bound to another enrollment (`needs_human`).
+                             * @enum {string}
+                             */
+                            status: "pending" | "settling" | "completed" | "rejected" | "expired" | "canceled" | "failed" | "unknown";
+                            provider_status: string | null;
+                            /** @description The Pix end-to-end id. Assigned at create, so a rejected payment has one too: only `completed` moved money. */
+                            end_to_end_id: string | null;
+                            error_code: string | null;
+                            /** @description The bank ended it because the person did not sign within about ten minutes (TIMEOUT_CONSENTIMENTO). */
+                            signature_timed_out: boolean;
+                            /** @description A person must check it at the provider: it is never sent again. */
+                            needs_human: boolean;
+                            /** @description The hosted page where the person signs this payment with the passkey, while it waits for that. Handed only to a key with `wallets:admin`. It carries a credential of its own: hand it to the person and to no log. The API keeps it nowhere. */
+                            approval_url: string | null;
+                            /** @description The payment waits for a signature, and the key reading it lacks `wallets:admin`: the signing page authorises a debit, so it is not handed to a read-only key. */
+                            approval_url_withheld: boolean;
+                            /** @description Always `false` for now: a completed payment is not yet credited in the wallet. */
+                            credited: boolean;
+                            replayed: boolean;
+                            created_at: string;
+                            updated_at: string;
+                        };
+                    };
+                };
+                /** @description The key does not carry the `wallets:read` scope. Bare body; nothing was read or written. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "forbidden";
+                            message: string;
+                            /** @enum {number} */
+                            status: 403;
+                        };
+                    };
+                };
+                /** @description No JSR payment with this id in the caller's project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The project is live. JSR serves test projects only, against the provider's sandbox (`details.reason` `live_not_enabled`). */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "ofb_not_live";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider refused (`jsr_provider_refused`). `details.provider_code` is its own code; its free text is never relayed. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "jsr_provider_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No definite answer from the provider (`jsr_provider_ambiguous`), or the deployment has no JSR provider credentials (`ofb_adapter_unavailable`). */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "jsr_provider_ambiguous" | "ofb_adapter_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -12255,7 +14943,7 @@ export interface paths {
          *
          *     EVERY CHECK SAYS WHAT IT MEASURED AND WHAT THAT MEANS HERE. Its own `status` keeps its vocabulary; beside it, `state` separates a real failure from pending configuration, from no activity, and from a feature not in use, with `required`, a `reason` code and, where something has to be set up, an `action`. A new account with no integration, no provider call and no FX quote reads `healthy`, with `connections` pending configuration.
          *
-         *     GRADE ON `status`, AND READ THE RULE BEFORE WRITING THE ALERT. Only `state: failure` grades. `down` means `db` or `vault` fails. `degraded` means any other check fails, which today is one of: the tool catalog is not loaded (`tool_catalog`), a USD/BRL quote the router needs is missing, stale or unreadable (`fx_rates`; no deployment needs one until the router normalizes cost across currencies, and until then the quote is `not_in_use` whatever its age), a live Celcoin connection lacks a webhook subscription (`celcoin_webhook_subscriptions`), or a Pix Automático worker with work to do is stale, failing or never ran (`recurrence_holds`, `recurrence_scheduler`, including a hold past its time), or a BolePix paid twice has had its refund owed for longer than 3 days (`bolepix_refunds`), or this production process has no working tool strategy and refuses every meta-tool call with 503 `tool_strategy_unavailable` (`tool_strategy`; reads, authentication and webhooks keep working). Everything else grades `healthy`. `attention` lists the failing checks and the ones pending configuration by name.
+         *     GRADE ON `status`, AND READ THE RULE BEFORE WRITING THE ALERT. Only `state: failure` grades. `down` means `db` or `vault` fails. `degraded` means any other check fails, which today is one of: the tool catalog is not loaded (`tool_catalog`), a USD/BRL quote the router needs is missing, stale or unreadable (`fx_rates`; no deployment needs one until the router normalizes cost across currencies, and until then the quote is `not_in_use` whatever its age), a live Celcoin connection lacks a webhook subscription (`celcoin_webhook_subscriptions`), or a Pix Automático worker with work to do is stale, failing or never ran (`recurrence_holds`, `recurrence_scheduler`, including a hold past its time), or a BolePix paid twice has had its refund owed for longer than 3 days (`bolepix_refunds`), or a Live money state is waiting on a person (`money_reconcile`: an accepted cash-out the provider failed later, a hold whose dispatch outcome is unknown, a dispatch whose process died, or a return or inbound credit that could not be applied), or this production process has no working tool strategy and refuses every meta-tool call with 503 `tool_strategy_unavailable` (`tool_strategy`; reads, authentication and webhooks keep working). Everything else grades `healthy`. `attention` lists the failing checks and the ones pending configuration by name.
          *
          *     `metrics` IS READ, NEVER GRADED. `metrics.recurrence_instruction_alarms` counts the Pix Automático instruction alarms still open on a cycle still ahead, per kind and reason, for the calling org: a cycle not announced, an instruction refused, held back by a ceiling, or queued and expired. Each alarm already reached its tenant as an event in the recurrence's project; this is the standing number, and it never moves `status`.
          *
@@ -13133,6 +15821,8 @@ export interface paths {
          *     `link_token` is the same value as the `state` parameter inside `authorize_url`. It is single use and expires at `expires_at`, ten minutes out.
          *
          *     The refusals are bare `{ error, ... }` bodies, not the nested envelope the rest of this document mostly uses. A provider with no OAuth configuration is 404. A missing platform client credential is 500 — that is our seeding defect, not a caller error, and no change to the request fixes it.
+         *
+         *     The exception is a person's own Google account (`server_id` `google-calendar`, `google-drive` or `gmail`), described on the canonical path: its refusals use the `error.code` envelope, an API key or an OAuth token carries no person (403 `bearer_token_has_no_person`), `user_id` must be the signed-in person, `scopes` is refused because the connector's scopes are fixed, and the connectors switched off answer 503 `connector_disabled`.
          */
         post: {
             parameters: {
@@ -13189,6 +15879,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Google connectors only: no verified person rides on the request, the session token does not verify or names someone else, `user_id` is not the signed-in person, or the person is not a member of the organization. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "bearer_token_has_no_person" | "user_token_required" | "user_token_invalid" | "user_token_identity_mismatch" | "not_a_member";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
                 /** @description The provider has no OAuth configuration in the catalog. */
                 404: {
                     headers: {
@@ -13229,6 +15939,26 @@ export interface paths {
                             /** @enum {string} */
                             error: "oauth_client_not_configured";
                             message: string;
+                        };
+                    };
+                };
+                /** @description Google connectors only: they are switched off on this deployment, or it cannot verify a person's session. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "connector_disabled" | "user_token_verification_unconfigured";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
                         };
                     };
                 };
@@ -13899,7 +16629,7 @@ export interface paths {
          *
          *     THE MONEY IS AUTHORIZED BY THE CONSUMER'S SIGNED MANDATE, NOT BY WHO IS CALLING. `mandate`, `signature`, `agent_id` and `purpose` are all four required in practice: the schema marks them optional only so that omitting them produces a typed `mandate_required` refusal instead of a shapeless 400. No key, no role and no header substitutes for them, and the attribution recorded on the withdrawal is derived from the verified mandate rather than from anything the caller wrote. The destination must be NAMED in the mandate's signed withdrawal allowlist — its own field, separate from the list of merchants the agent may pay, so that a shopping grant is not also a cash-out grant.
          *
-         *     AND YET THE PATH DOES READ AN IDENTITY HEADER, BEFORE ANY OF THAT. The route carries an `admin` role gate as a preHandler, and that gate reads `x-codespar-user` and answers 403 on its own, before the mandate is looked at. Send the header, naming a member who holds `admin` or `owner` in the organization. On a dashboard-forwarded credential a missing header is refused immediately. On an API key the gate is being rolled out and currently lets the request through while recording it, so a key that works today without the header will stop working when the rollout completes — this is the one sentence to act on if you are integrating now.
+         *     THE ROLE GATE DOES NOT AUTHORIZE THIS. With an API key holding `wallets:admin` the mandate above is the whole authorization; `x-codespar-user` is not read. On the dashboard the gate also asks for a member who holds `admin` or `owner`.
          *
          *     Read the two gates as two different questions. The role gate asks who may ASK for a withdrawal; the mandate asks whether the money's owner AGREED to it. Passing the first does not weaken the second.
          *
@@ -14005,7 +16735,7 @@ export interface paths {
                 /**
                  * @description Forbidden, from one of THREE gates, in THREE different body shapes. Parse defensively: `error` is a string on two of them and an object on the third.
                  *
-                 *     (a) THE ROLE GATE, bare body: `{ error, required: "admin", message?, status? }`. `error` is `insufficient_role` when the acting member is not senior enough, `bearer_admin_role_missing` when no `x-codespar-user` was forwarded, `bearer_admin_user_not_member` when the forwarded user is not in the organization, or `bearer_admin_role_unresolved` when the role could not be looked up. The last three carry a `message` and `status`.
+                 *     (a) THE ROLE GATE, bare body: `{ error: "insufficient_role", required: "admin" }`, when the dashboard's acting member is not senior enough or the credential is an OAuth token. An API key is not refused by this gate.
                  *
                  *     (b) THE MANDATE GATE, `apiError` envelope. `mandate_required` (one of the four proof fields is missing), `mandate_consumer_mismatch`, `mandate_currency_mismatch`, `mandate_<status>` for a mandate that is not active, `mandate_sig_invalid` (the STORED row failed its own integrity check), `expired`, `agent_mismatch`, `purpose_mismatch`, `per_tx_cap_exceeded`, `total_cap_exceeded`, `currency_not_authorized`, `merchant_not_allowed`, and `withdrawal_destination_unpinned` — which carries `error.details` naming what the mandate DID authorize, so an agent can open a re-consent flow rather than stopping at a refusal it cannot interpret.
                  *
@@ -14020,12 +16750,9 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "insufficient_role" | "bearer_admin_role_missing" | "bearer_admin_user_not_member" | "bearer_admin_role_unresolved";
+                            error: "insufficient_role";
                             /** @enum {string} */
                             required: "admin";
-                            message?: string;
-                            /** @enum {number} */
-                            status?: 403;
                         } | {
                             error: {
                                 code: string;
@@ -14193,7 +16920,7 @@ export interface paths {
          *
          *     THE 202 IS AN ACKNOWLEDGEMENT, NOT A RECONCILIATION. The entries are stored; the matching happens on the next cycle, and `next_recon_cycle_within_seconds` is how long that is at most. Nothing here reports a match.
          *
-         *     Scope: `wallets:admin`, and the route additionally requires the `admin` role: send `x-codespar-user` naming an admin or owner of the organization.
+         *     Administrative: an admin or owner performs it from the dashboard. An API key is refused with 403 `admin_session_required`, whatever its scopes.
          */
         post: {
             parameters: {
@@ -14260,7 +16987,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden, from the role gate, in a BARE body — not the `apiError` envelope the 400 and 404 use. `insufficient_role` when the acting member is not senior enough; on an API key, `bearer_admin_role_missing`, `bearer_admin_user_not_member` or `bearer_admin_role_unresolved`, each with a `message` and `status`. */
+                /** @description Forbidden, from the role gate, in a BARE body — not the `apiError` envelope the 400 and 404 use. `insufficient_role` when the acting member is not senior enough (with `required: "admin"`); on an API key, `admin_session_required`, with a `message` and `status`, whatever its scopes. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -14268,9 +16995,9 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "insufficient_role" | "bearer_admin_role_missing" | "bearer_admin_user_not_member" | "bearer_admin_role_unresolved";
+                            error: "insufficient_role" | "admin_session_required";
                             /** @enum {string} */
-                            required: "admin";
+                            required?: "admin";
                             message?: string;
                             /** @enum {number} */
                             status?: 403;
@@ -16698,7 +19425,7 @@ export interface paths {
          *
          *     `POST /v1/connect/start` is the same handler on a second path. A provider with no OAuth configuration is 404; a missing platform client credential is 500, which is our seeding defect and not the caller's error. Both bodies are bare `{ error, … }`, not the `error.code` envelope.
          *
-         *     **A person's own Google account** (`server_id` `google-calendar`, `google-drive` or `gmail`) is connected for its owner only. The owner is the signed-in person whose session token the dashboard forwards (`x-codespar-user-token`), and `user_id` must name that person; an API key or an OAuth token carries no person and is refused `bearer_token_has_no_person` (403). The connector asks for its own scopes, so `scopes` is refused (400 `invalid_body`). The consent asks for offline access, always shows Google's consent screen and keeps earlier grants. Test and Live projects both use the real Google: there is no Google sandbox, and the data is the person's own. These refusals use the `error.code` envelope. Off on the deployment, the three answer `connector_disabled` (503).
+         *     **A person's own Google account** (`server_id` `google-calendar`, `google-drive` or `gmail`) is connected for its owner only. The owner is the signed-in person whose session token the dashboard forwards (`x-codespar-user-token`), and `user_id` must name that person; an API key or an OAuth token carries no person and is refused `bearer_token_has_no_person` (403). The connector asks for its own fixed scopes, so `scopes` is refused (400 `invalid_body`): `openid`, `https://www.googleapis.com/auth/userinfo.email` and `https://www.googleapis.com/auth/userinfo.profile` (which Google account it is), plus one product scope, `https://www.googleapis.com/auth/calendar` for `google-calendar`, `https://www.googleapis.com/auth/drive` for `google-drive` and `https://www.googleapis.com/auth/gmail.modify` for `gmail`. The person may untick the product scope at Google; the connection then reads where a narrower grant allows it and a write answers `connector_scope_insufficient`. The consent asks for offline access, always shows Google's consent screen and keeps earlier grants. A Test project uses the real Google: there is no Google sandbox, and the data is the person's own. A Live project is refused `google_connectors_live_disabled` (409), here and at the callback, before anything is sent to Google. These refusals use the `error.code` envelope. Off on the deployment, the three answer `connector_disabled` (503).
          */
         post: {
             parameters: {
@@ -16818,7 +19545,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Google connectors only: they are switched off on this deployment. */
+                /** @description Google connectors only: they are switched off on this deployment, or it cannot verify a person's session. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -17285,6 +20012,8 @@ export interface paths {
                          * @enum {string}
                          */
                         surface?: "hosted" | "partner";
+                        /** @enum {string} */
+                        executor?: "codespar_simulator" | "provider_sandbox";
                     };
                 };
             };
@@ -17307,10 +20036,29 @@ export interface paths {
                             surface: "hosted" | "partner";
                             /** @description The hosted page for this token, composed from the server's configured base. Hand it to the consumer on the `hosted` surface. It is returned on `partner` too, where it is a usable fallback: the same token also answers on the page. */
                             consent_url: string;
+                            /**
+                             * @description Who executes (or executed) the payment, by the same name the integrator chooses with on POST /v1/consents. `codespar_simulator` ("Simulado pela CodeSpar": no provider is called) or `provider_sandbox` (the provider's sandbox, over the account the server bound to this consumer); both Test only. Null when no executor applies, Live included. The name is the MODE: the provider, account, project, consumer and environment are resolved by the server before the signature and checked again when the payment runs; no request field chooses them (`executor_provider_not_selectable`), and a provider failure is never turned into a simulation. Records written before this name existed keep their stored value and are read in these words.
+                             * @enum {string|null}
+                             */
+                            executor: "codespar_simulator" | "provider_sandbox" | null;
+                            /**
+                             * @description The concrete provider behind `executor`, as the server resolved it: `celcoin` for `provider_sandbox`; null for `codespar_simulator` (no provider is called) and when `executor` is null. Read-only.
+                             * @enum {string|null}
+                             */
+                            executor_provider: "celcoin" | null;
+                            /** @description The executor's label as the consent screen, the dashboard and the receipt show it. In Test it ends "· sem dinheiro real". */
+                            executor_label: string | null;
+                            /**
+                             * @description The project's environment.
+                             * @enum {string|null}
+                             */
+                            environment: "test" | "live" | null;
+                            /** @description False in Test, always: no real money moves, including when the provider's sandbox CONFIRMED the operation (`moneyMoved: true` / `settlement: "confirmed"` then mean the sandbox settled it). True in Live. */
+                            real_money: boolean | null;
                         };
                     };
                 };
-                /** @description The body did not match the schema. `details.issues` carries the Zod issues; the refusals with their own message are a `"*"` entry in `intent.withdrawal_allowlist` and a `intent.dda_allowlist` entry that is not a CPF (11 digits) or a CNPJ (14 digits). */
+                /** @description The body did not match the schema (`invalid_body`), `executor` was sent for a mandate that is not single-currency BRL Pix (`executor_requires_brl_pix`), or the body named a provider (`provider` / `executor_provider`, top level or in `intent`: `executor_provider_not_selectable`, `details.field`): the provider behind `provider_sandbox` is resolved by the server. Nothing was created. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -17319,7 +20067,47 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "invalid_body";
+                                code: "invalid_body" | "executor_requires_brl_pix" | "executor_provider_not_selectable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `executor: "provider_sandbox"` and the project's provider sandbox is not ready (`provider_sandbox_not_ready`): `details.missing` names each gap, `details.next_steps` says who does what, and `details.alternative` names the simulator. Nothing was created. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "provider_sandbox_not_ready";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `executor` in a Live project: `simulation_refused_live` for `codespar_simulator` (Live never simulates) and `executor_test_only` for `provider_sandbox`. Nothing was created. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "simulation_refused_live" | "executor_test_only";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -17422,6 +20210,8 @@ export interface paths {
                          * @enum {string}
                          */
                         surface?: "hosted" | "partner";
+                        /** @enum {string} */
+                        executor?: "codespar_simulator" | "provider_sandbox";
                     };
                 };
             };
@@ -17444,10 +20234,29 @@ export interface paths {
                             surface: "hosted" | "partner";
                             /** @description The hosted page for this token, composed from the server's configured base. Hand it to the consumer on the `hosted` surface. It is returned on `partner` too, where it is a usable fallback: the same token also answers on the page. */
                             consent_url: string;
+                            /**
+                             * @description Who executes (or executed) the payment, by the same name the integrator chooses with on POST /v1/consents. `codespar_simulator` ("Simulado pela CodeSpar": no provider is called) or `provider_sandbox` (the provider's sandbox, over the account the server bound to this consumer); both Test only. Null when no executor applies, Live included. The name is the MODE: the provider, account, project, consumer and environment are resolved by the server before the signature and checked again when the payment runs; no request field chooses them (`executor_provider_not_selectable`), and a provider failure is never turned into a simulation. Records written before this name existed keep their stored value and are read in these words.
+                             * @enum {string|null}
+                             */
+                            executor: "codespar_simulator" | "provider_sandbox" | null;
+                            /**
+                             * @description The concrete provider behind `executor`, as the server resolved it: `celcoin` for `provider_sandbox`; null for `codespar_simulator` (no provider is called) and when `executor` is null. Read-only.
+                             * @enum {string|null}
+                             */
+                            executor_provider: "celcoin" | null;
+                            /** @description The executor's label as the consent screen, the dashboard and the receipt show it. In Test it ends "· sem dinheiro real". */
+                            executor_label: string | null;
+                            /**
+                             * @description The project's environment.
+                             * @enum {string|null}
+                             */
+                            environment: "test" | "live" | null;
+                            /** @description False in Test, always: no real money moves, including when the provider's sandbox CONFIRMED the operation (`moneyMoved: true` / `settlement: "confirmed"` then mean the sandbox settled it). True in Live. */
+                            real_money: boolean | null;
                         };
                     };
                 };
-                /** @description The body did not match the schema. `details.issues` carries the Zod issues; the refusals with their own message are a `"*"` entry in `intent.withdrawal_allowlist` and a `intent.dda_allowlist` entry that is not a CPF (11 digits) or a CNPJ (14 digits). */
+                /** @description The body did not match the schema (`invalid_body`), `executor` was sent for a mandate that is not single-currency BRL Pix (`executor_requires_brl_pix`), or the body named a provider (`provider` / `executor_provider`, top level or in `intent`: `executor_provider_not_selectable`, `details.field`): the provider behind `provider_sandbox` is resolved by the server. Nothing was created. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -17456,7 +20265,47 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "invalid_body";
+                                code: "invalid_body" | "executor_requires_brl_pix" | "executor_provider_not_selectable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `executor: "provider_sandbox"` and the project's provider sandbox is not ready (`provider_sandbox_not_ready`): `details.missing` names each gap, `details.next_steps` says who does what, and `details.alternative` names the simulator. Nothing was created. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "provider_sandbox_not_ready";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description `executor` in a Live project: `simulation_refused_live` for `codespar_simulator` (Live never simulates) and `executor_test_only` for `provider_sandbox`. Nothing was created. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "simulation_refused_live" | "executor_test_only";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -17528,6 +20377,25 @@ export interface paths {
                              * @enum {string}
                              */
                             surface: "hosted" | "partner";
+                            /**
+                             * @description Who executes (or executed) the payment, by the same name the integrator chooses with on POST /v1/consents. `codespar_simulator` ("Simulado pela CodeSpar": no provider is called) or `provider_sandbox` (the provider's sandbox, over the account the server bound to this consumer); both Test only. Null when no executor applies, Live included. The name is the MODE: the provider, account, project, consumer and environment are resolved by the server before the signature and checked again when the payment runs; no request field chooses them (`executor_provider_not_selectable`), and a provider failure is never turned into a simulation. Records written before this name existed keep their stored value and are read in these words.
+                             * @enum {string|null}
+                             */
+                            executor: "codespar_simulator" | "provider_sandbox" | null;
+                            /**
+                             * @description The concrete provider behind `executor`, as the server resolved it: `celcoin` for `provider_sandbox`; null for `codespar_simulator` (no provider is called) and when `executor` is null. Read-only.
+                             * @enum {string|null}
+                             */
+                            executor_provider: "celcoin" | null;
+                            /** @description The executor's label as the consent screen, the dashboard and the receipt show it. In Test it ends "· sem dinheiro real". */
+                            executor_label: string | null;
+                            /**
+                             * @description The project's environment.
+                             * @enum {string|null}
+                             */
+                            environment: "test" | "live" | null;
+                            /** @description False in Test, always: no real money moves, including when the provider's sandbox CONFIRMED the operation (`moneyMoved: true` / `settlement: "confirmed"` then mean the sandbox settled it). True in Live. */
+                            real_money: boolean | null;
                         };
                     };
                 };
@@ -17692,10 +20560,41 @@ export interface paths {
                             signature: string;
                             /** @description The `callback_url` given at creation, echoed so the caller can post the mandate on. */
                             callback_url: string | null;
+                            /**
+                             * @description Who executes (or executed) the payment, by the same name the integrator chooses with on POST /v1/consents. `codespar_simulator` ("Simulado pela CodeSpar": no provider is called) or `provider_sandbox` (the provider's sandbox, over the account the server bound to this consumer); both Test only. Null when no executor applies, Live included. The name is the MODE: the provider, account, project, consumer and environment are resolved by the server before the signature and checked again when the payment runs; no request field chooses them (`executor_provider_not_selectable`), and a provider failure is never turned into a simulation. Records written before this name existed keep their stored value and are read in these words.
+                             * @enum {string|null}
+                             */
+                            executor: "codespar_simulator" | "provider_sandbox" | null;
+                            /**
+                             * @description The concrete provider behind `executor`, as the server resolved it: `celcoin` for `provider_sandbox`; null for `codespar_simulator` (no provider is called) and when `executor` is null. Read-only.
+                             * @enum {string|null}
+                             */
+                            executor_provider: "celcoin" | null;
+                            /** @description The executor's label as the consent screen, the dashboard and the receipt show it. In Test it ends "· sem dinheiro real". */
+                            executor_label: string | null;
+                            /**
+                             * @description The project's environment.
+                             * @enum {string|null}
+                             */
+                            environment: "test" | "live" | null;
+                            /** @description False in Test, always: no real money moves, including when the provider's sandbox CONFIRMED the operation (`moneyMoved: true` / `settlement: "confirmed"` then mean the sandbox settled it). True in Live. */
+                            real_money: boolean | null;
+                            /** @description Test only: present when the mandate was signed over a `pix-consent` source with no executor. A payment under it is refused with `funding_source_executor_required`; open a new consent naming `executor`. */
+                            executor_guidance?: {
+                                /** @enum {string} */
+                                code: "funding_source_executor_required";
+                                message: string;
+                                next: {
+                                    /** @enum {string} */
+                                    action: "reconsent_with_executor";
+                                    endpoint: string;
+                                    executor_choices: ("codespar_simulator" | "provider_sandbox")[];
+                                };
+                            };
                         };
                     };
                 };
-                /** @description The body did not match the schema (`invalid_body`, with the Zod issues in `details.issues`), the attestation does not match the token's surface (`attestation_required` on `partner` without one, `attestation_not_accepted` on `hosted` with one), or the evidence carries a key its channel cannot expose or one the object does not declare (`attestation_evidence_invalid`, `details.key`). */
+                /** @description The body did not match the schema (`invalid_body`, with the Zod issues in `details.issues`), the attestation does not match the token's surface (`attestation_required` on `partner` without one, `attestation_not_accepted` on `hosted` with one), or the evidence carries a key its channel cannot expose or one the object does not declare (`attestation_evidence_invalid`, `details.key`), or a consent opened with `executor` was submitted with a rail other than `pix-consent` (`executor_rail_mismatch`), or the body named a provider (`executor_provider_not_selectable`, `details.field`): the source signed is the one the server resolved for the consent's executor. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -17704,7 +20603,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "invalid_body" | "attestation_required" | "attestation_not_accepted" | "attestation_evidence_invalid";
+                                code: "invalid_body" | "attestation_required" | "attestation_not_accepted" | "attestation_evidence_invalid" | "executor_rail_mismatch" | "executor_provider_not_selectable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -17755,7 +20654,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The token was already submitted, or a concurrent submit won the race (nothing was created twice: the loser rolls back whole); or `method: "verified_code"` was claimed without a contact verification for this consumer in the last 24h, in which case nothing was created at all and the token is still pending. */
+                /** @description The token was already submitted, or a concurrent submit won the race (nothing was created twice: the loser rolls back whole); or `method: "verified_code"` was claimed without a contact verification for this consumer in the last 24h, in which case nothing was created at all and the token is still pending; or the consent was opened with `executor: "provider_sandbox"` and the project has no sandbox account bound to THIS consumer (`provider_sandbox_not_ready`, `details.missing`/`next_steps`): nothing was signed, the token is still pending and no other source is used. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -17764,7 +20663,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "consent_already_resolved" | "consent_race" | "contact_verification_required";
+                                code: "consent_already_resolved" | "consent_race" | "contact_verification_required" | "provider_sandbox_not_ready";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -17785,6 +20684,26 @@ export interface paths {
                             error: {
                                 /** @enum {string} */
                                 code: "consent_expired";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The consent was opened with `executor` and its project is not a Test project (`simulation_refused_live`, `executor_test_only`). Nothing was signed. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "simulation_refused_live" | "executor_test_only";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -17929,7 +20848,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Local state refuses. `psp_attempt_in_flight`: the same attempt is already in flight; retry the SAME `attempt_id` once it has answered, never a new one. `psp_attempt_uncertain`: an earlier attempt ended with an unknown outcome and this intent is PINNED to it, so present the same `attempt_id` again, never a new one. `psp_attempt_conflict`: the earlier attempt was already compensated. `attempt_id_conflict`: this `attempt_id` was already used for a different payment (`mismatched_fields` names what differs); nothing was held or sent. `attempt_id_unavailable`: another project of this organization holds this `attempt_id`; use a new one. */
+                /** @description Local state refuses. `psp_attempt_in_flight`: the same attempt is already in flight; retry the SAME `attempt_id` once it has answered, never a new one. `psp_attempt_uncertain`: an earlier attempt ended with an unknown outcome and this intent is PINNED to it, so present the same `attempt_id` again, never a new one. `psp_attempt_conflict`: the earlier attempt was already compensated. `attempt_id_conflict`: this `attempt_id` was already used for a different payment (`mismatched_fields` names what differs); nothing was held or sent. `attempt_id_unavailable`: another project of this organization holds this `attempt_id`; use a new one. `funding_source_executor_required` (Test only, ent#1983): the mandate's `pix-consent` source was signed without an executor; nothing was sent and the mandate is unchanged; `details.next` says to open a new consent naming `executor` (`codespar_simulator` or `provider_sandbox`). */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -17938,7 +20857,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
+                                code: "funding_source_executor_required" | "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -18140,7 +21059,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Local state refuses, on the same five conditions as the by-id route. */
+                /** @description Local state refuses, on the same conditions as the by-id route, `funding_source_executor_required` included. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -18149,7 +21068,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
+                                code: "funding_source_executor_required" | "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -18391,7 +21310,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Our own row status: `pending`, `settled`, `expired`. */
+                    /** @description Our own row status: `pending`, `settled`, `expired`, `failed`. */
                     status?: string;
                     /** @description Filters on the same three facts the field is derived from, in SQL. */
                     settlement?: "confirmed" | "pending" | "unconfirmable" | "none";
@@ -18422,6 +21341,11 @@ export interface paths {
                                 created_at: string;
                                 /** @enum {string|null} */
                                 settlement: "confirmed" | "pending" | "unconfirmable" | null;
+                                failure?: {
+                                    code: string;
+                                    provider_status: string | null;
+                                    failed_at: string | null;
+                                };
                                 /** @description When we last knew the issuer's state. Null means we never did. */
                                 settlement_as_of: string | null;
                             }[];
@@ -18456,7 +21380,7 @@ export interface paths {
          * Issue a charge
          * @description Issues an inbound charge: the buyer pays the merchant. The RAIL IS A FIELD, not a path. `method: "pix"` mints an immediate Pix that hands back its copy-and-paste string right away and expires in about an hour. `method: "boleto"` WITH a `due_date` issues a cobrança com vencimento: ONE receivable the payer settles either as a boleto (barcode and linha digitável) or by Pix. One debt, two payable legs, never two documents.
          *
-         *     **The cobrança com vencimento answers `PROCESSING` with `payable: false` and no document.** The instrument registers with the clearing house first. Subscribe to `commerce.charge.created` rather than polling for a barcode that is not late, only not made yet. `commerce.charge.paid` is the event that means the funds arrived, by either leg.
+         *     **The cobrança com vencimento answers `PROCESSING` with `payable: false` and no document.** The instrument registers with the clearing house first. Subscribe to `commerce.charge.created` rather than polling for a barcode that is not late, only not made yet. `commerce.charge.paid` is the event that means the funds arrived, by either leg: it is published only after CodeSpar settled the charge and credited the wallet, never on the provider's word alone, and once per charge. A charge the issuer refuses to register closes as `local_status: "failed"` and publishes `commerce.charge.failed` once instead.
          *
          *     **`idempotency_key` is REQUIRED for that combination**, and it is checked before anything reaches the issuer. A repeat with the same key returns the charge already issued, or its still-open reservation, instead of a second receivable the same debtor could pay twice. Send it as the `Idempotency-Key` header, as the body's `idempotency_key`, or as both with the SAME value; two different values are refused rather than one silently winning.
          *
@@ -18533,9 +21457,18 @@ export interface paths {
                              *     **A charge settled by the sandbox payer answers `CONFIRMED` here**, the same value a real payment leaves a live read answering — so a client that polls `status` sees the test payment exactly where it would see a live one. The issuer's homolog account never sees that money and keeps answering PENDING (EXPIRED after the due date); that answer stays in `raw` and is not reported as `status` or as a `status_conflict`, because for a test charge the fixture is the issuer's truth. `settlement: "confirmed"` and `local_status: "settled"` say the same thing from our side. Any other issuer answer (ERROR, CANCELLED, PROCESSING) is reported as the issuer said it, with `status_conflict: true`.
                              */
                             status: string;
-                            /** @description What CodeSpar recorded, which is a different question from `status`. */
+                            /** @description What CodeSpar recorded, which is a different question from `status`: `pending`, `settled`, `expired` (cancelled or expired unpaid) or `failed`. `failed` is terminal: the issuer refused to register the charge (`status: "ERROR"`, no boleto and no Pix ever issued), so nothing was ever payable and nothing was charged; `failure` says why. Create a new charge. PROCESSING, a slow registration or a missing callback are never `failed`. */
                             local_status: string;
-                            /** @description True whenever the issuer's known state and ours disagree, instead of one of them silently winning. They agree only as follows: our `pending` beside the issuer's PENDING or PROCESSING; our `settled` beside CONFIRMED or PENDING (the issuer's read can lag a payment); our `expired` beside CANCELLED or PENDING (lag after a cancel). Every other pair is a conflict, including an issuer ERROR, an issuer terminal state on a charge we still hold open, and a status spelling we do not recognise. False when no issuer state is known at all. `settlement: "unconfirmable"` is the narrower case of both sides terminal and different. */
+                            /** @description Present only when `local_status` is `failed`. The charge's history, ids and correlation stay readable; `commerce.charge.failed` was published once when it closed. */
+                            failure?: {
+                                /** @description `issuer_rejected`: the issuer refused to register the charge. */
+                                code: string;
+                                /** @description The issuer's own word, preserved (`ERROR`). */
+                                provider_status: string | null;
+                                /** @description When CodeSpar closed the charge as failed. */
+                                failed_at: string | null;
+                            };
+                            /** @description True whenever the issuer's known state and ours disagree, instead of one of them silently winning. They agree only as follows: our `pending` beside the issuer's PENDING or PROCESSING; our `settled` beside CONFIRMED or PENDING (the issuer's read can lag a payment); our `expired` beside CANCELLED or PENDING (lag after a cancel); our `failed` beside ERROR (the refusal it records). Every other pair is a conflict, including an issuer ERROR, an issuer terminal state on a charge we still hold open, and a status spelling we do not recognise. False when no issuer state is known at all. `settlement: "unconfirmable"` is the narrower case of both sides terminal and different. */
                             status_conflict: boolean;
                             method: string;
                             currency: string;
@@ -18696,9 +21629,18 @@ export interface paths {
                              *     **A charge settled by the sandbox payer answers `CONFIRMED` here**, the same value a real payment leaves a live read answering — so a client that polls `status` sees the test payment exactly where it would see a live one. The issuer's homolog account never sees that money and keeps answering PENDING (EXPIRED after the due date); that answer stays in `raw` and is not reported as `status` or as a `status_conflict`, because for a test charge the fixture is the issuer's truth. `settlement: "confirmed"` and `local_status: "settled"` say the same thing from our side. Any other issuer answer (ERROR, CANCELLED, PROCESSING) is reported as the issuer said it, with `status_conflict: true`.
                              */
                             status: string;
-                            /** @description What CodeSpar recorded, which is a different question from `status`. */
+                            /** @description What CodeSpar recorded, which is a different question from `status`: `pending`, `settled`, `expired` (cancelled or expired unpaid) or `failed`. `failed` is terminal: the issuer refused to register the charge (`status: "ERROR"`, no boleto and no Pix ever issued), so nothing was ever payable and nothing was charged; `failure` says why. Create a new charge. PROCESSING, a slow registration or a missing callback are never `failed`. */
                             local_status: string;
-                            /** @description True whenever the issuer's known state and ours disagree, instead of one of them silently winning. They agree only as follows: our `pending` beside the issuer's PENDING or PROCESSING; our `settled` beside CONFIRMED or PENDING (the issuer's read can lag a payment); our `expired` beside CANCELLED or PENDING (lag after a cancel). Every other pair is a conflict, including an issuer ERROR, an issuer terminal state on a charge we still hold open, and a status spelling we do not recognise. False when no issuer state is known at all. `settlement: "unconfirmable"` is the narrower case of both sides terminal and different. */
+                            /** @description Present only when `local_status` is `failed`. The charge's history, ids and correlation stay readable; `commerce.charge.failed` was published once when it closed. */
+                            failure?: {
+                                /** @description `issuer_rejected`: the issuer refused to register the charge. */
+                                code: string;
+                                /** @description The issuer's own word, preserved (`ERROR`). */
+                                provider_status: string | null;
+                                /** @description When CodeSpar closed the charge as failed. */
+                                failed_at: string | null;
+                            };
+                            /** @description True whenever the issuer's known state and ours disagree, instead of one of them silently winning. They agree only as follows: our `pending` beside the issuer's PENDING or PROCESSING; our `settled` beside CONFIRMED or PENDING (the issuer's read can lag a payment); our `expired` beside CANCELLED or PENDING (lag after a cancel); our `failed` beside ERROR (the refusal it records). Every other pair is a conflict, including an issuer ERROR, an issuer terminal state on a charge we still hold open, and a status spelling we do not recognise. False when no issuer state is known at all. `settlement: "unconfirmable"` is the narrower case of both sides terminal and different. */
                             status_conflict: boolean;
                             method: string;
                             currency: string;
@@ -18881,9 +21823,18 @@ export interface paths {
                              *     **A charge settled by the sandbox payer answers `CONFIRMED` here**, the same value a real payment leaves a live read answering — so a client that polls `status` sees the test payment exactly where it would see a live one. The issuer's homolog account never sees that money and keeps answering PENDING (EXPIRED after the due date); that answer stays in `raw` and is not reported as `status` or as a `status_conflict`, because for a test charge the fixture is the issuer's truth. `settlement: "confirmed"` and `local_status: "settled"` say the same thing from our side. Any other issuer answer (ERROR, CANCELLED, PROCESSING) is reported as the issuer said it, with `status_conflict: true`.
                              */
                             status: string;
-                            /** @description What CodeSpar recorded, which is a different question from `status`. */
+                            /** @description What CodeSpar recorded, which is a different question from `status`: `pending`, `settled`, `expired` (cancelled or expired unpaid) or `failed`. `failed` is terminal: the issuer refused to register the charge (`status: "ERROR"`, no boleto and no Pix ever issued), so nothing was ever payable and nothing was charged; `failure` says why. Create a new charge. PROCESSING, a slow registration or a missing callback are never `failed`. */
                             local_status: string;
-                            /** @description True whenever the issuer's known state and ours disagree, instead of one of them silently winning. They agree only as follows: our `pending` beside the issuer's PENDING or PROCESSING; our `settled` beside CONFIRMED or PENDING (the issuer's read can lag a payment); our `expired` beside CANCELLED or PENDING (lag after a cancel). Every other pair is a conflict, including an issuer ERROR, an issuer terminal state on a charge we still hold open, and a status spelling we do not recognise. False when no issuer state is known at all. `settlement: "unconfirmable"` is the narrower case of both sides terminal and different. */
+                            /** @description Present only when `local_status` is `failed`. The charge's history, ids and correlation stay readable; `commerce.charge.failed` was published once when it closed. */
+                            failure?: {
+                                /** @description `issuer_rejected`: the issuer refused to register the charge. */
+                                code: string;
+                                /** @description The issuer's own word, preserved (`ERROR`). */
+                                provider_status: string | null;
+                                /** @description When CodeSpar closed the charge as failed. */
+                                failed_at: string | null;
+                            };
+                            /** @description True whenever the issuer's known state and ours disagree, instead of one of them silently winning. They agree only as follows: our `pending` beside the issuer's PENDING or PROCESSING; our `settled` beside CONFIRMED or PENDING (the issuer's read can lag a payment); our `expired` beside CANCELLED or PENDING (lag after a cancel); our `failed` beside ERROR (the refusal it records). Every other pair is a conflict, including an issuer ERROR, an issuer terminal state on a charge we still hold open, and a status spelling we do not recognise. False when no issuer state is known at all. `settlement: "unconfirmable"` is the narrower case of both sides terminal and different. */
                             status_conflict: boolean;
                             method: string;
                             currency: string;
@@ -19013,7 +21964,7 @@ export interface paths {
         put?: never;
         /**
          * Pay a charge in the sandbox
-         * @description Plays the DEBTOR of a test charge: settles it through the SAME path a Celcoin `charge-in` webhook takes (translate, publish `commerce.charge.paid`, reconcile, ledger `fund()` with the `pending -> settled` claim). It is not a status write, so the event fans out to your triggers exactly as a real payment would, and the ledger and receipt side effects are the ones production produces.
+         * @description Plays the DEBTOR of a test charge: settles it through the SAME path a Celcoin `charge-in` webhook takes (translate, reconcile, ledger `fund()` with the `pending -> settled` claim, and `commerce.charge.paid` written by that same settling transaction). It is not a status write, so the event fans out to your triggers exactly as a real payment would, and the ledger and receipt side effects are the ones production produces.
          *
          *     **Test-mode only, fail-closed.** A live-environment key or project answers 403 `sandbox_pay_not_permitted` before the body is read or any query runs.
          *
@@ -19146,7 +22097,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The charge exists and cannot be paid, and nothing was settled, credited or published: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge with no document a debtor could pay, and `details.reason` says which: `issuer_rejected` (the issuer left it in ERROR, no boleto or Pix ever existed — terminal, create a new charge), `charge_closed` (expired or cancelled, ours or the issuer's — terminal, create a new charge), `instrument_not_registered` (the issuer has not handed over a boleto or Pix yet — read the charge and pay once it answers `payable: true`); `charge_reference_ambiguous` is a reference that is one charge's id and another's idempotency key — pay by the charge id; `collect_simulated_settle_refused` is a Collect link's charge, issued on a real rail: in Test it is paid with POST /v1/collect/attempts/{attemptId}/test-pay (`details.next_action`), never by this simulation. */
+                /** @description The charge exists and cannot be paid, and nothing was settled, credited or published: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge with no document a debtor could pay, and `details.reason` says which: `issuer_rejected` (the issuer left it in ERROR, no boleto or Pix ever existed, and the charge reads `local_status: "failed"` once closed — terminal, create a new charge), `charge_closed` (expired or cancelled, ours or the issuer's — terminal, create a new charge), `instrument_not_registered` (the issuer has not handed over a boleto or Pix yet — read the charge and pay once it answers `payable: true`); `charge_reference_ambiguous` is a reference that is one charge's id and another's idempotency key — pay by the charge id; `collect_simulated_settle_refused` is a Collect link's charge, issued on a real rail: in Test it is paid with POST /v1/collect/attempts/{attemptId}/test-pay (`details.next_action`), never by this simulation. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -19208,7 +22159,7 @@ export interface paths {
          * @deprecated
          * @description Alias of `POST /v1/test/charges/{chargeId}/pay` (ent#979 contract: one handler, two paths, one scope). Same body, same answers.
          *
-         *     Plays the DEBTOR of a test charge: settles it through the SAME path a Celcoin `charge-in` webhook takes (translate, publish `commerce.charge.paid`, reconcile, ledger `fund()` with the `pending -> settled` claim). It is not a status write, so the event fans out to your triggers exactly as a real payment would, and the ledger and receipt side effects are the ones production produces.
+         *     Plays the DEBTOR of a test charge: settles it through the SAME path a Celcoin `charge-in` webhook takes (translate, reconcile, ledger `fund()` with the `pending -> settled` claim, and `commerce.charge.paid` written by that same settling transaction). It is not a status write, so the event fans out to your triggers exactly as a real payment would, and the ledger and receipt side effects are the ones production produces.
          *
          *     **Test-mode only, fail-closed.** A live-environment key or project answers 403 `sandbox_pay_not_permitted` before the body is read or any query runs.
          *
@@ -19341,7 +22292,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The charge exists and cannot be paid, and nothing was settled, credited or published: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge with no document a debtor could pay, and `details.reason` says which: `issuer_rejected` (the issuer left it in ERROR, no boleto or Pix ever existed — terminal, create a new charge), `charge_closed` (expired or cancelled, ours or the issuer's — terminal, create a new charge), `instrument_not_registered` (the issuer has not handed over a boleto or Pix yet — read the charge and pay once it answers `payable: true`); `charge_reference_ambiguous` is a reference that is one charge's id and another's idempotency key — pay by the charge id; `collect_simulated_settle_refused` is a Collect link's charge, issued on a real rail: in Test it is paid with POST /v1/collect/attempts/{attemptId}/test-pay (`details.next_action`), never by this simulation. */
+                /** @description The charge exists and cannot be paid, and nothing was settled, credited or published: `issuance_unconfirmed` is a reservation whose create never got an answer; `charge_not_payable` is a charge with no document a debtor could pay, and `details.reason` says which: `issuer_rejected` (the issuer left it in ERROR, no boleto or Pix ever existed, and the charge reads `local_status: "failed"` once closed — terminal, create a new charge), `charge_closed` (expired or cancelled, ours or the issuer's — terminal, create a new charge), `instrument_not_registered` (the issuer has not handed over a boleto or Pix yet — read the charge and pay once it answers `payable: true`); `charge_reference_ambiguous` is a reference that is one charge's id and another's idempotency key — pay by the charge id; `collect_simulated_settle_refused` is a Collect link's charge, issued on a real rail: in Test it is paid with POST /v1/collect/attempts/{attemptId}/test-pay (`details.next_action`), never by this simulation. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -28119,6 +31070,25 @@ export interface paths {
                                     detail: string;
                                     at: string;
                                 }[];
+                                /**
+                                 * @description Who executes (or executed) the payment, by the same name the integrator chooses with on POST /v1/consents. `codespar_simulator` ("Simulado pela CodeSpar": no provider is called) or `provider_sandbox` (the provider's sandbox, over the account the server bound to this consumer); both Test only. Null when no executor applies, Live included. The name is the MODE: the provider, account, project, consumer and environment are resolved by the server before the signature and checked again when the payment runs; no request field chooses them (`executor_provider_not_selectable`), and a provider failure is never turned into a simulation. Records written before this name existed keep their stored value and are read in these words.
+                                 * @enum {string|null}
+                                 */
+                                executor: "codespar_simulator" | "provider_sandbox" | null;
+                                /**
+                                 * @description The concrete provider behind `executor`, as the server resolved it: `celcoin` for `provider_sandbox`; null for `codespar_simulator` (no provider is called) and when `executor` is null. Read-only.
+                                 * @enum {string|null}
+                                 */
+                                executor_provider: "celcoin" | null;
+                                /** @description The executor's label as the consent screen, the dashboard and the receipt show it. In Test it ends "· sem dinheiro real". */
+                                executor_label: string | null;
+                                /**
+                                 * @description The project's environment.
+                                 * @enum {string|null}
+                                 */
+                                environment: "test" | "live" | null;
+                                /** @description False in Test, always: no real money moves, including when the provider's sandbox CONFIRMED the operation (`moneyMoved: true` / `settlement: "confirmed"` then mean the sandbox settled it). True in Live. */
+                                real_money: boolean | null;
                             }[];
                         };
                     };
@@ -28267,6 +31237,25 @@ export interface paths {
                                 detail: string;
                                 at: string;
                             }[];
+                            /**
+                             * @description Who executes (or executed) the payment, by the same name the integrator chooses with on POST /v1/consents. `codespar_simulator` ("Simulado pela CodeSpar": no provider is called) or `provider_sandbox` (the provider's sandbox, over the account the server bound to this consumer); both Test only. Null when no executor applies, Live included. The name is the MODE: the provider, account, project, consumer and environment are resolved by the server before the signature and checked again when the payment runs; no request field chooses them (`executor_provider_not_selectable`), and a provider failure is never turned into a simulation. Records written before this name existed keep their stored value and are read in these words.
+                             * @enum {string|null}
+                             */
+                            executor: "codespar_simulator" | "provider_sandbox" | null;
+                            /**
+                             * @description The concrete provider behind `executor`, as the server resolved it: `celcoin` for `provider_sandbox`; null for `codespar_simulator` (no provider is called) and when `executor` is null. Read-only.
+                             * @enum {string|null}
+                             */
+                            executor_provider: "celcoin" | null;
+                            /** @description The executor's label as the consent screen, the dashboard and the receipt show it. In Test it ends "· sem dinheiro real". */
+                            executor_label: string | null;
+                            /**
+                             * @description The project's environment.
+                             * @enum {string|null}
+                             */
+                            environment: "test" | "live" | null;
+                            /** @description False in Test, always: no real money moves, including when the provider's sandbox CONFIRMED the operation (`moneyMoved: true` / `settlement: "confirmed"` then mean the sandbox settled it). True in Live. */
+                            real_money: boolean | null;
                             /** @description On this point read only: who was paid, as the receipt document prints it under "Para". Read-side, outside the sealed fields. Fields the payment did not record are null, never backfilled. */
                             payee: {
                                 name: string | null;
@@ -33448,7 +36437,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden. The operation requires the `admin` role in the organization, resolved from the acting user forwarded in `x-codespar-user`. Known values of `error`: `insufficient_role`, `bearer_admin_role_missing`, `bearer_admin_user_not_member`, `bearer_admin_role_unresolved`. The same status and body shape also carry the scope gate's refusals, which reach every route in this subtree including the two reads: `forbidden` when the credential lacks the scope the route is mapped to, and the two alarms `scopes_unresolved` and `route_scope_unresolved`. */
+                /** @description Forbidden. On the dashboard the operation requires the `admin` role in the organization, resolved from the acting user forwarded in `x-codespar-user` (`insufficient_role`). An API key carrying `mcp-servers:write` is not refused by that gate; an OAuth access token is (`insufficient_role`). The fee sweep is administrative: an API key gets `admin_session_required` there, whatever its scopes. The same status and body shape also carry the scope gate's refusals, which reach every route in this subtree including the two reads: `forbidden` when the credential lacks the scope the route is mapped to, and the two alarms `scopes_unresolved` and `route_scope_unresolved`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -33712,7 +36701,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden. The operation requires the `admin` role in the organization, resolved from the acting user forwarded in `x-codespar-user`. Known values of `error`: `insufficient_role`, `bearer_admin_role_missing`, `bearer_admin_user_not_member`, `bearer_admin_role_unresolved`. The same status and body shape also carry the scope gate's refusals, which reach every route in this subtree including the two reads: `forbidden` when the credential lacks the scope the route is mapped to, and the two alarms `scopes_unresolved` and `route_scope_unresolved`. */
+                /** @description Forbidden. On the dashboard the operation requires the `admin` role in the organization, resolved from the acting user forwarded in `x-codespar-user` (`insufficient_role`). An API key carrying `mcp-servers:write` is not refused by that gate; an OAuth access token is (`insufficient_role`). The fee sweep is administrative: an API key gets `admin_session_required` there, whatever its scopes. The same status and body shape also carry the scope gate's refusals, which reach every route in this subtree including the two reads: `forbidden` when the credential lacks the scope the route is mapped to, and the two alarms `scopes_unresolved` and `route_scope_unresolved`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -33903,7 +36892,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description Forbidden. The operation requires the `admin` role in the organization, resolved from the acting user forwarded in `x-codespar-user`. Known values of `error`: `insufficient_role`, `bearer_admin_role_missing`, `bearer_admin_user_not_member`, `bearer_admin_role_unresolved`. The same status and body shape also carry the scope gate's refusals, which reach every route in this subtree including the two reads: `forbidden` when the credential lacks the scope the route is mapped to, and the two alarms `scopes_unresolved` and `route_scope_unresolved`. */
+                /** @description Forbidden. On the dashboard the operation requires the `admin` role in the organization, resolved from the acting user forwarded in `x-codespar-user` (`insufficient_role`). An API key carrying `mcp-servers:write` is not refused by that gate; an OAuth access token is (`insufficient_role`). The fee sweep is administrative: an API key gets `admin_session_required` there, whatever its scopes. The same status and body shape also carry the scope gate's refusals, which reach every route in this subtree including the two reads: `forbidden` when the credential lacks the scope the route is mapped to, and the two alarms `scopes_unresolved` and `route_scope_unresolved`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -34069,7 +37058,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden. The operation requires the `admin` role in the organization, resolved from the acting user forwarded in `x-codespar-user`. Known values of `error`: `insufficient_role`, `bearer_admin_role_missing`, `bearer_admin_user_not_member`, `bearer_admin_role_unresolved`. The same status and body shape also carry the scope gate's refusals, which reach every route in this subtree including the two reads: `forbidden` when the credential lacks the scope the route is mapped to, and the two alarms `scopes_unresolved` and `route_scope_unresolved`. */
+                /** @description Forbidden. On the dashboard the operation requires the `admin` role in the organization, resolved from the acting user forwarded in `x-codespar-user` (`insufficient_role`). An API key carrying `mcp-servers:write` is not refused by that gate; an OAuth access token is (`insufficient_role`). The fee sweep is administrative: an API key gets `admin_session_required` there, whatever its scopes. The same status and body shape also carry the scope gate's refusals, which reach every route in this subtree including the two reads: `forbidden` when the credential lacks the scope the route is mapped to, and the two alarms `scopes_unresolved` and `route_scope_unresolved`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -34197,7 +37186,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden. The operation requires the `admin` role in the organization, resolved from the acting user forwarded in `x-codespar-user`. Known values of `error`: `insufficient_role`, `bearer_admin_role_missing`, `bearer_admin_user_not_member`, `bearer_admin_role_unresolved`. The same status and body shape also carry the scope gate's refusals, which reach every route in this subtree including the two reads: `forbidden` when the credential lacks the scope the route is mapped to, and the two alarms `scopes_unresolved` and `route_scope_unresolved`. */
+                /** @description Forbidden. On the dashboard the operation requires the `admin` role in the organization, resolved from the acting user forwarded in `x-codespar-user` (`insufficient_role`). An API key carrying `mcp-servers:write` is not refused by that gate; an OAuth access token is (`insufficient_role`). The fee sweep is administrative: an API key gets `admin_session_required` there, whatever its scopes. The same status and body shape also carry the scope gate's refusals, which reach every route in this subtree including the two reads: `forbidden` when the credential lacks the scope the route is mapped to, and the two alarms `scopes_unresolved` and `route_scope_unresolved`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -34262,7 +37251,7 @@ export interface paths {
          *
          *     503 `payto_provisioning_unavailable` is broader than its name: the handler maps EVERY error thrown by the pass to that one code, so it covers a database failure during the sweep as well as a platform wallet that could not be provisioned.
          *
-         *     This operation needs the `platform-fees:sweep` scope, which the other seven do not.
+         *     Administrative, unlike the other seven: an admin or owner performs it from the dashboard, and an API key is refused with 403 `admin_session_required`, whatever its scopes.
          */
         post: {
             parameters: {
@@ -34299,7 +37288,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden. The operation requires the `admin` role in the organization, resolved from the acting user forwarded in `x-codespar-user`. Known values of `error`: `insufficient_role`, `bearer_admin_role_missing`, `bearer_admin_user_not_member`, `bearer_admin_role_unresolved`. The same status and body shape also carry the scope gate's refusals, which reach every route in this subtree including the two reads: `forbidden` when the credential lacks the scope the route is mapped to, and the two alarms `scopes_unresolved` and `route_scope_unresolved`. */
+                /** @description Forbidden. On the dashboard the operation requires the `admin` role in the organization, resolved from the acting user forwarded in `x-codespar-user` (`insufficient_role`). An API key carrying `mcp-servers:write` is not refused by that gate; an OAuth access token is (`insufficient_role`). The fee sweep is administrative: an API key gets `admin_session_required` there, whatever its scopes. The same status and body shape also carry the scope gate's refusals, which reach every route in this subtree including the two reads: `forbidden` when the credential lacks the scope the route is mapped to, and the two alarms `scopes_unresolved` and `route_scope_unresolved`. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -37060,27 +40049,20 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden. The acting user does not satisfy the org-role guard in front of this route. With an OAuth access token this is the live behaviour when `x-codespar-user` is absent or names a user below admin; with an API key it appears only where the deployment enforces the same guard. */
+                /** @description Forbidden. The org-role guard in front of this route refused. It refuses an OAuth access token, which is not the dashboard, whatever `x-codespar-user` says. An API key is not refused by this guard: its grant is its scope. */
                 403: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
-                            /** @description `insufficient_role` on the ordinary path. */
-                            error: string;
+                            /** @enum {string} */
+                            error: "insufficient_role";
                             /**
                              * @description The minimum org role this route asks for.
                              * @enum {string}
                              */
                             required: "admin";
-                            /** @description Present only on the enforced API-key path. */
-                            message?: string;
-                            /**
-                             * @description Present only on the enforced API-key path.
-                             * @enum {number}
-                             */
-                            status?: 403;
                         };
                     };
                 };
@@ -37226,11 +40208,7 @@ export interface paths {
          *
          *     The slug returns to the global namespace and any other tenant may then claim it, so a delete-and-recreate is not guaranteed to get the same gateway URL back.
          *
-         *     AUTHORIZATION, as deployed rather than as named, and it is NOT the same for the two credentials this document describes.
-         *
-         *     With an OAUTH ACCESS TOKEN the org-role guard in front of this route is ordinary and live: the acting user must be forwarded in `x-codespar-user` and must hold at least the admin role in the organization. No header, or a user who is not an admin, is 403 `insufficient_role` before the handler runs.
-         *
-         *     With an API KEY the same guard is in a measurement window: it resolves the forwarded user, RECORDS the request when that user would not have sufficed, and lets it through anyway. So today a key carrying `paywalls:write` deletes without forwarding anybody. A deployment that closes the window refuses those calls with 403 as well, so forward `x-codespar-user` if you have it: it is already required on the token path, it is inert on the key path while the window is open, and it is what keeps the call working when the window closes.
+         *     AUTHORIZATION. With an API KEY the grant is the key's scope: a key carrying `paywalls:write` deletes, and `x-codespar-user` is not read. Only an admin mints a key. An OAUTH ACCESS TOKEN is refused with 403 `insufficient_role` before the handler runs: this write belongs to a key or to the dashboard.
          */
         delete: {
             parameters: {
@@ -37250,27 +40228,20 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description Forbidden. The acting user does not satisfy the org-role guard in front of this route. With an OAuth access token this is the live behaviour when `x-codespar-user` is absent or names a user below admin; with an API key it appears only where the deployment enforces the same guard. */
+                /** @description Forbidden. The org-role guard in front of this route refused. It refuses an OAuth access token, which is not the dashboard, whatever `x-codespar-user` says. An API key is not refused by this guard: its grant is its scope. */
                 403: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
-                            /** @description `insufficient_role` on the ordinary path. */
-                            error: string;
+                            /** @enum {string} */
+                            error: "insufficient_role";
                             /**
                              * @description The minimum org role this route asks for.
                              * @enum {string}
                              */
                             required: "admin";
-                            /** @description Present only on the enforced API-key path. */
-                            message?: string;
-                            /**
-                             * @description Present only on the enforced API-key path.
-                             * @enum {number}
-                             */
-                            status?: 403;
                         };
                     };
                 };
@@ -37425,27 +40396,20 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Forbidden. The acting user does not satisfy the org-role guard in front of this route. With an OAuth access token this is the live behaviour when `x-codespar-user` is absent or names a user below admin; with an API key it appears only where the deployment enforces the same guard. */
+                /** @description Forbidden. The org-role guard in front of this route refused. It refuses an OAuth access token, which is not the dashboard, whatever `x-codespar-user` says. An API key is not refused by this guard: its grant is its scope. */
                 403: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
-                            /** @description `insufficient_role` on the ordinary path. */
-                            error: string;
+                            /** @enum {string} */
+                            error: "insufficient_role";
                             /**
                              * @description The minimum org role this route asks for.
                              * @enum {string}
                              */
                             required: "admin";
-                            /** @description Present only on the enforced API-key path. */
-                            message?: string;
-                            /**
-                             * @description Present only on the enforced API-key path.
-                             * @enum {number}
-                             */
-                            status?: 403;
                         };
                     };
                 };
@@ -45289,6 +48253,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description A Test project the own-account rule reaches has no own account yet: there is no account to state, so no statement (never the simulator's residue as the account's, nor an empty one closing at 0). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "statement_account_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
                 /** @description The ledger of the period does not reconcile; logged, nothing served. */
                 500: {
                     headers: {
@@ -45975,6 +48959,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/shop/agent/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the Shop can do in this project and mode
+         * @description Scope `shop:purchases:read`. The seven tasks, always all seven and in this order: `research`, `purchase`, `reserve`, `pay_pix`, `pay_boleto`, `pay_dda`, `receive_pix`. Each is `available` (an executable path is wired and on for the key's project in its mode; `scope` narrows what it covers, e.g. `test_store`: the synthetic test store only), `needs_step` (it waits for a person's act, named by `step`: `resume_shop_mandate`, `rebind_integrated_proof`, `confirm_shop_mandate`) or `unavailable` (`reason`, a code for logs and mapping). Derived from the gates the Shop's own paths read, the same answer the Shop's dashboard reads: researching is not reserving, and reserving is not paying (`reserve` has no executor). A mandate never signed is not a step in Test; it is confirmed by a person when a payment first needs it. Reads only: nothing is provisioned, signed or enabled, in Test or in Live. Served whatever `SHOP_PURCHASES_ENABLED` says: a switch that is off is answered as the reason of the tasks it gates.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            project_id: string;
+                            /** @enum {string} */
+                            environment: "test" | "live";
+                            capabilities: {
+                                /** @enum {string} */
+                                task: "research" | "purchase" | "reserve" | "pay_pix" | "pay_boleto" | "pay_dda" | "receive_pix";
+                                /** @enum {string} */
+                                state: "available" | "needs_step" | "unavailable";
+                                /** @description Only with needs_step: the person's act it waits for. */
+                                step: string | null;
+                                /** @description Only with unavailable: a code for logs and mapping, never shown raw. */
+                                reason: string | null;
+                                /** @description What available covers, e.g. test_store: the synthetic test store only. */
+                                scope: string | null;
+                            }[];
+                            /** @description When the gates were read (ISO 8601). */
+                            as_of: string;
+                        };
+                    };
+                };
+                /** @description The key does not hold `shop:purchases:read`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/shop/agent/instruments": {
         parameters: {
             query?: never;
@@ -46112,9 +49172,7 @@ export interface paths {
          * Create a project
          * @description Creates a project in the organization this credential resolves to.
          *
-         *     ROLE. This is an administrative operation and it carries the `admin` role gate. On a credential of the kind this document describes — an API key or an OAuth access token — that gate does NOT refuse today. It resolves the user forwarded in the `x-codespar-user` header against this organization's members, records the outcome when no user was forwarded, the user is not a member of the organization, or the user ranks below `admin`, and then lets the request through. Refusal is behind a server-side rollout flag that is currently off. Forward an `admin` or `owner` user in `x-codespar-user` now: when the flag is turned on, a call that does not carry one starts being answered with 403 instead of being served.
-         *
-         *     SCOPE. A key created with an explicit scope list needs `projects:write` and is answered with 403 without it. A wildcard key passes: the wildcard is what a key gets when it is created without an explicit list, which is every key by default.
+         *     ROLE. This is an administrative operation: an `admin` or `owner` performs it from the dashboard. An API key is refused with 403 `admin_session_required`, whatever its scopes and even on the project it was issued in. `x-codespar-user` is not read for an API key. An OAuth access token is refused with 403 `insufficient_role`.
          *
          *     `slug` is unique per organization, lowercase alphanumerics plus `_` and `-`, at most 64 characters, and `default` is reserved because the auto-seeded first project already holds it. A slug already taken in the organization is refused with 400 and code `slug_conflict`, not 409, and `details.slug` echoes the value that collided.
          *
@@ -46297,9 +49355,7 @@ export interface paths {
          * Delete a project
          * @description A hard delete, not a soft one: the project row is removed and most of what hangs off it goes with it. 204 with no body on success.
          *
-         *     ROLE. This is an administrative operation and it carries the `admin` role gate. On a credential of the kind this document describes — an API key or an OAuth access token — that gate does NOT refuse today. It resolves the user forwarded in the `x-codespar-user` header against this organization's members, records the outcome when no user was forwarded, the user is not a member of the organization, or the user ranks below `admin`, and then lets the request through. Refusal is behind a server-side rollout flag that is currently off. Forward an `admin` or `owner` user in `x-codespar-user` now: when the flag is turned on, a call that does not carry one starts being answered with 403 instead of being served.
-         *
-         *     SCOPE. A key created with an explicit scope list needs `projects:write` and is answered with 403 without it. A wildcard key passes: the wildcard is what a key gets when it is created without an explicit list, which is every key by default.
+         *     ROLE. This is an administrative operation: an `admin` or `owner` performs it from the dashboard. An API key is refused with 403 `admin_session_required`, whatever its scopes and even on the project it was issued in. `x-codespar-user` is not read for an API key. An OAuth access token is refused with 403 `insufficient_role`.
          *
          *     Four refusals, all 409 because the request is well formed and conflicts with an invariant the organization relies on:
          *
@@ -46378,9 +49434,7 @@ export interface paths {
          * Rename a project, change its slug, or promote it to default
          * @description At least one field must be present; an empty body is refused with 400.
          *
-         *     ROLE. This is an administrative operation and it carries the `admin` role gate. On a credential of the kind this document describes — an API key or an OAuth access token — that gate does NOT refuse today. It resolves the user forwarded in the `x-codespar-user` header against this organization's members, records the outcome when no user was forwarded, the user is not a member of the organization, or the user ranks below `admin`, and then lets the request through. Refusal is behind a server-side rollout flag that is currently off. Forward an `admin` or `owner` user in `x-codespar-user` now: when the flag is turned on, a call that does not carry one starts being answered with 403 instead of being served.
-         *
-         *     SCOPE. A key created with an explicit scope list needs `projects:write` and is answered with 403 without it. A wildcard key passes: the wildcard is what a key gets when it is created without an explicit list, which is every key by default.
+         *     ROLE. This is an administrative operation: an `admin` or `owner` performs it from the dashboard. An API key is refused with 403 `admin_session_required`, whatever its scopes and even on the project it was issued in. `x-codespar-user` is not read for an API key. An OAuth access token is refused with 403 `insufficient_role`.
          *
          *     `is_default` accepts `true` and nothing else. A project cannot be un-defaulted, and the only way to move the default is to promote a different project: the previous default is cleared and the new one set in one transaction, so no committed state ever shows two defaults. Promoting a project that is already the default is a no-op.
          *
@@ -46492,9 +49546,9 @@ export interface paths {
          * Archive a project
          * @description The way out for a project that cannot be deleted because it holds records: nothing is deleted, moved or revoked. It is refused while the project has open money obligations (409 `project_has_open_operations`), so nothing recurring stops in silence. An archived project leaves `GET /v1/projects` (list it with `?include_archived=1`), its API keys and OAuth tokens are refused with 403 `project_archived`, the dashboard's writes in it too, and the workers start nothing for it; provider events of objects created before keep being recorded. The organization's default project is not archived (409 `cannot_archive_default`). Asking for the state the project is already in answers 200 with `changed: false`. Recorded in the organization's audit log.
          *
-         *     ROLE. This is an administrative operation and it carries the `admin` role gate. On a credential of the kind this document describes — an API key or an OAuth access token — that gate does NOT refuse today. It resolves the user forwarded in the `x-codespar-user` header against this organization's members, records the outcome when no user was forwarded, the user is not a member of the organization, or the user ranks below `admin`, and then lets the request through. Refusal is behind a server-side rollout flag that is currently off. Forward an `admin` or `owner` user in `x-codespar-user` now: when the flag is turned on, a call that does not carry one starts being answered with 403 instead of being served.
+         *     ROLE. This is an administrative operation: an `admin` or `owner` performs it from the dashboard. An API key is refused with 403 `admin_session_required`, whatever its scopes and even on the project it was issued in. `x-codespar-user` is not read for an API key. An OAuth access token is refused with 403 `insufficient_role`.
          *
-         *     SCOPE. A key created with an explicit scope list needs `projects:write` and is answered with 403 without it. A wildcard key passes: the wildcard is what a key gets when it is created without an explicit list, which is every key by default.
+         *
          *
          *     A cross-tenant id is 404, not 403.
          */
@@ -46586,9 +49640,9 @@ export interface paths {
          * Unarchive a project
          * @description Restores an archived project as it was: listed again, its keys and operations accepted. Asking for the state the project is already in answers 200 with `changed: false`. Recorded in the organization's audit log.
          *
-         *     ROLE. This is an administrative operation and it carries the `admin` role gate. On a credential of the kind this document describes — an API key or an OAuth access token — that gate does NOT refuse today. It resolves the user forwarded in the `x-codespar-user` header against this organization's members, records the outcome when no user was forwarded, the user is not a member of the organization, or the user ranks below `admin`, and then lets the request through. Refusal is behind a server-side rollout flag that is currently off. Forward an `admin` or `owner` user in `x-codespar-user` now: when the flag is turned on, a call that does not carry one starts being answered with 403 instead of being served.
+         *     ROLE. This is an administrative operation: an `admin` or `owner` performs it from the dashboard. An API key is refused with 403 `admin_session_required`, whatever its scopes and even on the project it was issued in. `x-codespar-user` is not read for an API key. An OAuth access token is refused with 403 `insufficient_role`.
          *
-         *     SCOPE. A key created with an explicit scope list needs `projects:write` and is answered with 403 without it. A wildcard key passes: the wildcard is what a key gets when it is created without an explicit list, which is every key by default.
+         *
          *
          *     A cross-tenant id is 404, not 403.
          */
@@ -46660,7 +49714,7 @@ export interface paths {
          *
          *     SCOPE. A key created with an explicit scope list needs `projects:settings` and is answered with 403 without it. A wildcard key passes: the wildcard is what a key gets when it is created without an explicit list, which is every key by default.
          *
-         *     This read alone carries NO role gate. The write and the history read below both do, and what that gate currently does is described on each of them.
+         *     This read alone carries NO role gate. The write and the history read below both do, and what that gate does is described on each of them. An API key reads only the project it was issued in: another `{id}` is 403 `api_key_other_project`.
          *
          *     The list is filtered by environment: a setting declared test-only does not appear on a live project at all, so an empty list is a normal answer rather than an error. A stored value whose key is no longer declared is omitted too. Every setting the registry declares as this is written applies to `test` only, which makes an empty list what a `live` project returns — a fact about the current declarations, not about this route.
          *
@@ -46740,9 +49794,7 @@ export interface paths {
          * Set or reset a project's settings
          * @description The body is `{ "settings": { <key>: <value> } }`. A `null` value RESETS that key to default-tracking; it does not store null. Multiple keys in one call are applied together.
          *
-         *     ROLE. This is an administrative operation and it carries the `admin` role gate. On a credential of the kind this document describes — an API key or an OAuth access token — that gate does NOT refuse today. It resolves the user forwarded in the `x-codespar-user` header against this organization's members, records the outcome when no user was forwarded, the user is not a member of the organization, or the user ranks below `admin`, and then lets the request through. Refusal is behind a server-side rollout flag that is currently off. Forward an `admin` or `owner` user in `x-codespar-user` now: when the flag is turned on, a call that does not carry one starts being answered with 403 instead of being served.
-         *
-         *     SCOPE. A key created with an explicit scope list needs `projects:settings` and is answered with 403 without it. A wildcard key passes: the wildcard is what a key gets when it is created without an explicit list, which is every key by default.
+         *     ROLE. This is an administrative operation: an `admin` or `owner` performs it from the dashboard. An API key is refused with 403 `admin_session_required`, whatever its scopes and even on the project it was issued in. `x-codespar-user` is not read for an API key. An OAuth access token is refused with 403 `insufficient_role`.
          *
          *     The whole batch is validated against the settings registry before anything is written, so one bad entry rejects the entire call and nothing changes. An unknown key, a value of the wrong type, or a key that does not apply to the project's environment is 400 `invalid_body` with `details.key` naming the offender. An empty `settings` object is 400 as well, with no `details`.
          *
@@ -46860,9 +49912,7 @@ export interface paths {
          * Read a project's settings audit log
          * @description The ordered change history for this project's settings, oldest first.
          *
-         *     ROLE. This is an administrative operation and it carries the `admin` role gate. On a credential of the kind this document describes — an API key or an OAuth access token — that gate does NOT refuse today. It resolves the user forwarded in the `x-codespar-user` header against this organization's members, records the outcome when no user was forwarded, the user is not a member of the organization, or the user ranks below `admin`, and then lets the request through. Refusal is behind a server-side rollout flag that is currently off. Forward an `admin` or `owner` user in `x-codespar-user` now: when the flag is turned on, a call that does not carry one starts being answered with 403 instead of being served.
-         *
-         *     SCOPE. A key created with an explicit scope list needs `projects:settings` and is answered with 403 without it. A wildcard key passes: the wildcard is what a key gets when it is created without an explicit list, which is every key by default.
+         *     ROLE. This is an administrative operation: an `admin` or `owner` performs it from the dashboard. An API key is refused with 403 `admin_session_required`, whatever its scopes and even on the project it was issued in. `x-codespar-user` is not read for an API key. An OAuth access token is refused with 403 `insufficient_role`.
          *
          *     One entry per key that actually changed, so a call that wrote a value an already-explicit key was already holding leaves no trace here. Note what does leave a trace: writing a key's own default value while it is still tracking that default is a change, and it lands here with `old_value` equal to `new_value`. `explicit_before` and `explicit_after` are what separate a reset from a write: a reset ends with `explicit_after: false` and a `new_value` equal to the declared default.
          *
@@ -46973,11 +50023,13 @@ export interface paths {
                             /** @enum {string} */
                             environment: "live" | "test";
                             /**
-                             * @description `confirm_each`: a person confirms every payment. `confirm_exceptions`: a payment above `exception_amount_minor`, or to a payee never paid, waits for a person. `within_mandate`: the agent pays inside the mandate unconfirmed. No level widens a mandate. A project that never changed it is at `confirm_each`.
-                             * @enum {string}
+                             * @description The level the payment step applies. `confirm_each`: a person confirms every payment. `confirm_exceptions`: a payment above `exception_amount_minor`, or to a payee never paid, waits for a person. `within_mandate`: the agent pays inside the mandate unconfirmed. No level widens a mandate. A test project that never changed it is at `confirm_each`. Null where no level applies (a live project, or a deployment that releases none): there the agent pays within the mandate and the project's approval rules, with no per-payment confirmation.
+                             * @enum {string|null}
                              */
-                            level: "confirm_each" | "confirm_exceptions" | "within_mandate";
-                            /** @description The threshold of `confirm_exceptions`, in minor units; null at the other levels. */
+                            level: "confirm_each" | "confirm_exceptions" | "within_mandate" | null;
+                            /** @description Whether the agent's autonomy applies to this project's payments now. False on a live project, where `level` is null. */
+                            applies: boolean;
+                            /** @description The threshold of `confirm_exceptions`, in minor units; null at the other levels and where no level applies. */
                             exception_amount_minor: number | null;
                             /** @description Send it back on the PUT. 0 for a project that never changed its level. */
                             version: number;
@@ -46991,6 +50043,15 @@ export interface paths {
                              * @enum {string|null}
                              */
                             live_activation: "pending" | null;
+                            /** @description The organization's approval rules that hold a payment for a person, in the engine's order and by its first-match scan. They apply in every environment; in a live project, where no autonomy level applies, these and the mandate's limits are what stand before a payment. */
+                            payment_approval_rules: {
+                                id: string;
+                                name: string;
+                                /** @description The agents it applies to (`*` for all). */
+                                agents: string[];
+                                /** @description The payment tools it holds for a person: `consumer_payment:execute` (every consumer payment door), `codespar_pay`, `codespar_crypto_pay`, `codespar_shop`. */
+                                payment_tools: string[];
+                            }[];
                         };
                     };
                 };
@@ -47058,11 +50119,13 @@ export interface paths {
                                 /** @enum {string} */
                                 environment: "live" | "test";
                                 /**
-                                 * @description `confirm_each`: a person confirms every payment. `confirm_exceptions`: a payment above `exception_amount_minor`, or to a payee never paid, waits for a person. `within_mandate`: the agent pays inside the mandate unconfirmed. No level widens a mandate. A project that never changed it is at `confirm_each`.
-                                 * @enum {string}
+                                 * @description The level the payment step applies. `confirm_each`: a person confirms every payment. `confirm_exceptions`: a payment above `exception_amount_minor`, or to a payee never paid, waits for a person. `within_mandate`: the agent pays inside the mandate unconfirmed. No level widens a mandate. A test project that never changed it is at `confirm_each`. Null where no level applies (a live project, or a deployment that releases none): there the agent pays within the mandate and the project's approval rules, with no per-payment confirmation.
+                                 * @enum {string|null}
                                  */
-                                level: "confirm_each" | "confirm_exceptions" | "within_mandate";
-                                /** @description The threshold of `confirm_exceptions`, in minor units; null at the other levels. */
+                                level: "confirm_each" | "confirm_exceptions" | "within_mandate" | null;
+                                /** @description Whether the agent's autonomy applies to this project's payments now. False on a live project, where `level` is null. */
+                                applies: boolean;
+                                /** @description The threshold of `confirm_exceptions`, in minor units; null at the other levels and where no level applies. */
                                 exception_amount_minor: number | null;
                                 /** @description Send it back on the PUT. 0 for a project that never changed its level. */
                                 version: number;
@@ -47076,6 +50139,15 @@ export interface paths {
                                  * @enum {string|null}
                                  */
                                 live_activation: "pending" | null;
+                                /** @description The organization's approval rules that hold a payment for a person, in the engine's order and by its first-match scan. They apply in every environment; in a live project, where no autonomy level applies, these and the mandate's limits are what stand before a payment. */
+                                payment_approval_rules: {
+                                    id: string;
+                                    name: string;
+                                    /** @description The agents it applies to (`*` for all). */
+                                    agents: string[];
+                                    /** @description The payment tools it holds for a person: `consumer_payment:execute` (every consumer payment door), `codespar_pay`, `codespar_crypto_pay`, `codespar_shop`. */
+                                    payment_tools: string[];
+                                }[];
                             };
                         };
                     };
@@ -48102,9 +51174,9 @@ export interface paths {
                     };
                 };
                 /**
-                 * @description Forbidden. This write is gated on an organization role, and the guard refused. It is reachable with an OAuth access token or a service credential: either no acting user was forwarded in the `x-codespar-user` header, or the user it named does not hold at least `admin` in the organization. Re-sending the same header will not help in the second case — promote that user, or forward one who already qualifies.
+                 * @description Forbidden. This write is gated on an organization role, and the guard refused. It refuses an OAuth access token, which is not the dashboard, whatever `x-codespar-user` says.
                  *
-                 *     AN API KEY IS NOT REFUSED HERE TODAY. The role requirement is not enforced for that credential at this version, so a key alone completes the write and a 200 is not evidence that anyone holding `admin` authorized it. Plan for the header: it is the arm that will be closed.
+                 *     An API key is not refused by this guard: a key carries no role, its grant is its scope (`payment-links:write`), and only an admin mints a key. `x-codespar-user` is not read for a key.
                  */
                 403: {
                     headers: {
@@ -48535,9 +51607,9 @@ export interface paths {
                     content?: never;
                 };
                 /**
-                 * @description Forbidden. This write is gated on an organization role, and the guard refused. It is reachable with an OAuth access token or a service credential: either no acting user was forwarded in the `x-codespar-user` header, or the user it named does not hold at least `admin` in the organization. Re-sending the same header will not help in the second case — promote that user, or forward one who already qualifies.
+                 * @description Forbidden. This write is gated on an organization role, and the guard refused. It refuses an OAuth access token, which is not the dashboard, whatever `x-codespar-user` says.
                  *
-                 *     AN API KEY IS NOT REFUSED HERE TODAY. The role requirement is not enforced for that credential at this version, so a key alone completes the write and a 200 is not evidence that anyone holding `admin` authorized it. Plan for the header: it is the arm that will be closed.
+                 *     An API key is not refused by this guard: a key carries no role, its grant is its scope (`payment-links:write`), and only an admin mints a key. `x-codespar-user` is not read for a key.
                  */
                 403: {
                     headers: {
@@ -48698,9 +51770,9 @@ export interface paths {
                     };
                 };
                 /**
-                 * @description Forbidden. This write is gated on an organization role, and the guard refused. It is reachable with an OAuth access token or a service credential: either no acting user was forwarded in the `x-codespar-user` header, or the user it named does not hold at least `admin` in the organization. Re-sending the same header will not help in the second case — promote that user, or forward one who already qualifies.
+                 * @description Forbidden. This write is gated on an organization role, and the guard refused. It refuses an OAuth access token, which is not the dashboard, whatever `x-codespar-user` says.
                  *
-                 *     AN API KEY IS NOT REFUSED HERE TODAY. The role requirement is not enforced for that credential at this version, so a key alone completes the write and a 200 is not evidence that anyone holding `admin` authorized it. Plan for the header: it is the arm that will be closed.
+                 *     An API key is not refused by this guard: a key carries no role, its grant is its scope (`payment-links:write`), and only an admin mints a key. `x-codespar-user` is not read for a key.
                  */
                 403: {
                     headers: {
@@ -52494,6 +55566,25 @@ export interface components {
             called_at: string;
             routing?: unknown;
             failover_trail?: unknown;
+            /** @description Who triggered the call, as its authentication knew it (0408). Null when not recorded; never inferred from a mandate or a session. */
+            actor?: {
+                /**
+                 * @description How the caller authenticated: an OAuth connection (an MCP client), an API key, or the platform's service key (the dashboard).
+                 * @enum {string}
+                 */
+                via: "oauth" | "bearer" | "service";
+                /** @description On `oauth`: the name the OAuth client declared about itself at dynamic registration. Self-declared, never verified. */
+                client_name_declared?: string | null;
+                /** @description On `oauth`: the client id, last four characters only. */
+                client_id_masked?: string | null;
+                /** @description On `bearer`: the API key id, last four characters only. */
+                key_id_masked?: string | null;
+            } | null;
+            /** @description The agent the call's session belongs to, when the session is a registered agent's. Null on the shared remote-MCP session, whose callers are told apart by `actor`, never by a mandate's agent. */
+            agent?: {
+                id: string;
+                name: string | null;
+            } | null;
         };
         Trigger: {
             id: string;
@@ -52647,6 +55738,25 @@ export interface components {
                  */
                 settlement?: "confirmed" | "pending" | "failed";
                 adapter: string;
+                /**
+                 * @description Who executes (or executed) the payment, by the same name the integrator chooses with on POST /v1/consents. `codespar_simulator` ("Simulado pela CodeSpar": no provider is called) or `provider_sandbox` (the provider's sandbox, over the account the server bound to this consumer); both Test only. Null when no executor applies, Live included. The name is the MODE: the provider, account, project, consumer and environment are resolved by the server before the signature and checked again when the payment runs; no request field chooses them (`executor_provider_not_selectable`), and a provider failure is never turned into a simulation. Records written before this name existed keep their stored value and are read in these words.
+                 * @enum {string|null}
+                 */
+                executor: "codespar_simulator" | "provider_sandbox" | null;
+                /**
+                 * @description The concrete provider behind `executor`, as the server resolved it: `celcoin` for `provider_sandbox`; null for `codespar_simulator` (no provider is called) and when `executor` is null. Read-only.
+                 * @enum {string|null}
+                 */
+                executor_provider: "celcoin" | null;
+                /** @description The executor's label as the consent screen, the dashboard and the receipt show it. In Test it ends "· sem dinheiro real". */
+                executor_label: string | null;
+                /**
+                 * @description The project's environment.
+                 * @enum {string|null}
+                 */
+                environment: "test" | "live" | null;
+                /** @description False in Test, always: no real money moves, including when the provider's sandbox CONFIRMED the operation (`moneyMoved: true` / `settlement: "confirmed"` then mean the sandbox settled it). True in Live. */
+                real_money: boolean | null;
             };
             wallet: {
                 walletId: string;
