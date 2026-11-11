@@ -1,5 +1,26 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.29 — 2026-11-11
+
+### Changed
+
+- **Executor under its public name (enterprise#1983).** In the generated types, `executor` is now `"codespar_simulator" | "provider_sandbox" | null` and `"celcoin_sandbox"` is gone from the enum. That covers `GET /v1/account/ledger`, `/payments` and `/sessions`, proposals, receipts, consents and the consumer payment response. An exhaustive `switch` that has a `"celcoin_sandbox"` case no longer compiles; read `"provider_sandbox"` instead.
+- The concrete provider comes apart in `executor_provider` (`"celcoin" | null`). The server always resolves it, and the caller never chooses it.
+- Consent, payment and receipt also carry `executor_label`, `environment` and `real_money`. In Test, `real_money` is always `false`, even when a sandbox confirmed with `moneyMoved: true`.
+- `POST /v1/consents` and the consent submit can answer 400 `executor_provider_not_selectable` when the body names `provider` or `executor_provider`.
+- Old records keep their stored value; the API reads them under the public name.
+- The Charge (Collect) `issuer` and `payment.executor` are a separate contract and keep `celcoin_sandbox`.
+
+### Added
+
+- OpenAPI snapshot refreshed to the served document (b9b057565a31, 390 operations), and `src/generated/` regenerated from it. Besides the executor fields, it picks up what was served since 0.16.28:
+  - `/v1/ofb/sweeping` (7 operations);
+  - `/v1/ofb/jsr` (7 operations);
+  - `/v1/onboarding/first-receive` (GET, POST);
+  - `GET /v1/shop/agent/capabilities`.
+
+  Only types and the operation table change; no handwritten method was added for them.
+
 ## 0.16.28 — 2026-10-30
 
 ### Added

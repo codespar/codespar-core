@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 4ae3274e16aa0655cacab1b3a1f0c1fbe8ad710fe2c0184c9b0aa816fdd0095c, fetched 2026-10-31T00:54:41.356Z
+// Source: openapi-snapshot.json (sha256 b9b057565a31502b762e37b6c0c713984543f48a2425e34729bf1332afa34cfb, fetched 2026-11-11T11:18:25.811Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -76,6 +76,8 @@ export const API_OPERATIONS = [
   { method: "post", path: "/v1/account/fund/sandbox/initial", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/account/sessions", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/onboarding", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/onboarding/first-receive", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/onboarding/first-receive", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/account/test-balance", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/account/fund/sandbox/refill", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/approvals", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
@@ -100,6 +102,20 @@ export const API_OPERATIONS = [
   { method: "post", path: "/v1/bank-consents", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/bank-consents/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/ofb/consents/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: true },
+  { method: "get", path: "/v1/ofb/sweeping/consents", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/ofb/sweeping/consents", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/ofb/sweeping/consents/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/ofb/sweeping/consents/{id}/revoke", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/ofb/sweeping/pulls", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/ofb/sweeping/pulls", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/ofb/sweeping/pulls/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/ofb/jsr/enrollments", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/ofb/jsr/enrollments", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/ofb/jsr/enrollments/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/ofb/jsr/enrollments/{id}/revoke", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/ofb/jsr/payments", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/ofb/jsr/payments", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/ofb/jsr/payments/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/fees", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/fees/movimentar", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/fees/governar", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
@@ -325,6 +341,7 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/shop/agent/purchases/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/shop/agent/research", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/research/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/shop/agent/capabilities", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/instruments", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/projects", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/projects", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
