@@ -5,9 +5,9 @@
       "id": "GHSA-mrhx-c7xc-m3w5",
       "package": "zod",
       "severity": "high",
-      "expires": "2026-11-07",
+      "expires": "2026-11-16",
       "issue": "https://github.com/codespar/codespar-core/issues/214",
-      "justification": "Memory exhaustion while validating oversized constrained collections: a denial of service of the process doing the validation, with no data exposure. The only fix is zod >= 4.6.6, a major that changes the public types of @codespar/api-types and @codespar/sdk consumed by codespar-enterprise and codespar-web; no patched 3.x exists. The zod 4 migration is tracked in #214 with the coordinated bumps."
+      "justification": "Memory exhaustion while validating oversized constrained collections: a denial of service of the process doing the validation, with no data exposure. The only fix is zod >= 4.6.6, a major that changes the public types of @codespar/api-types and @codespar/sdk consumed by codespar-enterprise and codespar-web; no patched 3.x exists. Renewed on 2026-11-09 for seven days only because of the mitigation in #245: a model's tool arguments, the untrusted input that reaches Zod in this repo, are bounded by @codespar/langchain before any schema parses them. The other parses in this repo read developer configuration and first-party API responses. Without #245 this renewal does not stand. The zod 4 migration is tracked in #214 with the coordinated bumps."
     }
   ]
 }

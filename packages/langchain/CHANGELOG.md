@@ -1,5 +1,28 @@
 # @codespar/langchain — changelog
 
+## 0.5.1 — 2026-11-08
+
+### Security
+
+- A tool call's input is bounded before Zod validates it. The model's
+  arguments now have to fit three limits:
+  - at most 1,000 entries in any one array or object, at any depth;
+  - at most 32 levels of nesting;
+  - at most 1,048,576 characters of JSON in total.
+- An input past any of them is refused with one clear issue
+  (`code: "custom"`, `params.limit`) or, from `invoke`, a
+  `ToolInputTooLargeError`. Nothing is sent, nothing is truncated, and the
+  schema under the bounds never parses it.
+- This mitigates GHSA-mrhx-c7xc-m3w5 (zod < 4.6.6 can exhaust memory
+  validating oversized constrained collections) on the path the LangChain
+  tools take.
+- The tools' JSON Schemas are unchanged. `jsonSchemaToZod` itself is
+  unchanged; `toLangChainTool` wraps its result with `boundedToolInput`.
+- The limits are exported (`MAX_TOOL_INPUT_COLLECTION_LENGTH`,
+  `MAX_TOOL_INPUT_DEPTH`, `MAX_TOOL_INPUT_SERIALIZED_LENGTH`) along with
+  `toolInputBoundsViolation`.
+- `toolInputObject` now unwraps any number of `ZodEffects` layers.
+
 ## 0.5.0 — 2026-09-23
 
 ### Fixed
