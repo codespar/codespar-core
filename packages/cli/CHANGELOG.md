@@ -1,5 +1,15 @@
 # @codespar/cli — changelog
 
+## 0.22.7 — 2026-11-11
+
+### Added
+
+- **`codespar ofb`**, derived from the served document like every resource group. The `/v1/ofb` family is live again, Test only. Its commands cover:
+  - sweeping consents and pulls (`list-`/`create-`/`get-sweeping-consents`, `sweeping-consents-revoke`, `list-`/`create-`/`get-sweeping-pulls`);
+  - Pix com biometria (`list-`/`create-`/`get-jsr-enrollments`, `jsr-enrollments-revoke`, `list-`/`create-`/`get-jsr-payments`);
+  - the bank-consent routes (`create-`/`get-consents`, `consents-callback`, `consents-refresh-statement`, `consents-revoke`).
+- `codespar onboarding list-first-receive` / `create-first-receive` (`/v1/onboarding/first-receive`) and `codespar shop capabilities` (`GET /v1/shop/agent/capabilities`) are derived from the same refresh, alongside @codespar/sdk 0.16.29.
+
 ## 0.22.6 — 2026-11-01
 
 ### Fixed
