@@ -114,8 +114,8 @@ export interface LoopResult {
 // validation, so the client-side schema accepts any object shape
 // rather than re-encoding the rules and risking drift.
 const MockValueSchema = z.union([
-  z.record(z.unknown()),
-  z.array(z.record(z.unknown())),
+  z.record(z.string(), z.unknown()),
+  z.array(z.record(z.string(), z.unknown())),
 ]);
 
 /** Wire format for a project scope. Shared by the Zod session schema
@@ -131,9 +131,9 @@ export const SessionConfigSchema = z.object({
       timeout: z.number().optional(),
     })
     .optional(),
-  metadata: z.record(z.string()).optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
   projectId: z.string().regex(PROJECT_ID_REGEX).optional(),
-  mocks: z.record(MockValueSchema).optional(),
+  mocks: z.record(z.string(), MockValueSchema).optional(),
 });
 
 /* ── Payables: documents and batches (/v1/payables/files, /v1/payables/batches) ── */
