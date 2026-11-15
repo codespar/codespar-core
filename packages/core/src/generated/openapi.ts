@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 b9b057565a31502b762e37b6c0c713984543f48a2425e34729bf1332afa34cfb, fetched 2026-11-11T11:18:25.811Z
+// Source: openapi-snapshot.json (sha256 868a0272e249a736c8f2510fb7e7def491fdb6ee509d85fc09e5f2fb32af33bd, fetched 2026-11-15T23:15:37.743Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -3299,6 +3299,17 @@ export interface paths {
                                 faucet: string | null;
                                 reason: string | null;
                                 checked_at: string | null;
+                                /** @description Test only: the one initial top-up from the Test treasury; credited by the importer once the Transfer is confirmed. */
+                                seed?: {
+                                    /** @enum {string} */
+                                    state: "awaiting_treasury" | "sending" | "submitted" | "confirmed" | "not_needed" | "needs_attention";
+                                    /** @description USDC the Test treasury sends (the difference to 100 USDC), 6 decimals. */
+                                    amount_atomic: string;
+                                    treasury_address: string;
+                                    tx_hash: string | null;
+                                    gas: string | null;
+                                    reason: string | null;
+                                } | null;
                             }[];
                             /** @description The account's money only. Empty when `account.exists` is false (a Test project with no own account yet): the simulator's residue is never presented as the account's balance, nor as a zero one; it is in `simulator_legacy`. */
                             currencies: {
@@ -48388,7 +48399,7 @@ export interface paths {
                                 run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
                                 awaiting: {
                                     /** @enum {string} */
-                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" | "store_challenge" | "store_cvv_requested";
+                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" | "store_challenge" | "store_cvv_requested" | "identity_required" | "consent_required";
                                 } | null;
                                 merchant: {
                                     id: string;
@@ -48447,7 +48458,7 @@ export interface paths {
                                 run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
                                 awaiting: {
                                     /** @enum {string} */
-                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" | "store_challenge" | "store_cvv_requested";
+                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" | "store_challenge" | "store_cvv_requested" | "identity_required" | "consent_required";
                                 } | null;
                                 merchant: {
                                     id: string;
@@ -48657,7 +48668,7 @@ export interface paths {
                                 run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
                                 awaiting: {
                                     /** @enum {string} */
-                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" | "store_challenge" | "store_cvv_requested";
+                                    reason: "instrument" | "store_login" | "cvv" | "approval" | "challenge" | "store_challenge" | "store_cvv_requested" | "identity_required" | "consent_required";
                                 } | null;
                                 merchant: {
                                     id: string;

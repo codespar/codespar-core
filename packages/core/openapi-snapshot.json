@@ -1,8 +1,8 @@
 {
   "snapshot": {
     "source": "https://api.codespar.dev/openapi.json",
-    "fetched_at": "2026-11-11T11:18:25.811Z",
-    "sha256": "b9b057565a31502b762e37b6c0c713984543f48a2425e34729bf1332afa34cfb",
+    "fetched_at": "2026-11-15T23:15:37.743Z",
+    "sha256": "868a0272e249a736c8f2510fb7e7def491fdb6ee509d85fc09e5f2fb32af33bd",
     "etag": null,
     "last_modified": null,
     "info": {
@@ -7383,6 +7383,60 @@
                                 "string",
                                 "null"
                               ]
+                            },
+                            "seed": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "awaiting_treasury",
+                                    "sending",
+                                    "submitted",
+                                    "confirmed",
+                                    "not_needed",
+                                    "needs_attention"
+                                  ]
+                                },
+                                "amount_atomic": {
+                                  "type": "string",
+                                  "pattern": "^\\d+$",
+                                  "description": "USDC the Test treasury sends (the difference to 100 USDC), 6 decimals."
+                                },
+                                "treasury_address": {
+                                  "type": "string"
+                                },
+                                "tx_hash": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "gas": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "amount_atomic",
+                                "treasury_address",
+                                "tx_hash",
+                                "gas",
+                                "reason"
+                              ],
+                              "description": "Test only: the one initial top-up from the Test treasury; credited by the importer once the Transfer is confirmed."
                             }
                           },
                           "required": [
@@ -116961,7 +117015,9 @@
                                   "approval",
                                   "challenge",
                                   "store_challenge",
-                                  "store_cvv_requested"
+                                  "store_cvv_requested",
+                                  "identity_required",
+                                  "consent_required"
                                 ]
                               }
                             },
@@ -117198,7 +117254,9 @@
                                   "approval",
                                   "challenge",
                                   "store_challenge",
-                                  "store_cvv_requested"
+                                  "store_cvv_requested",
+                                  "identity_required",
+                                  "consent_required"
                                 ]
                               }
                             },
@@ -117730,7 +117788,9 @@
                                   "approval",
                                   "challenge",
                                   "store_challenge",
-                                  "store_cvv_requested"
+                                  "store_cvv_requested",
+                                  "identity_required",
+                                  "consent_required"
                                 ]
                               }
                             },
