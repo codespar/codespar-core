@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { z } from "zod";
+import { z } from "zod/v3";
 import {
   CHARGE_DEFINITION,
   CRYPTO_PAY_DEFINITION,

@@ -1,6 +1,6 @@
 {
   "name": "@codespar/langchain",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "LangChain.js adapter for CodeSpar — convert session tools to LangChain StructuredTool format",
   "type": "module",
   "main": "./dist/index.js",
@@ -48,7 +48,7 @@
     "ajv-formats": "^3.0.1",
     "typescript": "^5.8.0",
     "vitest": "^3.1.0",
-    "zod": "^3.25.0",
+    "zod": "^4.6.6",
     "zod-to-json-schema": "^3.25.2"
   }
 }

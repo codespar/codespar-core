@@ -1,5 +1,16 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.30 — 2026-11-15
+
+### Security
+
+- **zod 4 (GHSA-mrhx-c7xc-m3w5, core#214).** The SDK now depends on `zod ^4.6.6`. zod up to 4.6.5, and every 3.x, can exhaust memory while validating an oversized array. `SessionConfigSchema` is now a zod 4 schema with the same shape and the same `SessionConfig` type. Code that only calls `new CodeSpar(...)` / `create(...)` changes nothing. Code that composes `SessionConfigSchema` with its own zod 3 schemas (`.extend`, `.merge`, `z.union`) has to move to zod 4.
+- In the schema, `metadata` and `mocks` use the two-argument `z.record(key, value)`. What validates is the same.
+
+### Changed
+
+- The OpenAPI snapshot follows the served document (868a0272e249, 390 operations): `GET /v1/account/balances` gains `usdc_accounts[].seed` (the one Test top-up from the treasury, enterprise#2582), and a Shop purchase's `awaiting.reason` gains `identity_required` and `consent_required` (enterprise#2580). An exhaustive `switch` over `awaiting.reason` needs the two new cases.
+
 ## 0.16.29 — 2026-11-11
 
 ### Changed
