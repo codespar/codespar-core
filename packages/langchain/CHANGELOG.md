@@ -1,5 +1,11 @@
 # @codespar/langchain — changelog
 
+## 0.5.2 — 2026-11-15
+
+### Security
+
+- **zod 4 in development (GHSA-mrhx-c7xc-m3w5, core#214).** The dev dependency goes to `zod ^4.6.6`, and the tests import `zod/v3`, the same entry as `schema.ts`. The peer stays `zod >=3.25.0`: the package reads the classic API through `zod/v3`, which zod 3.25+ and zod 4 both ship. The input bound of 0.5.1 is unchanged. A project on zod 3 still has the advisory in its own tree; moving it to zod >= 4.6.6 is what removes it.
+
 ## 0.5.1 — 2026-11-08
 
 ### Security
