@@ -697,9 +697,11 @@ function core(schema: JsonSchema, ctx: Ctx): z.ZodTypeAny {
  */
 export type ToolInputSchema = AnyObject | z.ZodEffects<AnyObject, unknown, unknown>;
 
-/** The object under a tool input schema, whichever form it takes. */
+/** The object under a tool input schema, whichever form it takes (rules, input bounds, or both). */
 export function toolInputObject(schema: ToolInputSchema): AnyObject {
-  return schema instanceof z.ZodEffects ? schema.innerType() : schema;
+  let current: z.ZodTypeAny = schema;
+  while (current instanceof z.ZodEffects) current = current.innerType();
+  return current as AnyObject;
 }
 
 /** The properties of a tool input schema, whichever form it takes. */

@@ -230,6 +230,14 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     description: "Onboarding: the first-access guide's progress for the project",
   },
   {
+    // Live again at the 390-operation refresh (2026-11-11): the older ofb
+    // routes were all deprecated, and the served document now declares the
+    // sweeping consents/pulls and the Pix com biometria (JSR) family, Test only.
+    name: "ofb",
+    prefix: "/v1/ofb",
+    description: "Open Finance (Test): sweeping consents and pulls, Pix com biometria enrollments and payments",
+  },
+  {
     name: "webhook-deliveries",
     prefix: "/v1/webhook-deliveries",
     description: "Webhook deliveries: every delivery attempt of the project, across endpoints",

@@ -1,6 +1,6 @@
 # @codespar/sdk — CHANGELOG
 
-## 0.16.29 — 2026-11-08
+## 0.16.31 — 2026-11-17
 
 ### Added
 
@@ -13,9 +13,49 @@
   one word (`succeeded`, `pending`, `refused`, `failed`, `uncertain`).
 - `session.research.create` takes `taskKind` (`data_service` among them) and
   `criteria.dataService { params, sku? }`.
-- OpenAPI snapshot: the three data-call operations and the research body with
-  `task_kind`, from the enterprise routes of Shop G3.1 (served once they are
-  deployed; `spec:check` compares the served document then).
+- OpenAPI snapshot: the served document of 0.16.30 plus the three data-call
+  operations and the research body with `task_kind`, from the enterprise
+  routes of Shop G3.1 (codespar-enterprise #2520). They are served once #2520
+  is deployed; until then `spec:check` reports the served document as behind
+  the snapshot, and this version is not published.
+- The rest of the snapshot follows the served document as of 2026-11-17: the
+  research body's `task_kind` (`product`, `service_plan`, `reservation`),
+  the `web` source with `sources.origins` and the `reservation` and
+  `service_plan` criteria (Shop G1, enterprise #2366/#2367); `monthly_minor`
+  and `monthly_quantity` on the sweeping consents; the Test treasury top-up
+  described against 20 USDC.
+
+## 0.16.30 — 2026-11-15
+
+### Security
+
+- **zod 4 (GHSA-mrhx-c7xc-m3w5, core#214).** The SDK now depends on `zod ^4.6.6`. zod up to 4.6.5, and every 3.x, can exhaust memory while validating an oversized array. `SessionConfigSchema` is now a zod 4 schema with the same shape and the same `SessionConfig` type. Code that only calls `new CodeSpar(...)` / `create(...)` changes nothing. Code that composes `SessionConfigSchema` with its own zod 3 schemas (`.extend`, `.merge`, `z.union`) has to move to zod 4.
+- In the schema, `metadata` and `mocks` use the two-argument `z.record(key, value)`. What validates is the same.
+
+### Changed
+
+- The OpenAPI snapshot follows the served document (868a0272e249, 390 operations): `GET /v1/account/balances` gains `usdc_accounts[].seed` (the one Test top-up from the treasury, enterprise#2582), and a Shop purchase's `awaiting.reason` gains `identity_required` and `consent_required` (enterprise#2580). An exhaustive `switch` over `awaiting.reason` needs the two new cases.
+
+## 0.16.29 — 2026-11-11
+
+### Changed
+
+- **Executor under its public name (enterprise#1983).** In the generated types, `executor` is now `"codespar_simulator" | "provider_sandbox" | null` and `"celcoin_sandbox"` is gone from the enum. That covers `GET /v1/account/ledger`, `/payments` and `/sessions`, proposals, receipts, consents and the consumer payment response. An exhaustive `switch` that has a `"celcoin_sandbox"` case no longer compiles; read `"provider_sandbox"` instead.
+- The concrete provider comes apart in `executor_provider` (`"celcoin" | null`). The server always resolves it, and the caller never chooses it.
+- Consent, payment and receipt also carry `executor_label`, `environment` and `real_money`. In Test, `real_money` is always `false`, even when a sandbox confirmed with `moneyMoved: true`.
+- `POST /v1/consents` and the consent submit can answer 400 `executor_provider_not_selectable` when the body names `provider` or `executor_provider`.
+- Old records keep their stored value; the API reads them under the public name.
+- The Charge (Collect) `issuer` and `payment.executor` are a separate contract and keep `celcoin_sandbox`.
+
+### Added
+
+- OpenAPI snapshot refreshed to the served document (b9b057565a31, 390 operations), and `src/generated/` regenerated from it. Besides the executor fields, it picks up what was served since 0.16.28:
+  - `/v1/ofb/sweeping` (7 operations);
+  - `/v1/ofb/jsr` (7 operations);
+  - `/v1/onboarding/first-receive` (GET, POST);
+  - `GET /v1/shop/agent/capabilities`.
+
+  Only types and the operation table change; no handwritten method was added for them.
 
 ## 0.16.28 — 2026-10-30
 

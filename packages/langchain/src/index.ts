@@ -27,6 +27,7 @@
 import type { Session, Tool, ToolResult } from "@codespar/sdk";
 import { tools as getSessionTools } from "@codespar/sdk";
 import { jsonSchemaToZod, type ToolInputSchema } from "./schema.js";
+import { boundedToolInput, toolInputBoundsViolation, ToolInputTooLargeError } from "./input-bounds.js";
 
 export interface CodeSparLangChainTool {
   name: string;
@@ -51,13 +52,20 @@ export async function getTools(session: Session): Promise<CodeSparLangChainTool[
   return tools.map((t) => toLangChainTool(t, session));
 }
 
-/** Convert a single CodeSpar tool to LangChain format. */
+/**
+ * Convert a single CodeSpar tool to LangChain format. The input the model
+ * sends is bounded (input-bounds.ts) before any validation and before
+ * anything is sent: an oversized input is refused with a clear error, never
+ * truncated.
+ */
 export function toLangChainTool(tool: Tool, session: Session): CodeSparLangChainTool {
   return {
     name: tool.name,
     description: tool.description,
-    schema: jsonSchemaToZod(tool.input_schema),
+    schema: boundedToolInput(jsonSchemaToZod(tool.input_schema)),
     invoke: async (input: Record<string, unknown>): Promise<string> => {
+      const over = toolInputBoundsViolation(input);
+      if (over) throw new ToolInputTooLargeError(over);
       const result = await session.execute(tool.name, input);
       if (!result.success) throw new Error(result.error || "Tool execution failed");
       return JSON.stringify(result.data);
@@ -76,6 +84,16 @@ export async function handleToolCall(
 ): Promise<ToolResult> {
   return session.execute(toolName, args);
 }
+
+export {
+  MAX_TOOL_INPUT_COLLECTION_LENGTH,
+  MAX_TOOL_INPUT_DEPTH,
+  MAX_TOOL_INPUT_SERIALIZED_LENGTH,
+  ToolInputTooLargeError,
+  boundedToolInput,
+  toolInputBoundsViolation,
+  type ToolInputBoundsViolation,
+} from "./input-bounds.js";
 
 export {
   KEYWORD_SUPPORT,
