@@ -2,9 +2,13 @@
 
 ## 0.6.0 — unreleased (coordinated codespar_card release)
 
+### Breaking
+
+- Discovery relays `codespar_card` from the hosted catalog. `codespar_issue` is gone from the hosted catalog with no alias; a call to it is an unknown tool.
+
 ### Changed
 
-- Discovery relays `codespar_card` from the hosted catalog. The old card tool stays callable on the server as a deprecated alias of the same path. The README and the package description no longer say Pomelo-only: spend cards are BRL on Pomelo and USD on Rain.
+- The README and package description no longer say Pomelo-only: spend cards are BRL on Pomelo and USD on Rain.
 - Accepts `@codespar/sdk ^0.17.0`.
 
 ## 0.5.20 — 2026-10-30

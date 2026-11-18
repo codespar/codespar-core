@@ -199,10 +199,7 @@ cs.cards.readiness()
 ```
 
 A refusal with a stable code is returned as `CardRefusal`, not raised; only a
-failure with no code raises `ApiError`. `session.issue()` is deprecated: it
-warns and calls the same `codespar_card` with the same validations, and a call
-in the old Pomelo shape (`IssueArgs` with `cardholder_id` / `program_id`)
-raises `CardContractMigrationError` naming the new fields.
+failure with no code raises `ApiError`.
 
 ## Pay documents and batches
 

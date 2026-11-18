@@ -42,12 +42,6 @@ describe("validateCardArgs", () => {
     );
   });
 
-  it("an old Pomelo-shaped call names the new fields (card_contract_migration_required)", () => {
-    expect(() =>
-      validateCardArgs({ action: "card-virtual", cardholder_id: "u", program_id: "p" } as unknown as CardArgs),
-    ).toThrow(/card_contract_migration_required.*currency \(BRL \| USD\), mandate_id, consumer_id and idempotency_key/);
-  });
-
   it("issue needs currency, mandate, consumer and the idempotency key", () => {
     const full = { action: "issue", currency: "BRL", mandate_id: "m", consumer_id: "c", idempotency_key: "k" } as const;
     expect(() => validateCardArgs(full)).not.toThrow();

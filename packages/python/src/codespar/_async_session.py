@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import datetime
 from typing import Any
@@ -19,7 +18,7 @@ from typing import Any
 import httpx
 
 from ._http import request_json, stream_sse, stream_sse_get
-from .errors import ApiError, CardContractMigrationError, ConfigError, TimeoutError
+from .errors import ApiError, ConfigError, TimeoutError
 from .types import (
     AssistantTextEvent,
     AuthConfig,
@@ -49,7 +48,6 @@ from .types import (
     DiscoverToolMatch,
     DoneEvent,
     ErrorEvent,
-    IssueArgs,
     LedgerArgs,
     LedgerResult,
     PaymentStatusEvent,
@@ -338,36 +336,6 @@ def _parse_card_result(raw: dict[str, Any], action: str) -> CardResult:
             else []
         )
     return _parse_card_view(raw)
-
-
-_LEGACY_ISSUE = (
-    'card(CardArgs(action="issue", currency, mandate_id, consumer_id, '
-    "idempotency_key, provider=None))"
-)
-_LEGACY_INSTEAD = {
-    "card-virtual": _LEGACY_ISSUE,
-    "card-physical": _LEGACY_ISSUE,
-    "card-get": 'card(CardArgs(action="get", card_id))',
-    "card-control": 'card(CardArgs(action="freeze" | "unfreeze" | "cancel", card_id, reason=None))',
-}
-_LEGACY_FIELDS = ("cardholder_id", "program_id", "control", "shipping_address", "metadata")
-
-
-def _card_migration_error(args: Any) -> CardContractMigrationError | None:
-    """The old-shaped call's migration error (TS ``cardMigrationError``), or None."""
-    action = getattr(args, "action", "")
-    instead = _LEGACY_INSTEAD.get(action)
-    legacy = [f for f in _LEGACY_FIELDS if getattr(args, f, None) is not None]
-    if instead is None and not legacy:
-        return None
-    what = ", ".join(([f'action "{action}"'] if instead else []) + [f'"{f}"' for f in legacy])
-    verb = "belong" if len(legacy) + (1 if instead else 0) > 1 else "belongs"
-    return CardContractMigrationError(
-        f"card_contract_migration_required: {what} {verb} to the retired Pomelo-only shape. "
-        f"Use {instead or 'card(CardArgs(...))'}: issue takes currency (BRL | USD), mandate_id, "
-        "consumer_id and idempotency_key; provider (pomelo | rain) is optional. Nothing was sent.",
-        legacy,
-    )
 
 
 def _parse_card_refusal(
@@ -903,9 +871,6 @@ class AsyncSession:
         ``ApiError``. ``idempotency_key`` is required on ``action="issue"``
         and is checked before anything is sent.
         """
-        migration = _card_migration_error(args)
-        if migration is not None:
-            raise migration
         if args.action == "issue" and not args.idempotency_key:
             raise ApiError(
                 "card: idempotency_key is required on action=issue",
@@ -961,27 +926,6 @@ class AsyncSession:
         if not isinstance(payload, dict):
             raise ApiError("card: malformed response", status=0, body=payload)
         return _parse_card_result(payload, args.action)
-
-    async def issue(
-        self, args: CardArgs | IssueArgs, *, timeout: float | None = None
-    ) -> CardResult:
-        """Deprecated: use :meth:`card`. Same tool and validations, plus a warning.
-
-        An ``IssueArgs`` (old Pomelo shape) raises
-        ``CardContractMigrationError`` before anything is sent.
-        """
-        warnings.warn(
-            "session.issue() is deprecated; use session.card(). "
-            "It calls codespar_card with the same validations.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        migration = _card_migration_error(args)
-        if migration is not None:
-            raise migration
-        if not isinstance(args, CardArgs):
-            raise CardContractMigrationError("issue() takes CardArgs", [])
-        return await self.card(args, timeout=timeout)
 
     async def shop(self, args: ShopArgs, *, timeout: float | None = None) -> ShopResult:
         """

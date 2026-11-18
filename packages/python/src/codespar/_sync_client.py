@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import asyncio
 import threading
-import warnings
 from collections.abc import Coroutine, Iterator
 from types import TracebackType
 from typing import Any, TypeVar
@@ -38,7 +37,6 @@ from .types import (
     ConnectionWizardResult,
     DiscoverOptions,
     DiscoverResult,
-    IssueArgs,
     LedgerArgs,
     LedgerResult,
     PaymentStatusResult,
@@ -215,20 +213,6 @@ class Session:
     def card(self, args: CardArgs, *, timeout: float | None = None) -> CardResult:
         """Sync wrapper around ``AsyncSession.card``. See that for docs."""
         return self._runner.run(self._async.card(args, timeout=timeout))
-
-    def issue(
-        self, args: CardArgs | IssueArgs, *, timeout: float | None = None
-    ) -> CardResult:
-        """Deprecated: use :meth:`card`. Sync wrapper around ``AsyncSession.issue``."""
-        warnings.warn(
-            "session.issue() is deprecated; use session.card(). "
-            "It calls codespar_card with the same validations.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            return self._runner.run(self._async.issue(args, timeout=timeout))
 
     def shop(self, args: ShopArgs, *, timeout: float | None = None) -> ShopResult:
         """Sync wrapper around ``AsyncSession.shop``. See that for docs."""

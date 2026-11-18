@@ -69,7 +69,6 @@ export type {
   PixKeyType,
 } from "./types.js";
 export { PIX_KEY_DELETE_CONSEQUENCE, PixKeyDeleteNotConfirmedError } from "./wallet.js";
-export { CardContractMigrationError, cardMigrationError } from "./card.js";
 export type { Wallet, WalletPixKeys } from "./wallet.js";
 export type { Cards } from "./cards.js";
 export { filenameFromDisposition } from "./documents.js";

@@ -43,7 +43,6 @@ from .documents import (
 from .errors import (
     PIX_KEY_DELETE_CONSEQUENCE,
     ApiError,
-    CardContractMigrationError,
     CodeSparError,
     ConfigError,
     NotConnectedError,
@@ -138,9 +137,6 @@ from .types import (
     DoneEvent,
     ErrorEvent,
     HttpMethod,
-    IssueAction,
-    IssueArgs,
-    IssueResult,
     LedgerAction,
     LedgerArgs,
     LedgerLeg,
@@ -240,7 +236,6 @@ __all__ = [
     # Card (codespar_card)
     "CardAction",
     "CardArgs",
-    "CardContractMigrationError",
     "CardControlAction",
     "CardControlReason",
     "CardCurrency",
@@ -292,9 +287,6 @@ __all__ = [
     "DoneEvent",
     "ErrorEvent",
     "HttpMethod",
-    "IssueAction",
-    "IssueArgs",
-    "IssueResult",
     # Ledger (codespar_ledger)
     "LedgerAction",
     "LedgerArgs",

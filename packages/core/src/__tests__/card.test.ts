@@ -8,9 +8,8 @@
  */
 
 import { describe, it, expect, vi, afterEach } from "vitest";
-import type { CardArgs, CardReadiness, CardView, IssueArgs, Session, ToolResult } from "@codespar/types";
+import type { CardArgs, CardReadiness, CardView, Session, ToolResult } from "@codespar/types";
 import { createSession } from "../session.js";
-import { CardContractMigrationError, resetIssueDeprecationWarning } from "../card.js";
 import { CodeSpar } from "../index.js";
 import { CodesparApiError } from "../errors.js";
 
@@ -312,53 +311,9 @@ describe("session.card facade", () => {
   });
 });
 
-describe("session.issue (deprecated, contract §8.4)", () => {
-  it("warns once and sends codespar_card with the same args", async () => {
-    resetIssueDeprecationWarning();
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const { session, calls } = await sessionAnswering({
-      kind: "envelope",
-      envelope: { data: issued(RAIN_VIEW) },
-    });
-    const r = await session.issue(ISSUE_USD);
-    await session.issue(ISSUE_USD);
-    expect(r.state).toBe("issued");
-    expect(calls.map((c) => c.tool)).toEqual(["codespar_card", "codespar_card"]);
-    expect(calls[0]!.input).toEqual(ISSUE_USD);
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(String(warn.mock.calls[0]![0])).toMatch(/session\.issue\(\) is deprecated; use session\.card\(\)/);
-    warn.mockRestore();
-  });
-
-  it("keeps the same validations: no idempotency_key, nothing sent", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    const { session, calls } = await sessionAnswering({ kind: "envelope", envelope: { data: RAIN_VIEW } });
-    await expect(session.issue({ ...ISSUE_USD, idempotency_key: "" })).rejects.toThrow(/idempotency_key is required/);
-    expect(calls).toHaveLength(0);
-  });
-
-  it.each([
-    [{ action: "card-virtual", cardholder_id: "usr_1", program_id: "afg_1" }, /action "card-virtual", "cardholder_id", "program_id"/],
-    [{ action: "card-get", card_id: "icrd_1" }, /card\(\{ action: "get", card_id \}\)/],
-    [{ action: "card-control", card_id: "icrd_1", control: "freeze" }, /"freeze" \| "unfreeze" \| "cancel"/],
-  ] as const)("an old Pomelo-shaped call is refused before anything is sent: %j", async (args, message) => {
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    const { session, calls } = await sessionAnswering({ kind: "envelope", envelope: { data: RAIN_VIEW } });
-    const err = await session.issue(args as unknown as IssueArgs).catch((e: unknown) => e);
-    expect(err).toBeInstanceOf(CardContractMigrationError);
-    expect((err as CardContractMigrationError).code).toBe("card_contract_migration_required");
-    expect((err as Error).message).toMatch(message);
-    expect((err as Error).message).toMatch(/currency \(BRL \| USD\), mandate_id, consumer_id and idempotency_key/);
-    expect(calls).toHaveLength(0);
-  });
-
-  it("card() refuses old Pomelo fields too: no path keeps the old shape", async () => {
-    const { session, calls } = await sessionAnswering({ kind: "envelope", envelope: { data: RAIN_VIEW } });
-    await expect(
-      session.card({ ...ISSUE_USD, cardholder_id: "usr_1" } as unknown as CardArgs),
-    ).rejects.toBeInstanceOf(CardContractMigrationError);
-    expect(calls).toHaveLength(0);
-  });
+it("session.issue is gone: no alias, no shim (contract §10.1)", async () => {
+  const { session } = await sessionAnswering({ kind: "envelope", envelope: { data: RAIN_VIEW } });
+  expect("issue" in session).toBe(false);
 });
 
 describe("cs.cards.readiness", () => {

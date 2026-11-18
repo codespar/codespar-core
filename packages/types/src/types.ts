@@ -190,14 +190,6 @@ export interface Session extends SessionBase {
    */
   card(args: CardArgs, opts?: CallOptions): Promise<CardResult>;
   /**
-   * @deprecated Use `card()`. A wrapper over `card()`: same tool
-   * (`codespar_card`), same validations, plus a one-time deprecation
-   * warning. A call in the old Pomelo shape (`cardholder_id` /
-   * `program_id`, `card-*` actions) is refused before anything is sent,
-   * naming the new fields.
-   */
-  issue(args: CardArgs | IssueArgs, opts?: CallOptions): Promise<CardResult>;
-  /**
    * Buy-side shopping: catalog search → async checkout → Pix mint.
    * Typed wrapper around `execute("codespar_shop", {...})`. The
    * discriminated `ShopArgs`/`ShopResult` give the action-correct
@@ -1022,7 +1014,6 @@ export type CardRefusalCode =
   | "card_action_unsupported"
   | "card_terms_policy_missing"
   | "card_oauth_not_bound"
-  | "card_contract_migration_required"
   | "card_holder_not_eligible"
   | "card_issue_refused"
   | "card_issue_request_failed"
@@ -1106,28 +1097,6 @@ export interface CardProgramReadiness {
 export interface CardReadiness {
   programs: CardProgramReadiness[];
 }
-
-/* ── Deprecated: the Pomelo-only card shape ──────────────────── */
-
-/**
- * @deprecated The Pomelo-only shape of the deprecated `issue()` wrapper.
- * Kept so existing imports compile; a call in this shape is refused with
- * `card_contract_migration_required` before anything is sent. Use
- * `CardArgs` with `card()`.
- */
-export interface IssueArgs {
-  action: "card-virtual" | "card-physical" | "card-control" | "card-get";
-  cardholder_id?: string;
-  program_id?: string;
-  card_id?: string;
-  control?: "freeze" | "unfreeze" | "cancel";
-  reason?: string;
-  shipping_address?: Record<string, unknown>;
-  metadata?: Record<string, unknown>;
-}
-
-/** @deprecated `issue()` now answers what `card()` answers. Use `CardResult`. */
-export type IssueResult = CardResult;
 
 /* ── codespar_shop wire shape ────────────────────────────────── */
 

@@ -19,7 +19,6 @@ from codespar import (
     ApiError,
     AsyncCodeSpar,
     CardArgs,
-    CardContractMigrationError,
     CardIssued,
     CardList,
     CardPendingHuman,
@@ -28,7 +27,6 @@ from codespar import (
     CardUncertain,
     CardView,
     CodeSpar,
-    IssueArgs,
 )
 
 BASE = "https://api.codespar.dev"
@@ -434,46 +432,13 @@ async def test_failed_request_is_a_refusal_with_failure_code(httpx_mock: HTTPXMo
     )
 
 
-@pytest.mark.asyncio
-async def test_deprecated_issue_warns_and_sends_codespar_card(httpx_mock: HTTPXMock) -> None:
-    _mock_session(httpx_mock)
-    httpx_mock.add_response(url=EXECUTE, method="POST", json=_envelope(_issued(RAIN_VIEW)))
-    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
-        session = await cs.create("consumer_123", servers=[])
-        with pytest.warns(DeprecationWarning, match=r"session\.issue\(\) is deprecated"):
-            result = await session.issue(ISSUE_USD)
-    assert isinstance(result, CardIssued)
-    body = _sent(httpx_mock)
-    assert body["tool"] == "codespar_card"
-    assert body["input"]["idempotency_key"] == "idem_1"
+def test_issue_method_is_gone() -> None:
+    """codespar_card without alias (contract §10.1)."""
+    from codespar import AsyncSession
+    from codespar._sync_client import Session
 
-
-@pytest.mark.asyncio
-async def test_deprecated_issue_refuses_old_shape_before_sending(httpx_mock: HTTPXMock) -> None:
-    _mock_session(httpx_mock)
-    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
-        session = await cs.create("consumer_123", servers=[])
-        with (
-            pytest.warns(DeprecationWarning),
-            pytest.raises(CardContractMigrationError) as exc,
-        ):
-            await session.issue(
-                IssueArgs(action="card-virtual", cardholder_id="usr_1", program_id="afg_1")
-            )
-    assert exc.value.code == "card_contract_migration_required"
-    assert exc.value.legacy_fields == ["cardholder_id", "program_id"]
-    assert "mandate_id, consumer_id and idempotency_key" in str(exc.value)
-    assert not any(r.url.path.endswith("/execute") for r in httpx_mock.get_requests())
-
-
-def test_sync_deprecated_issue_warns_once_per_call(httpx_mock: HTTPXMock) -> None:
-    _mock_session(httpx_mock)
-    httpx_mock.add_response(url=EXECUTE, method="POST", json=_envelope(RAIN_VIEW))
-    with CodeSpar(api_key="csk_test_x") as cs:
-        session = cs.create("consumer_123", servers=[])
-        with pytest.warns(DeprecationWarning) as record:
-            session.issue(CardArgs(action="get", card_id="rcrd_abc"))
-    assert len([w for w in record if issubclass(w.category, DeprecationWarning)]) == 1
+    assert not hasattr(AsyncSession, "issue")
+    assert not hasattr(Session, "issue")
 
 
 @pytest.mark.asyncio

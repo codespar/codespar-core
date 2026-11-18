@@ -2,7 +2,7 @@
  * Session implementation for the CodeSpar managed runtime.
  */
 
-import { assertCardArgs, cardMigrationError, cardResultFrom, warnIssueDeprecated } from "./card.js";
+import { assertCardArgs, cardResultFrom } from "./card.js";
 import { CodesparApiError, networkErrorToApiError, throwFromInstrumentsResponse, throwFromResponse, TimeoutError } from "./errors.js";
 import type { SessionConfig, Tool, CallOptions } from "./types.js";
 import { fetchWithTimeout, validateTimeout } from "./internal/fetch.js";
@@ -34,7 +34,6 @@ import type {
   LedgerResult,
   CardArgs,
   CardResult,
-  IssueArgs,
   ShopArgs,
   ShopResult,
   AgentInstrument,
@@ -403,8 +402,6 @@ export async function createSession(
      * idempotency_key). Only a failure with no code throws.
      */
     async card(args: CardArgs, opts?: CallOptions): Promise<CardResult> {
-      const migration = cardMigrationError(args);
-      if (migration) throw migration;
       assertCardArgs(args);
       const result = await session.execute(
         "codespar_card",
@@ -412,18 +409,6 @@ export async function createSession(
         opts,
       );
       return cardResultFrom(args, result);
-    },
-
-    /**
-     * @deprecated Use `card()`. Same tool and validations, plus a one-time
-     * warning; an old Pomelo-shaped call throws `CardContractMigrationError`
-     * before anything is sent.
-     */
-    async issue(args: CardArgs | IssueArgs, opts?: CallOptions): Promise<CardResult> {
-      warnIssueDeprecated();
-      const migration = cardMigrationError(args);
-      if (migration) throw migration;
-      return session.card(args as CardArgs, opts);
     },
 
     /**

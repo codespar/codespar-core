@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  ISSUE_DEFINITION,
   SHARED_META_TOOL_DEFINITIONS,
   contractOf,
   type MetaToolInputSchema,
@@ -584,18 +583,9 @@ describe("wire-shape arg unions match the published definition vocabularies (ent
     expect(card.description).toMatch(/SAME idempotency_key, never by a new key/);
   });
 
-  it("the old card tool is a deprecated alias outside the shared surface (contract §8.4)", () => {
-    const old = "codespar_issue";
-    // An agent is shown one card tool.
-    expect(Object.keys(SHARED_META_TOOL_DEFINITIONS)).not.toContain(old);
-    for (const def of ALL) expect(def.name).not.toBe(old);
-    // The alias takes exactly codespar_card's input: no path keeps the old,
-    // less restrictive Pomelo arguments.
-    expect(ISSUE_DEFINITION.name).toBe(old);
-    expect(ISSUE_DEFINITION.input_schema).toBe(SHARED_META_TOOL_DEFINITIONS.codespar_card.input_schema);
-    expect(ISSUE_DEFINITION.description).toMatch(/^DEPRECATED alias of codespar_card/);
-    expect(ISSUE_DEFINITION.description).toMatch(/card_contract_migration_required/);
-    expect(definitionViolations(ISSUE_DEFINITION).map((v) => v.detail)).toEqual([]);
+  it("codespar_issue is gone: no alias, no shim (contract §10.1)", () => {
+    expect(Object.keys(SHARED_META_TOOL_DEFINITIONS)).not.toContain("codespar_issue");
+    for (const def of ALL) expect(def.name).not.toBe("codespar_issue");
   });
 
   it("ShopArgs.action == codespar_shop action enum", () => {

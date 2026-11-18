@@ -37,20 +37,6 @@ class ApiError(CodeSparError):
         self.code = code
 
 
-class CardContractMigrationError(CodeSparError):
-    """A card call in the old Pomelo-only shape, refused before anything is sent.
-
-    ``code`` matches what the server answers to the same call through the
-    deprecated tool alias.
-    """
-
-    code = "card_contract_migration_required"
-
-    def __init__(self, message: str, legacy_fields: list[str]):
-        super().__init__(message)
-        self.legacy_fields = legacy_fields
-
-
 #: What the person is told before a key is deleted (the TypeScript SDK exports the same).
 PIX_KEY_DELETE_CONSEQUENCE = "Depois de excluída, esta chave deixa de apontar para esta conta."
 

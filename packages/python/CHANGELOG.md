@@ -4,23 +4,27 @@
 
 In parity with `@codespar/sdk` 0.17.0.
 
+### Breaking
+
+- **`session.card(CardArgs(...))` replaces `session.issue(...)`, async and sync, with no alias.** `issue()`, `IssueArgs`, `IssueResult` and `IssueAction` are removed.
+
+| Before | Now |
+|---|---|
+| `session.issue(IssueArgs(action="card-virtual", cardholder_id=..., program_id=...))` | `session.card(CardArgs(action="issue", currency=..., mandate_id=..., consumer_id=..., idempotency_key=..., provider=None))` |
+| `session.issue(IssueArgs(action="card-get", card_id=...))` | `session.card(CardArgs(action="get", card_id=...))` |
+| `session.issue(IssueArgs(action="card-control", card_id=..., control="freeze"))` | `session.card(CardArgs(action="freeze", card_id=..., reason=None))` |
+
 ### Added
 
-- **`session.card(CardArgs(...))`** (async and sync) calls `codespar_card` (BRL on Pomelo, USD on Rain). `idempotency_key` is required on `action="issue"` and is checked before anything is sent.
-- It returns one of:
+- `session.card(...)` calls `codespar_card` (BRL on Pomelo, USD on Rain). `idempotency_key` is required on `action="issue"` and is checked before anything is sent.
+- It returns:
   - `CardIssued`;
   - `CardPendingHuman` (`pending_action`);
-  - `CardProcessing` and `CardUncertain`: same key, never a new one;
-  - `CardFailed`;
-  - `CardView`, `CardList`;
-  - `CardRefusal`. A refusal with a stable code is returned, whether it came in the tool envelope or as a non-2xx answer (`http_status`). Only a failure with no code raises `ApiError`.
-- **`cs.cards.readiness()`** reads `GET /v1/cards/readiness`. It returns typed dicts `CardReadiness`, `CardProgramReadiness` and `CardRequirement`.
-- `CardContractMigrationError` (`code = "card_contract_migration_required"`, `legacy_fields`).
-
-### Deprecated
-
-- **`session.issue(...)`** (async and sync) emits a `DeprecationWarning` and calls `card()` with the same validations. An `IssueArgs` (old Pomelo shape) raises `CardContractMigrationError` before anything is sent.
-- `IssueArgs` and `IssueAction` are kept for imports. `IssueResult` is an alias of `CardResult`.
+  - `CardProcessing` and `CardUncertain` (same key, never a new one);
+  - `CardView` and `CardList`;
+  - `CardRefusal`: a refusal with a stable code is returned, whether it came in the tool envelope or as a non-2xx answer (`http_status`), and a definitive issuer failure is one.
+- Only a failure with no code raises `ApiError`.
+- `cs.cards.readiness()` reads `GET /v1/cards/readiness`. It returns the typed dicts `CardReadiness`, `CardProgramReadiness` and `CardRequirement`.
 
 ## 0.16.2
 

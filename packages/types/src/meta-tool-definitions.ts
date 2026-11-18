@@ -628,20 +628,6 @@ export const CARD_DEFINITION: SharedMetaToolDefinition = {
 };
 
 /**
- * @deprecated The transition alias of `codespar_card` (contract §8.4): the
- * same input, the same server path and the same validations. Published for
- * runtimes that still register the old name; it is NOT in
- * `SHARED_META_TOOL_DEFINITIONS`, so an agent is shown one card tool.
- */
-export const ISSUE_DEFINITION: SharedMetaToolDefinition = {
-  name: "codespar_issue",
-  description:
-    "DEPRECATED alias of codespar_card: same arguments, same server path, same validations and refusals. Call codespar_card instead. A call with the old Pomelo-only arguments is refused with card_contract_migration_required, naming the new fields (currency, mandate_id, consumer_id, idempotency_key).",
-  input_schema: CARD_INPUT,
-  contract: contractOf(CARD_INPUT),
-};
-
-/**
  * The shared agent-facing definitions, keyed by wire tool name — the FULL
  * meta-tool surface, all fifteen tools. (This used to publish only the three
  * demo tools — invoice/notify/pay — leaving twelve agent-facing tools,

@@ -8,7 +8,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HttpError } from "../api.js";
 import { CliError } from "../config.js";
-import { cardCommand, cardReadinessCommand, issueDeprecatedCommand } from "../commands/card.js";
+import { cardCommand, cardReadinessCommand } from "../commands/card.js";
 
 const AUTH = { apiKey: "csk_test_notreal", baseUrl: "https://api.test.dev" };
 
@@ -222,28 +222,5 @@ describe("codespar card readiness", () => {
     await cardReadinessCommand({ ...AUTH, json: true });
     expect(urls).toEqual(["https://api.test.dev/v1/cards/readiness"]);
     expect(JSON.parse(out.text())).toEqual(doc);
-  });
-});
-
-describe("codespar issue (deprecated, contract §8.4)", () => {
-  it("warns and sends codespar_card for a new-shaped call", async () => {
-    const { sent } = backend({ success: true, error: null, data: POMELO_VIEW });
-    const out = captureStdout();
-    await issueDeprecatedCommand({ ...AUTH, input: '{"action":"get","card_id":"icrd_1"}', json: true });
-    expect(out.err()).toMatch(/`codespar issue` is deprecated; use `codespar card/);
-    expect(sent).toEqual([{ tool: "codespar_card", input: { action: "get", card_id: "icrd_1" } }]);
-  });
-
-  it("refuses the old Pomelo shape with card_contract_migration_required, nothing sent", async () => {
-    const { sent } = backend({ success: true, error: null, data: POMELO_VIEW });
-    captureStdout();
-    const err = await issueDeprecatedCommand({
-      ...AUTH,
-      input: '{"action":"card-virtual","cardholder_id":"usr_123","program_id":"afg_123"}',
-    }).catch((e: unknown) => e);
-    expect(err).toBeInstanceOf(CliError);
-    expect((err as CliError).code).toBe("card_contract_migration_required");
-    expect((err as Error).message).toMatch(/codespar card issue --currency --mandate-id --consumer-id --idempotency-key/);
-    expect(sent).toHaveLength(0);
   });
 });

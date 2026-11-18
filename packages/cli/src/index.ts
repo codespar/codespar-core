@@ -36,7 +36,7 @@ import { paymentStatusCommand } from "./commands/payment-status.js";
 import { verificationStatusCommand } from "./commands/verification-status.js";
 import { wizardCommand } from "./commands/wizard.js";
 import { ledgerCommand } from "./commands/ledger.js";
-import { cardCommand, cardReadinessCommand, issueDeprecatedCommand, type CardFlags } from "./commands/card.js";
+import { cardCommand, cardReadinessCommand, type CardFlags } from "./commands/card.js";
 import {
   listMetaToolsCommand,
   metaToolCommand,
@@ -914,17 +914,6 @@ card
   .action(async () => {
     const auth = await resolveAuth();
     await cardReadinessCommand({ ...auth, json: rootJsonFlag() });
-  });
-
-program
-  .command("issue")
-  .description("DEPRECATED: use `codespar card`. Sends codespar_card with the same validations")
-  .option("-i, --input <json>", "codespar_card args as JSON string (the old Pomelo shape is refused)")
-  .option("-f, --input-file <path>", "codespar_card args from JSON file")
-  .option("-u, --user <id>", "User id for the session (default: cli-user)")
-  .action(async (opts: { input?: string; inputFile?: string; user?: string }) => {
-    const auth = await resolveAuth();
-    await issueDeprecatedCommand({ ...opts, ...auth, json: rootJsonFlag() });
   });
 
 for (const [name, what] of [

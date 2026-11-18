@@ -27,7 +27,6 @@ import type {
   CardRefusal,
   CardResult,
   CardView,
-  IssueArgs,
   ToolResult,
 } from "@codespar/types";
 
@@ -128,61 +127,4 @@ export function assertCardArgs(args: CardArgs): void {
   if (args.action === "issue" && !args.idempotency_key) {
     throw new Error("card: idempotency_key is required on action=issue");
   }
-}
-
-/* ── The deprecated `issue()` wrapper (contract §8.4) ─────────────── */
-
-const LEGACY_ACTIONS: Readonly<Record<string, string>> = {
-  "card-virtual": "card({ action: \"issue\", currency, mandate_id, consumer_id, idempotency_key, provider? })",
-  "card-physical": "card({ action: \"issue\", currency, mandate_id, consumer_id, idempotency_key, provider? })",
-  "card-get": "card({ action: \"get\", card_id })",
-  "card-control": "card({ action: \"freeze\" | \"unfreeze\" | \"cancel\", card_id, reason? })",
-};
-
-const LEGACY_FIELDS = ["cardholder_id", "program_id", "control", "shipping_address", "metadata"] as const;
-
-/**
- * A call in the old Pomelo-only shape, refused before anything is sent.
- * `code` matches what the server answers to the same call through the
- * deprecated tool alias.
- */
-export class CardContractMigrationError extends Error {
-  readonly code = "card_contract_migration_required" as const;
-  constructor(
-    message: string,
-    readonly legacyFields: readonly string[],
-  ) {
-    super(message);
-    Object.setPrototypeOf(this, CardContractMigrationError.prototype);
-    this.name = "CardContractMigrationError";
-  }
-}
-
-/** The old-shaped call's migration error, or null for a `CardArgs` call. */
-export function cardMigrationError(args: CardArgs | IssueArgs): CardContractMigrationError | null {
-  const a = args as unknown as Record<string, unknown>;
-  const action = typeof a.action === "string" ? a.action : "";
-  const legacyFields = LEGACY_FIELDS.filter((f) => a[f] !== undefined);
-  const instead = LEGACY_ACTIONS[action];
-  if (!instead && legacyFields.length === 0) return null;
-  const what = [instead ? `action "${action}"` : null, ...legacyFields.map((f) => `"${f}"`)].filter(Boolean).join(", ");
-  return new CardContractMigrationError(
-    `card_contract_migration_required: ${what} belong${legacyFields.length + (instead ? 1 : 0) > 1 ? "" : "s"} to the retired Pomelo-only shape. ` +
-      `Use ${instead ?? "card(args)"}: issue takes currency (BRL | USD), mandate_id, consumer_id and idempotency_key; provider (pomelo | rain) is optional. Nothing was sent.`,
-    legacyFields,
-  );
-}
-
-let issueDeprecationWarned = false;
-
-/** One warning per process, so a loop of calls does not flood stderr. */
-export function warnIssueDeprecated(): void {
-  if (issueDeprecationWarned) return;
-  issueDeprecationWarned = true;
-  console.warn("[@codespar/sdk] session.issue() is deprecated; use session.card(). It calls codespar_card with the same validations.");
-}
-
-/** Test seam: re-arm the one-time warning. */
-export function resetIssueDeprecationWarning(): void {
-  issueDeprecationWarned = false;
 }

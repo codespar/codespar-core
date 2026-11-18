@@ -1,4 +1,4 @@
-import { CodeSpar, cardMigrationError } from "@codespar/sdk";
+import { CodeSpar } from "@codespar/sdk";
 import type { CardArgs, CardIssued, CardResult, CardView } from "@codespar/sdk";
 import { HttpError } from "../api.js";
 import { CliError } from "../config.js";
@@ -78,11 +78,6 @@ export async function buildCardArgs(
   return card;
 }
 
-/** The SDK's migration sentence, plus the terminal spelling of the same call. */
-function cliMigrationMessage(sdkMessage: string): string {
-  return `${sdkMessage} In the terminal: \`codespar card issue --currency --mandate-id --consumer-id --idempotency-key [--provider]\`, \`codespar card get <card-id>\`, \`codespar card freeze|unfreeze|cancel <card-id>\`.`;
-}
-
 function oneOf(field: string, value: unknown, published: readonly string[]): void {
   if (value === undefined) return;
   if (typeof value !== "string" || !published.includes(value)) {
@@ -92,8 +87,6 @@ function oneOf(field: string, value: unknown, published: readonly string[]): voi
 
 /** Refuse locally what the server would refuse anyway. Vocabularies come from the published definition. */
 export function validateCardArgs(args: CardArgs): void {
-  const migration = cardMigrationError(args);
-  if (migration) throw new CliError(cliMigrationMessage(migration.message), { code: migration.code });
   const actions = metaToolActions(TOOL);
   if (!args.action || !actions.includes(args.action)) {
     throw new CliError(`card.action must be one of: ${actions.join(", ")}.`);
@@ -238,27 +231,4 @@ export async function cardReadinessCommand(opts: { apiKey: string; baseUrl: stri
       p.requirements.map((r) => [r.kind, r.status, r.actor, r.action_url ?? r.reason ?? "-"]),
     );
   }
-}
-
-/**
- * The deprecated `codespar issue` (contract §8.4): a wrapper over
- * `codespar card <action>`. It takes the JSON it always took, warns, and
- * refuses the old Pomelo shape with the new fields named.
- */
-export async function issueDeprecatedCommand(opts: Omit<CardCommandOptions, keyof CardFlags>): Promise<void> {
-  warn("`codespar issue` is deprecated; use `codespar card issue|get|list|freeze|unfreeze|cancel`. It sends codespar_card with the same validations.");
-  const raw = await resolveMetaInput(opts, "issue", '{"action":"issue","currency":"BRL","mandate_id":"mnd_...","consumer_id":"cons_...","idempotency_key":"..."}');
-  const migration = cardMigrationError(raw as unknown as CardArgs);
-  if (migration) {
-    throw new CliError(cliMigrationMessage(migration.message), { code: migration.code });
-  }
-  const action = typeof raw.action === "string" ? raw.action : "";
-  if (!metaToolActions(TOOL).includes(action)) {
-    throw new CliError(`issue: action must be one of: ${metaToolActions(TOOL).join(", ")}.`);
-  }
-  const rest: Record<string, unknown> = { ...raw };
-  delete rest.action;
-  delete rest.card_id;
-  const cardId = typeof raw.card_id === "string" ? raw.card_id : undefined;
-  await cardCommand(action, cardId, { ...opts, input: JSON.stringify(rest), inputFile: undefined });
 }

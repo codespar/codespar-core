@@ -821,34 +821,6 @@ CardResult = (
 )
 
 
-# ── Deprecated: the Pomelo-only card shape ─────────────────────────
-
-IssueAction = Literal["card-virtual", "card-physical", "card-control", "card-get"]
-
-
-@dataclass(slots=True)
-class IssueArgs:
-    """Deprecated: the Pomelo-only shape of the deprecated ``issue()`` wrapper.
-
-    Kept so existing imports work. A call in this shape raises
-    ``CardContractMigrationError`` (``card_contract_migration_required``)
-    before anything is sent. Use ``CardArgs`` with ``card()``.
-    """
-
-    action: IssueAction
-    cardholder_id: str | None = None
-    program_id: str | None = None
-    card_id: str | None = None
-    control: Literal["freeze", "unfreeze", "cancel"] | None = None
-    reason: str | None = None
-    shipping_address: dict[str, Any] | None = None
-    metadata: dict[str, Any] | None = None
-
-
-#: Deprecated: ``issue()`` now answers what ``card()`` answers.
-IssueResult = CardResult
-
-
 # ── codespar_shop wire shape ───────────────────────────────────────
 
 ShopAction = Literal["search", "checkout", "checkout_status"]

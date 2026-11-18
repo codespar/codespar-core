@@ -1,7 +1,7 @@
 // fakeSession v1 covers execute()-driven flows. send(), sendStream(),
 // and channel mocking land when Layer 3 demos demand them.
 
-import type { CardArgs, Session, ToolResult } from "@codespar/types";
+import type { Session, ToolResult } from "@codespar/types";
 
 export type { ToolResult };
 
@@ -132,10 +132,6 @@ export function fakeSession(
       if (args.action === "freeze") return { ...view, id: args.card_id, status: "blocked" as const, issuer_status: "BLOCKED", available_actions: ["unfreeze" as const, "cancel" as const] };
       if (args.action === "cancel") return { ...view, id: args.card_id, status: "canceled" as const, issuer_status: "DISABLED", available_actions: [] };
       return { ...view, id: args.card_id };
-    },
-
-    async issue(args) {
-      return session.card(args as CardArgs);
     },
 
     async shop(args) {
