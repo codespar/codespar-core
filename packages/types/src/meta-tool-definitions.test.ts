@@ -585,7 +585,7 @@ describe("wire-shape arg unions match the published definition vocabularies (ent
   });
 
   it("the old card tool is a deprecated alias outside the shared surface (contract §8.4)", () => {
-    const old = ["codespar", "issue"].join("_");
+    const old = "codespar_issue";
     // An agent is shown one card tool.
     expect(Object.keys(SHARED_META_TOOL_DEFINITIONS)).not.toContain(old);
     for (const def of ALL) expect(def.name).not.toBe(old);

@@ -634,7 +634,7 @@ export const CARD_DEFINITION: SharedMetaToolDefinition = {
  * `SHARED_META_TOOL_DEFINITIONS`, so an agent is shown one card tool.
  */
 export const ISSUE_DEFINITION: SharedMetaToolDefinition = {
-  name: ["codespar", "issue"].join("_"),
+  name: "codespar_issue",
   description:
     "DEPRECATED alias of codespar_card: same arguments, same server path, same validations and refusals. Call codespar_card instead. A call with the old Pomelo-only arguments is refused with card_contract_migration_required, naming the new fields (currency, mandate_id, consumer_id, idempotency_key).",
   input_schema: CARD_INPUT,
