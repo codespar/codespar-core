@@ -64,6 +64,12 @@ jobs:
       - name: Publish drift guard
         run: node scripts/check-publish-drift.mjs
 
+      # A snapshot generated from an enterprise CANDIDATE head (review state,
+      # cards contract §8.6) describes routes production may not serve.
+      # Publish day refreshes from the served document first.
+      - name: OpenAPI snapshot is from the served document
+        run: node packages/core/scripts/openapi-spec.mjs assert-served
+
       - name: Publish all packages
         run: |
           # Bash's "exit on error" is off for the loop body so one bad package

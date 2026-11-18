@@ -1,5 +1,30 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.17.0 — unreleased (coordinated codespar_card release)
+
+### Added
+
+- **`session.card(args)`** calls `codespar_card`: one contract for BRL on Pomelo (`pomelo_brl`) and USD on Rain (`rain_usd`).
+  - `issue` takes `currency`, `mandate_id`, `consumer_id` and a required `idempotency_key`, checked before anything is sent. `provider` is optional, and the currency picks the program when it is omitted.
+  - Results narrow on `state`:
+    - `"issued"`;
+    - `"pending_human"`: a `pending_action` for `holder`, `company_signatory` or `org_admin`;
+    - `"processing"` and `"uncertain"`: the card MAY exist, so call again with the SAME key, never a new one;
+    - `"failed"`: a definitive refusal by the issuer;
+    - `"refused"`: a stable `code`, `reason`, `available_programs`, `available_actions` and `http_status`. The refusal is **returned**, whether it came in the tool envelope or as a non-2xx body.
+  - A result with no `state` is a card view or `{ cards }`. Only a failure with no code throws.
+- **`cs.cards.readiness()`** reads `GET /v1/cards/readiness`: per program, ready or not and the checklist of what is missing.
+- `CardContractMigrationError` and `cardMigrationError()`: a call in the old Pomelo shape (`card-*` actions, `cardholder_id`, `program_id`, `control`, `shipping_address`, `metadata`) is refused before anything is sent, with the new fields named.
+- Depends on `@codespar/types ^0.12.0`. The fake session in `@codespar/sdk/testing` implements `card()`.
+
+### Deprecated
+
+- **`session.issue(args)`** is a wrapper over `session.card(args)`. It sends `codespar_card` with the same validations and warns once per process (`console.warn`). An old-shaped call throws `CardContractMigrationError`; the server answers the same call through its deprecated alias with `card_contract_migration_required`. No path keeps the old Pomelo-only validation.
+
+### Changed
+
+- Generated OpenAPI: see the PR body for the candidate enterprise SHA it was generated from.
+
 ## 0.16.30 — 2026-11-15
 
 ### Security

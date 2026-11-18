@@ -629,7 +629,7 @@ export const SURFACE_EXCEPTIONS: Readonly<Record<string, SurfaceException>> = {
     since: "2026-09-10",
   },
   cards: {
-    reason: "Single card read. Reachable as `codespar tool codespar_issue --action card-get`.",
+    reason: "Card reads and controls. `codespar card get|list|freeze|unfreeze|cancel` (through codespar_card, the same server path as these routes) and `codespar card readiness` (`GET /v1/cards/readiness`) are the terminal entrances.",
     since: "2026-09-10",
   },
   "funding-sources": {

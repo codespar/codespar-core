@@ -1,5 +1,27 @@
 # @codespar/cli — changelog
 
+## 0.23.0 — unreleased (coordinated codespar_card release)
+
+### Added
+
+- **`codespar card issue|get|list|freeze|unfreeze|cancel|readiness`**, through `codespar_card` (BRL on Pomelo, USD on Rain).
+  - `card issue` takes `--currency`, `--mandate-id`, `--consumer-id` and `--idempotency-key` (required), plus an optional `--provider`.
+  - `card get <card-id>`.
+  - `card list [--issuer] [--mandate-id] [--consumer-id]`.
+  - `card freeze|unfreeze|cancel <card-id> [--reason]`.
+  - `card readiness` reads `GET /v1/cards/readiness`.
+  - `-i/--input` and `-f/--input-file` take JSON, and flags win over it. `--json` prints the result document.
+- The output shows id, issuer, program, currency, status (with the issuer's raw status) and the available actions.
+- Exit codes:
+  - A refusal, or a definitive `failed`, exits 1 with an `api` error document carrying the `code` and the whole result as `body`.
+  - `pending_human`, `processing` and `uncertain` exit 0. They say what happens next. `uncertain` says the card may exist and that it reconciles on the SAME `--idempotency-key`, never a new one.
+- Vocabularies (actions, currency, provider, issuer) come from the published `codespar_card` definition, not a copy.
+- Depends on `@codespar/sdk ^0.17.0`.
+
+### Deprecated
+
+- **`codespar issue`** is a wrapper over `codespar card <action>`. It takes the JSON it always took, warns, and sends `codespar_card` with the same validations. The old Pomelo shape is refused with `card_contract_migration_required`, and the message names the new fields and commands.
+
 ## 0.22.7 — 2026-11-11
 
 ### Added

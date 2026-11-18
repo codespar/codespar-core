@@ -1,5 +1,32 @@
 # @codespar/types — CHANGELOG
 
+## 0.12.0 — unreleased (coordinated codespar_card release)
+
+### Added
+
+- **`codespar_card`** (`CARD_DEFINITION` / `CARD_INPUT`) in `SHARED_META_TOOL_DEFINITIONS`: one card contract for BRL on Pomelo (`pomelo_brl`) and USD on Rain (`rain_usd`).
+  - Actions: `issue | get | list | freeze | unfreeze | cancel`.
+  - Properties: `currency` (BRL | USD), `provider` (pomelo | rain), `mandate_id`, `consumer_id`, `idempotency_key`, `card_id`, `issuer` (pomelo | rain), `reason`.
+  - `required` is `["action"]`. The server enforces `idempotency_key`, currency, mandate and holder on `issue`.
+- `Session.card(args: CardArgs): Promise<CardResult>`.
+  - `CardArgs` is `CardIssueArgs | CardGetArgs | CardListArgs | CardControlArgs`.
+  - `CardResult` narrows on `state`: `issued`, `pending_human`, `processing`, `uncertain`, `failed` or `refused`. A result with no `state` is a card view or a list.
+  - Pending actors are `holder`, `company_signatory` and `org_admin`.
+  - Refusal codes include `card_oauth_not_bound` and `card_contract_migration_required`.
+- `CardReadiness` / `CardProgramReadiness` / `CardRequirement`, for `GET /v1/cards/readiness`.
+- The scenario manifest moves to 0.12.0.
+
+### Changed
+
+- `SHARED_META_TOOL_DEFINITIONS` lists `codespar_card` in place of the old card tool, so an agent is shown one card tool. `SharedMetaToolName` follows.
+
+### Deprecated
+
+- **`Session.issue()`** now takes `CardArgs | IssueArgs` and returns `CardResult`. It is a wrapper over `card()` with the same validations.
+- **`IssueArgs`** is kept only so imports compile. A call in that shape is refused with `card_contract_migration_required`.
+- **`IssueResult`** is an alias of `CardResult`.
+- **`ISSUE_DEFINITION`** is the old tool name as an alias with `codespar_card`'s exact input and a DEPRECATED description. It is outside the shared map.
+
 ## 0.11.7 — 2026-10-30
 
 ### Added

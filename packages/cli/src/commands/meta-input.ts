@@ -3,7 +3,7 @@ import { CliError } from "../config.js";
 
 /**
  * Resolve a meta-tool command's args from `--input '<json>'` or
- * `--input-file <path>`. Shared by the `ledger` / `issue` commands (and
+ * `--input-file <path>`. Shared by the `ledger` / `card` commands (and
  * a good target for charge/ship to migrate onto). Returns a parsed JSON
  * object or throws a CliError with an actionable message.
  */

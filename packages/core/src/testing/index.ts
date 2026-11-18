@@ -1,7 +1,7 @@
 // fakeSession v1 covers execute()-driven flows. send(), sendStream(),
 // and channel mocking land when Layer 3 demos demand them.
 
-import type { Session, ToolResult } from "@codespar/types";
+import type { CardArgs, Session, ToolResult } from "@codespar/types";
 
 export type { ToolResult };
 
@@ -100,16 +100,42 @@ export function fakeSession(
       return { id: "txn_fake", status: "POSTED" };
     },
 
-    async issue(args) {
-      if (args.action === "card-control" || args.action === "card-get") {
-        return { id: args.card_id ?? "card_fake", status: "ACTIVE", card_type: "VIRTUAL" };
-      }
-      return {
-        id: "card_fake",
-        status: "ACTIVE",
-        card_type: args.action === "card-physical" ? "PHYSICAL" : "VIRTUAL",
-        last_four: "4242",
+    async card(args) {
+      const view = {
+        id: "icrd_fake",
+        issuer: "pomelo" as const,
+        program: "pomelo_brl" as const,
+        currency: "BRL" as const,
+        status: "active" as const,
+        issuer_status: "ACTIVE",
+        last4: "4242",
+        network: "MASTERCARD",
+        mandate_id: "mnd_fake",
+        consumer_id: "cons_fake",
+        created_at: new Date(0).toISOString(),
+        available_actions: ["freeze" as const, "cancel" as const],
       };
+      if (args.action === "issue") {
+        return {
+          state: "issued" as const,
+          issue_request_id: "cir_fake",
+          issuer: view.issuer,
+          program: view.program,
+          selection: { provider_requested: args.provider ?? null, chosen_by: args.provider ? ("provider" as const) : ("currency" as const) },
+          card: view,
+          authorization_id: "caia_fake",
+          authorization_active: true,
+        };
+      }
+      if (args.action === "list") return { cards: [view] };
+      if (args.action === "get") return { ...view, id: args.card_id };
+      if (args.action === "freeze") return { ...view, id: args.card_id, status: "blocked" as const, issuer_status: "BLOCKED", available_actions: ["unfreeze" as const, "cancel" as const] };
+      if (args.action === "cancel") return { ...view, id: args.card_id, status: "canceled" as const, issuer_status: "DISABLED", available_actions: [] };
+      return { ...view, id: args.card_id };
+    },
+
+    async issue(args) {
+      return session.card(args as CardArgs);
     },
 
     async shop(args) {

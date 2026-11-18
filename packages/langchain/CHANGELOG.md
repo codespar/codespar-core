@@ -1,5 +1,11 @@
 # @codespar/langchain — changelog
 
+## 0.5.3 — unreleased (coordinated codespar_card release)
+
+### Changed
+
+- The `@codespar/sdk` peer range accepts `^0.17.0`.
+
 ## 0.5.2 — 2026-11-15
 
 ### Security

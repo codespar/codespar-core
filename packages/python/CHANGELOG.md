@@ -1,5 +1,27 @@
 # codespar (Python SDK) — CHANGELOG
 
+## 0.17.0 — unreleased (coordinated codespar_card release)
+
+In parity with `@codespar/sdk` 0.17.0.
+
+### Added
+
+- **`session.card(CardArgs(...))`** (async and sync) calls `codespar_card` (BRL on Pomelo, USD on Rain). `idempotency_key` is required on `action="issue"` and is checked before anything is sent.
+- It returns one of:
+  - `CardIssued`;
+  - `CardPendingHuman` (`pending_action`);
+  - `CardProcessing` and `CardUncertain`: same key, never a new one;
+  - `CardFailed`;
+  - `CardView`, `CardList`;
+  - `CardRefusal`. A refusal with a stable code is returned, whether it came in the tool envelope or as a non-2xx answer (`http_status`). Only a failure with no code raises `ApiError`.
+- **`cs.cards.readiness()`** reads `GET /v1/cards/readiness`. It returns typed dicts `CardReadiness`, `CardProgramReadiness` and `CardRequirement`.
+- `CardContractMigrationError` (`code = "card_contract_migration_required"`, `legacy_fields`).
+
+### Deprecated
+
+- **`session.issue(...)`** (async and sync) emits a `DeprecationWarning` and calls `card()` with the same validations. An `IssueArgs` (old Pomelo shape) raises `CardContractMigrationError` before anything is sent.
+- `IssueArgs` and `IssueAction` are kept for imports. `IssueResult` is an alias of `CardResult`.
+
 ## 0.16.2
 
 The statement as PNG pages, in parity with `@codespar/sdk` 0.16.28.

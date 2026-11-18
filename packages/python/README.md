@@ -155,6 +155,56 @@ Every method listed above exists on **both** `Session` (sync) and
 `AsyncSession` (await the async variants). Snake-case throughout —
 TS `paymentStatusStream` ⇆ Python `payment_status_stream`.
 
+### Spend cards (`codespar_card`)
+
+One contract for BRL cards on Pomelo (`pomelo_brl`) and USD cards on Rain
+(`rain_usd`). `provider` is optional: the currency picks the program.
+`idempotency_key` is required on `issue`; a retry with the same key resumes
+the same request and never issues a second card.
+
+```python
+from codespar import (
+    CardArgs, CardFailed, CardIssued, CardPendingHuman, CardProcessing,
+    CardRefusal, CardUncertain,
+)
+
+result = session.card(
+    CardArgs(
+        action="issue",
+        currency="USD",
+        mandate_id="mnd_...",
+        consumer_id="cons_...",
+        idempotency_key="order-7721-card",
+    )
+)
+if isinstance(result, CardIssued):
+    print(result.id, result.issuer, result.program, result.available_actions)
+elif isinstance(result, CardPendingHuman):
+    # A step only a person can take: hand them the link, never act for them.
+    print(result.pending_action.kind, result.pending_action.actor, result.pending_action.url)
+elif isinstance(result, (CardProcessing, CardUncertain)):
+    # Not a failure. Uncertain means the card MAY exist at the issuer:
+    # call again with the SAME idempotency_key, never a new one.
+    print(result.state, result.issue_request_id)
+elif isinstance(result, CardFailed):
+    print("issuer refused:", result.code, result.reason)
+elif isinstance(result, CardRefusal):
+    print(result.code, result.reason, result.available_programs)
+
+session.card(CardArgs(action="get", card_id="icrd_..."))
+session.card(CardArgs(action="list", issuer="rain"))
+session.card(CardArgs(action="freeze", card_id="icrd_...", reason="lost"))
+
+# Per program, what is missing and who must act (holder, company_signatory, org_admin).
+cs.cards.readiness()
+```
+
+A refusal with a stable code is returned as `CardRefusal`, not raised; only a
+failure with no code raises `ApiError`. `session.issue()` is deprecated: it
+warns and calls the same `codespar_card` with the same validations, and a call
+in the old Pomelo shape (`IssueArgs` with `cardholder_id` / `program_id`)
+raises `CardContractMigrationError` naming the new fields.
+
 ## Pay documents and batches
 
 ```python

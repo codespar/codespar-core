@@ -94,7 +94,8 @@ codespar init my-agent
 | `charge` | Issue an inbound charge via `codespar_charge` |
 | `ship` | Generate label / quote rates / track via `codespar_ship` |
 | `ledger` | Post entries / read balances / create accounts via `codespar_ledger` |
-| `issue` | Issue / freeze / read agent spend cards via `codespar_issue` |
+| `card issue\|get\|list\|freeze\|unfreeze\|cancel\|readiness` | Spend cards via `codespar_card`: BRL on Pomelo, USD on Rain. `card issue` needs `--currency --mandate-id --consumer-id --idempotency-key`; `processing` / `uncertain` resolve by running it again with the SAME key. `card readiness` lists, per program, what is missing and who must act |
+| `issue` | Deprecated: use `card`. Same tool and validations; the old Pomelo JSON shape is refused with `card_contract_migration_required` |
 | `payment-status <id>` | Poll async settlement status (add `--stream`) |
 | `verification-status <id>` | Poll async KYC status (add `--stream`) |
 | `wizard [server]` | Connection wizard — required secrets, connect URL, next steps |

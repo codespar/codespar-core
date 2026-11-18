@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import threading
+import warnings
 from collections.abc import Coroutine, Iterator
 from types import TracebackType
 from typing import Any, TypeVar
@@ -22,12 +23,15 @@ from typing import Any, TypeVar
 from ._async_client import AsyncCodeSpar
 from ._async_session import AsyncSession
 from ._http import normalize_timeout
+from .cards import Cards
 from .documents import Account, Receipts
 from .errors import ConfigError
 from .payables import Payables
 from .types import (
     AuthConfig,
     AuthResult,
+    CardArgs,
+    CardResult,
     ChargeArgs,
     ChargeResult,
     ConnectionWizardOptions,
@@ -35,7 +39,6 @@ from .types import (
     DiscoverOptions,
     DiscoverResult,
     IssueArgs,
-    IssueResult,
     LedgerArgs,
     LedgerResult,
     PaymentStatusResult,
@@ -209,9 +212,23 @@ class Session:
         """Sync wrapper around ``AsyncSession.ledger``. See that for docs."""
         return self._runner.run(self._async.ledger(args, timeout=timeout))
 
-    def issue(self, args: IssueArgs, *, timeout: float | None = None) -> IssueResult:
-        """Sync wrapper around ``AsyncSession.issue``. See that for docs."""
-        return self._runner.run(self._async.issue(args, timeout=timeout))
+    def card(self, args: CardArgs, *, timeout: float | None = None) -> CardResult:
+        """Sync wrapper around ``AsyncSession.card``. See that for docs."""
+        return self._runner.run(self._async.card(args, timeout=timeout))
+
+    def issue(
+        self, args: CardArgs | IssueArgs, *, timeout: float | None = None
+    ) -> CardResult:
+        """Deprecated: use :meth:`card`. Sync wrapper around ``AsyncSession.issue``."""
+        warnings.warn(
+            "session.issue() is deprecated; use session.card(). "
+            "It calls codespar_card with the same validations.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return self._runner.run(self._async.issue(args, timeout=timeout))
 
     def shop(self, args: ShopArgs, *, timeout: float | None = None) -> ShopResult:
         """Sync wrapper around ``AsyncSession.shop``. See that for docs."""
@@ -343,6 +360,8 @@ class CodeSpar:
         self.payables = Payables(self._async.payables, self._runner)
         #: A consumer's own account: ``wallet.pix_keys`` over ``/v1/consumers/:id/pix-keys``.
         self.wallet = Wallet(self._async.wallet, self._runner)
+        #: Card reads outside the meta-tool: ``cards.readiness()`` (``GET /v1/cards/readiness``).
+        self.cards = Cards(self._async.cards, self._runner)
         #: The receipt document (comprovante) of a payment
         #: (``/v1/consumers/receipts/:id/document``).
         self.receipts = Receipts(self._async.receipts, self._runner)
