@@ -6,11 +6,11 @@
 
 - **`codespar_card`** (`CARD_DEFINITION` / `CARD_INPUT`) in `SHARED_META_TOOL_DEFINITIONS`: one card contract for BRL on Pomelo (`pomelo_brl`) and USD on Rain (`rain_usd`).
   - Actions: `issue | get | list | freeze | unfreeze | cancel`.
-  - Properties: `currency` (BRL | USD), `provider` (pomelo | rain), `mandate_id`, `consumer_id`, `idempotency_key`, `card_id`, `issuer` (pomelo | rain), `reason`.
+  - Properties: `currency` (BRL | USD), `provider` (pomelo | rain), `mandate_id`, `consumer_id`, `idempotency_key`, `card_id`, `holder` (Pomelo cardholder identity, pomelo_brl only), `issuer` (pomelo | rain), `reason` (client_request | lost | stolen | broken | upgrade).
   - `required` is `["action"]`. The server enforces `idempotency_key`, currency, mandate and holder on `issue`.
 - `Session.card(args: CardArgs): Promise<CardResult>`.
   - `CardArgs` is `CardIssueArgs | CardGetArgs | CardListArgs | CardControlArgs`.
-  - `CardResult` narrows on `state`: `issued`, `pending_human`, `processing`, `uncertain`, `failed` or `refused`. A result with no `state` is a card view or a list.
+  - `CardResult` narrows on `state`: `issued` (the card view nested in `card`, plus `authorization_id` / `authorization_active`), `pending_human`, `processing` / `uncertain` (`retry_after_seconds`; `note` and `issuer_code` on uncertain) or `refused`. A definitive issuer failure is a refusal, never a state. A result with no `state` is a card view or a list.
   - Pending actors are `holder`, `company_signatory` and `org_admin`.
   - Refusal codes include `card_oauth_not_bound` and `card_contract_migration_required`.
 - `CardReadiness` / `CardProgramReadiness` / `CardRequirement`, for `GET /v1/cards/readiness`.

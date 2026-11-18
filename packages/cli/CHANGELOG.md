@@ -13,7 +13,7 @@
   - `-i/--input` and `-f/--input-file` take JSON, and flags win over it. `--json` prints the result document.
 - The output shows id, issuer, program, currency, status (with the issuer's raw status) and the available actions.
 - Exit codes:
-  - A refusal, or a definitive `failed`, exits 1 with an `api` error document carrying the `code` and the whole result as `body`.
+  - A refusal exits 1 (a definitive issuer failure is one: `card_issue_refused`, or `card_issue_request_failed` with `failure_code` on a later call with the same key), with an `api` error document carrying the `code` and the whole result as `body`.
   - `pending_human`, `processing` and `uncertain` exit 0. They say what happens next. `uncertain` says the card may exist and that it reconciles on the SAME `--idempotency-key`, never a new one.
 - Vocabularies (actions, currency, provider, issuer) come from the published `codespar_card` definition, not a copy.
 - Depends on `@codespar/sdk ^0.17.0`.

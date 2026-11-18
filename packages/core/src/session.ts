@@ -400,7 +400,7 @@ export async function createSession(
      * wire as `execute("codespar_card", {...})`; a refusal with a stable code
      * is RETURNED as `CardRefusal` (`state: "refused"`); a non-final issue
      * as `pending_human` / `processing` / `uncertain` (resolve on the SAME
-     * idempotency_key) or `failed`. Only a failure with no code throws.
+     * idempotency_key). Only a failure with no code throws.
      */
     async card(args: CardArgs, opts?: CallOptions): Promise<CardResult> {
       const migration = cardMigrationError(args);

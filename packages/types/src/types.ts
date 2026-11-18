@@ -983,6 +983,8 @@ export interface CardPendingHuman extends CardIssueRequestRef {
 /** action=issue, the issuer was called and has not answered yet. Read it again with the SAME key. */
 export interface CardProcessing extends CardIssueRequestRef {
   state: "processing";
+  /** When to read it again, with the SAME key. */
+  retry_after_seconds?: number;
 }
 
 /**
@@ -993,15 +995,10 @@ export interface CardProcessing extends CardIssueRequestRef {
  */
 export interface CardUncertain extends CardIssueRequestRef {
   state: "uncertain";
-  message?: string | null;
-}
-
-/** action=issue, a definitive refusal by the issuer. */
-export interface CardFailed extends CardIssueRequestRef {
-  state: "failed";
-  code?: string;
-  reason?: string;
-  message?: string | null;
+  retry_after_seconds?: number;
+  note?: string;
+  /** The issuer's raw code, when it sent one. */
+  issuer_code?: string;
 }
 
 /** action=list. */
@@ -1026,6 +1023,9 @@ export type CardRefusalCode =
   | "card_terms_policy_missing"
   | "card_oauth_not_bound"
   | "card_contract_migration_required"
+  | "card_holder_not_eligible"
+  | "card_issue_refused"
+  | "card_issue_request_failed"
   | "idempotency_key_conflict"
   | (string & {});
 
@@ -1056,21 +1056,23 @@ export interface CardRefusal {
   program?: CardProgram;
   action?: CardAction;
   available_actions?: CardControlAction[];
+  /** On `card_issue_request_failed`: the request that failed, and why (issuer_refused | issuer_revoked | reconciled_absent | a Pomelo code). */
+  issue_request_id?: string;
+  failure_code?: string;
   /** The refusal body as received. */
   raw: unknown;
 }
 
-export type CardIssueResult =
-  | CardIssued
-  | CardPendingHuman
-  | CardProcessing
-  | CardUncertain
-  | CardFailed
-  | CardRefusal;
+/**
+ * A definitive failure is never an issue `state`: it is a refusal
+ * (`card_issue_refused`, a Pomelo code, or `card_issue_request_failed` on a
+ * later call with the same key, with `failure_code`).
+ */
+export type CardIssueResult = CardIssued | CardPendingHuman | CardProcessing | CardUncertain | CardRefusal;
 
 /**
  * Narrow on `state`: "issued" | "pending_human" | "processing" |
- * "uncertain" | "failed" | "refused"; no `state` is a card view (get,
+ * "uncertain" | "refused"; no `state` is a card view (get,
  * freeze, unfreeze, cancel) or a list (`"cards" in result`).
  */
 export type CardResult = CardIssueResult | CardView | CardList;

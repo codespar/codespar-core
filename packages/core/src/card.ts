@@ -5,7 +5,7 @@
  * transport carried a refusal:
  *   - success, action=issue, a non-final `state` -> as received:
  *       `pending_human` (a person must act), `processing`, `uncertain`
- *       (both resolved on the SAME idempotency_key), `failed` (definitive)
+ *       (both resolved on the SAME idempotency_key); a definitive failure is a refusal
  *   - success, action=issue, `state: "issued"`    -> CardIssued (the view nested in `card`)
  *   - success, action=issue, anything else         -> throws: an issue answer always says its state
  *   - success, any other action                  -> CardView / CardList as received
@@ -91,12 +91,16 @@ export function cardRefusalFrom(result: ToolResult): CardRefusal | null {
   if (typeof program === "string") refusal.program = program as CardRefusal["program"];
   const action = pick("action");
   if (typeof action === "string") refusal.action = action as CardRefusal["action"];
+  const requestId = pick("issue_request_id");
+  if (typeof requestId === "string") refusal.issue_request_id = requestId;
+  const failure = pick("failure_code");
+  if (typeof failure === "string") refusal.failure_code = failure;
   const actions = pick("available_actions");
   if (Array.isArray(actions)) refusal.available_actions = actions as CardRefusal["available_actions"];
   return refusal;
 }
 
-const NON_FINAL_ISSUE_STATES: ReadonlySet<string> = new Set(["pending_human", "processing", "uncertain", "failed"]);
+const NON_FINAL_ISSUE_STATES: ReadonlySet<string> = new Set(["pending_human", "processing", "uncertain"]);
 
 /** Turn a codespar_card envelope into the typed result, or throw on a failure with no code. */
 export function cardResultFrom(args: CardArgs, result: ToolResult): CardResult {

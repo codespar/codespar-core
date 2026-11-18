@@ -10,8 +10,7 @@
     - `"issued"`;
     - `"pending_human"`: a `pending_action` for `holder`, `company_signatory` or `org_admin`;
     - `"processing"` and `"uncertain"`: the card MAY exist, so call again with the SAME key, never a new one;
-    - `"failed"`: a definitive refusal by the issuer;
-    - `"refused"`: a stable `code`, `reason`, `available_programs`, `available_actions` and `http_status`. The refusal is **returned**, whether it came in the tool envelope or as a non-2xx body.
+    - `"refused"`: also a definitive issuer failure (`card_issue_refused`; `card_issue_request_failed` with `failure_code` and `issue_request_id` on a later call with the same key). It carries a stable `code`, `reason`, `available_programs`, `available_actions` and `http_status`. The refusal is **returned**, whether it came in the tool envelope or as a non-2xx body.
   - A result with no `state` is a card view or `{ cards }`. Only a failure with no code throws.
 - **`cs.cards.readiness()`** reads `GET /v1/cards/readiness`: per program, ready or not and the checklist of what is missing.
 - `CardContractMigrationError` and `cardMigrationError()`: a call in the old Pomelo shape (`card-*` actions, `cardholder_id`, `program_id`, `control`, `shipping_address`, `metadata`) is refused before anything is sent, with the new fields named.

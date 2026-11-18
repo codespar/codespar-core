@@ -263,10 +263,10 @@ describe("session.card facade", () => {
     );
   });
 
-  it.each(["processing", "uncertain", "failed"] as const)(
+  it.each(["processing", "uncertain"] as const)(
     "issue: a %s answer is returned as received, never stamped issued (contract §8.3)",
     async (state) => {
-      const data = { state, issue_request_id: "cir_3", issuer: "rain", program: "rain_usd" };
+      const data = { state, issue_request_id: "cir_3", issuer: "rain", program: "rain_usd", retry_after_seconds: 30 };
       const { session } = await sessionAnswering({ kind: "envelope", envelope: { data } });
       const r = await session.card(ISSUE_USD);
       expect(r).toEqual(data);
@@ -275,10 +275,31 @@ describe("session.card facade", () => {
   );
 
   it("an issue answer in an unknown state throws instead of passing as issued", async () => {
-    for (const data of [{ state: "pending" }, RAIN_VIEW]) {
+    // `failed` is never an issue state: a definitive failure is a refusal.
+    for (const data of [{ state: "pending" }, { state: "failed" }, RAIN_VIEW]) {
       const { session } = await sessionAnswering({ kind: "envelope", envelope: { data } });
       await expect(session.card(ISSUE_USD)).rejects.toThrow(/unexpected issue state/);
     }
+  });
+
+  it("card_issue_request_failed lifts issue_request_id and failure_code from details", async () => {
+    const { session } = await sessionAnswering({
+      kind: "envelope",
+      envelope: {
+        success: false,
+        error: "card_issue_request_failed",
+        data: {
+          error: {
+            code: "card_issue_request_failed",
+            message: "this request failed",
+            details: { issue_request_id: "cir_8", issuer: "rain", program: "rain_usd", failure_code: "reconciled_absent" },
+          },
+          http_status: 409,
+        },
+      },
+    });
+    const r = await session.card(ISSUE_USD);
+    expect(r).toMatchObject({ state: "refused", code: "card_issue_request_failed", http_status: 409, issue_request_id: "cir_8", failure_code: "reconciled_absent", issuer: "rain" });
   });
 
   it("card_oauth_not_bound comes back as a refusal like any coded one", async () => {

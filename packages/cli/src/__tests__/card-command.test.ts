@@ -159,14 +159,18 @@ describe("codespar card", () => {
   it.each(["uncertain", "processing"] as const)(
     "%s: says it resolves on the SAME key and never suggests another one (contract §8.3)",
     async (state) => {
-      backend({ success: true, error: null, data: { state, issue_request_id: "cir_9", issuer: "rain", program: "rain_usd" } });
+      backend({
+        success: true,
+        error: null,
+        data: { state, issue_request_id: "cir_9", issuer: "rain", program: "rain_usd", retry_after_seconds: 30, ...(state === "uncertain" ? { issuer_code: "timeout" } : {}) },
+      });
       const out = captureStdout();
       await expect(
         cardCommand("issue", undefined, { ...AUTH, currency: "USD", mandateId: "m", consumerId: "c", idempotencyKey: "k" }),
       ).resolves.toBeUndefined();
       const text = out.err();
       expect(text).toContain("cir_9");
-      expect(text).toMatch(/same --idempotency-key/i);
+      expect(text).toMatch(/same --idempotency-key in 30s/i);
       expect(text).not.toMatch(/(try again|retry|run it again) with (a )?(new|another|different) key/i);
       if (state === "uncertain") {
         expect(text).toMatch(/MAY exist/);
@@ -175,12 +179,26 @@ describe("codespar card", () => {
     },
   );
 
-  it("failed is a definitive refusal: HttpError with the issuer's code", async () => {
-    backend({ success: true, error: null, data: { state: "failed", issue_request_id: "cir_8", issuer: "pomelo", program: "pomelo_brl", code: "issuer_declined" } });
+  it("a later call on a failed request is card_issue_request_failed: exit 1 with failure_code", async () => {
+    backend({
+      success: false,
+      error: "card_issue_request_failed",
+      data: {
+        error: {
+          code: "card_issue_request_failed",
+          message: "this request failed",
+          details: { issue_request_id: "cir_8", issuer: "rain", program: "rain_usd", failure_code: "issuer_refused" },
+        },
+        http_status: 409,
+      },
+    });
     captureStdout();
-    const err = await cardCommand("issue", undefined, { ...AUTH, currency: "BRL", mandateId: "m", consumerId: "c", idempotencyKey: "k" }).catch((e: unknown) => e);
+    const err = await cardCommand("issue", undefined, { ...AUTH, currency: "USD", mandateId: "m", consumerId: "c", idempotencyKey: "k" }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(HttpError);
-    expect((err as HttpError).code).toBe("issuer_declined");
+    expect((err as HttpError).code).toBe("card_issue_request_failed");
+    expect((err as HttpError).status).toBe(409);
+    expect((err as Error).message).toMatch(/failure_code issuer_refused/);
+    expect((err as HttpError).body).toMatchObject({ issue_request_id: "cir_8", failure_code: "issuer_refused" });
   });
 
   it("issue without --idempotency-key never reaches the network", async () => {

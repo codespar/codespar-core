@@ -25,7 +25,6 @@ from .types import (
     AuthConfig,
     AuthResult,
     CardArgs,
-    CardFailed,
     CardFunding,
     CardIssued,
     CardList,
@@ -306,17 +305,21 @@ def _parse_card_result(raw: dict[str, Any], action: str) -> CardResult:
                     url=pa.get("url"),
                 ),
             )
-        if state == "processing":
-            return CardProcessing(**ref)
-        if state == "uncertain":
-            message = raw.get("message")
-            return CardUncertain(**ref, message=message if isinstance(message, str) else None)
-        if state == "failed":
-            def opt(key: str) -> str | None:
-                v = raw.get(key)
-                return v if isinstance(v, str) else None
+        def opt_str(key: str) -> str | None:
+            v = raw.get(key)
+            return v if isinstance(v, str) else None
 
-            return CardFailed(**ref, code=opt("code"), reason=opt("reason"), message=opt("message"))
+        retry = raw.get("retry_after_seconds")
+        retry_after = retry if isinstance(retry, int) else None
+        if state == "processing":
+            return CardProcessing(**ref, retry_after_seconds=retry_after)
+        if state == "uncertain":
+            return CardUncertain(
+                **ref,
+                retry_after_seconds=retry_after,
+                note=opt_str("note"),
+                issuer_code=opt_str("issuer_code"),
+            )
         if state == "issued":
             card = raw.get("card")
             auth_id = raw.get("authorization_id")
@@ -427,6 +430,8 @@ def _parse_card_refusal(
         program=pick_str("program"),
         action=pick_str("action"),
         available_actions=_str_list(actions) if isinstance(actions, list) else None,
+        issue_request_id=pick_str("issue_request_id"),
+        failure_code=pick_str("failure_code"),
         raw=body,
     )
 
@@ -890,8 +895,9 @@ class AsyncSession:
         can take; retry with the same ``idempotency_key`` once done) |
         ``CardProcessing`` / ``CardUncertain`` (both resolved on the SAME
         ``idempotency_key``, never a new one: the card may already exist) |
-        ``CardFailed`` (definitive) | ``CardView`` | ``CardList`` |
-        ``CardRefusal``. A refusal with a
+        ``CardView`` | ``CardList`` | ``CardRefusal`` (a definitive issuer
+        failure is a refusal: ``card_issue_refused``, or
+        ``card_issue_request_failed`` with ``failure_code``). A refusal with a
         stable code is RETURNED, whether it came inside the tool envelope
         or as a non-2xx answer; only a failure with no code raises
         ``ApiError``. ``idempotency_key`` is required on ``action="issue"``

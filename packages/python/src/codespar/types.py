@@ -743,6 +743,8 @@ class CardProcessing:
     issuer: str = ""
     program: str = ""
     selection: CardSelection | None = None
+    #: When to read it again, with the SAME key.
+    retry_after_seconds: int | None = None
     state: Literal["processing"] = "processing"
 
 
@@ -757,23 +759,12 @@ class CardUncertain:
     issue_request_id: str = ""
     issuer: str = ""
     program: str = ""
-    message: str | None = None
     selection: CardSelection | None = None
+    retry_after_seconds: int | None = None
+    note: str | None = None
+    #: The issuer's raw code, when it sent one.
+    issuer_code: str | None = None
     state: Literal["uncertain"] = "uncertain"
-
-
-@dataclass(slots=True)
-class CardFailed:
-    """``action=issue``: a definitive refusal by the issuer."""
-
-    issue_request_id: str = ""
-    issuer: str = ""
-    program: str = ""
-    code: str | None = None
-    reason: str | None = None
-    message: str | None = None
-    selection: CardSelection | None = None
-    state: Literal["failed"] = "failed"
 
 
 @dataclass(slots=True)
@@ -811,6 +802,10 @@ class CardRefusal:
     program: str | None = None
     action: str | None = None
     available_actions: list[str] | None = None
+    #: On ``card_issue_request_failed``: the failed request and why
+    #: (issuer_refused | issuer_revoked | reconciled_absent | a Pomelo code).
+    issue_request_id: str | None = None
+    failure_code: str | None = None
     raw: Any = None
     state: Literal["refused"] = "refused"
 
@@ -820,7 +815,6 @@ CardResult = (
     | CardPendingHuman
     | CardProcessing
     | CardUncertain
-    | CardFailed
     | CardRefusal
     | CardView
     | CardList

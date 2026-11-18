@@ -118,6 +118,10 @@ export function validateCardArgs(args: CardArgs): void {
   }
 }
 
+function retryAfter(seconds: number | undefined): string {
+  return typeof seconds === "number" ? ` in ${seconds}s` : "";
+}
+
 function viewPairs(v: CardView): Array<[string, string]> {
   const pairs: Array<[string, string]> = [
     ["Id", v.id],
@@ -135,7 +139,7 @@ function viewPairs(v: CardView): Array<[string, string]> {
 }
 
 /**
- * Print a result, or throw for a refusal or a definitive `failed`. The
+ * Print a result, or throw for a refusal (a definitive issuer failure is one). The
  * non-final issue states (`pending_human`, `processing`, `uncertain`) are
  * not failures (REST answers 202): they print what happens next and exit 0,
  * and a script branches on `state` in `--json`. None of them ever suggests a
@@ -143,16 +147,13 @@ function viewPairs(v: CardView): Array<[string, string]> {
  */
 export function renderCardResult(action: string, result: CardResult, asJson: boolean): void {
   if (result.state === "refused") {
+    // A definitive issuer refusal is a refusal too (card_issue_refused, or
+    // card_issue_request_failed with failure_code on a later call with the
+    // same key): a failure for the exit code.
+    const failure = result.failure_code ? ` [failure_code ${result.failure_code}]` : "";
     throw new HttpError(
-      `card ${action} refused: ${result.code}${result.reason ? ` (${result.reason})` : ""}${result.message ? ` — ${result.message}` : ""}`,
+      `card ${action} refused: ${result.code}${result.reason ? ` (${result.reason})` : ""}${failure}${result.message ? ` — ${result.message}` : ""}`,
       { status: result.http_status, code: result.code, body: result },
-    );
-  }
-  if (result.state === "failed") {
-    // A definitive refusal by the issuer: a failure for the exit code too.
-    throw new HttpError(
-      `card issue failed at ${result.issuer}/${result.program}${result.code ? `: ${result.code}` : ""}${result.reason ? ` (${result.reason})` : ""}${result.message ? ` — ${result.message}` : ""}`,
-      { status: 200, code: result.code ?? "card_issue_failed", body: result },
     );
   }
   if (asJson) {
@@ -167,13 +168,18 @@ export function renderCardResult(action: string, result: CardResult, asJson: boo
   }
   if (result.state === "processing") {
     warn(`card issue processing at ${result.issuer}/${result.program}: the issuer has not answered yet.`);
-    info(`Request: ${result.issue_request_id}. Run the same command with the same --idempotency-key to read where it stands.`);
+    info(
+      `Request: ${result.issue_request_id}. Run the same command with the same --idempotency-key to read where it stands${retryAfter(result.retry_after_seconds)}.`,
+    );
     return;
   }
   if (result.state === "uncertain") {
-    warn(`card issue uncertain at ${result.issuer}/${result.program}: the issuer's answer was lost or ambiguous, and the card MAY exist.`);
+    warn(
+      `card issue uncertain at ${result.issuer}/${result.program}: the issuer's answer was lost or ambiguous, and the card MAY exist${result.issuer_code ? ` (issuer code ${result.issuer_code})` : ""}.`,
+    );
+    if (result.note) info(result.note);
     info(
-      `Request: ${result.issue_request_id}. It reconciles on the same key: run the same command with the SAME --idempotency-key. Do not use a new key; that would be a second issuance.`,
+      `Request: ${result.issue_request_id}. It reconciles on the same key: run the same command with the SAME --idempotency-key${retryAfter(result.retry_after_seconds)}. Do not use a new key; that would be a second issuance.`,
     );
     return;
   }

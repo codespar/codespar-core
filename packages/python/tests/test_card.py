@@ -20,7 +20,6 @@ from codespar import (
     AsyncCodeSpar,
     CardArgs,
     CardContractMigrationError,
-    CardFailed,
     CardIssued,
     CardList,
     CardPendingHuman,
@@ -339,7 +338,8 @@ async def test_failure_without_code_raises(httpx_mock: HTTPXMock) -> None:
 @pytest.mark.asyncio
 async def test_unknown_issue_state_raises(httpx_mock: HTTPXMock) -> None:
     _mock_session(httpx_mock)
-    httpx_mock.add_response(url=EXECUTE, method="POST", json=_envelope({"state": "pending"}))
+    # ``failed`` is never an issue state: a definitive failure is a refusal.
+    httpx_mock.add_response(url=EXECUTE, method="POST", json=_envelope({"state": "failed"}))
     async with AsyncCodeSpar(api_key="csk_test_x") as cs:
         session = await cs.create("consumer_123", servers=[])
         with pytest.raises(ApiError, match="unexpected issue state"):
@@ -367,7 +367,7 @@ def test_sync_card_is_the_same_call(httpx_mock: HTTPXMock) -> None:
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("state", "cls"),
-    [("processing", CardProcessing), ("uncertain", CardUncertain), ("failed", CardFailed)],
+    [("processing", CardProcessing), ("uncertain", CardUncertain)],
 )
 async def test_non_final_issue_states_are_distinct(
     httpx_mock: HTTPXMock, state: str, cls: type
@@ -382,7 +382,8 @@ async def test_non_final_issue_states_are_distinct(
                 "issue_request_id": "cir_3",
                 "issuer": "rain",
                 "program": "rain_usd",
-                "code": "issuer_declined",
+                "retry_after_seconds": 30,
+                "issuer_code": "timeout",
             }
         ),
     )
@@ -392,8 +393,45 @@ async def test_non_final_issue_states_are_distinct(
     assert type(result) is cls
     assert result.state == state
     assert result.issue_request_id == "cir_3"
-    if isinstance(result, CardFailed):
-        assert result.code == "issuer_declined"
+    assert result.retry_after_seconds == 30
+    if isinstance(result, CardUncertain):
+        assert result.issuer_code == "timeout"
+
+
+@pytest.mark.asyncio
+async def test_failed_request_is_a_refusal_with_failure_code(httpx_mock: HTTPXMock) -> None:
+    _mock_session(httpx_mock)
+    httpx_mock.add_response(
+        url=EXECUTE,
+        method="POST",
+        json=_envelope(
+            {
+                "error": {
+                    "code": "card_issue_request_failed",
+                    "message": "this request failed",
+                    "details": {
+                        "issue_request_id": "cir_8",
+                        "issuer": "rain",
+                        "program": "rain_usd",
+                        "failure_code": "issuer_refused",
+                    },
+                },
+                "http_status": 409,
+            },
+            success=False,
+            error="card_issue_request_failed",
+        ),
+    )
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        session = await cs.create("consumer_123", servers=[])
+        result = await session.card(ISSUE_USD)
+    assert isinstance(result, CardRefusal)
+    assert (result.code, result.http_status, result.issue_request_id, result.failure_code) == (
+        "card_issue_request_failed",
+        409,
+        "cir_8",
+        "issuer_refused",
+    )
 
 
 @pytest.mark.asyncio

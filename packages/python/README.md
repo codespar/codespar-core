@@ -164,8 +164,7 @@ the same request and never issues a second card.
 
 ```python
 from codespar import (
-    CardArgs, CardFailed, CardIssued, CardPendingHuman, CardProcessing,
-    CardRefusal, CardUncertain,
+    CardArgs, CardIssued, CardPendingHuman, CardProcessing, CardRefusal, CardUncertain,
 )
 
 result = session.card(
@@ -178,18 +177,18 @@ result = session.card(
     )
 )
 if isinstance(result, CardIssued):
-    print(result.id, result.issuer, result.program, result.available_actions)
+    print(result.card.id, result.issuer, result.program, result.card.available_actions)
 elif isinstance(result, CardPendingHuman):
     # A step only a person can take: hand them the link, never act for them.
     print(result.pending_action.kind, result.pending_action.actor, result.pending_action.url)
 elif isinstance(result, (CardProcessing, CardUncertain)):
     # Not a failure. Uncertain means the card MAY exist at the issuer:
     # call again with the SAME idempotency_key, never a new one.
-    print(result.state, result.issue_request_id)
-elif isinstance(result, CardFailed):
-    print("issuer refused:", result.code, result.reason)
+    print(result.state, result.issue_request_id, result.retry_after_seconds)
 elif isinstance(result, CardRefusal):
-    print(result.code, result.reason, result.available_programs)
+    # A definitive issuer failure is a refusal too (card_issue_refused, or
+    # card_issue_request_failed with failure_code on a later call).
+    print(result.code, result.reason, result.failure_code, result.available_programs)
 
 session.card(CardArgs(action="get", card_id="icrd_..."))
 session.card(CardArgs(action="list", issuer="rain"))
