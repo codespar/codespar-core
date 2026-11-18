@@ -169,7 +169,7 @@ export function renderCardResult(action: string, result: CardResult, asJson: boo
   if (result.state === "processing") {
     warn(`card issue processing at ${result.issuer}/${result.program}: the issuer has not answered yet.`);
     info(
-      `Request: ${result.issue_request_id}. Run the same command with the same --idempotency-key to read where it stands${retryAfter(result.retry_after_seconds)}.`,
+      `Request: ${result.issue_request_id}. Run the same command with the same --idempotency-key${retryAfter(result.retry_after_seconds)} to read where it stands; never a new key.`,
     );
     return;
   }
