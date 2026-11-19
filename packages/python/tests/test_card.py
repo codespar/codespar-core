@@ -45,7 +45,7 @@ RAIN_VIEW: dict[str, Any] = {
     "consumer_id": "cons_1",
     "created_at": "2026-11-18T12:00:00.000Z",
     "available_actions": [],
-    "funding": {"asset": "USDC"},
+    "funding": {"source": "wallet", "currency": "BRL"},
 }
 
 ISSUE_USD = CardArgs(
@@ -127,7 +127,8 @@ async def test_issue_dispatches_codespar_card_and_returns_issued(httpx_mock: HTT
     assert result.card.issuer_status == "notActivated"
     assert result.card.available_actions == []
     assert result.card.network is None
-    assert result.card.funding is not None and result.card.funding.asset == "USDC"
+    # Passed through as served; the client restates none of its fields.
+    assert result.card.funding == {"source": "wallet", "currency": "BRL"}
     assert result.authorization_id == "caia_1"
     assert result.authorization_active is True
     assert result.selection is not None

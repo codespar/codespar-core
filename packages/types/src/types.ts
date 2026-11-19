@@ -810,7 +810,7 @@ export interface LedgerReceiptsResult {
  * record behind `card_id`).
  */
 export type CardIssuer = "pomelo" | "rain";
-/** The CARD currency. Rain's funding asset (USDC) is separate: `CardView.funding`. */
+/** The CARD currency. How a card is funded is separate data: `CardView.funding`. */
 export type CardCurrency = "BRL" | "USD";
 /** Program registry, code-side on the server. */
 export type CardProgram = "pomelo_brl" | "rain_usd";
@@ -893,10 +893,12 @@ export interface CardSelection {
   chosen_by: "provider" | "currency";
 }
 
-/** Funding of a `rain_usd` card. Never mixed into `currency`. */
-export interface CardFunding {
-  asset: "USDC";
-}
+/**
+ * How a card is funded, as the server reports it for its program. Kept
+ * open here: its fields are the served contract's (see the generated
+ * OpenAPI types), and nothing in this file restates them.
+ */
+export type CardFunding = Record<string, unknown>;
 
 /** The card view (REST and codespar_card): get, controls, list items, an issued card. */
 export interface CardView {

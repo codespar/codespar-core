@@ -125,7 +125,6 @@ function viewPairs(v: CardView): Array<[string, string]> {
     ["Actions", v.available_actions.length > 0 ? v.available_actions.join(", ") : "none"],
   ];
   if (v.last4) pairs.push(["Last four", v.last4]);
-  if (v.funding) pairs.push(["Funding", v.funding.asset]);
   if (v.mandate_id) pairs.push(["Mandate", v.mandate_id]);
   if (v.consumer_id) pairs.push(["Consumer", v.consumer_id]);
   return pairs;

@@ -76,7 +76,7 @@ const RAIN_VIEW: CardView = {
   consumer_id: "cons_1",
   created_at: "2026-11-18T12:00:00.000Z",
   available_actions: [],
-  funding: { asset: "USDC" },
+  funding: { source: "wallet", currency: "BRL" },
 };
 
 function issued(card: CardView) {
@@ -124,7 +124,8 @@ describe("session.card facade", () => {
     expect(r.program).toBe("rain_usd");
     expect(r.issue_request_id).toBe("cir_1");
     expect(r.card.currency).toBe("USD");
-    expect(r.card.funding).toEqual({ asset: "USDC" });
+    // Passed through as served; the client restates none of its fields.
+    expect(r.card.funding).toEqual({ source: "wallet", currency: "BRL" });
     expect(r.card.network).toBeNull();
     expect(r.selection).toEqual({ provider_requested: null, chosen_by: "currency" });
     expect(r.card.available_actions).toEqual([]);

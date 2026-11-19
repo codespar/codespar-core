@@ -24,7 +24,6 @@ from .types import (
     AuthConfig,
     AuthResult,
     CardArgs,
-    CardFunding,
     CardIssued,
     CardList,
     CardPendingAction,
@@ -269,11 +268,7 @@ def _card_view_fields(raw: dict[str, Any]) -> dict[str, Any]:
         "consumer_id": raw.get("consumer_id"),
         "created_at": raw.get("created_at"),
         "available_actions": _str_list(raw.get("available_actions")),
-        "funding": (
-            CardFunding(asset=str(funding.get("asset", "USDC")))
-            if isinstance(funding, dict)
-            else None
-        ),
+        "funding": dict(funding) if isinstance(funding, dict) else None,
     }
 
 

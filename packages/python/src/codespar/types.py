@@ -670,13 +670,6 @@ class CardSelection:
 
 
 @dataclass(slots=True)
-class CardFunding:
-    """Funding of a ``rain_usd`` card (USDC). Never mixed into ``currency``."""
-
-    asset: str = "USDC"
-
-
-@dataclass(slots=True)
 class CardView:
     """The card view: get, controls, list items."""
 
@@ -692,7 +685,9 @@ class CardView:
     consumer_id: str | None = None
     created_at: str | None = None
     available_actions: list[str] = field(default_factory=list)
-    funding: CardFunding | None = None
+    #: How the card is funded, as the server reports it for its program
+    #: (the served contract's fields, passed through unchanged).
+    funding: dict[str, Any] | None = None
 
 
 @dataclass(slots=True)
