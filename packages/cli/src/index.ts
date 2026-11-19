@@ -885,6 +885,7 @@ cardSubcommand("issue", "Issue a card; the currency picks the program unless --p
   .option("--provider <issuer>", "pomelo | rain (optional)")
   .option("--mandate-id <id>", "Mandate the card spends under; its currency must equal the card's (required)")
   .option("--consumer-id <id>", "Card holder, a consumer of this project (required)")
+  .option("--holder-consumer-id <id>", "A company's pomelo_brl card only (required there): the person who will hold it, as their own consumer")
   .option("--idempotency-key <key>", "Required. The same key resumes the same request; it never issues a second card")
   .option("--holder <json>", "Pomelo cardholder identity as JSON (pomelo_brl): full_name, email, birthdate, document, address, phone?")
   .action(async (opts: CardCliOpts) => {

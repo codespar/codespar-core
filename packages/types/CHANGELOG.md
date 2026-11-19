@@ -30,7 +30,16 @@
     - `processing` / `uncertain`: `retry_after_seconds`, plus `note` and `issuer_code` on uncertain;
     - `refused`.
   - A definitive issuer failure is a refusal, never a state. A result with no `state` is a card view or a list.
-- `CardReadiness` / `CardProgramReadiness` / `CardRequirement`, for `GET /v1/cards/readiness`.
+- `CardReadiness` / `CardProgramReadiness` / `CardRequirement`, for `GET /v1/cards/readiness`:
+  - `mode`;
+  - `missing_fields`, `mandate_id` and `bound_api_key_ids` on a requirement;
+  - the kinds `issuer_capability_pending` and `verify_company_representative`.
+- `CardFunding` (`{ source: "wallet", currency: "BRL" }`: what a rain_usd card spends) and `CardProgramSettlement` (`{ asset: "USDC", by: "codespar" }`: a program fact, never what a card spends), both on `CardProgramAvailability`.
+- `CardView.payment_token` (`ready | pending | not_configured`, Pomelo).
+- `CardView.network` (`visa | mastercard | null`).
+- `holder_consumer_id` on issue (a company's pomelo_brl card).
+- The refusal codes `card_control_failed` and `card_control_uncertain`.
+- Freeze, unfreeze and cancel on both programs.
 - The scenario manifest moves to 0.12.0.
 
 ## 0.11.7 — 2026-10-30

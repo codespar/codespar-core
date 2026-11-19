@@ -109,7 +109,7 @@ export function fakeSession(
         status: "active" as const,
         issuer_status: "ACTIVE",
         last4: "4242",
-        network: "MASTERCARD",
+        network: "mastercard" as const,
         mandate_id: "mnd_fake",
         consumer_id: "cons_fake",
         created_at: new Date(0).toISOString(),

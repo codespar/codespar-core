@@ -14,6 +14,7 @@ export interface CardFlags {
   provider?: string;
   mandateId?: string;
   consumerId?: string;
+  holderConsumerId?: string;
   idempotencyKey?: string;
   issuer?: string;
   reason?: string;
@@ -36,6 +37,7 @@ const FLAG_TO_ARG: ReadonlyArray<[keyof CardFlags, string]> = [
   ["provider", "provider"],
   ["mandateId", "mandate_id"],
   ["consumerId", "consumer_id"],
+  ["holderConsumerId", "holder_consumer_id"],
   ["idempotencyKey", "idempotency_key"],
   ["issuer", "issuer"],
   ["reason", "reason"],
@@ -137,14 +139,16 @@ function viewPairs(v: CardView): Array<[string, string]> {
  * and a script branches on `state` in `--json`. None of them ever suggests a
  * new key: processing and uncertain resolve on the same one.
  */
-export function renderCardResult(action: string, result: CardResult, asJson: boolean): void {
+export function renderCardResult(action: string, result: CardResult, asJson: boolean, args?: CardArgs): void {
   if (result.state === "refused") {
     // A definitive issuer refusal is a refusal too (card_issue_refused, or
     // card_issue_request_failed with failure_code on a later call with the
     // same key): a failure for the exit code.
     const failure = result.failure_code ? ` [failure_code ${result.failure_code}]` : "";
+    // The issuer may or may not have applied the change: read before acting again.
+    const hint = result.code === "card_control_uncertain" && args && "card_id" in args ? ` Read it again: codespar card get ${args.card_id}.` : "";
     throw new HttpError(
-      `card ${action} refused: ${result.code}${result.reason ? ` (${result.reason})` : ""}${failure}${result.message ? ` — ${result.message}` : ""}`,
+      `card ${action} refused: ${result.code}${result.reason ? ` (${result.reason})` : ""}${failure}${result.message ? ` — ${result.message}` : ""}${hint}`,
       { status: result.http_status, code: result.code, body: result },
     );
   }
@@ -209,7 +213,7 @@ export async function cardCommand(action: string, cardId: string | undefined, op
   const session = await cs.create(opts.user ?? "cli-user", { servers: [] });
   try {
     const result = await session.card(args);
-    renderCardResult(action, result, opts.json === true);
+    renderCardResult(action, result, opts.json === true, args);
   } finally {
     await session.close();
   }

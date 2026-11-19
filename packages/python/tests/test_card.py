@@ -19,6 +19,7 @@ from codespar import (
     ApiError,
     AsyncCodeSpar,
     CardArgs,
+    CardFunding,
     CardIssued,
     CardList,
     CardPendingHuman,
@@ -127,8 +128,8 @@ async def test_issue_dispatches_codespar_card_and_returns_issued(httpx_mock: HTT
     assert result.card.issuer_status == "notActivated"
     assert result.card.available_actions == []
     assert result.card.network is None
-    # Passed through as served; the client restates none of its fields.
-    assert result.card.funding == {"source": "wallet", "currency": "BRL"}
+    assert result.card.funding == CardFunding(source="wallet", currency="BRL")
+    assert result.card.payment_token is None
     assert result.authorization_id == "caia_1"
     assert result.authorization_active is True
     assert result.selection is not None
@@ -527,3 +528,49 @@ async def test_issue_sends_holder(httpx_mock: HTTPXMock) -> None:
             )
         )
     assert _sent(httpx_mock)["input"]["holder"] == holder
+
+
+@pytest.mark.asyncio
+async def test_funding_outside_the_contract_is_refused_not_guessed(httpx_mock: HTTPXMock) -> None:
+    """The old {asset: USDC} shape is not the contract: a parse error, never a silent pass."""
+    _mock_session(httpx_mock)
+    httpx_mock.add_response(
+        url=EXECUTE, method="POST", json=_envelope({**RAIN_VIEW, "funding": {"asset": "USDC"}})
+    )
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        session = await cs.create("consumer_123", servers=[])
+        with pytest.raises(ApiError, match="funding outside the published contract"):
+            await session.card(CardArgs(action="get", card_id="rcrd_abc"))
+
+
+@pytest.mark.asyncio
+async def test_pomelo_payment_token_and_company_holder(httpx_mock: HTTPXMock) -> None:
+    _mock_session(httpx_mock)
+    view = {
+        **RAIN_VIEW,
+        "id": "icrd_1",
+        "issuer": "pomelo",
+        "program": "pomelo_brl",
+        "currency": "BRL",
+        "network": "mastercard",
+        "payment_token": "pending",
+        "available_actions": ["freeze", "cancel"],
+    }
+    del view["funding"]
+    httpx_mock.add_response(url=EXECUTE, method="POST", json=_envelope(_issued(view)))
+    async with AsyncCodeSpar(api_key="csk_test_x") as cs:
+        session = await cs.create("consumer_123", servers=[])
+        result = await session.card(
+            CardArgs(
+                action="issue",
+                currency="BRL",
+                mandate_id="m",
+                consumer_id="cons_company",
+                holder_consumer_id="cons_person",
+                idempotency_key="k",
+            )
+        )
+    assert isinstance(result, CardIssued)
+    assert result.card.payment_token == "pending"
+    assert result.card.funding is None
+    assert _sent(httpx_mock)["input"]["holder_consumer_id"] == "cons_person"

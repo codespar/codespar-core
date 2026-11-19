@@ -24,6 +24,7 @@ from .types import (
     AuthConfig,
     AuthResult,
     CardArgs,
+    CardFunding,
     CardIssued,
     CardList,
     CardPendingAction,
@@ -253,6 +254,14 @@ def _parse_card_selection(raw: Any) -> CardSelection | None:
     )
 
 
+def _parse_card_funding(raw: Any) -> CardFunding | None:
+    if not isinstance(raw, dict):
+        return None
+    if raw.get("source") != "wallet" or raw.get("currency") != "BRL":
+        raise ApiError("card: funding outside the published contract", status=0, body=raw)
+    return CardFunding()
+
+
 def _card_view_fields(raw: dict[str, Any]) -> dict[str, Any]:
     funding = raw.get("funding")
     return {
@@ -268,7 +277,10 @@ def _card_view_fields(raw: dict[str, Any]) -> dict[str, Any]:
         "consumer_id": raw.get("consumer_id"),
         "created_at": raw.get("created_at"),
         "available_actions": _str_list(raw.get("available_actions")),
-        "funding": dict(funding) if isinstance(funding, dict) else None,
+        "funding": _parse_card_funding(funding),
+        "payment_token": (
+            raw.get("payment_token") if isinstance(raw.get("payment_token"), str) else None
+        ),
     }
 
 
@@ -878,6 +890,7 @@ class AsyncSession:
             "provider",
             "mandate_id",
             "consumer_id",
+            "holder_consumer_id",
             "idempotency_key",
             "holder",
             "card_id",

@@ -1,6 +1,6 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 6941cbee6488d220240741e9147cd018de80426af81d3fc02aa32dd757bd2224, fetched 2026-11-19T02:03:13.382Z
-//         from candidate:ffa66ce789ab6284cab9f831ba73025f0a5afeae/openapi-candidate.json, API 0.3.0).
+// Source: openapi-snapshot.json (sha256 3dfc154cf3a516dad74db03ccc4ff869ef99af8376944b6f37ab8aebd4d68c5a, fetched 2026-11-19T03:38:42.091Z
+//         from candidate:05f75845c051e7e8cba908547a9a2327cd1286e4/openapi-candidate.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
     "/.well-known/oauth-protected-resource": {
@@ -11993,7 +11993,7 @@ export interface paths {
                                 /** @enum {string} */
                                 program: "pomelo_brl" | "rain_usd";
                                 /**
-                                 * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                                 * @description The CARD currency. What a Rain card spends is in `funding` (the account's BRL wallet), never here.
                                  * @enum {string}
                                  */
                                 currency: "BRL" | "USD";
@@ -12008,12 +12008,20 @@ export interface paths {
                                 consumer_id: string | null;
                                 /** Format: date-time */
                                 created_at: string;
-                                /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                                /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain active: freeze, cancel; blocked (Rain locked): unfreeze, cancel; not_activated: cancel; canceled: none. */
                                 available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                                /** @description Rain cards: what the card spends, the account's CodeSpar BRL wallet (the consumer's for a PF holder, the project's account wallet for a PJ), priced in BRL at authorization. Never the settlement asset. */
                                 funding?: {
                                     /** @enum {string} */
-                                    asset: "USDC";
+                                    source: "wallet";
+                                    /** @enum {string} */
+                                    currency: "BRL";
                                 };
+                                /**
+                                 * @description Pomelo cards only: whether the card can be spent through CodeSpar's CDE. `ready`: tokenized. `pending`: the card exists but its tokenization did not complete; retry the same Idempotency-Key (or resume the request): the same card is answered and the tokenization is retried, never a new card. `not_configured`: this deployment has no CDE. Never a token value.
+                                 * @enum {string}
+                                 */
+                                payment_token?: "ready" | "pending" | "not_configured";
                             }[];
                         };
                     };
@@ -12070,6 +12078,7 @@ export interface paths {
                         provider?: string | null;
                         mandate_id: string;
                         consumer_id: string;
+                        holder_consumer_id?: string;
                         holder?: {
                             full_name: string;
                             /** Format: email */
@@ -12130,7 +12139,7 @@ export interface paths {
                                 /** @enum {string} */
                                 program: "pomelo_brl" | "rain_usd";
                                 /**
-                                 * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                                 * @description The CARD currency. What a Rain card spends is in `funding` (the account's BRL wallet), never here.
                                  * @enum {string}
                                  */
                                 currency: "BRL" | "USD";
@@ -12145,12 +12154,20 @@ export interface paths {
                                 consumer_id: string | null;
                                 /** Format: date-time */
                                 created_at: string;
-                                /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                                /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain active: freeze, cancel; blocked (Rain locked): unfreeze, cancel; not_activated: cancel; canceled: none. */
                                 available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                                /** @description Rain cards: what the card spends, the account's CodeSpar BRL wallet (the consumer's for a PF holder, the project's account wallet for a PJ), priced in BRL at authorization. Never the settlement asset. */
                                 funding?: {
                                     /** @enum {string} */
-                                    asset: "USDC";
+                                    source: "wallet";
+                                    /** @enum {string} */
+                                    currency: "BRL";
                                 };
+                                /**
+                                 * @description Pomelo cards only: whether the card can be spent through CodeSpar's CDE. `ready`: tokenized. `pending`: the card exists but its tokenization did not complete; retry the same Idempotency-Key (or resume the request): the same card is answered and the tokenization is retried, never a new card. `not_configured`: this deployment has no CDE. Never a token value.
+                                 * @enum {string}
+                                 */
+                                payment_token?: "ready" | "pending" | "not_configured";
                             };
                             /** @description The automated issuance authorization in force when the issuer was called. */
                             authorization_id: string | null;
@@ -12192,7 +12209,7 @@ export interface paths {
                                 /** @enum {string} */
                                 program: "pomelo_brl" | "rain_usd";
                                 /**
-                                 * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                                 * @description The CARD currency. What a Rain card spends is in `funding` (the account's BRL wallet), never here.
                                  * @enum {string}
                                  */
                                 currency: "BRL" | "USD";
@@ -12207,12 +12224,20 @@ export interface paths {
                                 consumer_id: string | null;
                                 /** Format: date-time */
                                 created_at: string;
-                                /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                                /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain active: freeze, cancel; blocked (Rain locked): unfreeze, cancel; not_activated: cancel; canceled: none. */
                                 available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                                /** @description Rain cards: what the card spends, the account's CodeSpar BRL wallet (the consumer's for a PF holder, the project's account wallet for a PJ), priced in BRL at authorization. Never the settlement asset. */
                                 funding?: {
                                     /** @enum {string} */
-                                    asset: "USDC";
+                                    source: "wallet";
+                                    /** @enum {string} */
+                                    currency: "BRL";
                                 };
+                                /**
+                                 * @description Pomelo cards only: whether the card can be spent through CodeSpar's CDE. `ready`: tokenized. `pending`: the card exists but its tokenization did not complete; retry the same Idempotency-Key (or resume the request): the same card is answered and the tokenization is retried, never a new card. `not_configured`: this deployment has no CDE. Never a token value.
+                                 * @enum {string}
+                                 */
+                                payment_token?: "ready" | "pending" | "not_configured";
                             };
                             /** @description The automated issuance authorization in force when the issuer was called. */
                             authorization_id: string | null;
@@ -12252,8 +12277,11 @@ export interface paths {
                             pending_action: {
                                 /** @description Stable for the same issue request and kind. */
                                 id: string;
-                                /** @enum {string} */
-                                kind: "issuer_kyc" | "accept_terms" | "authorize_automated_issuance" | "bind_key_to_mandate" | "complete_holder_profile";
+                                /**
+                                 * @description `verify_company_representative` (pomelo_brl for a company, actor `company_signatory`): the legal representative of the company's approved onboarding completes their own onboarding (their CPF) in the dashboard, then the SAME request resumes.
+                                 * @enum {string}
+                                 */
+                                kind: "issuer_kyc" | "accept_terms" | "authorize_automated_issuance" | "bind_key_to_mandate" | "complete_holder_profile" | "verify_company_representative";
                                 /**
                                  * @description `holder` acts for themselves (personal terms, KYC); `company_signatory` signs for the company (PJ) or the holder (PF) authorizes issuance; `org_admin` configures.
                                  * @enum {string}
@@ -12500,11 +12528,21 @@ export interface paths {
                                 currency: "BRL" | "USD";
                                 available: boolean;
                                 /** @enum {string} */
-                                reason?: "not_configured" | "not_verified" | "verify_failed" | "live_blocked" | "account_not_eligible" | "issuer_disabled" | "issuer_not_supported";
+                                reason?: "not_configured" | "not_verified" | "verify_failed" | "live_blocked" | "account_not_eligible" | "issuer_disabled" | "issuer_not_supported" | "pomelo_pj_authority_source";
                                 operations: ("issue" | "get" | "list" | "freeze" | "unfreeze" | "cancel")[];
+                                /** @description What the program's cards spend: the account's CodeSpar BRL wallet (rain_usd), priced in BRL at authorization. */
                                 funding?: {
                                     /** @enum {string} */
+                                    source: "wallet";
+                                    /** @enum {string} */
+                                    currency: "BRL";
+                                };
+                                /** @description How CodeSpar settles the program with the issuer, from its own treasury (rain_usd: USDC). A program fact: never what a card or its holder spends. */
+                                settlement?: {
+                                    /** @enum {string} */
                                     asset: "USDC";
+                                    /** @enum {string} */
+                                    by: "codespar";
                                 };
                             }[];
                         };
@@ -12534,10 +12572,12 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description The holder. */
+                    /** @description The holder (for a company's pomelo_brl card, the company's consumer). */
                     consumer_id?: string;
                     /** @description The mandate the card would stand on; the authorization is bound to it. */
                     mandate_id?: string;
+                    /** @description A company's pomelo_brl card: the person who would hold it, as their own consumer. */
+                    holder_consumer_id?: string;
                     /** @description Default: `person` for a dashboard session, `automated` for an API key. */
                     mode?: "automated" | "person";
                 };
@@ -12568,8 +12608,11 @@ export interface paths {
                                 currency: "BRL" | "USD";
                                 ready: boolean;
                                 requirements: {
-                                    /** @enum {string} */
-                                    kind: "environment" | "integration_connected" | "bind_key_to_mandate" | "complete_holder_profile" | "issuer_kyc" | "accept_terms" | "authorize_automated_issuance";
+                                    /**
+                                     * @description Two items appear only for pomelo_brl on a company (PJ) account. `issuer_capability_pending`: blocked, actor `org_admin`, reason `pomelo_pj_authority_source`; no approved onboarding records who acts for the company at Pomelo (its legal representative), and nothing on the company's side unblocks it now (refusal `card_issuer_unavailable`, with the programs that are available). `verify_company_representative`: actor `company_signatory`; pending, reason `representative_onboarding_required`, until that recorded representative completes their own onboarding (their CPF) in the dashboard; done once a member is the representative.
+                                     * @enum {string}
+                                     */
+                                    kind: "environment" | "integration_connected" | "issuer_capability_pending" | "verify_company_representative" | "bind_key_to_mandate" | "complete_holder_profile" | "issuer_kyc" | "accept_terms" | "authorize_automated_issuance";
                                     /** @enum {string} */
                                     status: "done" | "pending" | "blocked" | "not_applicable";
                                     /** @enum {string} */
@@ -12656,7 +12699,7 @@ export interface paths {
                             /** @enum {string} */
                             program: "pomelo_brl" | "rain_usd";
                             /**
-                             * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                             * @description The CARD currency. What a Rain card spends is in `funding` (the account's BRL wallet), never here.
                              * @enum {string}
                              */
                             currency: "BRL" | "USD";
@@ -12671,12 +12714,20 @@ export interface paths {
                             consumer_id: string | null;
                             /** Format: date-time */
                             created_at: string;
-                            /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                            /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain active: freeze, cancel; blocked (Rain locked): unfreeze, cancel; not_activated: cancel; canceled: none. */
                             available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                            /** @description Rain cards: what the card spends, the account's CodeSpar BRL wallet (the consumer's for a PF holder, the project's account wallet for a PJ), priced in BRL at authorization. Never the settlement asset. */
                             funding?: {
                                 /** @enum {string} */
-                                asset: "USDC";
+                                source: "wallet";
+                                /** @enum {string} */
+                                currency: "BRL";
                             };
+                            /**
+                             * @description Pomelo cards only: whether the card can be spent through CodeSpar's CDE. `ready`: tokenized. `pending`: the card exists but its tokenization did not complete; retry the same Idempotency-Key (or resume the request): the same card is answered and the tokenization is retried, never a new card. `not_configured`: this deployment has no CDE. Never a token value.
+                             * @enum {string}
+                             */
+                            payment_token?: "ready" | "pending" | "not_configured";
                         } | {
                             /**
                              * @description A person must act; nothing was sent to the issuer for this request since the last answer.
@@ -12702,8 +12753,11 @@ export interface paths {
                             pending_action: {
                                 /** @description Stable for the same issue request and kind. */
                                 id: string;
-                                /** @enum {string} */
-                                kind: "issuer_kyc" | "accept_terms" | "authorize_automated_issuance" | "bind_key_to_mandate" | "complete_holder_profile";
+                                /**
+                                 * @description `verify_company_representative` (pomelo_brl for a company, actor `company_signatory`): the legal representative of the company's approved onboarding completes their own onboarding (their CPF) in the dashboard, then the SAME request resumes.
+                                 * @enum {string}
+                                 */
+                                kind: "issuer_kyc" | "accept_terms" | "authorize_automated_issuance" | "bind_key_to_mandate" | "complete_holder_profile" | "verify_company_representative";
                                 /**
                                  * @description `holder` acts for themselves (personal terms, KYC); `company_signatory` signs for the company (PJ) or the holder (PF) authorizes issuance; `org_admin` configures.
                                  * @enum {string}
@@ -12766,7 +12820,7 @@ export interface paths {
                                 /** @enum {string} */
                                 program: "pomelo_brl" | "rain_usd";
                                 /**
-                                 * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                                 * @description The CARD currency. What a Rain card spends is in `funding` (the account's BRL wallet), never here.
                                  * @enum {string}
                                  */
                                 currency: "BRL" | "USD";
@@ -12781,12 +12835,20 @@ export interface paths {
                                 consumer_id: string | null;
                                 /** Format: date-time */
                                 created_at: string;
-                                /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                                /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain active: freeze, cancel; blocked (Rain locked): unfreeze, cancel; not_activated: cancel; canceled: none. */
                                 available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                                /** @description Rain cards: what the card spends, the account's CodeSpar BRL wallet (the consumer's for a PF holder, the project's account wallet for a PJ), priced in BRL at authorization. Never the settlement asset. */
                                 funding?: {
                                     /** @enum {string} */
-                                    asset: "USDC";
+                                    source: "wallet";
+                                    /** @enum {string} */
+                                    currency: "BRL";
                                 };
+                                /**
+                                 * @description Pomelo cards only: whether the card can be spent through CodeSpar's CDE. `ready`: tokenized. `pending`: the card exists but its tokenization did not complete; retry the same Idempotency-Key (or resume the request): the same card is answered and the tokenization is retried, never a new card. `not_configured`: this deployment has no CDE. Never a token value.
+                                 * @enum {string}
+                                 */
+                                payment_token?: "ready" | "pending" | "not_configured";
                             };
                             /** @description The automated issuance authorization in force when the issuer was called. */
                             authorization_id: string | null;
@@ -12854,7 +12916,7 @@ export interface paths {
         put?: never;
         /**
          * Freeze a card
-         * @description Routed by the card's recorded issuer. `pomelo_brl` applies it at Pomelo and answers the card view; `rain_usd` has no lock/cancel call and answers `422 card_action_unsupported`. Requires `cards:issue`.
+         * @description Routed by the card's recorded issuer. `pomelo_brl` applies it at Pomelo; `rain_usd` at Rain (freeze = locked, reversible; unfreeze = active; cancel = canceled, PERMANENT; Rain's own card update stays the source of truth, and Rain may lock a card on its own). Cancel cannot be undone on either issuer. Both answer the card view. Requires `cards:issue`.
          */
         post: {
             parameters: {
@@ -12889,7 +12951,7 @@ export interface paths {
                             /** @enum {string} */
                             program: "pomelo_brl" | "rain_usd";
                             /**
-                             * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                             * @description The CARD currency. What a Rain card spends is in `funding` (the account's BRL wallet), never here.
                              * @enum {string}
                              */
                             currency: "BRL" | "USD";
@@ -12904,12 +12966,20 @@ export interface paths {
                             consumer_id: string | null;
                             /** Format: date-time */
                             created_at: string;
-                            /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                            /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain active: freeze, cancel; blocked (Rain locked): unfreeze, cancel; not_activated: cancel; canceled: none. */
                             available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                            /** @description Rain cards: what the card spends, the account's CodeSpar BRL wallet (the consumer's for a PF holder, the project's account wallet for a PJ), priced in BRL at authorization. Never the settlement asset. */
                             funding?: {
                                 /** @enum {string} */
-                                asset: "USDC";
+                                source: "wallet";
+                                /** @enum {string} */
+                                currency: "BRL";
                             };
+                            /**
+                             * @description Pomelo cards only: whether the card can be spent through CodeSpar's CDE. `ready`: tokenized. `pending`: the card exists but its tokenization did not complete; retry the same Idempotency-Key (or resume the request): the same card is answered and the tokenization is retried, never a new card. `not_configured`: this deployment has no CDE. Never a token value.
+                             * @enum {string}
+                             */
+                            payment_token?: "ready" | "pending" | "not_configured";
                         };
                     };
                 };
@@ -13013,7 +13083,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The program does not support it, or the project is Live. */
+                /** @description The project is Live, or (no program today) the program does not support the action. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -13033,7 +13103,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The issuer did not apply the change; the card is as it was. */
+                /** @description `card_control_failed`: the issuer did not apply the change, the card is as it was. `card_control_uncertain`: the issuer may or may not have applied it; read the card again. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -13042,7 +13112,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "card_control_failed";
+                                code: "card_control_failed" | "card_control_uncertain";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -13053,7 +13123,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The issuer's credentials could not be read. */
+                /** @description The issuer's credentials could not be read, or its lane is off; nothing was sent. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -13062,7 +13132,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "vault_unavailable";
+                                code: "vault_unavailable" | "card_control_failed";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -13092,7 +13162,7 @@ export interface paths {
         put?: never;
         /**
          * Unfreeze a card
-         * @description Routed by the card's recorded issuer. `pomelo_brl` applies it at Pomelo and answers the card view; `rain_usd` has no lock/cancel call and answers `422 card_action_unsupported`. Requires `cards:issue`.
+         * @description Routed by the card's recorded issuer. `pomelo_brl` applies it at Pomelo; `rain_usd` at Rain (freeze = locked, reversible; unfreeze = active; cancel = canceled, PERMANENT; Rain's own card update stays the source of truth, and Rain may lock a card on its own). Cancel cannot be undone on either issuer. Both answer the card view. Requires `cards:issue`.
          */
         post: {
             parameters: {
@@ -13127,7 +13197,7 @@ export interface paths {
                             /** @enum {string} */
                             program: "pomelo_brl" | "rain_usd";
                             /**
-                             * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                             * @description The CARD currency. What a Rain card spends is in `funding` (the account's BRL wallet), never here.
                              * @enum {string}
                              */
                             currency: "BRL" | "USD";
@@ -13142,12 +13212,20 @@ export interface paths {
                             consumer_id: string | null;
                             /** Format: date-time */
                             created_at: string;
-                            /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                            /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain active: freeze, cancel; blocked (Rain locked): unfreeze, cancel; not_activated: cancel; canceled: none. */
                             available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                            /** @description Rain cards: what the card spends, the account's CodeSpar BRL wallet (the consumer's for a PF holder, the project's account wallet for a PJ), priced in BRL at authorization. Never the settlement asset. */
                             funding?: {
                                 /** @enum {string} */
-                                asset: "USDC";
+                                source: "wallet";
+                                /** @enum {string} */
+                                currency: "BRL";
                             };
+                            /**
+                             * @description Pomelo cards only: whether the card can be spent through CodeSpar's CDE. `ready`: tokenized. `pending`: the card exists but its tokenization did not complete; retry the same Idempotency-Key (or resume the request): the same card is answered and the tokenization is retried, never a new card. `not_configured`: this deployment has no CDE. Never a token value.
+                             * @enum {string}
+                             */
+                            payment_token?: "ready" | "pending" | "not_configured";
                         };
                     };
                 };
@@ -13251,7 +13329,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The program does not support it, or the project is Live. */
+                /** @description The project is Live, or (no program today) the program does not support the action. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -13271,7 +13349,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The issuer did not apply the change; the card is as it was. */
+                /** @description `card_control_failed`: the issuer did not apply the change, the card is as it was. `card_control_uncertain`: the issuer may or may not have applied it; read the card again. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -13280,7 +13358,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "card_control_failed";
+                                code: "card_control_failed" | "card_control_uncertain";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -13291,7 +13369,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The issuer's credentials could not be read. */
+                /** @description The issuer's credentials could not be read, or its lane is off; nothing was sent. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -13300,7 +13378,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "vault_unavailable";
+                                code: "vault_unavailable" | "card_control_failed";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -13330,7 +13408,7 @@ export interface paths {
         put?: never;
         /**
          * Cancel a card
-         * @description Routed by the card's recorded issuer. `pomelo_brl` applies it at Pomelo and answers the card view; `rain_usd` has no lock/cancel call and answers `422 card_action_unsupported`. Requires `cards:issue`.
+         * @description Routed by the card's recorded issuer. `pomelo_brl` applies it at Pomelo; `rain_usd` at Rain (freeze = locked, reversible; unfreeze = active; cancel = canceled, PERMANENT; Rain's own card update stays the source of truth, and Rain may lock a card on its own). Cancel cannot be undone on either issuer. Both answer the card view. Requires `cards:issue`.
          */
         post: {
             parameters: {
@@ -13365,7 +13443,7 @@ export interface paths {
                             /** @enum {string} */
                             program: "pomelo_brl" | "rain_usd";
                             /**
-                             * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                             * @description The CARD currency. What a Rain card spends is in `funding` (the account's BRL wallet), never here.
                              * @enum {string}
                              */
                             currency: "BRL" | "USD";
@@ -13380,12 +13458,20 @@ export interface paths {
                             consumer_id: string | null;
                             /** Format: date-time */
                             created_at: string;
-                            /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                            /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain active: freeze, cancel; blocked (Rain locked): unfreeze, cancel; not_activated: cancel; canceled: none. */
                             available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                            /** @description Rain cards: what the card spends, the account's CodeSpar BRL wallet (the consumer's for a PF holder, the project's account wallet for a PJ), priced in BRL at authorization. Never the settlement asset. */
                             funding?: {
                                 /** @enum {string} */
-                                asset: "USDC";
+                                source: "wallet";
+                                /** @enum {string} */
+                                currency: "BRL";
                             };
+                            /**
+                             * @description Pomelo cards only: whether the card can be spent through CodeSpar's CDE. `ready`: tokenized. `pending`: the card exists but its tokenization did not complete; retry the same Idempotency-Key (or resume the request): the same card is answered and the tokenization is retried, never a new card. `not_configured`: this deployment has no CDE. Never a token value.
+                             * @enum {string}
+                             */
+                            payment_token?: "ready" | "pending" | "not_configured";
                         };
                     };
                 };
@@ -13489,7 +13575,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The program does not support it, or the project is Live. */
+                /** @description The project is Live, or (no program today) the program does not support the action. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -13509,7 +13595,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The issuer did not apply the change; the card is as it was. */
+                /** @description `card_control_failed`: the issuer did not apply the change, the card is as it was. `card_control_uncertain`: the issuer may or may not have applied it; read the card again. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -13518,7 +13604,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "card_control_failed";
+                                code: "card_control_failed" | "card_control_uncertain";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -13529,7 +13615,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The issuer's credentials could not be read. */
+                /** @description The issuer's credentials could not be read, or its lane is off; nothing was sent. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -13538,7 +13624,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "vault_unavailable";
+                                code: "vault_unavailable" | "card_control_failed";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;

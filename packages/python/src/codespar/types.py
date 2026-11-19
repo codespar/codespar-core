@@ -653,6 +653,9 @@ class CardArgs:
     mandate_id: str | None = None
     consumer_id: str | None = None
     idempotency_key: str | None = None
+    #: A company's pomelo_brl card only, and required there: the person who
+    #: will hold the card, as their own consumer.
+    holder_consumer_id: str | None = None
     #: Pomelo cardholder identity (pomelo_brl): full_name, email, birthdate,
     #: document {type, value, issuing_country}, address {...}, phone. Rain refuses it.
     holder: dict[str, Any] | None = None
@@ -667,6 +670,23 @@ class CardSelection:
 
     provider_requested: str | None = None
     chosen_by: str = "currency"  # "provider" | "currency"
+
+
+@dataclass(slots=True)
+class CardFunding:
+    """What a card spends (rain_usd): the account's CodeSpar BRL wallet,
+    priced in BRL at authorization. Never the program's settlement asset."""
+
+    source: Literal["wallet"] = "wallet"
+    currency: Literal["BRL"] = "BRL"
+
+
+@dataclass(slots=True)
+class CardProgramSettlement:
+    """How CodeSpar settles a program with its issuer (a program fact)."""
+
+    asset: Literal["USDC"] = "USDC"
+    by: Literal["codespar"] = "codespar"
 
 
 @dataclass(slots=True)
@@ -685,9 +705,10 @@ class CardView:
     consumer_id: str | None = None
     created_at: str | None = None
     available_actions: list[str] = field(default_factory=list)
-    #: How the card is funded, as the server reports it for its program
-    #: (the served contract's fields, passed through unchanged).
-    funding: dict[str, Any] | None = None
+    #: Rain cards: what the card spends (the account's CodeSpar BRL wallet).
+    funding: CardFunding | None = None
+    #: Pomelo cards: CDE tokenization state, "ready" | "pending" | "not_configured".
+    payment_token: str | None = None
 
 
 @dataclass(slots=True)
@@ -777,6 +798,8 @@ class CardProgramAvailability:
     available: bool | None = None
     reason: str | None = None
     operations: list[str] = field(default_factory=list)
+    funding: CardFunding | None = None
+    settlement: CardProgramSettlement | None = None
 
 
 @dataclass(slots=True)

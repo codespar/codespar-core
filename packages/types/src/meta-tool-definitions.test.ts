@@ -552,6 +552,7 @@ describe("wire-shape arg unions match the published definition vocabularies (ent
       "provider",
       "mandate_id",
       "consumer_id",
+      "holder_consumer_id",
       "idempotency_key",
       "holder",
       "card_id",

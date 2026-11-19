@@ -24,7 +24,10 @@ In parity with `@codespar/sdk` 0.17.0.
   - `CardView` and `CardList`;
   - `CardRefusal`: a refusal with a stable code is returned, whether it came in the tool envelope or as a non-2xx answer (`http_status`), and a definitive issuer failure is one.
 - Only a failure with no code raises `ApiError`.
-- `cs.cards.readiness()` reads `GET /v1/cards/readiness`. It returns the typed dicts `CardReadiness`, `CardProgramReadiness` and `CardRequirement`.
+- `cs.cards.readiness()` reads `GET /v1/cards/readiness`.
+- `CardFunding` / `CardProgramSettlement` are typed exactly. A funding outside the contract raises instead of passing through.
+- `CardView.payment_token`.
+- `holder_consumer_id` on `CardArgs`. It returns the typed dicts `CardReadiness`, `CardProgramReadiness` and `CardRequirement`.
 
 ## 0.16.2
 

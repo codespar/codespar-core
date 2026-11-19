@@ -30,7 +30,7 @@ const POMELO_VIEW = {
   status: "active",
   issuer_status: "ACTIVE",
   last4: "4242",
-  network: "MASTERCARD",
+  network: "mastercard",
   mandate_id: "mnd_brl",
   consumer_id: "cons_1",
   created_at: "2026-11-18T12:00:00.000Z",

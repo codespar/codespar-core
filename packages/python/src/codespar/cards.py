@@ -40,6 +40,10 @@ class CardRequirement(_CardRequirementRequired, total=False):
     action_url: str
     reason: str
     pending_action_id: str
+    #: complete_holder_profile: exactly the fields still missing.
+    missing_fields: list[str]
+    mandate_id: str
+    bound_api_key_ids: list[str]
 
 
 class CardProgramReadiness(TypedDict):
@@ -53,6 +57,8 @@ class CardProgramReadiness(TypedDict):
 class CardReadiness(TypedDict):
     """``GET /v1/cards/readiness``."""
 
+    #: ``automated`` (API key / OAuth) or ``person`` (the dashboard).
+    mode: Literal["automated", "person"]
     programs: list[CardProgramReadiness]
 
 

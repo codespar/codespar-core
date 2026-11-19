@@ -831,6 +831,8 @@ export interface CardIssueArgs {
   provider?: CardIssuer;
   mandate_id: string;
   consumer_id: string;
+  /** A company's pomelo_brl card only, and required there: the person who will hold the card, as their own consumer. */
+  holder_consumer_id?: string;
   idempotency_key: string;
   /** Pomelo cardholder identity (pomelo_brl). Without it the issue answers pending_human/complete_holder_profile. Rain refuses it. */
   holder?: CardHolder;
@@ -876,8 +878,10 @@ export interface CardListArgs {
 
 /**
  * action=freeze | unfreeze | cancel, routed by the card's recorded issuer.
- * An action the program does not support (any control on a Rain card) is
- * refused with `card_action_unsupported`.
+ * Both programs support all three (cancel is permanent); an action the
+ * card's state does not allow is refused with `card_action_unsupported`
+ * (see `available_actions`). An issuer answer that may or may not have
+ * applied the change is `card_control_uncertain`: read the card again.
  */
 export interface CardControlArgs {
   action: CardControlAction;
@@ -894,11 +898,27 @@ export interface CardSelection {
 }
 
 /**
- * How a card is funded, as the server reports it for its program. Kept
- * open here: its fields are the served contract's (see the generated
- * OpenAPI types), and nothing in this file restates them.
+ * What a card spends (rain_usd today): the account's CodeSpar BRL wallet,
+ * priced in BRL at authorization. Never the program's settlement asset.
+ * Pinned to the served schema by `card-wire.test.ts` in `@codespar/sdk`.
  */
-export type CardFunding = Record<string, unknown>;
+export interface CardFunding {
+  source: "wallet";
+  currency: "BRL";
+}
+
+/**
+ * How CodeSpar settles a program with its issuer, from its own treasury
+ * (`GET /v1/cards/programs`). A program fact, never what a card or its
+ * holder spends.
+ */
+export interface CardProgramSettlement {
+  asset: "USDC";
+  by: "codespar";
+}
+
+/** Pomelo cards: whether the card can be spent through CodeSpar's CDE. `pending` resolves on the same Idempotency-Key, never a new card. */
+export type CardPaymentToken = "ready" | "pending" | "not_configured";
 
 /** The card view (REST and codespar_card): get, controls, list items, an issued card. */
 export interface CardView {
@@ -911,13 +931,16 @@ export interface CardView {
   status: CardStatus;
   issuer_status: string | null;
   last4: string | null;
-  network: string | null;
+  network: "visa" | "mastercard" | null;
   mandate_id: string | null;
   consumer_id: string | null;
   created_at: string;
-  /** Only what the program supports AND the card state allows (rain: none). */
+  /** Only what the program supports AND the card state allows (both programs: freeze, unfreeze, cancel; cancel is permanent). */
   available_actions: CardControlAction[];
+  /** Rain cards: what the card spends. */
   funding?: CardFunding;
+  /** Pomelo cards: CDE tokenization state. Never a token value. */
+  payment_token?: CardPaymentToken;
 }
 
 /** action=issue, card issued (first call or an idempotent replay). The card view is nested in `card`. */
@@ -1008,7 +1031,8 @@ export type CardUnavailableReason =
   | "live_blocked"
   | "account_not_eligible"
   | "issuer_disabled"
-  | "issuer_not_supported";
+  | "issuer_not_supported"
+  | "pomelo_pj_authority_source";
 
 export type CardRefusalCode =
   | "card_issuer_unavailable"
@@ -1019,6 +1043,8 @@ export type CardRefusalCode =
   | "card_holder_not_eligible"
   | "card_issue_refused"
   | "card_issue_request_failed"
+  | "card_control_failed"
+  | "card_control_uncertain"
   | "idempotency_key_conflict"
   | (string & {});
 
@@ -1030,6 +1056,10 @@ export interface CardProgramAvailability {
   available?: boolean;
   reason?: CardUnavailableReason;
   operations?: CardAction[];
+  /** rain_usd: what its cards spend. */
+  funding?: CardFunding;
+  /** rain_usd: how CodeSpar settles the program with the issuer. */
+  settlement?: CardProgramSettlement;
 }
 
 /**
@@ -1073,7 +1103,12 @@ export type CardResult = CardIssueResult | CardView | CardList;
 /* ── GET /v1/cards/readiness ─────────────────────────────────── */
 
 /** The pending-action kinds plus the two admin/environment checks. */
-export type CardRequirementKind = CardPendingActionKind | "integration_connected" | "environment";
+export type CardRequirementKind =
+  | CardPendingActionKind
+  | "integration_connected"
+  | "environment"
+  | "issuer_capability_pending"
+  | "verify_company_representative";
 
 export type CardRequirementStatus = "done" | "pending" | "blocked" | "not_applicable";
 
@@ -1085,6 +1120,10 @@ export interface CardRequirement {
   action_url?: string;
   reason?: string;
   pending_action_id?: string;
+  /** complete_holder_profile: exactly the fields still missing. */
+  missing_fields?: string[];
+  mandate_id?: string;
+  bound_api_key_ids?: string[];
 }
 
 export interface CardProgramReadiness {
@@ -1097,6 +1136,8 @@ export interface CardProgramReadiness {
 
 /** `GET /v1/cards/readiness` (read-only; person session or API key). */
 export interface CardReadiness {
+  /** `automated`: an API key / OAuth issue. `person`: the competent person in the dashboard. */
+  mode: "automated" | "person";
   programs: CardProgramReadiness[];
 }
 
