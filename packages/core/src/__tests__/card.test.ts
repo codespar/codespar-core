@@ -320,6 +320,7 @@ it("session.issue is gone: no alias, no shim (contract §10.1)", async () => {
 describe("cs.cards.readiness", () => {
   it("GETs /v1/cards/readiness with the client's credentials and returns the checklist", async () => {
     const body: CardReadiness = {
+      mode: "automated",
       programs: [
         {
           program: "rain_usd",

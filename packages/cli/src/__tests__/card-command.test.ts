@@ -212,7 +212,7 @@ describe("codespar card", () => {
 
 describe("codespar card readiness", () => {
   it("GETs /v1/cards/readiness and prints the document in --json", async () => {
-    const doc = { programs: [{ program: "pomelo_brl", issuer: "pomelo", currency: "BRL", ready: true, requirements: [] }] };
+    const doc = { mode: "automated", programs: [{ program: "pomelo_brl", issuer: "pomelo", currency: "BRL", ready: true, requirements: [] }] };
     const urls: string[] = [];
     vi.spyOn(globalThis, "fetch").mockImplementation((input: unknown) => {
       urls.push(String(input));
