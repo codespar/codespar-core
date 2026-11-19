@@ -272,6 +272,10 @@ export const PUBLISHED_GROUPS: readonly GroupSpec[] = [
     name: "payment-links",
     prefix: "/v1/payment-links",
     description: "Payment links: the shareable URL an agent pays over x402/USDC and a person pays via Pix; list, create, read, change, remove, payments, stats",
+  },  {
+    name: "integrations",
+    prefix: "/v1/integrations",
+    description: "Integrations: the card-issuing integration of this project (issuer, program, status, verified_at)",
   },
 ];
 
