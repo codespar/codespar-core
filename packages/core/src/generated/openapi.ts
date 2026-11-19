@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 868a0272e249a736c8f2510fb7e7def491fdb6ee509d85fc09e5f2fb32af33bd, fetched 2026-11-15T23:15:37.743Z
+// Source: openapi-snapshot.json (sha256 1e6a6006fe5e00b10e48e23de7d9c90d61f25fc7fd065bb774f57181382ab426, fetched 2026-11-19T22:56:00.566Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -36,6 +36,54 @@ export interface paths {
                             authorization_servers: string[];
                             bearer_methods_supported: string[];
                             scopes_supported: string[];
+                            /** @description Present only with OAUTH_CONSENT_FLOW=consent. Not an RFC 9728 parameter: it repeats the authorization server's list, so a client that reads only this document learns a client secret is accepted. */
+                            token_endpoint_auth_methods_supported?: string[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/oauth-protected-resource/mcp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Protected-resource metadata for /mcp (RFC 9728, path-suffixed)
+         * @description The RFC 9728 §3.1 path-suffixed copy of the protected-resource metadata, for the remote MCP endpoint `/mcp`. MCP clients try this location before the root one, and the `/mcp` 401's `WWW-Authenticate` `resource_metadata` points here. Identical to `/.well-known/oauth-protected-resource` except `resource`, which is `<origin>/mcp`, the URL the client was given (RFC 9728 §3.3 requires the two to match). Host-aware, like the root copy.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            resource: string;
+                            authorization_servers: string[];
+                            bearer_methods_supported: string[];
+                            scopes_supported: string[];
+                            /** @description Present only with OAUTH_CONSENT_FLOW=consent, as on the root copy. Not an RFC 9728 parameter: it repeats the authorization server's list, so a client that reads only this document learns a client secret is accepted. */
+                            token_endpoint_auth_methods_supported?: string[];
                         };
                     };
                 };
@@ -134,9 +182,9 @@ export interface paths {
         };
         /**
          * Authorization-server metadata (RFC 8414)
-         * @description The three endpoint URLs below, absolute under the issuer, plus what this server supports: `response_types_supported: ["code"]`, `grant_types_supported: ["authorization_code", "refresh_token"]`, `code_challenge_methods_supported: ["S256"]` and `token_endpoint_auth_methods_supported: ["none"]`.
+         * @description The three endpoint URLs below, absolute under the issuer, plus what this server supports: `response_types_supported: ["code"]`, `grant_types_supported: ["authorization_code", "refresh_token"]`, `code_challenge_methods_supported: ["S256"]` and `token_endpoint_auth_methods_supported: ["none"]`, with `client_secret_basic` and `client_secret_post` added (and `offline_access` in `scopes_supported`) only when OAUTH_CONSENT_FLOW=consent.
          *
-         *     Read the last two together: this is a PUBLIC client with no secret, and PKCE S256 is mandatory rather than preferred. `plain` is never advertised and is refused at the authorize endpoint. Host-aware, like the document above.
+         *     Read the last two together. `none` is every dynamically registered client: a PUBLIC client with no secret. The two secret methods are for a client CodeSpar registered ahead of time with a secret. PKCE S256 is mandatory for EVERY client, secret or not, rather than preferred. `plain` is never advertised and is refused at the authorize endpoint. Host-aware, like the document above.
          */
         get: {
             parameters: {
@@ -287,6 +335,8 @@ export interface paths {
          * @description Returns `text/html`, NOT JSON: this is the leg a human completes in a browser, so a generated client should open it rather than call it. `response_type=code`, a registered `client_id`, a `redirect_uri` matching one registered for that client exactly, and `code_challenge` with `code_challenge_method=S256` are all required.
          *
          *     Errors are rendered as HTML with status 400 and are NOT redirected: per RFC 6749 §4.1.2.1 an invalid `client_id`/`redirect_uri` must not be redirected to, and this endpoint keeps that posture for every error so a human sees the reason on the page. A scope request this server cannot satisfy is refused here, before the form asking for a key is drawn.
+         *
+         *     Where the deployment runs signed-in consent (`OAUTH_CONSENT_FLOW=consent`) no key is asked for: a valid request is held server-side and answered with a 302 to the web consent page, where a signed-in admin approves it. An unknown `client_id` or a `redirect_uri` that is not an exact registered match still gets the 400 page and is never redirected; every other refusal (`unsupported_response_type`, `invalid_request`, `invalid_scope`, `invalid_target` for a `resource` that is not this server's MCP endpoint) goes back to `redirect_uri` as an OAuth error with the `state`.
          */
         get: {
             parameters: {
@@ -299,6 +349,8 @@ export interface paths {
                     state?: string;
                     /** @description Space-separated. Requesting more than the pasted key holds is refused. */
                     scope?: string;
+                    /** @description RFC 8707 resource indicator. Under signed-in consent it must name this server's MCP endpoint. */
+                    resource?: string;
                 };
                 header?: never;
                 path?: never;
@@ -314,6 +366,14 @@ export interface paths {
                     content: {
                         "text/html": string;
                     };
+                };
+                /** @description Signed-in consent only: Location is the web consent page, or `redirect_uri` with an OAuth `error` and the `state`. */
+                302: {
+                    headers: {
+                        Location: string;
+                        [name: string]: unknown;
+                    };
+                    content?: never;
                 };
                 /** @description Rendered as HTML, never redirected. */
                 400: {
@@ -332,6 +392,8 @@ export interface paths {
          * @description `application/x-www-form-urlencoded`, submitted by the page above, not by a generated client. The form carries the same authorization-request parameters plus the API key the human pasted.
          *
          *     On success: 302 to `redirect_uri` with `code` and `state`. The code is single-use, short-lived, and bound to the tenant, the client, the redirect URI, the PKCE challenge AND the API key that authorized it — so revoking that key invalidates every token the code goes on to mint, and the token's scopes can never exceed the key's own. On refusal the page re-renders as HTML with 400.
+         *
+         *     Where the deployment runs signed-in consent (`OAUTH_CONSENT_FLOW=consent`) this answers 404 and mints no code: no key is accepted.
          */
         post: {
             parameters: {
@@ -394,7 +456,7 @@ export interface paths {
         put?: never;
         /**
          * Token endpoint — authorization_code and refresh_token grants
-         * @description `application/x-www-form-urlencoded`, unauthenticated (public client, `token_endpoint_auth_method: none`); the authorization code IS the authority. `grant_type=authorization_code` requires `code`, `code_verifier`, `redirect_uri` and `client_id`; `grant_type=refresh_token` requires `refresh_token`. Anything else is 400 `unsupported_grant_type`.
+         * @description `application/x-www-form-urlencoded`. A public client (every dynamically registered one, `token_endpoint_auth_method: none`) is unauthenticated: the authorization code and its PKCE verifier are the authority. A client CodeSpar registered ahead of time with a secret must also authenticate, on BOTH grants, by `client_secret_basic` (`Authorization: Basic` with the url-encoded id and secret) or `client_secret_post` (`client_id` and `client_secret` in the body); a missing or wrong secret is 401 `invalid_client` and leaves the code or refresh token untouched, and both methods at once is 400 `invalid_request`. `grant_type=authorization_code` requires `code`, `code_verifier`, `redirect_uri` and `client_id`; `grant_type=refresh_token` requires `refresh_token`. Anything else is 400 `unsupported_grant_type`.
          *
          *     Redemption is atomic and single-use even under a concurrent retry: a second redemption of the same code sees no row and gets 400 `invalid_grant`. The refresh grant ROTATES — the presented refresh token is revoked and a new one returned, so a client must persist the new value. A refresh chain lives at most 90 days from the consent that began it: past that the refresh grant answers 400 `invalid_grant` and the user has to authorize again. `expires_in` is the access token's lifetime in seconds Responses carry `Cache-Control: no-store` (RFC 6749 §5.1).
          */
@@ -414,6 +476,8 @@ export interface paths {
                         code_verifier?: string;
                         redirect_uri?: string;
                         client_id?: string;
+                        /** @description client_secret_post, for a pre-registered client with a secret only. */
+                        client_secret?: string;
                         refresh_token?: string;
                     };
                 };
@@ -435,7 +499,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `invalid_grant` (code invalid, expired, already used, bound to a different client or redirect_uri, PKCE verification failed, carrying no recorded scope grant, or a refresh chain older than 90 days), `invalid_request`, or `unsupported_grant_type`. */
+                /** @description `invalid_grant` (code invalid, expired, already used, bound to a different client or redirect_uri, PKCE verification failed, carrying no recorded scope grant, or a refresh chain older than 90 days), `invalid_request` (also two client authentication methods at once), or `unsupported_grant_type`. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -444,6 +508,290 @@ export interface paths {
                         "application/json": {
                             error: string;
                             error_description?: string;
+                        };
+                    };
+                };
+                /** @description `invalid_client`: a client registered with a secret presented none, a wrong one, a malformed Basic header, or a Basic id that differs from the body `client_id`. Carries `WWW-Authenticate: Basic` when the request used Basic. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            error_description?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oauth/pending/{handle}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Signed-in consent — read a held authorization request for the consent page
+         * @description What the consent page shows before the person decides: the client, the scopes it would get with the line the page prints for each, when the request expires, and whether the organization the person's session is signed into may finish a consent yet. The first person to read a handle is bound to it. Not an API-key or OAuth-token operation: send the service key and the person's Clerk session token, and no Authorization header.
+         *
+         *     `approverAccess` is the access an approval by this person would give, from their role in the organization their session is signed into: `full` for an owner or admin (a personal account counts as owner), `read_only` for a member, whose grant reaches only the read tools, and `null` for a person with no role there, whose approval is refused. It is a hint for the page's wording only — the decide call resolves the role again at the click. For an approver that is not `full`, the `tools:execute` line reads "Call codespar's read tools (getting started, discovery, payment status)".
+         *
+         *     JSON `{ "error": "<code>" }`. `bearer_token_cannot_decide` (403, an Authorization header was sent), `unauthorized` (401, no valid service key), `user_token_required` / `user_token_invalid` / `user_token_identity_mismatch` / `user_token_wrong_party` (403), `user_token_verification_unconfigured` (503), `rate_limit_exceeded` (429 with `Retry-After`), `pending_not_found` (404), `handle_bound_to_other` (403), `pending_decided` (409), `pending_expired` (410), and 404 `consent_flow_disabled` when the deployment does not run signed-in consent.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description The service key of the web app that renders the consent page. */
+                    "x-codespar-service-key": string;
+                    /** @description The signed-in person's Clerk session token, issued to the consent page's origin. The person is its subject, never a forwarded header. */
+                    "x-codespar-user-token": string;
+                };
+                path: {
+                    /** @description The `request` value of the consent page's URL. */
+                    handle: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            client: {
+                                /** @description The client's display name, sanitized; a placeholder when it registered none. */
+                                name: string;
+                                unverified: boolean;
+                                redirectHost: string;
+                            };
+                            scopes: {
+                                scope: string;
+                                label: string;
+                            }[];
+                            expiresAt: string;
+                            openForActiveOrg: boolean;
+                            /**
+                             * @description What this person's approval would grant: `full`, `read_only` (read tools only), or null (no role; approval refused). A display hint; decide resolves it again.
+                             * @enum {string|null}
+                             */
+                            approverAccess: "full" | "read_only" | null;
+                        };
+                    };
+                };
+                /** @description `unauthorized`: no valid service key. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description A refusal named in `error`; see the description. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `pending_not_found` or `consent_flow_disabled`. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `pending_decided`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `pending_expired`. */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `rate_limit_exceeded`, with `Retry-After`. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oauth/pending/{handle}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signed-in consent — approve or deny a held authorization request
+         * @description The person's decision, made with a Clerk session token minted at the click (older than 120 seconds is 403 `user_token_stale`). Same headers as the read, and no Authorization header. An approval by an owner or admin of the project's organization makes a `full` grant; an approval by a member makes a `read_only` grant whose tool calls are limited to the read tools; a person with no role in that organization is refused `no_role`. Approve or deny, the answer is 200 with the URL to send the browser to: the client's redirect URI with `code` and `state` on approval, or with `error=access_denied` and `state` on deny.
+         *
+         *     Decide-only refusals: `invalid_body` (400), `project_not_in_org` (403), and for an approval `no_role`, `not_open_yet`, `project_archived`, `live_not_available`, `no_grantable_scopes` (403) and `invalid_client` / `invalid_request` (400). None of them consumes the request. JSON `{ "error": "<code>" }`. `bearer_token_cannot_decide` (403, an Authorization header was sent), `unauthorized` (401, no valid service key), `user_token_required` / `user_token_invalid` / `user_token_identity_mismatch` / `user_token_wrong_party` (403), `user_token_verification_unconfigured` (503), `rate_limit_exceeded` (429 with `Retry-After`), `pending_not_found` (404), `handle_bound_to_other` (403), `pending_decided` (409), `pending_expired` (410), and 404 `consent_flow_disabled` when the deployment does not run signed-in consent.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description The service key of the web app that renders the consent page. */
+                    "x-codespar-service-key": string;
+                    /** @description The signed-in person's Clerk session token, issued to the consent page's origin. The person is its subject, never a forwarded header. */
+                    "x-codespar-user-token": string;
+                };
+                path: {
+                    handle: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decision: "approve" | "deny";
+                        /** @description The project the grant is for, in the session's organization. */
+                        projectId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Where to send the browser: the client's redirect URI with the code, or with `access_denied`. */
+                            redirectUrl: string;
+                        };
+                    };
+                };
+                /** @description `invalid_body`, `invalid_client` or `invalid_request`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `unauthorized`: no valid service key. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description A refusal named in `error`, `no_role` among them; see the description. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `pending_not_found` or `consent_flow_disabled`. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `pending_decided`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `pending_expired`. */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `rate_limit_exceeded`, with `Retry-After`. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
                         };
                     };
                 };
@@ -1613,7 +1961,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, api_key.mandate_bound, api_key.mandate_unbound, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.failed, commerce.charge.paid, commerce.charge.payment_notified, commerce.charge.payment_received, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.pix_key_registered, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, api_key.mandate_bound, api_key.mandate_unbound, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.failed, commerce.charge.paid, commerce.charge.payment_notified, commerce.charge.payment_received, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, oauth.consent_denied, oauth.grant_created, oauth.grant_replaced, oauth.grant_revoked, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.pix_key_registered, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
                         event: string;
                         server_id?: string;
                         /**
@@ -1767,7 +2115,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, api_key.mandate_bound, api_key.mandate_unbound, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.failed, commerce.charge.paid, commerce.charge.payment_notified, commerce.charge.payment_received, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.pix_key_registered, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, api_key.mandate_bound, api_key.mandate_unbound, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.failed, commerce.charge.paid, commerce.charge.payment_notified, commerce.charge.payment_received, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, oauth.consent_denied, oauth.grant_created, oauth.grant_replaced, oauth.grant_revoked, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.pix_key_registered, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
                         event: string;
                         server_id?: string;
                         /**
@@ -3303,7 +3651,7 @@ export interface paths {
                                 seed?: {
                                     /** @enum {string} */
                                     state: "awaiting_treasury" | "sending" | "submitted" | "confirmed" | "not_needed" | "needs_attention";
-                                    /** @description USDC the Test treasury sends (the difference to 100 USDC), 6 decimals. */
+                                    /** @description USDC the Test treasury sends (the difference to 20 USDC), 6 decimals. */
                                     amount_atomic: string;
                                     treasury_address: string;
                                     tx_hash: string | null;
@@ -7934,6 +8282,10 @@ export interface paths {
                                 limits: {
                                     total_minor: number | null;
                                     per_transaction_minor: number | null;
+                                    /** @description The amount the bank lets be pulled per month, over the bank's own monthly window. Present only on a consent that has a monthly limit. */
+                                    monthly_minor?: number;
+                                    /** @description How many pulls the bank lets through per month, over the bank's own monthly window. Present only when the bank stated one. */
+                                    monthly_quantity?: number;
                                 } | null;
                                 created_at: string;
                                 authorized_at: string | null;
@@ -8000,6 +8352,8 @@ export interface paths {
                         limits?: {
                             total_minor?: number;
                             per_transaction_minor?: number;
+                            monthly_minor?: number;
+                            monthly_quantity?: number;
                         };
                         /** Format: date-time */
                         expires_at?: string;
@@ -8042,6 +8396,10 @@ export interface paths {
                             limits: {
                                 total_minor: number | null;
                                 per_transaction_minor: number | null;
+                                /** @description The amount the bank lets be pulled per month, over the bank's own monthly window. Present only on a consent that has a monthly limit. */
+                                monthly_minor?: number;
+                                /** @description How many pulls the bank lets through per month, over the bank's own monthly window. Present only when the bank stated one. */
+                                monthly_quantity?: number;
                             } | null;
                             created_at: string;
                             authorized_at: string | null;
@@ -8216,6 +8574,10 @@ export interface paths {
                             limits: {
                                 total_minor: number | null;
                                 per_transaction_minor: number | null;
+                                /** @description The amount the bank lets be pulled per month, over the bank's own monthly window. Present only on a consent that has a monthly limit. */
+                                monthly_minor?: number;
+                                /** @description How many pulls the bank lets through per month, over the bank's own monthly window. Present only when the bank stated one. */
+                                monthly_quantity?: number;
                             } | null;
                             created_at: string;
                             authorized_at: string | null;
@@ -8381,6 +8743,10 @@ export interface paths {
                             limits: {
                                 total_minor: number | null;
                                 per_transaction_minor: number | null;
+                                /** @description The amount the bank lets be pulled per month, over the bank's own monthly window. Present only on a consent that has a monthly limit. */
+                                monthly_minor?: number;
+                                /** @description How many pulls the bank lets through per month, over the bank's own monthly window. Present only when the bank stated one. */
+                                monthly_quantity?: number;
                             } | null;
                             created_at: string;
                             authorized_at: string | null;
@@ -48772,6 +49138,11 @@ export interface paths {
                     "application/json": {
                         /** @description The pedido aberto, as the person said it (e.g. "fone bluetooth"). */
                         query: string;
+                        /**
+                         * @description product (default), service_plan, reservation or data_service (a per-call data service, executed by a data call).
+                         * @enum {string}
+                         */
+                        task_kind?: "product" | "service_plan" | "reservation" | "data_service";
                         criteria?: {
                             /**
                              * @description What decides the principal: the lowest total (default) or the fastest delivery.
@@ -48780,10 +49151,53 @@ export interface paths {
                             priority?: "total" | "eta";
                             /** @description The most the person wants to pay, shipping included, in centavos. */
                             max_total_minor?: number;
-                            /** @description Where to look: `registry` (the stores the Shop can buy at), `vtex` and `meli` (comparison only). Default: `registry` in Test, `vtex` and `meli` in Live. */
-                            sources?: ("registry" | "vtex" | "meli")[];
+                            /** @description Where to look: `registry` (the stores the Shop can buy at), `vtex` and `meli` (comparison only), `web` (the origins named in sources.origins), `data` (the data-service providers, for task_kind data_service). Default: `registry` in Test, `vtex` and `meli` in Live; `data` for a data service. */
+                            sources?: ("registry" | "vtex" | "meli" | "web" | "data")[];
                             /** @description Offers per source, 1 to 5 (default 5). */
                             limit?: number;
+                            /** @description task_kind reservation: check_in, check_out, occupants, location. */
+                            reservation?: {
+                                /** @description Check-in day, YYYY-MM-DD (São Paulo). */
+                                check_in: string;
+                                /** @description Check-out day, YYYY-MM-DD, after check_in. */
+                                check_out: string;
+                                occupants: {
+                                    adults: number;
+                                    children?: number;
+                                };
+                                /** @description Where, as the person said it. */
+                                location?: string;
+                            };
+                            /** @description task_kind service_plan: licenses and period. */
+                            service_plan?: {
+                                /** @description How many seats or licenses. */
+                                licenses: number;
+                                /**
+                                 * @description The billing period to compare on.
+                                 * @enum {string}
+                                 */
+                                period: "monthly" | "annual";
+                            };
+                            /** @description task_kind data_service: the call's params, and the SKU when the person named one. */
+                            data_service?: {
+                                /** @description The call's params, e.g. { cnpj: "11222333000181" }. */
+                                params: {
+                                    [key: string]: string;
+                                };
+                                /** @description The provider's SKU, when the person named one. */
+                                sku?: string;
+                            };
+                            /** @description Conditions an offer must state to be compared: an offer that does not state one is left out, with the reason. */
+                            required?: ("free_cancellation" | "breakfast_included" | "invoice" | "refundable" | "location")[];
+                        };
+                        sources?: {
+                            groups?: ("registry" | "vtex" | "meli" | "web" | "data")[];
+                            origins?: {
+                                /** @description https://host of a site to consult, as the person or you named it. */
+                                origin: string;
+                                /** @description The path to start at; default /. */
+                                start_path?: string;
+                            }[];
                         };
                     };
                 };
@@ -48957,6 +49371,750 @@ export interface paths {
                         "application/json": {
                             /** @enum {string} */
                             error: "not_found";
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shop/agent/data-calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft a data call from a data_service offer (never run)
+         * @description Scope `shop:purchases:write`. Shop G3.1: `offer_id` names a `data_service` offer of this key's research (`POST /v1/shop/agent/research` with `task_kind: "data_service"`). The provider quotes the call again and the call is drafted at those terms under the agent's mandate; nothing is reserved or sent. The answer shows the four states apart: quotation, authorization, commitment (the call), payment (Wallet) and the provider's confirmation. The same `agent_id` and `idempotency_key` answer the same draft (`idempotent_replay: true`). Running it is the person's authorization: a key never runs it. While it waits for the person, `next_action` is the protected action to hand them: `{ kind: "person_authorization", url }`, the call's card on the dashboard behind their sign-in (only the call's and the project's ids are in the url). Test projects only.
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        agent_id: string;
+                        /** @description A data_service offer of this key's research (`POST /v1/shop/agent/research`, task_kind data_service). */
+                        offer_id: string;
+                        idempotency_key: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data_call: {
+                                /** @description The data call's proposal id (`prp_...`). */
+                                proposal_id: string;
+                                /** @enum {string} */
+                                run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
+                                awaiting: {
+                                    reason: string;
+                                    cause: string | null;
+                                } | null;
+                                offer: {
+                                    offer_id: string;
+                                    /** @enum {string} */
+                                    offer_kind: "data_service";
+                                    merchant_name: string;
+                                    title: string;
+                                    attributes: {
+                                        coverage: string;
+                                        refresh: string;
+                                        license: string;
+                                        /** @enum {string} */
+                                        unit: "call";
+                                        params: {
+                                            [key: string]: string;
+                                        };
+                                        offer_version: number;
+                                        terms_hash: string;
+                                    };
+                                    cost_lines: {
+                                        /** @enum {string} */
+                                        kind: "call";
+                                        label: string;
+                                        unit_minor: number;
+                                        /** @enum {number} */
+                                        quantity: 1;
+                                        amount_minor: number;
+                                    }[];
+                                    total_minor: number;
+                                    /** @enum {string} */
+                                    currency: "BRL";
+                                    observed_at: string;
+                                    valid_until: string;
+                                    source: {
+                                        /** @enum {string} */
+                                        kind: "data_catalog";
+                                    };
+                                };
+                                quotation: {
+                                    /** @enum {string} */
+                                    state: "valid" | "stale" | "changed";
+                                    total_minor: number;
+                                    previous_total_minor?: number;
+                                    observed_at: string;
+                                    valid_until: string;
+                                };
+                                authorization: {
+                                    /** @enum {string} */
+                                    state: "needed" | "awaiting_approval" | "authorized" | "refused" | "expired";
+                                    amount_max_minor: number;
+                                    approval_id?: string;
+                                    expires_at?: string;
+                                };
+                                commitment: {
+                                    /**
+                                     * @description The call at the provider. `uncertain`: sent and not known yet; the read reconciles it by lookup, never by a resend.
+                                     * @enum {string}
+                                     */
+                                    state: "not_started" | "claimed" | "dispatching" | "settled" | "uncertain" | "failed" | "cancelled";
+                                    attempt_id?: string;
+                                    call_id?: string;
+                                    at?: string;
+                                };
+                                payment: {
+                                    /**
+                                     * @description The Wallet: the ceiling held, then the observed amount debited and the rest released.
+                                     * @enum {string}
+                                     */
+                                    state: "none" | "held" | "debited" | "released";
+                                    held_minor?: number;
+                                    debited_minor?: number;
+                                    released_minor?: number;
+                                    receipt_id?: string;
+                                };
+                                confirmation: {
+                                    /**
+                                     * @description The provider's result: `confirmed` only with its call id and result ref.
+                                     * @enum {string}
+                                     */
+                                    state: "none" | "pending" | "confirmed" | "failed";
+                                    at?: string;
+                                    source?: string;
+                                    result_ref?: string;
+                                };
+                                error?: {
+                                    /** @description commitment_terms_changed, data_call_refused, a mandate's or the Wallet's code: an unknown one is shown as a neutral text with the code. */
+                                    code: string;
+                                    detail?: string;
+                                };
+                                actions: {
+                                    execute: boolean;
+                                    cancel: boolean;
+                                    requote: boolean;
+                                };
+                            };
+                            next_action: {
+                                /** @enum {string} */
+                                kind: "person_authorization";
+                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's and the project's ids are in it. */
+                                url: string;
+                                proposal_id: string;
+                                description: string;
+                            } | null;
+                            idempotent_replay: boolean;
+                        };
+                    };
+                };
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data_call: {
+                                /** @description The data call's proposal id (`prp_...`). */
+                                proposal_id: string;
+                                /** @enum {string} */
+                                run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
+                                awaiting: {
+                                    reason: string;
+                                    cause: string | null;
+                                } | null;
+                                offer: {
+                                    offer_id: string;
+                                    /** @enum {string} */
+                                    offer_kind: "data_service";
+                                    merchant_name: string;
+                                    title: string;
+                                    attributes: {
+                                        coverage: string;
+                                        refresh: string;
+                                        license: string;
+                                        /** @enum {string} */
+                                        unit: "call";
+                                        params: {
+                                            [key: string]: string;
+                                        };
+                                        offer_version: number;
+                                        terms_hash: string;
+                                    };
+                                    cost_lines: {
+                                        /** @enum {string} */
+                                        kind: "call";
+                                        label: string;
+                                        unit_minor: number;
+                                        /** @enum {number} */
+                                        quantity: 1;
+                                        amount_minor: number;
+                                    }[];
+                                    total_minor: number;
+                                    /** @enum {string} */
+                                    currency: "BRL";
+                                    observed_at: string;
+                                    valid_until: string;
+                                    source: {
+                                        /** @enum {string} */
+                                        kind: "data_catalog";
+                                    };
+                                };
+                                quotation: {
+                                    /** @enum {string} */
+                                    state: "valid" | "stale" | "changed";
+                                    total_minor: number;
+                                    previous_total_minor?: number;
+                                    observed_at: string;
+                                    valid_until: string;
+                                };
+                                authorization: {
+                                    /** @enum {string} */
+                                    state: "needed" | "awaiting_approval" | "authorized" | "refused" | "expired";
+                                    amount_max_minor: number;
+                                    approval_id?: string;
+                                    expires_at?: string;
+                                };
+                                commitment: {
+                                    /**
+                                     * @description The call at the provider. `uncertain`: sent and not known yet; the read reconciles it by lookup, never by a resend.
+                                     * @enum {string}
+                                     */
+                                    state: "not_started" | "claimed" | "dispatching" | "settled" | "uncertain" | "failed" | "cancelled";
+                                    attempt_id?: string;
+                                    call_id?: string;
+                                    at?: string;
+                                };
+                                payment: {
+                                    /**
+                                     * @description The Wallet: the ceiling held, then the observed amount debited and the rest released.
+                                     * @enum {string}
+                                     */
+                                    state: "none" | "held" | "debited" | "released";
+                                    held_minor?: number;
+                                    debited_minor?: number;
+                                    released_minor?: number;
+                                    receipt_id?: string;
+                                };
+                                confirmation: {
+                                    /**
+                                     * @description The provider's result: `confirmed` only with its call id and result ref.
+                                     * @enum {string}
+                                     */
+                                    state: "none" | "pending" | "confirmed" | "failed";
+                                    at?: string;
+                                    source?: string;
+                                    result_ref?: string;
+                                };
+                                error?: {
+                                    /** @description commitment_terms_changed, data_call_refused, a mandate's or the Wallet's code: an unknown one is shown as a neutral text with the code. */
+                                    code: string;
+                                    detail?: string;
+                                };
+                                actions: {
+                                    execute: boolean;
+                                    cancel: boolean;
+                                    requote: boolean;
+                                };
+                            };
+                            next_action: {
+                                /** @enum {string} */
+                                kind: "person_authorization";
+                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's and the project's ids are in it. */
+                                url: string;
+                                proposal_id: string;
+                                description: string;
+                            } | null;
+                            idempotent_replay: boolean;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key does not hold `shop:purchases:write`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The offer is not in this key's research. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "offer_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No mandate permits the provider, the project is not a Test one, or the idempotency key drafted from another offer. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "proposal_no_mandate" | "data_call_live_unavailable" | "idempotency_key_reused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The offer is not a data service, the provider refuses the call, or the agent is not registered. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "offer_not_data_service" | "data_call_refused" | "agent_not_registered";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The provider did not answer, or Shop purchases are off on this deployment. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "data_provider_unavailable" | "shop_purchases_disabled";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shop/agent/data-calls/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a data call back
+         * @description Scope `shop:purchases:read`. The data call with its four states apart, as the Shop's card shows it. A call sent and not known yet is reconciled by the provider's lookup on this read, never resent: read the same id again, across restarts, until `confirmation.state` is `confirmed` (or the call failed). `next_action` while it waits for the person.
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The data call id (`prp_...`), from `POST /v1/shop/agent/data-calls`. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data_call: {
+                                /** @description The data call's proposal id (`prp_...`). */
+                                proposal_id: string;
+                                /** @enum {string} */
+                                run_state: "ready" | "awaiting_user" | "running" | "interrupted" | "completed" | "cancelled";
+                                awaiting: {
+                                    reason: string;
+                                    cause: string | null;
+                                } | null;
+                                offer: {
+                                    offer_id: string;
+                                    /** @enum {string} */
+                                    offer_kind: "data_service";
+                                    merchant_name: string;
+                                    title: string;
+                                    attributes: {
+                                        coverage: string;
+                                        refresh: string;
+                                        license: string;
+                                        /** @enum {string} */
+                                        unit: "call";
+                                        params: {
+                                            [key: string]: string;
+                                        };
+                                        offer_version: number;
+                                        terms_hash: string;
+                                    };
+                                    cost_lines: {
+                                        /** @enum {string} */
+                                        kind: "call";
+                                        label: string;
+                                        unit_minor: number;
+                                        /** @enum {number} */
+                                        quantity: 1;
+                                        amount_minor: number;
+                                    }[];
+                                    total_minor: number;
+                                    /** @enum {string} */
+                                    currency: "BRL";
+                                    observed_at: string;
+                                    valid_until: string;
+                                    source: {
+                                        /** @enum {string} */
+                                        kind: "data_catalog";
+                                    };
+                                };
+                                quotation: {
+                                    /** @enum {string} */
+                                    state: "valid" | "stale" | "changed";
+                                    total_minor: number;
+                                    previous_total_minor?: number;
+                                    observed_at: string;
+                                    valid_until: string;
+                                };
+                                authorization: {
+                                    /** @enum {string} */
+                                    state: "needed" | "awaiting_approval" | "authorized" | "refused" | "expired";
+                                    amount_max_minor: number;
+                                    approval_id?: string;
+                                    expires_at?: string;
+                                };
+                                commitment: {
+                                    /**
+                                     * @description The call at the provider. `uncertain`: sent and not known yet; the read reconciles it by lookup, never by a resend.
+                                     * @enum {string}
+                                     */
+                                    state: "not_started" | "claimed" | "dispatching" | "settled" | "uncertain" | "failed" | "cancelled";
+                                    attempt_id?: string;
+                                    call_id?: string;
+                                    at?: string;
+                                };
+                                payment: {
+                                    /**
+                                     * @description The Wallet: the ceiling held, then the observed amount debited and the rest released.
+                                     * @enum {string}
+                                     */
+                                    state: "none" | "held" | "debited" | "released";
+                                    held_minor?: number;
+                                    debited_minor?: number;
+                                    released_minor?: number;
+                                    receipt_id?: string;
+                                };
+                                confirmation: {
+                                    /**
+                                     * @description The provider's result: `confirmed` only with its call id and result ref.
+                                     * @enum {string}
+                                     */
+                                    state: "none" | "pending" | "confirmed" | "failed";
+                                    at?: string;
+                                    source?: string;
+                                    result_ref?: string;
+                                };
+                                error?: {
+                                    /** @description commitment_terms_changed, data_call_refused, a mandate's or the Wallet's code: an unknown one is shown as a neutral text with the code. */
+                                    code: string;
+                                    detail?: string;
+                                };
+                                actions: {
+                                    execute: boolean;
+                                    cancel: boolean;
+                                    requote: boolean;
+                                };
+                            };
+                            next_action: {
+                                /** @enum {string} */
+                                kind: "person_authorization";
+                                /** @description The call's card on the dashboard, behind the person's sign-in; only the call's and the project's ids are in it. */
+                                url: string;
+                                proposal_id: string;
+                                description: string;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description The key does not hold `shop:purchases:read`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shop/agent/data-calls/{id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run a data call: always refused for a key
+         * @description Scope `shop:purchases:write`. Running a data call reserves the Wallet and makes the provider's call: that is the person's authorization, and a key never gives it. This route always answers `person_required` (403), with `details.next_action` (the protected action: the call's card on the dashboard, behind the person's sign-in) and `details.data_call`. The person runs it there, or through an MCP client with their full-access login; then read it back by id.
+         *
+         *     **What an assistant can and cannot do.** It proposes a purchase and reads where it stands; it never pays, approves, saves a card or logs in at a store. A verified person presses Pagar on the dashboard and completes what the purchase waits for (the protected card or CVV form, the store login); the purchase then runs through the same executor as the Shop's own chat, at most once at the store. No answer carries a card number, a security code, a cookie or a collect secret. Test projects only in this first delivery; behind `SHOP_PURCHASES_ENABLED`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The data call id (`prp_...`). */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description A key never runs a data call; `details.next_action` is the person's way. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "person_required";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "not_found";
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shop/agent/offers/{id}/image/{n}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * An offer's image, through CodeSpar
+         * @description Scope `shop:purchases:read`. The image recorded with an offer of this project's keys' research, served from CodeSpar's domain: the store's URL is never exposed and never fetched by the client. The proxy reads only the URL recorded with that offer, checks the network at every hop, reads the type from the content (JPEG, PNG, WebP or AVIF; never SVG), bounds the size and the dimensions and removes the metadata. An offer's `image.url` is this address. Any offer that is not this project's keys', unknown, without that image or whose image is refused answers the same 404 `image_unavailable`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The offer id (`sof_...`), from a research of this project's keys. */
+                    id: string;
+                    /** @description The image's index; `image.url` names 0. */
+                    n: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The image, `Cache-Control: private, max-age=300`. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/jpeg": string;
+                        "image/png": string;
+                        "image/webp": string;
+                        "image/avif": string;
+                    };
+                };
+                /** @description The key does not hold `shop:purchases:read`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No image to serve. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "image_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
                         };
                     };
                 };

@@ -23,6 +23,7 @@ from ._async_session import (
 )
 from ._http import DEFAULT_BASE_URL, normalize_timeout, request_json
 from ._presets import preset_to_servers
+from .data_calls import AsyncDataCalls, AsyncResearch
 from .documents import AsyncAccount, AsyncReceipts
 from .errors import ApiError, ConfigError
 from .payables import AsyncPayables
@@ -107,6 +108,11 @@ class AsyncCodeSpar:
         self.payables = AsyncPayables(self._client, self._api_key, self._project_id)
         #: A consumer's own account: ``wallet.pix_keys`` over ``/v1/consumers/:id/pix-keys``.
         self.wallet = AsyncWallet(self._client, self._api_key, self._project_id)
+        #: Shop research (``/v1/shop/agent/research``): offers compared, one recommendation.
+        self.research = AsyncResearch(self._client, self._api_key, self._project_id)
+        #: Shop G3.1 data calls (``/v1/shop/agent/data-calls``):
+        #: a key drafts and reads; the person runs.
+        self.data_calls = AsyncDataCalls(self._client, self._api_key, self._project_id)
         #: The receipt document (comprovante) of a payment
         #: (``/v1/consumers/receipts/:id/document``).
         self.receipts = AsyncReceipts(self._client, self._api_key, self._project_id)

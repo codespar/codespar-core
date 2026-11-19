@@ -1,5 +1,14 @@
 # codespar (Python SDK) — CHANGELOG
 
+## Unreleased
+
+### Added
+
+- `cs.research` (create, get over `/v1/shop/agent/research`) and
+  `cs.data_calls` (create, get, execute over `/v1/shop/agent/data-calls`),
+  with `data_call_outcome`, on the async and the sync client (Shop G3.1).
+  `execute` with a key raises `ApiError` 403 `person_required`.
+
 ## 0.16.2
 
 The statement as PNG pages, in parity with `@codespar/sdk` 0.16.28.

@@ -42,6 +42,7 @@ import type {
   AgentResearch,
   AgentResearchInput,
 } from "@codespar/types";
+import { createDataCalls } from "./data-calls.js";
 
 interface SessionDeps {
   baseUrl: string;
@@ -488,11 +489,12 @@ export async function createSession(
               ...(c.maxTotalMinor !== undefined ? { max_total_minor: c.maxTotalMinor } : {}),
               ...(c.sources !== undefined ? { sources: c.sources } : {}),
               ...(c.limit !== undefined ? { limit: c.limit } : {}),
+              ...(c.dataService !== undefined ? { data_service: { params: c.dataService.params, ...(c.dataService.sku !== undefined ? { sku: c.dataService.sku } : {}) } } : {}),
             }
           : undefined;
         return await safeFetch(
           `${baseUrl}/v1/shop/agent/research`,
-          { method: "POST", headers, body: JSON.stringify({ query: input.query, ...(criteria ? { criteria } : {}) }) },
+          { method: "POST", headers, body: JSON.stringify({ query: input.query, ...(input.taskKind ? { task_kind: input.taskKind } : {}), ...(criteria ? { criteria } : {}) }) },
           "research.create",
           callOpts(opts),
           async (r) => {
@@ -522,6 +524,9 @@ export async function createSession(
      * is deprecated: still sent when given, so an API older than Shop v0.3
      * keeps answering, and ignored by a newer one.
      */
+    /** Shop G3.1 data calls (`/v1/shop/agent/data-calls`): the same client as `cs.dataCalls`. */
+    dataCalls: createDataCalls({ baseUrl, apiKey, ...(projectId ? { projectId } : {}), timeout: deps.timeout }),
+
     instruments: {
       async list(opts: { owner?: string } & CallOptions = {}): Promise<AgentInstrument[]> {
         const { owner, ...rest } = opts;

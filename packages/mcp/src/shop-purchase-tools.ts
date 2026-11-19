@@ -12,6 +12,12 @@
  * (`shop:purchases:write`, `shop:purchases:read`, `shop:instruments:read`).
  * Since Shop v0.3 the card list is the authenticated person's own: with a
  * project key it answers a text saying so (`INSTRUMENTS_NEED_A_PERSON`).
+ *
+ * Shop G3.1 adds data calls (`session.dataCalls`, `/v1/shop/agent/data-calls`):
+ * a research of task_kind data_service, a draft from its offer, and a read of
+ * it with the four states apart. Running one is the person's authorization:
+ * there is no run tool here, and the person runs it in the Shop or through an
+ * MCP client with their login.
  */
 import type { Session } from "@codespar/sdk";
 
@@ -72,7 +78,61 @@ export const SHOP_PURCHASE_MCP_TOOLS: readonly McpToolDefinition[] = [
         max_total_minor: { type: "integer", minimum: 1, description: "The most to pay, shipping included, in centavos." },
         sources: { type: "array", items: { type: "string", enum: ["registry", "vtex", "meli"] }, description: "Where to look; default: registry in Test, vtex and meli in Live." },
         limit: { type: "integer", minimum: 1, maximum: 5, description: "Offers per source (default 5)." },
+        task_kind: {
+          type: "string",
+          enum: ["product", "data_service"],
+          description: "product (default), or data_service: a per-call data service, with data_service_params (and data_service_sku).",
+        },
+        data_service_params: {
+          type: "object",
+          additionalProperties: { type: "string" },
+          description: "task_kind data_service: the call's params, e.g. { \"cnpj\": \"11222333000181\" }.",
+        },
+        data_service_sku: { type: "string", description: "task_kind data_service: the provider's SKU, when the person named one." },
       },
+    },
+  },
+  {
+    name: "codespar_shop_data_call_draft",
+    description:
+      "Draft a data call from a data_service offer of codespar_shop_research: the provider quotes it again and the draft " +
+      "shows the four states apart (quotation, authorization, commitment, payment, confirmation). Nothing is reserved or " +
+      "sent, and no tool here runs it: running is the person's authorization (in the Shop, or an MCP client with their " +
+      "login). The same idempotency_key answers the same draft. Needs shop:purchases:write.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["agent_id", "offer_id", "idempotency_key"],
+      properties: {
+        agent_id: { type: "string", description: "The registered agent drafting it." },
+        offer_id: { type: "string", pattern: "^sof_[A-Za-z0-9_-]{16}$", description: "A data_service offer of codespar_shop_research." },
+        idempotency_key: { type: "string", description: "The same key answers the same draft." },
+      },
+    },
+  },
+  {
+    name: "codespar_shop_data_call_request_authorization",
+    description:
+      "Ask for a drafted data call to be run. This key never runs it: the answer is the protected action for the person, " +
+      "a link to the call's card on the CodeSpar dashboard behind their own sign-in. Give the person the link, then follow " +
+      "the call with codespar_shop_data_call_status (by id, across restarts) until it is confirmed. Needs shop:purchases:write.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["proposal_id"],
+      properties: { proposal_id: { type: "string", pattern: "^prp_[A-Za-z0-9_-]{16}$" } },
+    },
+  },
+  {
+    name: "codespar_shop_data_call_status",
+    description:
+      "Where a data call stands, the four states apart: an uncertain call (sent, outcome not known yet) is reconciled by " +
+      "the server, never resent. Needs shop:purchases:read.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["proposal_id"],
+      properties: { proposal_id: { type: "string", pattern: "^prp_[A-Za-z0-9_-]{16}$" } },
     },
   },
   {
@@ -151,11 +211,48 @@ export async function callShopPurchaseTool(session: Session, name: string, args:
         ...(sources ? { sources } : {}),
         ...(typeof args.limit === "number" ? { limit: args.limit } : {}),
       };
-      return session.research.create({ query: String(args.query ?? ""), ...(Object.keys(criteria).length > 0 ? { criteria } : {}) });
+      const dataService =
+        args.task_kind === "data_service" && args.data_service_params && typeof args.data_service_params === "object"
+          ? {
+              dataService: {
+                params: Object.fromEntries(Object.entries(args.data_service_params as Record<string, unknown>).map(([k, v]) => [k, String(v)])),
+                ...(typeof args.data_service_sku === "string" ? { sku: args.data_service_sku } : {}),
+              },
+            }
+          : {};
+      const all = { ...criteria, ...dataService };
+      return session.research.create({
+        query: String(args.query ?? ""),
+        ...(args.task_kind === "data_service" ? { taskKind: "data_service" as const } : {}),
+        ...(Object.keys(all).length > 0 ? { criteria: all } : {}),
+      });
     }
     case "codespar_shop_research_status":
       if (!session.research) throw new Error("this runtime does not offer Shop research");
       return session.research.get(String(args.research_id ?? ""));
+    case "codespar_shop_data_call_draft":
+      if (!session.dataCalls) throw new Error("this runtime does not offer Shop data calls");
+      return session.dataCalls.create({ agentId: String(args.agent_id ?? ""), offerId: String(args.offer_id ?? ""), idempotencyKey: String(args.idempotency_key ?? "") });
+    case "codespar_shop_data_call_request_authorization": {
+      if (!session.dataCalls) throw new Error("this runtime does not offer Shop data calls");
+      try {
+        await session.dataCalls.execute(String(args.proposal_id ?? ""));
+      } catch (err) {
+        // Read by code and shape, so an older @codespar/sdk inside the peer range is read the same way.
+        const body = (err as { code?: unknown; body?: { error?: { details?: { next_action?: { url?: unknown } } } } } | null) ?? null;
+        const url = body?.body?.error?.details?.next_action?.url;
+        if (body?.code === "person_required") {
+          return typeof url === "string"
+            ? `This call waits for the person: they open ${url}, sign in and run it on its card. Then follow it with codespar_shop_data_call_status.`
+            : "This call cannot be run now (it already ran, or can no longer run); read it with codespar_shop_data_call_status.";
+        }
+        throw err;
+      }
+      throw new Error("the API ran a data call for a key; refusing to report it as run");
+    }
+    case "codespar_shop_data_call_status":
+      if (!session.dataCalls) throw new Error("this runtime does not offer Shop data calls");
+      return session.dataCalls.get(String(args.proposal_id ?? ""));
     case "codespar_shop_purchase_status":
       return session.purchases.get(String(args.purchase_id ?? ""));
     case "codespar_shop_instruments":
