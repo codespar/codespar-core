@@ -192,6 +192,7 @@ const PINNED_COMMANDS = [
   "shop create-data-calls → POST /v1/shop/agent/data-calls",
   "shop get-data-calls → GET /v1/shop/agent/data-calls/{id}",
   "shop data-calls-execute → POST /v1/shop/agent/data-calls/{id}/execute",
+  "shop offers-image → GET /v1/shop/agent/offers/{id}/image/{n}",
   "shop capabilities → GET /v1/shop/agent/capabilities",
   "shop instruments → GET /v1/shop/agent/instruments",
   "collect list-links → GET /v1/collect/links",

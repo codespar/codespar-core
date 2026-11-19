@@ -9,6 +9,7 @@
   confirmed, 10 pending (the person still runs it), 20 refused by the API
   (`person_required` included), 30 failure, 40 uncertain (an effect may have
   happened). Every other command keeps exit 1 for any failure.
+- Derived command `shop offers-image` (`GET /v1/shop/agent/offers/{id}/image/{n}`, `image/jpeg`): an offer's image from a key's research, through the CodeSpar proxy (Shop v0.7).
 - Needs @codespar/sdk ^0.16.31 (the data-call client and `nextActionOfError`).
 
 ## 0.22.7 — 2026-11-11
