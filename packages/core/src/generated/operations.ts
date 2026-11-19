@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 3e716356adacd0e48ee0f7ad9e5f5e786d5412a7e5b2d9fa0a60333ab149216d, fetched 2026-11-18T02:07:57.966Z
+// Source: openapi-snapshot.json (sha256 1e6a6006fe5e00b10e48e23de7d9c90d61f25fc7fd065bb774f57181382ab426, fetched 2026-11-19T22:56:00.566Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
@@ -13,12 +13,15 @@ import type { ApiOperationRef } from "../api/types.js";
  */
 export const API_OPERATIONS = [
   { method: "get", path: "/.well-known/oauth-protected-resource", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/.well-known/oauth-protected-resource/mcp", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/.well-known/codespar-receipt-keys.json", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/.well-known/oauth-authorization-server", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/oauth/register", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/oauth/authorize", body: null, accept: "text/html", requiredQuery: ["response_type","client_id","redirect_uri","code_challenge","code_challenge_method"], deprecated: false },
   { method: "post", path: "/oauth/authorize", body: "application/x-www-form-urlencoded", accept: null, requiredQuery: [], deprecated: false },
   { method: "post", path: "/oauth/token", body: "application/x-www-form-urlencoded", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/oauth/pending/{handle}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/oauth/pending/{handle}/decide", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/openapi.json", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/openapi.json", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/meta-tools.json", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
@@ -344,6 +347,7 @@ export const API_OPERATIONS = [
   { method: "post", path: "/v1/shop/agent/data-calls", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/data-calls/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/shop/agent/data-calls/{id}/execute", body: null, accept: null, requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/shop/agent/offers/{id}/image/{n}", body: null, accept: "image/jpeg", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/capabilities", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/instruments", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/projects", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
