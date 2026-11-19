@@ -25,6 +25,8 @@ import {
   requiredQueryParameters,
   readSnapshot,
   renderGenerated,
+  readCandidate,
+  CANDIDATE_SOURCE,
 } from "../../scripts/openapi-spec.mjs";
 import { API_OPERATIONS } from "../generated/operations.js";
 import { ApiClient } from "../api/client.js";
@@ -42,8 +44,12 @@ describe("openapi-snapshot.json", () => {
     expect(Object.keys(snapshot.document.paths ?? {})).toHaveLength(snapshot.snapshot.paths);
   });
 
-  it("names the served URL and a fetch timestamp", () => {
-    expect(snapshot.snapshot.source).toMatch(/^https:\/\/.+\/openapi\.json$/);
+  it("names the served URL (or an enterprise candidate head, never published) and a fetch timestamp", () => {
+    // A candidate snapshot (cards contract §8.6) is a review state: the
+    // publish workflow runs `assert-served` and refuses it.
+    expect(snapshot.snapshot.source).toMatch(
+      /^(https:\/\/.+\/openapi\.json|candidate:[0-9a-f]{7,40}\/openapi-candidate\.json)$/,
+    );
     expect(new Date(snapshot.snapshot.fetched_at).toString()).not.toBe("Invalid Date");
   });
 });
@@ -119,5 +125,21 @@ describe("diffOperations (the comparison the served check relies on)", () => {
     const diff = diffOperations(snapshot.document, edited);
     expect(diff.changed).toEqual(["GET /v1/wallets/{id}"]);
     expect(diff.schemas).toEqual(["Wallet"]);
+  });
+});
+
+describe("candidate documents (cards contract §8.6)", () => {
+  it("records the enterprise SHA from the directory name, and refuses a path that has none", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cand-"));
+    const shaDir = path.join(dir, "abc1234def");
+    fs.mkdirSync(shaDir);
+    const file = path.join(shaDir, "openapi-candidate.json");
+    fs.writeFileSync(file, JSON.stringify({ openapi: "3.1.0", info: { title: "t", version: "1" }, paths: {} }));
+    const read = readCandidate(file);
+    expect(read.source).toBe("candidate:abc1234def/openapi-candidate.json");
+    expect(CANDIDATE_SOURCE.test(read.source)).toBe(true);
+    const loose = path.join(dir, "openapi-candidate.json");
+    fs.writeFileSync(loose, "{}");
+    expect(() => readCandidate(loose)).toThrow(/enterprise sha/);
   });
 });

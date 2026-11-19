@@ -1,6 +1,6 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 868a0272e249a736c8f2510fb7e7def491fdb6ee509d85fc09e5f2fb32af33bd, fetched 2026-11-15T23:15:37.743Z
-//         from https://api.codespar.dev/openapi.json, API 0.3.0).
+// Source: openapi-snapshot.json (sha256 6941cbee6488d220240741e9147cd018de80426af81d3fc02aa32dd757bd2224, fetched 2026-11-19T02:03:13.382Z
+//         from candidate:ffa66ce789ab6284cab9f831ba73025f0a5afeae/openapi-candidate.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
     "/.well-known/oauth-protected-resource": {
@@ -36,6 +36,54 @@ export interface paths {
                             authorization_servers: string[];
                             bearer_methods_supported: string[];
                             scopes_supported: string[];
+                            /** @description Present only with OAUTH_CONSENT_FLOW=consent. Not an RFC 9728 parameter: it repeats the authorization server's list, so a client that reads only this document learns a client secret is accepted. */
+                            token_endpoint_auth_methods_supported?: string[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/oauth-protected-resource/mcp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Protected-resource metadata for /mcp (RFC 9728, path-suffixed)
+         * @description The RFC 9728 §3.1 path-suffixed copy of the protected-resource metadata, for the remote MCP endpoint `/mcp`. MCP clients try this location before the root one, and the `/mcp` 401's `WWW-Authenticate` `resource_metadata` points here. Identical to `/.well-known/oauth-protected-resource` except `resource`, which is `<origin>/mcp`, the URL the client was given (RFC 9728 §3.3 requires the two to match). Host-aware, like the root copy.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            resource: string;
+                            authorization_servers: string[];
+                            bearer_methods_supported: string[];
+                            scopes_supported: string[];
+                            /** @description Present only with OAUTH_CONSENT_FLOW=consent, as on the root copy. Not an RFC 9728 parameter: it repeats the authorization server's list, so a client that reads only this document learns a client secret is accepted. */
+                            token_endpoint_auth_methods_supported?: string[];
                         };
                     };
                 };
@@ -134,9 +182,9 @@ export interface paths {
         };
         /**
          * Authorization-server metadata (RFC 8414)
-         * @description The three endpoint URLs below, absolute under the issuer, plus what this server supports: `response_types_supported: ["code"]`, `grant_types_supported: ["authorization_code", "refresh_token"]`, `code_challenge_methods_supported: ["S256"]` and `token_endpoint_auth_methods_supported: ["none"]`.
+         * @description The three endpoint URLs below, absolute under the issuer, plus what this server supports: `response_types_supported: ["code"]`, `grant_types_supported: ["authorization_code", "refresh_token"]`, `code_challenge_methods_supported: ["S256"]` and `token_endpoint_auth_methods_supported: ["none"]`, with `client_secret_basic` and `client_secret_post` added (and `offline_access` in `scopes_supported`) only when OAUTH_CONSENT_FLOW=consent.
          *
-         *     Read the last two together: this is a PUBLIC client with no secret, and PKCE S256 is mandatory rather than preferred. `plain` is never advertised and is refused at the authorize endpoint. Host-aware, like the document above.
+         *     Read the last two together. `none` is every dynamically registered client: a PUBLIC client with no secret. The two secret methods are for a client CodeSpar registered ahead of time with a secret. PKCE S256 is mandatory for EVERY client, secret or not, rather than preferred. `plain` is never advertised and is refused at the authorize endpoint. Host-aware, like the document above.
          */
         get: {
             parameters: {
@@ -287,6 +335,8 @@ export interface paths {
          * @description Returns `text/html`, NOT JSON: this is the leg a human completes in a browser, so a generated client should open it rather than call it. `response_type=code`, a registered `client_id`, a `redirect_uri` matching one registered for that client exactly, and `code_challenge` with `code_challenge_method=S256` are all required.
          *
          *     Errors are rendered as HTML with status 400 and are NOT redirected: per RFC 6749 §4.1.2.1 an invalid `client_id`/`redirect_uri` must not be redirected to, and this endpoint keeps that posture for every error so a human sees the reason on the page. A scope request this server cannot satisfy is refused here, before the form asking for a key is drawn.
+         *
+         *     Where the deployment runs signed-in consent (`OAUTH_CONSENT_FLOW=consent`) no key is asked for: a valid request is held server-side and answered with a 302 to the web consent page, where a signed-in admin approves it. An unknown `client_id` or a `redirect_uri` that is not an exact registered match still gets the 400 page and is never redirected; every other refusal (`unsupported_response_type`, `invalid_request`, `invalid_scope`, `invalid_target` for a `resource` that is not this server's MCP endpoint) goes back to `redirect_uri` as an OAuth error with the `state`.
          */
         get: {
             parameters: {
@@ -299,6 +349,8 @@ export interface paths {
                     state?: string;
                     /** @description Space-separated. Requesting more than the pasted key holds is refused. */
                     scope?: string;
+                    /** @description RFC 8707 resource indicator. Under signed-in consent it must name this server's MCP endpoint. */
+                    resource?: string;
                 };
                 header?: never;
                 path?: never;
@@ -314,6 +366,14 @@ export interface paths {
                     content: {
                         "text/html": string;
                     };
+                };
+                /** @description Signed-in consent only: Location is the web consent page, or `redirect_uri` with an OAuth `error` and the `state`. */
+                302: {
+                    headers: {
+                        Location: string;
+                        [name: string]: unknown;
+                    };
+                    content?: never;
                 };
                 /** @description Rendered as HTML, never redirected. */
                 400: {
@@ -332,6 +392,8 @@ export interface paths {
          * @description `application/x-www-form-urlencoded`, submitted by the page above, not by a generated client. The form carries the same authorization-request parameters plus the API key the human pasted.
          *
          *     On success: 302 to `redirect_uri` with `code` and `state`. The code is single-use, short-lived, and bound to the tenant, the client, the redirect URI, the PKCE challenge AND the API key that authorized it — so revoking that key invalidates every token the code goes on to mint, and the token's scopes can never exceed the key's own. On refusal the page re-renders as HTML with 400.
+         *
+         *     Where the deployment runs signed-in consent (`OAUTH_CONSENT_FLOW=consent`) this answers 404 and mints no code: no key is accepted.
          */
         post: {
             parameters: {
@@ -394,7 +456,7 @@ export interface paths {
         put?: never;
         /**
          * Token endpoint — authorization_code and refresh_token grants
-         * @description `application/x-www-form-urlencoded`, unauthenticated (public client, `token_endpoint_auth_method: none`); the authorization code IS the authority. `grant_type=authorization_code` requires `code`, `code_verifier`, `redirect_uri` and `client_id`; `grant_type=refresh_token` requires `refresh_token`. Anything else is 400 `unsupported_grant_type`.
+         * @description `application/x-www-form-urlencoded`. A public client (every dynamically registered one, `token_endpoint_auth_method: none`) is unauthenticated: the authorization code and its PKCE verifier are the authority. A client CodeSpar registered ahead of time with a secret must also authenticate, on BOTH grants, by `client_secret_basic` (`Authorization: Basic` with the url-encoded id and secret) or `client_secret_post` (`client_id` and `client_secret` in the body); a missing or wrong secret is 401 `invalid_client` and leaves the code or refresh token untouched, and both methods at once is 400 `invalid_request`. `grant_type=authorization_code` requires `code`, `code_verifier`, `redirect_uri` and `client_id`; `grant_type=refresh_token` requires `refresh_token`. Anything else is 400 `unsupported_grant_type`.
          *
          *     Redemption is atomic and single-use even under a concurrent retry: a second redemption of the same code sees no row and gets 400 `invalid_grant`. The refresh grant ROTATES — the presented refresh token is revoked and a new one returned, so a client must persist the new value. A refresh chain lives at most 90 days from the consent that began it: past that the refresh grant answers 400 `invalid_grant` and the user has to authorize again. `expires_in` is the access token's lifetime in seconds Responses carry `Cache-Control: no-store` (RFC 6749 §5.1).
          */
@@ -414,6 +476,8 @@ export interface paths {
                         code_verifier?: string;
                         redirect_uri?: string;
                         client_id?: string;
+                        /** @description client_secret_post, for a pre-registered client with a secret only. */
+                        client_secret?: string;
                         refresh_token?: string;
                     };
                 };
@@ -435,7 +499,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description `invalid_grant` (code invalid, expired, already used, bound to a different client or redirect_uri, PKCE verification failed, carrying no recorded scope grant, or a refresh chain older than 90 days), `invalid_request`, or `unsupported_grant_type`. */
+                /** @description `invalid_grant` (code invalid, expired, already used, bound to a different client or redirect_uri, PKCE verification failed, carrying no recorded scope grant, or a refresh chain older than 90 days), `invalid_request` (also two client authentication methods at once), or `unsupported_grant_type`. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -444,6 +508,290 @@ export interface paths {
                         "application/json": {
                             error: string;
                             error_description?: string;
+                        };
+                    };
+                };
+                /** @description `invalid_client`: a client registered with a secret presented none, a wrong one, a malformed Basic header, or a Basic id that differs from the body `client_id`. Carries `WWW-Authenticate: Basic` when the request used Basic. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            error_description?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oauth/pending/{handle}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Signed-in consent — read a held authorization request for the consent page
+         * @description What the consent page shows before the person decides: the client, the scopes it would get with the line the page prints for each, when the request expires, and whether the organization the person's session is signed into may finish a consent yet. The first person to read a handle is bound to it. Not an API-key or OAuth-token operation: send the service key and the person's Clerk session token, and no Authorization header.
+         *
+         *     `approverAccess` is the access an approval by this person would give, from their role in the organization their session is signed into: `full` for an owner or admin (a personal account counts as owner), `read_only` for a member, whose grant reaches only the read tools, and `null` for a person with no role there, whose approval is refused. It is a hint for the page's wording only — the decide call resolves the role again at the click. For an approver that is not `full`, the `tools:execute` line reads "Call codespar's read tools (getting started, discovery, payment status)".
+         *
+         *     JSON `{ "error": "<code>" }`. `bearer_token_cannot_decide` (403, an Authorization header was sent), `unauthorized` (401, no valid service key), `user_token_required` / `user_token_invalid` / `user_token_identity_mismatch` / `user_token_wrong_party` (403), `user_token_verification_unconfigured` (503), `rate_limit_exceeded` (429 with `Retry-After`), `pending_not_found` (404), `handle_bound_to_other` (403), `pending_decided` (409), `pending_expired` (410), and 404 `consent_flow_disabled` when the deployment does not run signed-in consent.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description The service key of the web app that renders the consent page. */
+                    "x-codespar-service-key": string;
+                    /** @description The signed-in person's Clerk session token, issued to the consent page's origin. The person is its subject, never a forwarded header. */
+                    "x-codespar-user-token": string;
+                };
+                path: {
+                    /** @description The `request` value of the consent page's URL. */
+                    handle: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            client: {
+                                /** @description The client's display name, sanitized; a placeholder when it registered none. */
+                                name: string;
+                                unverified: boolean;
+                                redirectHost: string;
+                            };
+                            scopes: {
+                                scope: string;
+                                label: string;
+                            }[];
+                            expiresAt: string;
+                            openForActiveOrg: boolean;
+                            /**
+                             * @description What this person's approval would grant: `full`, `read_only` (read tools only), or null (no role; approval refused). A display hint; decide resolves it again.
+                             * @enum {string|null}
+                             */
+                            approverAccess: "full" | "read_only" | null;
+                        };
+                    };
+                };
+                /** @description `unauthorized`: no valid service key. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description A refusal named in `error`; see the description. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `pending_not_found` or `consent_flow_disabled`. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `pending_decided`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `pending_expired`. */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `rate_limit_exceeded`, with `Retry-After`. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oauth/pending/{handle}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signed-in consent — approve or deny a held authorization request
+         * @description The person's decision, made with a Clerk session token minted at the click (older than 120 seconds is 403 `user_token_stale`). Same headers as the read, and no Authorization header. An approval by an owner or admin of the project's organization makes a `full` grant; an approval by a member makes a `read_only` grant whose tool calls are limited to the read tools; a person with no role in that organization is refused `no_role`. Approve or deny, the answer is 200 with the URL to send the browser to: the client's redirect URI with `code` and `state` on approval, or with `error=access_denied` and `state` on deny.
+         *
+         *     Decide-only refusals: `invalid_body` (400), `project_not_in_org` (403), and for an approval `no_role`, `not_open_yet`, `project_archived`, `live_not_available`, `no_grantable_scopes` (403) and `invalid_client` / `invalid_request` (400). None of them consumes the request. JSON `{ "error": "<code>" }`. `bearer_token_cannot_decide` (403, an Authorization header was sent), `unauthorized` (401, no valid service key), `user_token_required` / `user_token_invalid` / `user_token_identity_mismatch` / `user_token_wrong_party` (403), `user_token_verification_unconfigured` (503), `rate_limit_exceeded` (429 with `Retry-After`), `pending_not_found` (404), `handle_bound_to_other` (403), `pending_decided` (409), `pending_expired` (410), and 404 `consent_flow_disabled` when the deployment does not run signed-in consent.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description The service key of the web app that renders the consent page. */
+                    "x-codespar-service-key": string;
+                    /** @description The signed-in person's Clerk session token, issued to the consent page's origin. The person is its subject, never a forwarded header. */
+                    "x-codespar-user-token": string;
+                };
+                path: {
+                    handle: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decision: "approve" | "deny";
+                        /** @description The project the grant is for, in the session's organization. */
+                        projectId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Where to send the browser: the client's redirect URI with the code, or with `access_denied`. */
+                            redirectUrl: string;
+                        };
+                    };
+                };
+                /** @description `invalid_body`, `invalid_client` or `invalid_request`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `unauthorized`: no valid service key. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description A refusal named in `error`, `no_role` among them; see the description. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `pending_not_found` or `consent_flow_disabled`. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `pending_decided`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `pending_expired`. */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description `rate_limit_exceeded`, with `Retry-After`. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
                         };
                     };
                 };
@@ -1613,7 +1961,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, api_key.mandate_bound, api_key.mandate_unbound, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.failed, commerce.charge.paid, commerce.charge.payment_notified, commerce.charge.payment_received, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.pix_key_registered, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, api_key.mandate_bound, api_key.mandate_unbound, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.failed, commerce.charge.paid, commerce.charge.payment_notified, commerce.charge.payment_received, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, oauth.consent_denied, oauth.grant_created, oauth.grant_replaced, oauth.grant_revoked, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.pix_key_registered, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
                         event: string;
                         server_id?: string;
                         /**
@@ -1767,7 +2115,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, api_key.mandate_bound, api_key.mandate_unbound, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.failed, commerce.charge.paid, commerce.charge.payment_notified, commerce.charge.payment_received, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.pix_key_registered, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
+                        /** @description The event type to subscribe to. Matching is EXACT string equality — there is no prefix and no wildcard, so `commerce.payment.succeeded` does not receive `commerce.payment.received`. A name outside the list below is accepted and recorded (`trigger.event_unknown`) rather than refused, so you can subscribe ahead of a release; until something emits it the subscription simply never fires. What this build emits: account_binding.closed, agent_autonomy.changed, api_key.mandate_bound, api_key.mandate_unbound, approval.decided, approval.pending, collect.attempt.cancelled, collect.attempt.expired, collect.attempt.failed, collect.attempt.issued, collect.attempt.ready, collect.attempt.superseded, collect.link.archived, collect.link.paused, collect.link.published, collect.payment.exception, collect.payment.paid, collect.refund.awaiting_decision, collect.refund.honored, collect.refund.required, commerce.account_entry_credit.received, commerce.account_entry_debit.received, commerce.account_launch_in.received, commerce.account_launch_out.received, commerce.account_status.changed, commerce.cashout.confirmed, commerce.charge.cancelled, commerce.charge.created, commerce.charge.expired, commerce.charge.expiry_notified, commerce.charge.failed, commerce.charge.paid, commerce.charge.payment_notified, commerce.charge.payment_received, commerce.dict_claim.cancelled, commerce.dict_claim.completed, commerce.dict_claim.confirmed, commerce.dict_claim.opened, commerce.dict_claim.waiting, commerce.internal_transfer_in.received, commerce.internal_transfer_out.received, commerce.mandate.expiring, commerce.mandate.granted, commerce.mandate.paused, commerce.mandate.resumed, commerce.mandate.revoked, commerce.onboarding.backgroundcheck_approved, commerce.onboarding.backgroundcheck_pending, commerce.onboarding.backgroundcheck_rejected, commerce.onboarding.documentscopy_approved, commerce.onboarding.documentscopy_pending, commerce.onboarding.documentscopy_processing, commerce.onboarding.documentscopy_rejected, commerce.onboarding.proposal_approved, commerce.onboarding.proposal_processing_documentscopy, commerce.onboarding.proposal_rejected, commerce.organization.paused, commerce.organization.resumed, commerce.payment.failed, commerce.payment.pending, commerce.payment.received, commerce.payment.refunded, commerce.payment.succeeded, commerce.payment.updated, commerce.pix_out.failed, commerce.pix_out.succeeded, commerce.pix_out.unconfirmed, commerce.pix_reversal_in.received, commerce.pix_reversal_out.received, commerce.recurrence.authorized, commerce.recurrence.cancelled, commerce.recurrence.cycle.accepted, commerce.recurrence.cycle.announced_late, commerce.recurrence.cycle.awaiting_instruction, commerce.recurrence.cycle.cancelled, commerce.recurrence.cycle.expired, commerce.recurrence.cycle.instruction_blocked, commerce.recurrence.cycle.instruction_missing, commerce.recurrence.cycle.instruction_refused, commerce.recurrence.cycle.paid, commerce.recurrence.cycle.queued_instruction_expired, commerce.recurrence.cycle.rejected, commerce.recurrence.cycle.scheduled, commerce.recurrence.cycle.settled_by_held_credit, commerce.recurrence.denied, commerce.recurrence.requested, commerce.recurrence.settlement_held, commerce.recurrence.settlement_hold_overdue, commerce.recurrence.settlement_hold_resolved, commerce.recurrence.settlement_possible_double_credit, commerce.rinne.observed, commerce.spend.failed, commerce.spend.settled, commerce.ted_in.succeeded, dda.boleto.registered, dda.subscription.activated, dda.subscription.failed, gate.paywall.charged, oauth.consent_denied, oauth.grant_created, oauth.grant_replaced, oauth.grant_revoked, payable.batch.completed, payable.batch.item_executed, payable.batch.item_refused, payable.rejected, project.archived, project.unarchived, proxy_call.failed, proxy_call.succeeded, sandbox.provisioning.account_bound, sandbox.provisioning.initial_credit, sandbox.provisioning.pix_key_registered, sandbox.provisioning.resumed, session.closed, space_credential_revocation.requested, spaces_consent.accepted, spaces_customer_account.resumed, spaces_customer_account.suspended, system.health.degraded, system.health.recovered, tool_call.failed, tool_call.succeeded, trigger.delivery.failed, trigger.paused_automatically, trigger.test_fire, user.signed_up, wallet.balance.below. */
                         event: string;
                         server_id?: string;
                         /**
@@ -3303,7 +3651,7 @@ export interface paths {
                                 seed?: {
                                     /** @enum {string} */
                                     state: "awaiting_treasury" | "sending" | "submitted" | "confirmed" | "not_needed" | "needs_attention";
-                                    /** @description USDC the Test treasury sends (the difference to 100 USDC), 6 decimals. */
+                                    /** @description USDC the Test treasury sends (the difference to 20 USDC), 6 decimals. */
                                     amount_atomic: string;
                                     treasury_address: string;
                                     tx_hash: string | null;
@@ -7934,6 +8282,10 @@ export interface paths {
                                 limits: {
                                     total_minor: number | null;
                                     per_transaction_minor: number | null;
+                                    /** @description The amount the bank lets be pulled per month, over the bank's own monthly window. Present only on a consent that has a monthly limit. */
+                                    monthly_minor?: number;
+                                    /** @description How many pulls the bank lets through per month, over the bank's own monthly window. Present only when the bank stated one. */
+                                    monthly_quantity?: number;
                                 } | null;
                                 created_at: string;
                                 authorized_at: string | null;
@@ -8000,6 +8352,8 @@ export interface paths {
                         limits?: {
                             total_minor?: number;
                             per_transaction_minor?: number;
+                            monthly_minor?: number;
+                            monthly_quantity?: number;
                         };
                         /** Format: date-time */
                         expires_at?: string;
@@ -8042,6 +8396,10 @@ export interface paths {
                             limits: {
                                 total_minor: number | null;
                                 per_transaction_minor: number | null;
+                                /** @description The amount the bank lets be pulled per month, over the bank's own monthly window. Present only on a consent that has a monthly limit. */
+                                monthly_minor?: number;
+                                /** @description How many pulls the bank lets through per month, over the bank's own monthly window. Present only when the bank stated one. */
+                                monthly_quantity?: number;
                             } | null;
                             created_at: string;
                             authorized_at: string | null;
@@ -8216,6 +8574,10 @@ export interface paths {
                             limits: {
                                 total_minor: number | null;
                                 per_transaction_minor: number | null;
+                                /** @description The amount the bank lets be pulled per month, over the bank's own monthly window. Present only on a consent that has a monthly limit. */
+                                monthly_minor?: number;
+                                /** @description How many pulls the bank lets through per month, over the bank's own monthly window. Present only when the bank stated one. */
+                                monthly_quantity?: number;
                             } | null;
                             created_at: string;
                             authorized_at: string | null;
@@ -8381,6 +8743,10 @@ export interface paths {
                             limits: {
                                 total_minor: number | null;
                                 per_transaction_minor: number | null;
+                                /** @description The amount the bank lets be pulled per month, over the bank's own monthly window. Present only on a consent that has a monthly limit. */
+                                monthly_minor?: number;
+                                /** @description How many pulls the bank lets through per month, over the bank's own monthly window. Present only when the bank stated one. */
+                                monthly_quantity?: number;
                             } | null;
                             created_at: string;
                             authorized_at: string | null;
@@ -11077,658 +11443,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/cards": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List issued cards
-         * @description The cards issued in this project, most recent first.
-         *
-         *     This listing carries CARDS, not mint flows: a `POST` that stopped at `202` waiting for KYC does not appear here until it becomes a card. To follow that flow, read the `flow_id` the issuance returned.
-         */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Filters to one consumer's cards. */
-                    consumer_id?: string;
-                    /** @description 1 to 200; the default is 50. */
-                    limit?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            cards: {
-                                /** @description CodeSpar's own id for the card row. This is what `/v1/cards/{id}` resolves. */
-                                id: string;
-                                /**
-                                 * @description Closed from two sides: `IssuerId` in `@codespar-enterprise/issuer` and `CHECK (issuer IN ('pomelo', 'bridge'))` on `issuer_cards` (migration 0118).
-                                 * @enum {string}
-                                 */
-                                issuer: "pomelo" | "bridge";
-                                /** @description The issuer's own identifier for the card, as it was returned to us. */
-                                card_id: string;
-                                /** @description The last four digits. No other card-number material exists on this surface. */
-                                last4: string;
-                                /**
-                                 * @description `CHECK (network IN ('visa', 'mastercard'))`, migration 0118.
-                                 * @enum {string}
-                                 */
-                                network: "visa" | "mastercard";
-                                /**
-                                 * @description `IssuerCardStatus`, and `CHECK (status IN ('active', 'blocked', 'canceled'))` in 0118.
-                                 * @enum {string}
-                                 */
-                                status: "active" | "blocked" | "canceled";
-                                /** @description The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet. */
-                                token_id: string | null;
-                                /**
-                                 * @description Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed.
-                                 * @enum {string}
-                                 */
-                                cde: "ingested" | "not_ingested" | "not_configured";
-                                /** Format: date-time */
-                                created_at: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description The query did not match the schema. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "invalid_query";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-            };
-        };
-        put?: never;
-        /**
-         * Issue a card under a signed mandate
-         * @description Issues a card for an agent, under a signed mandate.
-         *
-         *     **Three success outcomes, and the status separates them.** `201` is the issuance that finished now. `202` is the issuer asking for KYC on the holder before issuing: the flow stays `pending`, and `kyc_url` is where to send the person. `200` is a REPLAY: the same `Idempotency-Key` arriving again on a flow that already finished, returning what it produced instead of issuing a second card.
-         *
-         *     **Repeating is safe and it is the recovery path.** A `502 issuer_ingest_failed` means the card EXISTS and only the ingest into the data environment failed: repeating with the SAME key reuses the token, and sending a new key would issue a second card. The body of that refusal already carries the issued card.
-         *
-         *     **A repeated key with a different body is `409`**, not a new issuance: the request fingerprint is derived from the holder and compared, and it survives the redaction of the holder's data, so the divergence is caught much later.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: {
-                    /** @description Keys the mint flow. When absent, the server mints one, and the call then stops being repeatable, because there is no key to repeat. */
-                    "Idempotency-Key"?: string;
-                };
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** @description ISO 3166-1 alpha-2, uppercase. Decides the issuing corridor. */
-                        country: string;
-                        /** @description ISO 4217, uppercase. */
-                        currency: string;
-                        holder: {
-                            full_name: string;
-                            /** Format: email */
-                            email: string;
-                            /** @description `YYYY-MM-DD`. */
-                            birthdate: string;
-                            document: {
-                                type: string;
-                                value: string;
-                                /** @description ISO 3166-1 alpha-2, uppercase. */
-                                issuing_country: string;
-                            };
-                            address: {
-                                line1: string;
-                                line2?: string;
-                                /** @description Required by some corridors (Pomelo BR); optional in the schema. */
-                                street_number?: string;
-                                neighborhood?: string;
-                                city: string;
-                                state?: string;
-                                postal_code: string;
-                                /** @description Where the corridor requires it and it differs from `city`: in Pomelo BR, the IBGE code. */
-                                municipality?: string;
-                                /** @description ISO 3166-1 alpha-2, uppercase. */
-                                country: string;
-                            };
-                            /** @description E.164, with the `+`. */
-                            phone?: string;
-                        };
-                        /** @description REQUIRED on every rail, with no exception by issuer. The card is an agent's spending instrument and the mandate is the consumer's signed authorization for it. Issuing with no mandate produced, on Bridge, a card with no limit and no category on a rail that never declines; and on Pomelo, a card the authorizer has no link to at all at spend time. */
-                        mandate_id: string;
-                        metadata?: {
-                            [key: string]: string;
-                        };
-                    };
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            state: "issued";
-                            flow_id: string;
-                            card: {
-                                /** @description CodeSpar's own id for the card row. This is what `/v1/cards/{id}` resolves. */
-                                id: string;
-                                /**
-                                 * @description Closed from two sides: `IssuerId` in `@codespar-enterprise/issuer` and `CHECK (issuer IN ('pomelo', 'bridge'))` on `issuer_cards` (migration 0118).
-                                 * @enum {string}
-                                 */
-                                issuer: "pomelo" | "bridge";
-                                /** @description The issuer's own identifier for the card, as it was returned to us. */
-                                card_id: string;
-                                /** @description The last four digits. No other card-number material exists on this surface. */
-                                last4: string;
-                                /**
-                                 * @description `CHECK (network IN ('visa', 'mastercard'))`, migration 0118.
-                                 * @enum {string}
-                                 */
-                                network: "visa" | "mastercard";
-                                /**
-                                 * @description `IssuerCardStatus`, and `CHECK (status IN ('active', 'blocked', 'canceled'))` in 0118.
-                                 * @enum {string}
-                                 */
-                                status: "active" | "blocked" | "canceled";
-                                /** @description The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet. */
-                                token_id: string | null;
-                                /**
-                                 * @description Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed.
-                                 * @enum {string}
-                                 */
-                                cde: "ingested" | "not_ingested" | "not_configured";
-                                /** Format: date-time */
-                                created_at: string;
-                            };
-                        } | {
-                            /** @description `imf_` prefixed. The row it names is keyed by the mint call's `Idempotency-Key`, or by a server-minted one when that header was absent. */
-                            flow_id: string;
-                            /**
-                             * @description `MintFlowState`, and `CHECK (state IN ('pending', 'issued', 'revoked', 'failed'))` in 0118.
-                             * @enum {string}
-                             */
-                            state: "pending" | "issued" | "revoked" | "failed";
-                            /** @enum {string} */
-                            issuer: "pomelo" | "bridge";
-                            /** @description Why the flow is parked, when it is parked. Null otherwise. */
-                            reason: string | null;
-                            /** @description Where the holder finishes identity verification, when the issuer asked for one. Null otherwise. */
-                            kyc_url: string | null;
-                            /** Format: date-time */
-                            created_at: string;
-                            /** @description PRESENT ONLY when `state` is `issued` AND the flow already points at a card row. In every other case the key is absent rather than null. Null inside that case means the card row did not resolve under this org and project. */
-                            card?: {
-                                /** @description CodeSpar's own id for the card row. This is what `/v1/cards/{id}` resolves. */
-                                id: string;
-                                /**
-                                 * @description Closed from two sides: `IssuerId` in `@codespar-enterprise/issuer` and `CHECK (issuer IN ('pomelo', 'bridge'))` on `issuer_cards` (migration 0118).
-                                 * @enum {string}
-                                 */
-                                issuer: "pomelo" | "bridge";
-                                /** @description The issuer's own identifier for the card, as it was returned to us. */
-                                card_id: string;
-                                /** @description The last four digits. No other card-number material exists on this surface. */
-                                last4: string;
-                                /**
-                                 * @description `CHECK (network IN ('visa', 'mastercard'))`, migration 0118.
-                                 * @enum {string}
-                                 */
-                                network: "visa" | "mastercard";
-                                /**
-                                 * @description `IssuerCardStatus`, and `CHECK (status IN ('active', 'blocked', 'canceled'))` in 0118.
-                                 * @enum {string}
-                                 */
-                                status: "active" | "blocked" | "canceled";
-                                /** @description The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet. */
-                                token_id: string | null;
-                                /**
-                                 * @description Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed.
-                                 * @enum {string}
-                                 */
-                                cde: "ingested" | "not_ingested" | "not_configured";
-                                /** Format: date-time */
-                                created_at: string;
-                            } | null;
-                        };
-                    };
-                };
-                /** @description OK */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            state: "issued";
-                            flow_id: string;
-                            card: {
-                                /** @description CodeSpar's own id for the card row. This is what `/v1/cards/{id}` resolves. */
-                                id: string;
-                                /**
-                                 * @description Closed from two sides: `IssuerId` in `@codespar-enterprise/issuer` and `CHECK (issuer IN ('pomelo', 'bridge'))` on `issuer_cards` (migration 0118).
-                                 * @enum {string}
-                                 */
-                                issuer: "pomelo" | "bridge";
-                                /** @description The issuer's own identifier for the card, as it was returned to us. */
-                                card_id: string;
-                                /** @description The last four digits. No other card-number material exists on this surface. */
-                                last4: string;
-                                /**
-                                 * @description `CHECK (network IN ('visa', 'mastercard'))`, migration 0118.
-                                 * @enum {string}
-                                 */
-                                network: "visa" | "mastercard";
-                                /**
-                                 * @description `IssuerCardStatus`, and `CHECK (status IN ('active', 'blocked', 'canceled'))` in 0118.
-                                 * @enum {string}
-                                 */
-                                status: "active" | "blocked" | "canceled";
-                                /** @description The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet. */
-                                token_id: string | null;
-                                /**
-                                 * @description Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed.
-                                 * @enum {string}
-                                 */
-                                cde: "ingested" | "not_ingested" | "not_configured";
-                                /** Format: date-time */
-                                created_at: string;
-                            };
-                        };
-                    };
-                };
-                /** @description OK */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @description `imf_` prefixed. The row it names is keyed by the mint call's `Idempotency-Key`, or by a server-minted one when that header was absent. */
-                            flow_id: string;
-                            /**
-                             * @description `MintFlowState`, and `CHECK (state IN ('pending', 'issued', 'revoked', 'failed'))` in 0118.
-                             * @enum {string}
-                             */
-                            state: "pending" | "issued" | "revoked" | "failed";
-                            /** @enum {string} */
-                            issuer: "pomelo" | "bridge";
-                            /** @description Why the flow is parked, when it is parked. Null otherwise. */
-                            reason: string | null;
-                            /** @description Where the holder finishes identity verification, when the issuer asked for one. Null otherwise. */
-                            kyc_url: string | null;
-                            /** Format: date-time */
-                            created_at: string;
-                            /** @description PRESENT ONLY when `state` is `issued` AND the flow already points at a card row. In every other case the key is absent rather than null. Null inside that case means the card row did not resolve under this org and project. */
-                            card?: {
-                                /** @description CodeSpar's own id for the card row. This is what `/v1/cards/{id}` resolves. */
-                                id: string;
-                                /**
-                                 * @description Closed from two sides: `IssuerId` in `@codespar-enterprise/issuer` and `CHECK (issuer IN ('pomelo', 'bridge'))` on `issuer_cards` (migration 0118).
-                                 * @enum {string}
-                                 */
-                                issuer: "pomelo" | "bridge";
-                                /** @description The issuer's own identifier for the card, as it was returned to us. */
-                                card_id: string;
-                                /** @description The last four digits. No other card-number material exists on this surface. */
-                                last4: string;
-                                /**
-                                 * @description `CHECK (network IN ('visa', 'mastercard'))`, migration 0118.
-                                 * @enum {string}
-                                 */
-                                network: "visa" | "mastercard";
-                                /**
-                                 * @description `IssuerCardStatus`, and `CHECK (status IN ('active', 'blocked', 'canceled'))` in 0118.
-                                 * @enum {string}
-                                 */
-                                status: "active" | "blocked" | "canceled";
-                                /** @description The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet. */
-                                token_id: string | null;
-                                /**
-                                 * @description Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed.
-                                 * @enum {string}
-                                 */
-                                cde: "ingested" | "not_ingested" | "not_configured";
-                                /** Format: date-time */
-                                created_at: string;
-                            } | null;
-                        };
-                    };
-                };
-                /** @description The body did not match the schema, the country/currency pair has no corridor, the holder was rejected by the issuer, or the controls requested do not exist on this rail. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "invalid_body" | "issuer_corridor_unsupported" | "invalid_holder" | "issuer_controls_unsupported";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description The key and the issuer's environment do not match. A test key does not issue a real card, and a live key does not issue on the staging issuer. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "stage_issuer_live_key" | "live_issuer_test_key";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description The named mandate does not exist in this organization. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "mandate_not_found";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description The `Idempotency-Key` was already used with a different body, or it belongs to a request made before a `VAULT_MASTER_KEY` rotation and can no longer be matched to its body (retry with a new key), or the mandate is not active. `details` carries the mandate's state in the last case. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "idempotency_key_conflict" | "mandate_not_active";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description Invariant break: the flow is recorded as issued and there is no readable card row behind it. */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "issuer_card_unknown";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description The issuer refused or failed the issuance; or the card was issued and the ingest into the data environment failed. In the second case the card EXISTS and comes in `details.card`; repeat with the SAME key. */
-                502: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "issuer_mint_failed" | "issuer_ingest_failed";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description The issuer's credentials could not be read from the vault. */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "vault_unavailable";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/cards/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Read an issued card, or the mint flow that is producing one
-         * @description ONE PATH, TWO RESOURCES, chosen by the id's prefix. An id beginning `imf_` is a MINT FLOW and the response is the flow. Anything else is looked up as a card row and the response is the card. There is no query parameter and no header that changes this: the prefix is the whole dispatch, so a client has to be ready for both bodies on one operation.
-         *
-         *     A flow that reached `issued` and already points at a card row answers with the flow PLUS a `card` key. No other flow state carries that key at all. So the polling loop after a mint is: read the flow id, and when `state` is `issued`, read `card`.
-         *
-         *     SCOPING. Both lookups carry the caller's org and project in the WHERE clause. A card or flow belonging to a sibling project of the same org is indistinguishable from one that was never created: both are 404, with the same code.
-         *
-         *     NO CARD-NUMBER MATERIAL crosses this surface. `last4` and, once ingest lands, `token_id` are what a card exposes; the number itself lives only in the cardholder-data environment and is never part of this response.
-         *
-         *     The canonical path. `GET /v1/issuer/cards/{id}` is the same handler at the path that shipped first, kept for two releases and not described in this document.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description A card row id, or an `imf_` prefixed mint flow id. The prefix selects which. */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @description CodeSpar's own id for the card row. This is what `/v1/cards/{id}` resolves. */
-                            id: string;
-                            /**
-                             * @description Closed from two sides: `IssuerId` in `@codespar-enterprise/issuer` and `CHECK (issuer IN ('pomelo', 'bridge'))` on `issuer_cards` (migration 0118).
-                             * @enum {string}
-                             */
-                            issuer: "pomelo" | "bridge";
-                            /** @description The issuer's own identifier for the card, as it was returned to us. */
-                            card_id: string;
-                            /** @description The last four digits. No other card-number material exists on this surface. */
-                            last4: string;
-                            /**
-                             * @description `CHECK (network IN ('visa', 'mastercard'))`, migration 0118.
-                             * @enum {string}
-                             */
-                            network: "visa" | "mastercard";
-                            /**
-                             * @description `IssuerCardStatus`, and `CHECK (status IN ('active', 'blocked', 'canceled'))` in 0118.
-                             * @enum {string}
-                             */
-                            status: "active" | "blocked" | "canceled";
-                            /** @description The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet. */
-                            token_id: string | null;
-                            /**
-                             * @description Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed.
-                             * @enum {string}
-                             */
-                            cde: "ingested" | "not_ingested" | "not_configured";
-                            /** Format: date-time */
-                            created_at: string;
-                        } | {
-                            /** @description `imf_` prefixed. The row it names is keyed by the mint call's `Idempotency-Key`, or by a server-minted one when that header was absent. */
-                            flow_id: string;
-                            /**
-                             * @description `MintFlowState`, and `CHECK (state IN ('pending', 'issued', 'revoked', 'failed'))` in 0118.
-                             * @enum {string}
-                             */
-                            state: "pending" | "issued" | "revoked" | "failed";
-                            /** @enum {string} */
-                            issuer: "pomelo" | "bridge";
-                            /** @description Why the flow is parked, when it is parked. Null otherwise. */
-                            reason: string | null;
-                            /** @description Where the holder finishes identity verification, when the issuer asked for one. Null otherwise. */
-                            kyc_url: string | null;
-                            /** Format: date-time */
-                            created_at: string;
-                            /** @description PRESENT ONLY when `state` is `issued` AND the flow already points at a card row. In every other case the key is absent rather than null. Null inside that case means the card row did not resolve under this org and project. */
-                            card?: {
-                                /** @description CodeSpar's own id for the card row. This is what `/v1/cards/{id}` resolves. */
-                                id: string;
-                                /**
-                                 * @description Closed from two sides: `IssuerId` in `@codespar-enterprise/issuer` and `CHECK (issuer IN ('pomelo', 'bridge'))` on `issuer_cards` (migration 0118).
-                                 * @enum {string}
-                                 */
-                                issuer: "pomelo" | "bridge";
-                                /** @description The issuer's own identifier for the card, as it was returned to us. */
-                                card_id: string;
-                                /** @description The last four digits. No other card-number material exists on this surface. */
-                                last4: string;
-                                /**
-                                 * @description `CHECK (network IN ('visa', 'mastercard'))`, migration 0118.
-                                 * @enum {string}
-                                 */
-                                network: "visa" | "mastercard";
-                                /**
-                                 * @description `IssuerCardStatus`, and `CHECK (status IN ('active', 'blocked', 'canceled'))` in 0118.
-                                 * @enum {string}
-                                 */
-                                status: "active" | "blocked" | "canceled";
-                                /** @description The card's token in the cardholder-data environment. Null until ingest lands, which is its own step after the card exists, so a freshly issued card can be readable here with no token yet. */
-                                token_id: string | null;
-                                /**
-                                 * @description Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed.
-                                 * @enum {string}
-                                 */
-                                cde: "ingested" | "not_ingested" | "not_configured";
-                                /** Format: date-time */
-                                created_at: string;
-                            } | null;
-                        };
-                    };
-                };
-                /** @description `issuer_card_unknown` for both misses, with different messages: `mint flow not found` for an `imf_` id and `issuer card not found` otherwise. One code, so a client cannot tell a wrong id from another project's id by reading the code. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "issuer_card_unknown";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/counterparties/{id}": {
         parameters: {
             query?: never;
@@ -12232,6 +11946,1887 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the project's cards, both issuers
+         * @description The project's Pomelo and Rain cards, most recent first, as card views. Requires `cards:read`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    issuer?: "pomelo" | "rain";
+                    mandate_id?: string;
+                    consumer_id?: string;
+                    /** @description 1 to 200; the default is 50. */
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cards: {
+                                /** @description `icrd_…` for a Pomelo card, `rcrd_<rain card id>` for a Rain card. The issuer is the record's, never the request's. */
+                                id: string;
+                                /** @enum {string} */
+                                issuer: "pomelo" | "rain";
+                                /** @enum {string} */
+                                program: "pomelo_brl" | "rain_usd";
+                                /**
+                                 * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                                 * @enum {string}
+                                 */
+                                currency: "BRL" | "USD";
+                                /** @enum {string} */
+                                status: "pending" | "not_activated" | "active" | "blocked" | "canceled";
+                                /** @description The issuer's own status name (Pomelo ACTIVE/BLOCKED/DISABLED; Rain notActivated/active/locked/canceled). */
+                                issuer_status: string;
+                                last4: string | null;
+                                /** @enum {string|null} */
+                                network: "visa" | "mastercard" | null;
+                                mandate_id: string | null;
+                                consumer_id: string | null;
+                                /** Format: date-time */
+                                created_at: string;
+                                /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                                available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                                funding?: {
+                                    /** @enum {string} */
+                                    asset: "USDC";
+                                };
+                            }[];
+                        };
+                    };
+                };
+                /** @description The query did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Issue a card (pomelo_brl or rain_usd)
+         * @description Issues a card of the program chosen by `currency` (BRL -> `pomelo_brl`, USD -> `rain_usd`), or of `provider`'s program when given.
+         *
+         *     **For an API key or an OAuth token only**, holding `cards:issue`. Every call, a retry included, checks server-side: the mandate (this project's, the consumer's, active, unexpired, in the card currency), the key bound to the mandate, the holder approved by the issuer, the current terms accepted by the competent person, and an unrevoked authorization for automated issuance for (holder, program) granted in the dashboard.
+         *
+         *     **`Idempotency-Key` is required.** The first call binds the key to the program chosen then; a retry with the same key uses the RECORDED program even if the default or the availability changed, and never issues a second card. The same key with another body is `409 idempotency_key_conflict`.
+         *
+         *     **`202` is a person's action pending**, with a stable `pending_action`; nothing is ever accepted on a person's behalf. Repeat the same request after the action: it re-validates and resumes the SAME operation.
+         *
+         *     The Pomelo holder is built by the server from what the account already holds plus the holder's profile; what is missing is a 202 `complete_holder_profile` naming exactly the missing fields (`PUT /v1/cards/holder-profiles/{consumer_id}`), after which the SAME request resumes. An API caller MAY send `holder` for `pomelo_brl` instead; `rain_usd` refuses it (its holder is read from the Rain records). Live projects are refused (`card_issuer_unavailable`, reason `live_blocked`).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Required. Binds the request to its program; a retry never issues twice. */
+                    "Idempotency-Key": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        currency: string;
+                        provider?: string | null;
+                        mandate_id: string;
+                        consumer_id: string;
+                        holder?: {
+                            full_name: string;
+                            /** Format: email */
+                            email: string;
+                            birthdate: string;
+                            document: {
+                                type: string;
+                                value: string;
+                                issuing_country: string;
+                            };
+                            address: {
+                                line1: string;
+                                line2?: string;
+                                street_number?: string;
+                                neighborhood?: string;
+                                city: string;
+                                state?: string;
+                                postal_code: string;
+                                municipality?: string;
+                                country: string;
+                            };
+                            phone?: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            state: "issued";
+                            issue_request_id: string;
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            selection: {
+                                /**
+                                 * @description The `provider` the first call asked for; null when the program was chosen by currency.
+                                 * @enum {string|null}
+                                 */
+                                provider_requested: "pomelo" | "rain" | null;
+                                /** @enum {string} */
+                                chosen_by: "provider" | "currency";
+                            };
+                            mandate_id: string;
+                            consumer_id: string;
+                            card: {
+                                /** @description `icrd_…` for a Pomelo card, `rcrd_<rain card id>` for a Rain card. The issuer is the record's, never the request's. */
+                                id: string;
+                                /** @enum {string} */
+                                issuer: "pomelo" | "rain";
+                                /** @enum {string} */
+                                program: "pomelo_brl" | "rain_usd";
+                                /**
+                                 * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                                 * @enum {string}
+                                 */
+                                currency: "BRL" | "USD";
+                                /** @enum {string} */
+                                status: "pending" | "not_activated" | "active" | "blocked" | "canceled";
+                                /** @description The issuer's own status name (Pomelo ACTIVE/BLOCKED/DISABLED; Rain notActivated/active/locked/canceled). */
+                                issuer_status: string;
+                                last4: string | null;
+                                /** @enum {string|null} */
+                                network: "visa" | "mastercard" | null;
+                                mandate_id: string | null;
+                                consumer_id: string | null;
+                                /** Format: date-time */
+                                created_at: string;
+                                /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                                available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                                funding?: {
+                                    /** @enum {string} */
+                                    asset: "USDC";
+                                };
+                            };
+                            /** @description The automated issuance authorization in force when the issuer was called. */
+                            authorization_id: string | null;
+                            /** @description Whether that authorization still stands. An issued card is never undone; a revocation since is reported here. */
+                            authorization_active: boolean | null;
+                        };
+                    };
+                };
+                /** @description OK */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            state: "issued";
+                            issue_request_id: string;
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            selection: {
+                                /**
+                                 * @description The `provider` the first call asked for; null when the program was chosen by currency.
+                                 * @enum {string|null}
+                                 */
+                                provider_requested: "pomelo" | "rain" | null;
+                                /** @enum {string} */
+                                chosen_by: "provider" | "currency";
+                            };
+                            mandate_id: string;
+                            consumer_id: string;
+                            card: {
+                                /** @description `icrd_…` for a Pomelo card, `rcrd_<rain card id>` for a Rain card. The issuer is the record's, never the request's. */
+                                id: string;
+                                /** @enum {string} */
+                                issuer: "pomelo" | "rain";
+                                /** @enum {string} */
+                                program: "pomelo_brl" | "rain_usd";
+                                /**
+                                 * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                                 * @enum {string}
+                                 */
+                                currency: "BRL" | "USD";
+                                /** @enum {string} */
+                                status: "pending" | "not_activated" | "active" | "blocked" | "canceled";
+                                /** @description The issuer's own status name (Pomelo ACTIVE/BLOCKED/DISABLED; Rain notActivated/active/locked/canceled). */
+                                issuer_status: string;
+                                last4: string | null;
+                                /** @enum {string|null} */
+                                network: "visa" | "mastercard" | null;
+                                mandate_id: string | null;
+                                consumer_id: string | null;
+                                /** Format: date-time */
+                                created_at: string;
+                                /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                                available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                                funding?: {
+                                    /** @enum {string} */
+                                    asset: "USDC";
+                                };
+                            };
+                            /** @description The automated issuance authorization in force when the issuer was called. */
+                            authorization_id: string | null;
+                            /** @description Whether that authorization still stands. An issued card is never undone; a revocation since is reported here. */
+                            authorization_active: boolean | null;
+                        };
+                    };
+                };
+                /** @description OK */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description A person must act; nothing was sent to the issuer for this request since the last answer.
+                             * @enum {string}
+                             */
+                            state: "pending_human";
+                            issue_request_id: string;
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            selection: {
+                                /**
+                                 * @description The `provider` the first call asked for; null when the program was chosen by currency.
+                                 * @enum {string|null}
+                                 */
+                                provider_requested: "pomelo" | "rain" | null;
+                                /** @enum {string} */
+                                chosen_by: "provider" | "currency";
+                            };
+                            mandate_id: string;
+                            consumer_id: string;
+                            pending_action: {
+                                /** @description Stable for the same issue request and kind. */
+                                id: string;
+                                /** @enum {string} */
+                                kind: "issuer_kyc" | "accept_terms" | "authorize_automated_issuance" | "bind_key_to_mandate" | "complete_holder_profile";
+                                /**
+                                 * @description `holder` acts for themselves (personal terms, KYC); `company_signatory` signs for the company (PJ) or the holder (PF) authorizes issuance; `org_admin` configures.
+                                 * @enum {string}
+                                 */
+                                actor: "holder" | "company_signatory" | "org_admin";
+                                /** @description Where the person acts: the issuer's KYC link, or the dashboard page of this issue request. Null when the deployment has no dashboard URL. */
+                                url: string | null;
+                                /** @description complete_holder_profile only: exactly the holder fields still missing. `document` means the account's onboarding (KYC) is not finished. */
+                                missing_fields?: ("document" | "full_name" | "email" | "birthdate" | "address.line1" | "address.city" | "address.postal_code")[];
+                            };
+                        } | {
+                            /**
+                             * @description `processing`: the issuer is being called. `uncertain`: a timeout or an ambiguous answer, the card MAY exist; a retry with the same key reconciles on the same issuer reference and never issues a second card.
+                             * @enum {string}
+                             */
+                            state: "processing" | "uncertain";
+                            issue_request_id: string;
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            selection: {
+                                /**
+                                 * @description The `provider` the first call asked for; null when the program was chosen by currency.
+                                 * @enum {string|null}
+                                 */
+                                provider_requested: "pomelo" | "rain" | null;
+                                /** @enum {string} */
+                                chosen_by: "provider" | "currency";
+                            };
+                            mandate_id: string;
+                            consumer_id: string;
+                            retry_after_seconds: number;
+                            note?: string;
+                            issuer_code?: string;
+                        };
+                    };
+                };
+                /** @description The body or the key is malformed. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body" | "idempotency_key_required";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No API key behind the request. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_connection_key_unknown";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The caller may not issue: a service caller, a key without `cards:issue`, an OAuth token whose consent key is not bound to the mandate and listed in its authorization, or a mandate paused, revoked or expired. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_issue_requires_api_key" | "card_scope_missing" | "card_oauth_not_bound" | "mandate_paused" | "mandate_revoked" | "mandate_expired";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No mandate with that id in this project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_mandate_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key was used with another body; the request failed for good at the issuer; one card per mandate; the holder or the terms do not allow it; the program's card limit; or the issuer's attempt is still open (retry with the same key). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "idempotency_key_conflict" | "card_issue_request_failed" | "card_mandate_already_bound" | "card_holder_not_eligible" | "card_terms_policy_missing" | "card_limit_reached" | "card_issue_in_progress";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No program for the currency/provider, the program is unavailable (`details.reason`, `details.available_programs`), the mandate cannot back the card, or the issuer refused the card. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_program_not_found" | "card_issuer_unavailable" | "card_mandate_not_eligible" | "card_issue_refused";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The issuer failed the request; repeat with the same key. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                code: string;
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The issuer's lane or credentials could not be reached; nothing was issued. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_issuer_unavailable" | "vault_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/programs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The card programs and their availability in this project
+         * @description Each program with whether it can issue now in the caller's project and environment and, when not, why. Available = its Card issuing integration is connected (verified), the project is Test, the issuer is enabled and the account is eligible. Requires `cards:read`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description The account's market, derived server-side. Every account is BR today.
+                             * @enum {string}
+                             */
+                            market: "BR";
+                            programs: {
+                                /** @enum {string} */
+                                program: "pomelo_brl" | "rain_usd";
+                                /** @enum {string} */
+                                issuer: "pomelo" | "rain";
+                                /** @enum {string} */
+                                currency: "BRL" | "USD";
+                                available: boolean;
+                                /** @enum {string} */
+                                reason?: "not_configured" | "not_verified" | "verify_failed" | "live_blocked" | "account_not_eligible" | "issuer_disabled" | "issuer_not_supported";
+                                operations: ("issue" | "get" | "list" | "freeze" | "unfreeze" | "cancel")[];
+                                funding?: {
+                                    /** @enum {string} */
+                                    asset: "USDC";
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What is missing before a card can be issued
+         * @description Per program, each requirement of an issue and its status (`done`, `pending` with the actor who acts, `blocked` with the reason, `not_applicable`), optionally for one holder and mandate. Computed by the SAME function the issue runs, so this checklist and an issue's refusal never disagree. Read-only; a person session or an API key. Requires `cards:read`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description The holder. */
+                    consumer_id?: string;
+                    /** @description The mandate the card would stand on; the authorization is bound to it. */
+                    mandate_id?: string;
+                    /** @description Default: `person` for a dashboard session, `automated` for an API key. */
+                    mode?: "automated" | "person";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description `automated`: an API key / OAuth issue. `person`: the competent person issuing in the dashboard, where bind_key_to_mandate and authorize_automated_issuance are not_applicable.
+                             * @enum {string}
+                             */
+                            mode: "automated" | "person";
+                            programs: {
+                                /** @enum {string} */
+                                program: "pomelo_brl" | "rain_usd";
+                                /** @enum {string} */
+                                issuer: "pomelo" | "rain";
+                                /** @enum {string} */
+                                currency: "BRL" | "USD";
+                                ready: boolean;
+                                requirements: {
+                                    /** @enum {string} */
+                                    kind: "environment" | "integration_connected" | "bind_key_to_mandate" | "complete_holder_profile" | "issuer_kyc" | "accept_terms" | "authorize_automated_issuance";
+                                    /** @enum {string} */
+                                    status: "done" | "pending" | "blocked" | "not_applicable";
+                                    /** @enum {string} */
+                                    actor: "holder" | "company_signatory" | "org_admin";
+                                    action_url?: string;
+                                    reason?: string;
+                                    /** @description The pending action of the open issue request on this mandate, when there is one. */
+                                    pending_action_id?: string;
+                                    /** @description complete_holder_profile: exactly the holder fields still missing. */
+                                    missing_fields?: string[];
+                                    /** @description authorize_automated_issuance, with a mandate asked: the mandate the authorization binds to. */
+                                    mandate_id?: string;
+                                    /** @description authorize_automated_issuance, with a mandate asked: the project's unrevoked API keys bound to it. */
+                                    bound_api_key_ids?: string[];
+                                }[];
+                            }[];
+                        };
+                    };
+                };
+                /** @description The query did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_query";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a card, or an issue request
+         * @description A card id answers the card view. An issue request id (`cir_…`) answers its state: the pending action, the issued card, or the failure. Another project's id is indistinguishable from one that does not exist. Requires `cards:read`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description A card id (`icrd_…`, `rcrd_…`); on GET, also an issue request id (`cir_…`). */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `icrd_…` for a Pomelo card, `rcrd_<rain card id>` for a Rain card. The issuer is the record's, never the request's. */
+                            id: string;
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            /**
+                             * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                             * @enum {string}
+                             */
+                            currency: "BRL" | "USD";
+                            /** @enum {string} */
+                            status: "pending" | "not_activated" | "active" | "blocked" | "canceled";
+                            /** @description The issuer's own status name (Pomelo ACTIVE/BLOCKED/DISABLED; Rain notActivated/active/locked/canceled). */
+                            issuer_status: string;
+                            last4: string | null;
+                            /** @enum {string|null} */
+                            network: "visa" | "mastercard" | null;
+                            mandate_id: string | null;
+                            consumer_id: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                            available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                            funding?: {
+                                /** @enum {string} */
+                                asset: "USDC";
+                            };
+                        } | {
+                            /**
+                             * @description A person must act; nothing was sent to the issuer for this request since the last answer.
+                             * @enum {string}
+                             */
+                            state: "pending_human";
+                            issue_request_id: string;
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            selection: {
+                                /**
+                                 * @description The `provider` the first call asked for; null when the program was chosen by currency.
+                                 * @enum {string|null}
+                                 */
+                                provider_requested: "pomelo" | "rain" | null;
+                                /** @enum {string} */
+                                chosen_by: "provider" | "currency";
+                            };
+                            mandate_id: string;
+                            consumer_id: string;
+                            pending_action: {
+                                /** @description Stable for the same issue request and kind. */
+                                id: string;
+                                /** @enum {string} */
+                                kind: "issuer_kyc" | "accept_terms" | "authorize_automated_issuance" | "bind_key_to_mandate" | "complete_holder_profile";
+                                /**
+                                 * @description `holder` acts for themselves (personal terms, KYC); `company_signatory` signs for the company (PJ) or the holder (PF) authorizes issuance; `org_admin` configures.
+                                 * @enum {string}
+                                 */
+                                actor: "holder" | "company_signatory" | "org_admin";
+                                /** @description Where the person acts: the issuer's KYC link, or the dashboard page of this issue request. Null when the deployment has no dashboard URL. */
+                                url: string | null;
+                                /** @description complete_holder_profile only: exactly the holder fields still missing. `document` means the account's onboarding (KYC) is not finished. */
+                                missing_fields?: ("document" | "full_name" | "email" | "birthdate" | "address.line1" | "address.city" | "address.postal_code")[];
+                            };
+                        } | {
+                            /**
+                             * @description `processing`: the issuer is being called. `uncertain`: a timeout or an ambiguous answer, the card MAY exist; a retry with the same key reconciles on the same issuer reference and never issues a second card.
+                             * @enum {string}
+                             */
+                            state: "processing" | "uncertain";
+                            issue_request_id: string;
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            selection: {
+                                /**
+                                 * @description The `provider` the first call asked for; null when the program was chosen by currency.
+                                 * @enum {string|null}
+                                 */
+                                provider_requested: "pomelo" | "rain" | null;
+                                /** @enum {string} */
+                                chosen_by: "provider" | "currency";
+                            };
+                            mandate_id: string;
+                            consumer_id: string;
+                            retry_after_seconds: number;
+                            note?: string;
+                            issuer_code?: string;
+                        } | {
+                            /** @enum {string} */
+                            state: "issued";
+                            issue_request_id: string;
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            selection: {
+                                /**
+                                 * @description The `provider` the first call asked for; null when the program was chosen by currency.
+                                 * @enum {string|null}
+                                 */
+                                provider_requested: "pomelo" | "rain" | null;
+                                /** @enum {string} */
+                                chosen_by: "provider" | "currency";
+                            };
+                            mandate_id: string;
+                            consumer_id: string;
+                            card: {
+                                /** @description `icrd_…` for a Pomelo card, `rcrd_<rain card id>` for a Rain card. The issuer is the record's, never the request's. */
+                                id: string;
+                                /** @enum {string} */
+                                issuer: "pomelo" | "rain";
+                                /** @enum {string} */
+                                program: "pomelo_brl" | "rain_usd";
+                                /**
+                                 * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                                 * @enum {string}
+                                 */
+                                currency: "BRL" | "USD";
+                                /** @enum {string} */
+                                status: "pending" | "not_activated" | "active" | "blocked" | "canceled";
+                                /** @description The issuer's own status name (Pomelo ACTIVE/BLOCKED/DISABLED; Rain notActivated/active/locked/canceled). */
+                                issuer_status: string;
+                                last4: string | null;
+                                /** @enum {string|null} */
+                                network: "visa" | "mastercard" | null;
+                                mandate_id: string | null;
+                                consumer_id: string | null;
+                                /** Format: date-time */
+                                created_at: string;
+                                /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                                available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                                funding?: {
+                                    /** @enum {string} */
+                                    asset: "USDC";
+                                };
+                            };
+                            /** @description The automated issuance authorization in force when the issuer was called. */
+                            authorization_id: string | null;
+                            /** @description Whether that authorization still stands. An issued card is never undone; a revocation since is reported here. */
+                            authorization_active: boolean | null;
+                        } | {
+                            /** @enum {string} */
+                            state: "received" | "failed";
+                            issue_request_id: string;
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            selection: {
+                                /**
+                                 * @description The `provider` the first call asked for; null when the program was chosen by currency.
+                                 * @enum {string|null}
+                                 */
+                                provider_requested: "pomelo" | "rain" | null;
+                                /** @enum {string} */
+                                chosen_by: "provider" | "currency";
+                            };
+                            failure_code?: string;
+                        };
+                    };
+                };
+                /** @description No card or issue request with that id in this project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/{id}/freeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Freeze a card
+         * @description Routed by the card's recorded issuer. `pomelo_brl` applies it at Pomelo and answers the card view; `rain_usd` has no lock/cancel call and answers `422 card_action_unsupported`. Requires `cards:issue`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description A card id (`icrd_…`, `rcrd_…`); on GET, also an issue request id (`cir_…`). */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        reason?: "client_request" | "lost" | "stolen" | "broken" | "upgrade";
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `icrd_…` for a Pomelo card, `rcrd_<rain card id>` for a Rain card. The issuer is the record's, never the request's. */
+                            id: string;
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            /**
+                             * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                             * @enum {string}
+                             */
+                            currency: "BRL" | "USD";
+                            /** @enum {string} */
+                            status: "pending" | "not_activated" | "active" | "blocked" | "canceled";
+                            /** @description The issuer's own status name (Pomelo ACTIVE/BLOCKED/DISABLED; Rain notActivated/active/locked/canceled). */
+                            issuer_status: string;
+                            last4: string | null;
+                            /** @enum {string|null} */
+                            network: "visa" | "mastercard" | null;
+                            mandate_id: string | null;
+                            consumer_id: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                            available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                            funding?: {
+                                /** @enum {string} */
+                                asset: "USDC";
+                            };
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No API key behind the request. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_connection_key_unknown";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key lacks `cards:issue`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No card with that id in this project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The card's state does not allow it (`details.available_actions`). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_action_not_allowed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The program does not support it, or the project is Live. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_action_unsupported" | "card_issuer_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The issuer did not apply the change; the card is as it was. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_control_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The issuer's credentials could not be read. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "vault_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/{id}/unfreeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unfreeze a card
+         * @description Routed by the card's recorded issuer. `pomelo_brl` applies it at Pomelo and answers the card view; `rain_usd` has no lock/cancel call and answers `422 card_action_unsupported`. Requires `cards:issue`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description A card id (`icrd_…`, `rcrd_…`); on GET, also an issue request id (`cir_…`). */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        reason?: "client_request" | "lost" | "stolen" | "broken" | "upgrade";
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `icrd_…` for a Pomelo card, `rcrd_<rain card id>` for a Rain card. The issuer is the record's, never the request's. */
+                            id: string;
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            /**
+                             * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                             * @enum {string}
+                             */
+                            currency: "BRL" | "USD";
+                            /** @enum {string} */
+                            status: "pending" | "not_activated" | "active" | "blocked" | "canceled";
+                            /** @description The issuer's own status name (Pomelo ACTIVE/BLOCKED/DISABLED; Rain notActivated/active/locked/canceled). */
+                            issuer_status: string;
+                            last4: string | null;
+                            /** @enum {string|null} */
+                            network: "visa" | "mastercard" | null;
+                            mandate_id: string | null;
+                            consumer_id: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                            available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                            funding?: {
+                                /** @enum {string} */
+                                asset: "USDC";
+                            };
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No API key behind the request. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_connection_key_unknown";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key lacks `cards:issue`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No card with that id in this project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The card's state does not allow it (`details.available_actions`). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_action_not_allowed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The program does not support it, or the project is Live. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_action_unsupported" | "card_issuer_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The issuer did not apply the change; the card is as it was. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_control_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The issuer's credentials could not be read. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "vault_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel a card
+         * @description Routed by the card's recorded issuer. `pomelo_brl` applies it at Pomelo and answers the card view; `rain_usd` has no lock/cancel call and answers `422 card_action_unsupported`. Requires `cards:issue`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description A card id (`icrd_…`, `rcrd_…`); on GET, also an issue request id (`cir_…`). */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        reason?: "client_request" | "lost" | "stolen" | "broken" | "upgrade";
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description `icrd_…` for a Pomelo card, `rcrd_<rain card id>` for a Rain card. The issuer is the record's, never the request's. */
+                            id: string;
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            /**
+                             * @description The CARD currency. A Rain card's funding (USDC) is in `funding`, never here.
+                             * @enum {string}
+                             */
+                            currency: "BRL" | "USD";
+                            /** @enum {string} */
+                            status: "pending" | "not_activated" | "active" | "blocked" | "canceled";
+                            /** @description The issuer's own status name (Pomelo ACTIVE/BLOCKED/DISABLED; Rain notActivated/active/locked/canceled). */
+                            issuer_status: string;
+                            last4: string | null;
+                            /** @enum {string|null} */
+                            network: "visa" | "mastercard" | null;
+                            mandate_id: string | null;
+                            consumer_id: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** @description What the program supports AND the card's state allows. Pomelo active: freeze, cancel; blocked: unfreeze, cancel; canceled: none. Rain: none. */
+                            available_actions: ("freeze" | "unfreeze" | "cancel")[];
+                            funding?: {
+                                /** @enum {string} */
+                                asset: "USDC";
+                            };
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No API key behind the request. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_connection_key_unknown";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The key lacks `cards:issue`. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_scope_missing";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No card with that id in this project. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The card's state does not allow it (`details.available_actions`). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_action_not_allowed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The program does not support it, or the project is Live. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_action_unsupported" | "card_issuer_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The issuer did not apply the change; the card is as it was. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_control_failed";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description The issuer's credentials could not be read. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "vault_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/holder-profiles/{consumer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Which Pomelo holder fields are on file and which are missing
+         * @description The Pomelo holder is built from what the account already holds (the verified document, the onboarding's registered name) and the holder's profile. This read names each required field's source and lists exactly what is missing. It never returns a value. Requires `cards:read`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    consumer_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            consumer_id: string;
+                            /** @enum {string} */
+                            program: "pomelo_brl";
+                            /** @description Where each required field comes from. Values are never returned. */
+                            sources: {
+                                [key: string]: "account" | "onboarding" | "profile" | "missing";
+                            };
+                            missing_fields: ("document" | "full_name" | "email" | "birthdate" | "address.line1" | "address.city" | "address.postal_code")[];
+                            optional_present: string[];
+                            complete: boolean;
+                            /** Format: date-time */
+                            updated_at: string | null;
+                        };
+                    };
+                };
+                /** @description No consumer with that id in this organization. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_consumer_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * The holder fills only what is missing
+         * @description Sealed with the vault's per-org key. Send only the fields asked for; a field sent replaces the stored one. The document is never accepted here: it comes from the account's onboarding (KYC). After this, repeat the SAME issue request (same Idempotency-Key): it revalidates and resumes, and never issues a second card. Only the HOLDER may write it, a verified person through the dashboard whose own verified consumer is this one (or Rain's verified person for it); an admin or another member gets `card_holder_only`, an API key or an OAuth token `card_person_required`.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    consumer_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        full_name?: string;
+                        /** Format: email */
+                        email?: string;
+                        birthdate?: string;
+                        phone?: string;
+                        address?: {
+                            line1: string;
+                            line2?: string;
+                            street_number?: string;
+                            neighborhood?: string;
+                            city: string;
+                            state?: string;
+                            postal_code: string;
+                            municipality?: string;
+                            /** @default BR */
+                            country?: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            consumer_id: string;
+                            /** @enum {string} */
+                            program: "pomelo_brl";
+                            /** @description Where each required field comes from. Values are never returned. */
+                            sources: {
+                                [key: string]: "account" | "onboarding" | "profile" | "missing";
+                            };
+                            missing_fields: ("document" | "full_name" | "email" | "birthdate" | "address.line1" | "address.city" | "address.postal_code")[];
+                            optional_present: string[];
+                            complete: boolean;
+                            /** Format: date-time */
+                            updated_at: string | null;
+                        };
+                    };
+                };
+                /** @description The body did not match the schema. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "invalid_body";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description Not a verified person of this org, or not the holder: only the holder writes it, proved by their own verified consumer or their Rain-verified person, never by a role. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_person_required" | "card_authorization_not_competent" | "card_holder_only";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description No consumer with that id in this organization. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_consumer_not_found";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+                /** @description A Live project. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "card_issuer_unavailable";
+                                message: string;
+                                details?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
+                            request_id: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/card-issuing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Integrations: Card issuing
+         * @description One entry per program: managed by CodeSpar (no customer credential), and its state in this project and environment: `not_configured`, `configured` (never verified), `connected` (last verification ok), `verify_failed` (with `reason`), `live_blocked`. Requires `cards:read`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            issuer: "pomelo" | "rain";
+                            /** @enum {string} */
+                            program: "pomelo_brl" | "rain_usd";
+                            /** @enum {string} */
+                            currency: "BRL" | "USD";
+                            /**
+                             * @description The customer supplies no issuer credentials.
+                             * @enum {string}
+                             */
+                            managed_by: "codespar";
+                            /**
+                             * @description `connected` = connectivity verified for the current connection, template and credential versions, unexpired. It is NOT homologation, holder eligibility or issuance availability.
+                             * @enum {string}
+                             */
+                            status: "not_configured" | "configured" | "connected" | "verify_failed" | "live_blocked";
+                            /** Format: date-time */
+                            verified_at: string | null;
+                            /** Format: date-time */
+                            expires_at: string | null;
+                            reason?: string;
+                            operations: ("issue" | "get" | "list" | "freeze" | "unfreeze" | "cancel")[];
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -13506,447 +15101,6 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/issuer/cards/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Read one issued card, or the mint flow behind it
-         * @deprecated
-         * @description DEPRECATED alias of `GET /v1/cards/{id}` (ent#979), kept for two releases. Same handler, same required scope; switch the path and nothing else changes.
-         *
-         *     ONE path, TWO bodies, chosen by the id's prefix. An `imf_` id is a mint flow and answers with the flow; anything else is read as a card row and answers with the card. Branch on the prefix you sent, or on `flow_id` being present, never on field order.
-         *
-         *     Resolution is scoped to the organization AND the project the credential authenticates for: both lookups filter on all three of id, org and project, so a card held by a sibling project in the same organization answers 404 here, indistinguishable from one that never existed.
-         *
-         *     No cardholder data crosses this boundary. The number is represented by `last4` and by the token id; PAN, CVV and expiry never enter the process that serves this route.
-         *
-         *     Requires the `cards:read` scope.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description `icrd_` for a card, `imf_` for a mint flow. The prefix selects the body. */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK. The card, or the mint flow when the id was an `imf_` one — see the description for which id yields which. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @description `icrd_`-prefixed. Our row id for the card, not the issuer's handle. */
-                            id: string;
-                            /**
-                             * @description The issuing rail the card was minted on. Closed in the type, not just in data.
-                             * @enum {string}
-                             */
-                            issuer: "pomelo" | "bridge";
-                            /** @description The issuer's own global handle for the card. */
-                            card_id: string;
-                            /** @description Last four digits. The only fragment of the number this API returns. */
-                            last4: string;
-                            /** @enum {string} */
-                            network: "visa" | "mastercard";
-                            /** @enum {string} */
-                            status: "active" | "blocked" | "canceled";
-                            /** @description The card-data-environment token id, null until the mint flow allocates one. Allocation happens BEFORE the card material is ingested, so a token id with no material behind it is a recorded failure rather than a silent gap. It is the handle a PCI-scoped surface exchanges for card material; no card material is reachable through this API with it. */
-                            token_id: string | null;
-                            /**
-                             * @description Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed.
-                             * @enum {string}
-                             */
-                            cde: "ingested" | "not_ingested" | "not_configured";
-                            /** Format: date-time */
-                            created_at: string;
-                        } | {
-                            /** @description `imf_`-prefixed. The mint attempt, keyed by the caller's idempotency key. */
-                            flow_id: string;
-                            /** @enum {string} */
-                            state: "pending" | "issued" | "revoked" | "failed";
-                            /** @enum {string} */
-                            issuer: "pomelo" | "bridge";
-                            /** @description Why the flow is parked or failed, when the lane recorded one. */
-                            reason: string | null;
-                            /** @description The issuer-hosted step the holder must complete before the flow can move on. */
-                            kyc_url: string | null;
-                            /** Format: date-time */
-                            created_at: string;
-                            /** @description Present ONLY when the flow reached `issued` AND carries a card row id. It is then the card itself, or null if that row could not be read back. On every other state the key is absent rather than null, so `"card" in body` and `body.card !== null` are different questions. */
-                            card?: {
-                                /** @description `icrd_`-prefixed. Our row id for the card, not the issuer's handle. */
-                                id: string;
-                                /**
-                                 * @description The issuing rail the card was minted on. Closed in the type, not just in data.
-                                 * @enum {string}
-                                 */
-                                issuer: "pomelo" | "bridge";
-                                /** @description The issuer's own global handle for the card. */
-                                card_id: string;
-                                /** @description Last four digits. The only fragment of the number this API returns. */
-                                last4: string;
-                                /** @enum {string} */
-                                network: "visa" | "mastercard";
-                                /** @enum {string} */
-                                status: "active" | "blocked" | "canceled";
-                                /** @description The card-data-environment token id, null until the mint flow allocates one. Allocation happens BEFORE the card material is ingested, so a token id with no material behind it is a recorded failure rather than a silent gap. It is the handle a PCI-scoped surface exchanges for card material; no card material is reachable through this API with it. */
-                                token_id: string | null;
-                                /**
-                                 * @description Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed.
-                                 * @enum {string}
-                                 */
-                                cde: "ingested" | "not_ingested" | "not_configured";
-                                /** Format: date-time */
-                                created_at: string;
-                            } | null;
-                        };
-                    };
-                };
-                /** @description Not Found. No card and no mint flow with this id in the caller's organization and project. Both branches answer with the same code and differ only in the message. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "issuer_card_unknown";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/issuer/cards": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Issue a card under a signed mandate (deprecated path)
-         * @deprecated
-         * @description DEPRECATED alias of `POST /v1/cards` (ent#979), kept for two releases. Same handler, same required scope; switch the path and nothing else changes.
-         *
-         *     Three success outcomes: `201` issued the card now, `202` the issuer asked for KYC of the holder (`kyc_url` is where to send the person), `200` is a repeat of the same `Idempotency-Key` on a flow that already finished. Repeating with the SAME key is the recovery path: a `502 issuer_ingest_failed` means the card EXISTS and only the ingest failed, and a new key would issue a second card.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: {
-                    "Idempotency-Key"?: string;
-                };
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** @description ISO 3166-1 alpha-2, uppercase. */
-                        country: string;
-                        /** @description ISO 4217, uppercase. */
-                        currency: string;
-                        holder: {
-                            full_name: string;
-                            /** Format: email */
-                            email: string;
-                            birthdate: string;
-                            document: {
-                                type: string;
-                                value: string;
-                                issuing_country: string;
-                            };
-                            address: {
-                                line1: string;
-                                line2?: string;
-                                street_number?: string;
-                                neighborhood?: string;
-                                city: string;
-                                state?: string;
-                                postal_code: string;
-                                municipality?: string;
-                                country: string;
-                            };
-                            phone?: string;
-                        };
-                        /** @description Required: there is no card without a signed mandate. */
-                        mandate_id: string;
-                        metadata?: {
-                            [key: string]: string;
-                        };
-                    };
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            state: "issued";
-                            flow_id: string;
-                            card: {
-                                id: string;
-                                /** @enum {string} */
-                                issuer: "pomelo" | "bridge";
-                                card_id: string;
-                                last4: string;
-                                /** @enum {string} */
-                                network: "visa" | "mastercard";
-                                /** @enum {string} */
-                                status: "active" | "blocked" | "canceled";
-                                token_id: string | null;
-                                /**
-                                 * @description Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed.
-                                 * @enum {string}
-                                 */
-                                cde: "ingested" | "not_ingested" | "not_configured";
-                                /** Format: date-time */
-                                created_at: string;
-                            };
-                        } | {
-                            flow_id: string;
-                            /** @enum {string} */
-                            state: "pending" | "issued" | "revoked" | "failed";
-                            /** @enum {string} */
-                            issuer: "pomelo" | "bridge";
-                            reason: string | null;
-                            kyc_url: string | null;
-                            /** Format: date-time */
-                            created_at: string;
-                        };
-                    };
-                };
-                /** @description OK */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            state: "issued";
-                            flow_id: string;
-                            card: {
-                                id: string;
-                                /** @enum {string} */
-                                issuer: "pomelo" | "bridge";
-                                card_id: string;
-                                last4: string;
-                                /** @enum {string} */
-                                network: "visa" | "mastercard";
-                                /** @enum {string} */
-                                status: "active" | "blocked" | "canceled";
-                                token_id: string | null;
-                                /**
-                                 * @description Whether the cardholder-data environment holds this card's PAN. `ingested`: it does, and `token_id` names the token. `not_configured`: this deployment has no CDE, the PAN was never asked for, and no retry of the Idempotency-Key changes that — a deployment posture, not a caller fault. `not_ingested`: a CDE exists and the card has no token; on a mint that is the 502 `issuer_ingest_failed` retry contract, on a read it is a card whose ingest has not landed.
-                                 * @enum {string}
-                                 */
-                                cde: "ingested" | "not_ingested" | "not_configured";
-                                /** Format: date-time */
-                                created_at: string;
-                            };
-                        };
-                    };
-                };
-                /** @description OK */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            flow_id: string;
-                            /** @enum {string} */
-                            state: "pending" | "issued" | "revoked" | "failed";
-                            /** @enum {string} */
-                            issuer: "pomelo" | "bridge";
-                            reason: string | null;
-                            kyc_url: string | null;
-                            /** Format: date-time */
-                            created_at: string;
-                        };
-                    };
-                };
-                /** @description Body outside the schema, a country/currency pair with no corridor, a rejected holder, or controls requested that the rail does not have. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "invalid_body" | "issuer_corridor_unsupported" | "invalid_holder" | "issuer_controls_unsupported";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description The key and the issuer environment do not match. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "stage_issuer_live_key" | "live_issuer_test_key";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description The named mandate does not exist in this organization. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "mandate_not_found";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description Key repeated with a different body, or used before a key rotation and no longer matchable (use a new key), or the mandate is not active. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "idempotency_key_conflict" | "mandate_not_active";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description Flow issued with no readable card row. */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "issuer_card_unknown";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description The issuer failed, or the card was issued and the ingest failed; in the second case the card comes back in `details.card` and the recovery is to repeat the same key. */
-                502: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "issuer_mint_failed" | "issuer_ingest_failed";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-                /** @description Issuer credentials not readable in the vault. */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "vault_unavailable";
-                                message: string;
-                                details?: {
-                                    [key: string]: unknown;
-                                };
-                            };
-                            /** @description Echoes the `X-Request-Id` header when the request carried one. */
-                            request_id: string | null;
-                        };
-                    };
-                };
-            };
-        };
         delete?: never;
         options?: never;
         head?: never;
@@ -48772,6 +49926,11 @@ export interface paths {
                     "application/json": {
                         /** @description The pedido aberto, as the person said it (e.g. "fone bluetooth"). */
                         query: string;
+                        /**
+                         * @description product (default), service_plan or reservation.
+                         * @enum {string}
+                         */
+                        task_kind?: "product" | "service_plan" | "reservation";
                         criteria?: {
                             /**
                              * @description What decides the principal: the lowest total (default) or the fastest delivery.
@@ -48780,10 +49939,44 @@ export interface paths {
                             priority?: "total" | "eta";
                             /** @description The most the person wants to pay, shipping included, in centavos. */
                             max_total_minor?: number;
-                            /** @description Where to look: `registry` (the stores the Shop can buy at), `vtex` and `meli` (comparison only). Default: `registry` in Test, `vtex` and `meli` in Live. */
-                            sources?: ("registry" | "vtex" | "meli")[];
+                            /** @description Where to look: `registry` (the stores the Shop can buy at), `vtex` and `meli` (comparison only), `web` (the origins named in sources.origins). Default: `registry` in Test, `vtex` and `meli` in Live. */
+                            sources?: ("registry" | "vtex" | "meli" | "web")[];
                             /** @description Offers per source, 1 to 5 (default 5). */
                             limit?: number;
+                            /** @description task_kind reservation: check_in, check_out, occupants, location. */
+                            reservation?: {
+                                /** @description Check-in day, YYYY-MM-DD (São Paulo). */
+                                check_in: string;
+                                /** @description Check-out day, YYYY-MM-DD, after check_in. */
+                                check_out: string;
+                                occupants: {
+                                    adults: number;
+                                    children?: number;
+                                };
+                                /** @description Where, as the person said it. */
+                                location?: string;
+                            };
+                            /** @description task_kind service_plan: licenses and period. */
+                            service_plan?: {
+                                /** @description How many seats or licenses. */
+                                licenses: number;
+                                /**
+                                 * @description The billing period to compare on.
+                                 * @enum {string}
+                                 */
+                                period: "monthly" | "annual";
+                            };
+                            /** @description Conditions an offer must state to be compared: an offer that does not state one is left out, with the reason. */
+                            required?: ("free_cancellation" | "breakfast_included" | "invoice" | "refundable" | "location")[];
+                        };
+                        sources?: {
+                            groups?: ("registry" | "vtex" | "meli" | "web")[];
+                            origins?: {
+                                /** @description https://host of a site to consult, as the person or you named it. */
+                                origin: string;
+                                /** @description The path to start at; default /. */
+                                start_path?: string;
+                            }[];
                         };
                     };
                 };
