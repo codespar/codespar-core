@@ -27,7 +27,11 @@ In parity with `@codespar/sdk` 0.17.0.
 - `cs.cards.readiness()` reads `GET /v1/cards/readiness`.
 - `CardFunding` / `CardProgramSettlement` are typed exactly. A funding outside the contract raises instead of passing through.
 - `CardView.payment_token`.
-- `holder_consumer_id` on `CardArgs`. It returns the typed dicts `CardReadiness`, `CardProgramReadiness` and `CardRequirement`.
+- `holder_consumer_id` on `CardArgs`.
+- Shop G3.1, merged from main: `cs.research` (create, get over `/v1/shop/agent/research`) and
+  `cs.data_calls` (create, get, execute over `/v1/shop/agent/data-calls`),
+  with `data_call_outcome`, on the async and the sync client (Shop G3.1).
+  `execute` with a key raises `ApiError` 403 `person_required`.
 
 ## 0.16.2
 

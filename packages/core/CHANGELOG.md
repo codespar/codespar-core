@@ -31,6 +31,31 @@
 - `spec:refresh --from-file <dir>/<sha>/openapi-candidate.json` generates from an enterprise candidate document. `assert-served` refuses a candidate snapshot, and the publish workflow runs it.
 - Depends on `@codespar/types ^0.12.0`. The fake session in `@codespar/sdk/testing` implements `card()`.
 
+## 0.16.31 — 2026-11-17
+
+### Added
+
+- **Shop G3.1 data calls**: `cs.dataCalls` (and `session.dataCalls`) over
+  `/v1/shop/agent/data-calls`: `create({ agentId, offerId, idempotencyKey })`
+  drafts a data call from a `data_service` offer of a research, `get(id)` reads
+  it with the four states apart (quotation, authorization, commitment, payment,
+  confirmation), and `execute(id)` surfaces the API's `person_required` (403):
+  a key never runs a data call, the person does. `dataCallOutcome(view)` reads
+  one word (`succeeded`, `pending`, `refused`, `failed`, `uncertain`).
+- `session.research.create` takes `taskKind` (`data_service` among them) and
+  `criteria.dataService { params, sku? }`.
+- OpenAPI snapshot: the served document of 0.16.30 plus the three data-call
+  operations and the research body with `task_kind`, from the enterprise
+  routes of Shop G3.1 (codespar-enterprise #2520). They are served once #2520
+  is deployed; until then `spec:check` reports the served document as behind
+  the snapshot, and this version is not published.
+- The rest of the snapshot follows the served document as of 2026-11-17: the
+  research body's `task_kind` (`product`, `service_plan`, `reservation`),
+  the `web` source with `sources.origins` and the `reservation` and
+  `service_plan` criteria (Shop G1, enterprise #2366/#2367); `monthly_minor`
+  and `monthly_quantity` on the sweeping consents; the Test treasury top-up
+  described against 20 USDC.
+
 ## 0.16.30 — 2026-11-15
 
 ### Security

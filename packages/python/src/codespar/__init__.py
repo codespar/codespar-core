@@ -30,6 +30,18 @@ from ._async_client import AsyncCodeSpar
 from ._async_session import AsyncSession
 from ._sync_client import CodeSpar, Session
 from .cards import AsyncCards, CardProgramReadiness, CardReadiness, CardRequirement, Cards
+from .data_calls import (
+    AsyncDataCalls,
+    AsyncResearch,
+    DataCall,
+    DataCallCreated,
+    DataCallNextAction,
+    DataCallRead,
+    DataCalls,
+    Research,
+    data_call_outcome,
+    next_action_of,
+)
 from .documents import (
     Account,
     AsyncAccount,
@@ -226,8 +238,10 @@ __all__ = [
     "AsyncAccount",
     "AsyncCards",
     "AsyncCodeSpar",
+    "AsyncDataCalls",
     "AsyncPayables",
     "AsyncReceipts",
+    "AsyncResearch",
     "AsyncSession",
     "AsyncWallet",
     "AsyncWalletPixKeys",
@@ -279,6 +293,11 @@ __all__ = [
     "ConnectionWizardInstructions",
     "ConnectionWizardOptions",
     "ConnectionWizardResult",
+    "DataCall",
+    "DataCallCreated",
+    "DataCallNextAction",
+    "DataCallRead",
+    "DataCalls",
     # Tool discovery (codespar_discover)
     "DiscoverOptions",
     "DiscoverPlanStep",
@@ -342,6 +361,7 @@ __all__ = [
     "ReceiptQuote",
     "Receipts",
     "RequiredSecret",
+    "Research",
     "SearchStrategy",
     "SendResult",
     "ServerConnection",
@@ -397,11 +417,13 @@ __all__ = [
     # Version
     "__version__",
     "assert_exhaustive_tool_result",
+    "data_call_outcome",
     "filename_from_disposition",
     "is_approval_required",
     "is_mocks_engine_error",
     "is_mocks_exhausted",
     "is_policy_denied",
     "is_tool_not_mocked",
+    "next_action_of",
     "payable_batch_from_error",
 ]

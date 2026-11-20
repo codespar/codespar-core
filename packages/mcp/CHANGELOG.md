@@ -11,6 +11,14 @@
 - The README and package description no longer say Pomelo-only: spend cards are BRL on Pomelo and USD on Rain.
 - Accepts `@codespar/sdk ^0.17.0`.
 
+## 0.5.21 — 2026-11-08
+
+### Added
+
+- `codespar_shop_data_call_draft` and `codespar_shop_data_call_status`, and
+  `task_kind: "data_service"` on `codespar_shop_research` (Shop G3.1). There is
+  no run tool: running a data call is the person's authorization.
+
 ## 0.5.20 — 2026-10-30
 
 ### Added
