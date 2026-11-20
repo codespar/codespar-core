@@ -1,6 +1,6 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 3dfc154cf3a516dad74db03ccc4ff869ef99af8376944b6f37ab8aebd4d68c5a, fetched 2026-11-19T03:55:57.847Z
-//         from candidate:f6fd2931f208115d26892f24b9f5562547b32bcb/openapi-candidate.json, API 0.3.0).
+// Source: openapi-snapshot.json (sha256 8550d2a77f6d950a981d704a1f32aa58ce32232a6b61332bf48ded14857d173f, fetched 2026-11-20T15:49:48.281Z
+//         from candidate:8be55ec18619ec2985fc0e6072b5f08c9d3d715d/openapi-candidate.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
 
@@ -350,6 +350,10 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/shop/agent/purchases/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/shop/agent/research", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/research/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/shop/agent/data-calls", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/shop/agent/data-calls/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/shop/agent/data-calls/{id}/execute", body: null, accept: null, requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/shop/agent/offers/{id}/image/{n}", body: null, accept: "image/jpeg", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/capabilities", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/shop/agent/instruments", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/projects", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
