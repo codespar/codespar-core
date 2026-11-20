@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 1e6a6006fe5e00b10e48e23de7d9c90d61f25fc7fd065bb774f57181382ab426, fetched 2026-11-19T22:56:00.566Z
+// Source: openapi-snapshot.json (sha256 7fd9095b81acda54a5b3021e7f1bc91c69a0842de9ac744db7bae20cc1d50889, fetched 2026-11-20T15:49:09.781Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -8264,8 +8264,6 @@ export interface paths {
                                 funding_source_id: string | null;
                                 /** @description The provider's id for the consumer's bank, as passed when the consent was opened. */
                                 participant_id: string;
-                                /** @enum {string} */
-                                provider: "iniciador" | "celcoin-itp";
                                 /**
                                  * @description `pending` until the consumer approves at their bank, then `authorised`. Terminal: `consumed`, `revoked` (after approval), `rejected` (refused or rejected before approval), `expired`, `canceled` (the provider canceled it, or it failed while being opened) and `failed` (a provider error). It only moves forward.
                                  * @enum {string}
@@ -8378,8 +8376,6 @@ export interface paths {
                             funding_source_id: string | null;
                             /** @description The provider's id for the consumer's bank, as passed when the consent was opened. */
                             participant_id: string;
-                            /** @enum {string} */
-                            provider: "iniciador" | "celcoin-itp";
                             /**
                              * @description `pending` until the consumer approves at their bank, then `authorised`. Terminal: `consumed`, `revoked` (after approval), `rejected` (refused or rejected before approval), `expired`, `canceled` (the provider canceled it, or it failed while being opened) and `failed` (a provider error). It only moves forward.
                              * @enum {string}
@@ -8556,8 +8552,6 @@ export interface paths {
                             funding_source_id: string | null;
                             /** @description The provider's id for the consumer's bank, as passed when the consent was opened. */
                             participant_id: string;
-                            /** @enum {string} */
-                            provider: "iniciador" | "celcoin-itp";
                             /**
                              * @description `pending` until the consumer approves at their bank, then `authorised`. Terminal: `consumed`, `revoked` (after approval), `rejected` (refused or rejected before approval), `expired`, `canceled` (the provider canceled it, or it failed while being opened) and `failed` (a provider error). It only moves forward.
                              * @enum {string}
@@ -8725,8 +8719,6 @@ export interface paths {
                             funding_source_id: string | null;
                             /** @description The provider's id for the consumer's bank, as passed when the consent was opened. */
                             participant_id: string;
-                            /** @enum {string} */
-                            provider: "iniciador" | "celcoin-itp";
                             /**
                              * @description `pending` until the consumer approves at their bank, then `authorised`. Terminal: `consumed`, `revoked` (after approval), `rejected` (refused or rejected before approval), `expired`, `canceled` (the provider canceled it, or it failed while being opened) and `failed` (a provider error). It only moves forward.
                              * @enum {string}
@@ -8924,8 +8916,6 @@ export interface paths {
                                 consent_id: string;
                                 consumer_id: string;
                                 wallet_id: string;
-                                /** @enum {string} */
-                                provider: "iniciador" | "celcoin-itp";
                                 /** @description In centavos. */
                                 amount_minor: number;
                                 currency: string;
@@ -9036,8 +9026,6 @@ export interface paths {
                             consent_id: string;
                             consumer_id: string;
                             wallet_id: string;
-                            /** @enum {string} */
-                            provider: "iniciador" | "celcoin-itp";
                             /** @description In centavos. */
                             amount_minor: number;
                             currency: string;
@@ -9074,8 +9062,6 @@ export interface paths {
                             consent_id: string;
                             consumer_id: string;
                             wallet_id: string;
-                            /** @enum {string} */
-                            provider: "iniciador" | "celcoin-itp";
                             /** @description In centavos. */
                             amount_minor: number;
                             currency: string;
@@ -9279,8 +9265,6 @@ export interface paths {
                             consent_id: string;
                             consumer_id: string;
                             wallet_id: string;
-                            /** @enum {string} */
-                            provider: "iniciador" | "celcoin-itp";
                             /** @description In centavos. */
                             amount_minor: number;
                             currency: string;
@@ -9450,8 +9434,6 @@ export interface paths {
                                 funding_source_id: string | null;
                                 /** @description The bank, as the provider's participant id. */
                                 participant_id: string;
-                                /** @enum {string} */
-                                provider: "iniciador";
                                 /**
                                  * @description `pending` until the person registers the passkey on the hosted page, then `authorised`; terminal `rejected` (not registered in its window, or revoked before it was), `revoked`, `expired`, or `canceled` (the provider failed while it was being opened). It only moves forward.
                                  * @enum {string}
@@ -9560,8 +9542,6 @@ export interface paths {
                             funding_source_id: string | null;
                             /** @description The bank, as the provider's participant id. */
                             participant_id: string;
-                            /** @enum {string} */
-                            provider: "iniciador";
                             /**
                              * @description `pending` until the person registers the passkey on the hosted page, then `authorised`; terminal `rejected` (not registered in its window, or revoked before it was), `revoked`, `expired`, or `canceled` (the provider failed while it was being opened). It only moves forward.
                              * @enum {string}
@@ -9723,8 +9703,6 @@ export interface paths {
                             funding_source_id: string | null;
                             /** @description The bank, as the provider's participant id. */
                             participant_id: string;
-                            /** @enum {string} */
-                            provider: "iniciador";
                             /**
                              * @description `pending` until the person registers the passkey on the hosted page, then `authorised`; terminal `rejected` (not registered in its window, or revoked before it was), `revoked`, `expired`, or `canceled` (the provider failed while it was being opened). It only moves forward.
                              * @enum {string}
@@ -9896,8 +9874,6 @@ export interface paths {
                             funding_source_id: string | null;
                             /** @description The bank, as the provider's participant id. */
                             participant_id: string;
-                            /** @enum {string} */
-                            provider: "iniciador";
                             /**
                              * @description `pending` until the person registers the passkey on the hosted page, then `authorised`; terminal `rejected` (not registered in its window, or revoked before it was), `revoked`, `expired`, or `canceled` (the provider failed while it was being opened). It only moves forward.
                              * @enum {string}
@@ -10099,8 +10075,6 @@ export interface paths {
                                 enrollment_id: string;
                                 consumer_id: string;
                                 wallet_id: string;
-                                /** @enum {string} */
-                                provider: "iniciador";
                                 /** @description In centavos. */
                                 amount_minor: number;
                                 currency: string;
@@ -10210,8 +10184,6 @@ export interface paths {
                             enrollment_id: string;
                             consumer_id: string;
                             wallet_id: string;
-                            /** @enum {string} */
-                            provider: "iniciador";
                             /** @description In centavos. */
                             amount_minor: number;
                             currency: string;
@@ -10252,8 +10224,6 @@ export interface paths {
                             enrollment_id: string;
                             consumer_id: string;
                             wallet_id: string;
-                            /** @enum {string} */
-                            provider: "iniciador";
                             /** @description In centavos. */
                             amount_minor: number;
                             currency: string;
@@ -10460,8 +10430,6 @@ export interface paths {
                             enrollment_id: string;
                             consumer_id: string;
                             wallet_id: string;
-                            /** @enum {string} */
-                            provider: "iniciador";
                             /** @description In centavos. */
                             amount_minor: number;
                             currency: string;
@@ -13097,7 +13065,7 @@ export interface paths {
                         /**
                          * @description The identity fields the provider asks for: `documentNumber` (CPF or CNPJ), full name, date of birth, address. Passed through as an object: the handler does not validate it field by field here, and whatever the provider refuses comes back in the provider's own refusal. Two exceptions are checked before anything is sent: the document's check digits, and, for a natural person (CPF) in a live project, `financialDetails` = `{ declaredIncome, occupation, netWorth }` in the provider's codes, and `isPoliticallyExposedPerson` as `true` or `false`. Those are the titular's own declarations, and CodeSpar never fills them in for them (a value of `isPoliticallyExposedPerson` that is not a boolean is refused in any project).
                          *
-                         *     `files` (A5b): the documents, `[{ type, data }]`, `data` a URL the provider downloads, valid for at least one hour, PDF/PNG/JPEG (CONTRATO_SOCIAL is PDF). Natural person: RG/CNH/RNE and SELFIE; legal person: also CONTRATO_SOCIAL, and PROCURACAO_PODERES when an owner is a REPRESENTANTE. Checked before anything is sent. A test project that sends none gets the Test sample documents; a live project never does, and a live request naming a sample document is refused.
+                         *     `files` (A5b): the documents, `[{ type, data }]`, `data` a URL the provider downloads, valid for at least one hour, PDF/PNG/JPEG (CONTRATO_SOCIAL is PDF). Natural person: RG/CNH/RNE and SELFIE; legal person: also CONTRATO_SOCIAL, and PROCURACAO_PODERES when an owner is a REPRESENTANTE. Checked before anything is sent. A test project that sends none gets the Test sample documents; a live project never does, and a live request naming a sample document is refused. An item may be `{ type, file_id }` instead, naming a file uploaded to the same organization and project through the dashboard in the last 2 hours (`obf_` and 24 hex): it is replaced at submission by a freshly minted URL on this API, valid for 2 hours and 5 downloads, and its uploaded document type must equal `type`. An item carries `data` or `file_id`, never both.
                          */
                         buyer: {
                             [key: string]: unknown;
@@ -13164,7 +13132,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The body did not match the schema, the document did not pass the check, or a natural person's onboarding in a live project came without `buyer.financialDetails` (one issue per missing code, its `path` naming it) or without `buyer.isPoliticallyExposedPerson` as a boolean (its own issue) — `invalid_body`. Or the documents were refused before sending (A5b): `onboarding_sample_file_in_live` for a live request naming a Test sample document or a public specimen, `onboarding_files_invalid` for a malformed `files` list, a format the provider does not take, or a missing required document. BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`. */
+                /** @description The body did not match the schema, the document did not pass the check, or a natural person's onboarding in a live project came without `buyer.financialDetails` (one issue per missing code, its `path` naming it) or without `buyer.isPoliticallyExposedPerson` as a boolean (its own issue) — `invalid_body`. Or the documents were refused before sending (A5b): `onboarding_sample_file_in_live` for a live request naming a Test sample document or a public specimen, `onboarding_files_invalid` for a malformed `files` list, a format the provider does not take, or a missing required document (or an item with both `data` and `file_id`); `onboarding_file_not_found` for a `file_id` that is not an upload of this organization and project, `onboarding_file_type_mismatch` for one uploaded as another document type. BARE BODY, not the `{ error: { code, message } }` envelope: this handler writes its failure inline and there is no `request_id`. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -13179,7 +13147,7 @@ export interface paths {
                             }[];
                         } | {
                             /** @enum {string} */
-                            error: "onboarding_sample_file_in_live" | "onboarding_files_invalid";
+                            error: "onboarding_sample_file_in_live" | "onboarding_files_invalid" | "onboarding_file_not_found" | "onboarding_file_type_mismatch";
                             message: string;
                             /** @description One line per refused field. */
                             issues: string[];
@@ -13218,7 +13186,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description ONBOARDING COLLISION, and it is caller state and not a provider failure, which is why 409 and not 502. `provider_code` carries the provider's code (OBE064 proposal already open, CBE022 account already exists, OBE062 clientCode already linked) so the audit trail records the ground for the refusal. CBE022 is attributed only on this organization's own evidence: `onboarding_account_exists_in_project`, `onboarding_account_exists_elsewhere` (another project of the organization) or `onboarding_account_exists_unattributed` (no evidence; not concluded to be anyone's). E2 also answers here `onboarding_attempt_in_progress` (another request holds this clientCode's reservation; repeat later), `onboarding_client_code_conflict` for a clientCode this project used for another document, and `onboarding_unreserved`. On the OBE062 recovery, `consumer_onboarded_in_sibling_project`: the consumer is already onboarded in another project of the caller's organization, and the body carries `holding_project_id`. Bare body. */
+                /** @description ONBOARDING COLLISION, and it is caller state and not a provider failure, which is why 409 and not 502. `provider_code` carries the provider's code (OBE064 proposal already open, CBE022 account already exists, OBE062 clientCode already linked) so the audit trail records the ground for the refusal. CBE022 is attributed only on this organization's own evidence: `onboarding_account_exists_in_project`, `onboarding_account_exists_elsewhere` (another project of the organization) or `onboarding_account_exists_unattributed` (no evidence; not concluded to be anyone's). E2 also answers here `onboarding_attempt_in_progress` (another request holds this clientCode's reservation; repeat later), `onboarding_client_code_conflict` for a clientCode this project used for another document, and `onboarding_unreserved`. On the OBE062 recovery, `consumer_onboarded_in_sibling_project`: the consumer is already onboarded in another project of the caller's organization, and the body carries `holding_project_id`. Per document (onboarding PF F1, B6), for another consumer's clientCode only: `onboarding_document_in_review` (another proposal for the document has an unknown outcome; `next_step.code: in_review_check_later`) and `onboarding_document_cooldown` (Celcoin saw one, created or refused with its own code, less than five minutes ago; `Retry-After` and `retry_after_seconds` say when). Both are unsent and retriable. A Live organization held by a go-live prepare (onboarding PF, 0468): `onboarding_document_not_holder` (`reason`: `not_pf` or `other_document`) when the application is not for the CPF of the organization's PF holder, bound by its first Live application; unsent, not retriable. Bare body. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -13226,9 +13194,23 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_account_exists_in_project" | "onboarding_account_exists_unattributed" | "onboarding_client_code_conflict" | "onboarding_attempt_in_progress" | "onboarding_unreserved" | "consumer_onboarded_in_sibling_project";
+                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_account_exists_in_project" | "onboarding_account_exists_unattributed" | "onboarding_client_code_conflict" | "onboarding_attempt_in_progress" | "onboarding_document_in_review" | "onboarding_document_cooldown" | "onboarding_document_not_holder" | "onboarding_unreserved" | "consumer_onboarded_in_sibling_project";
                             provider_code?: string;
                             retriable?: boolean;
+                            /** @description On `onboarding_document_cooldown` only: the same value as `Retry-After`. */
+                            retry_after_seconds?: number;
+                            /** @description On `onboarding_document_in_review` only. */
+                            next_step?: {
+                                /** @enum {string} */
+                                code: "in_review_check_later";
+                                message: string;
+                                retry_after_seconds: number;
+                            };
+                            /**
+                             * @description On `onboarding_document_not_holder` only.
+                             * @enum {string}
+                             */
+                            reason?: "not_pf" | "other_document";
                             message: string;
                             /** @description On `consumer_onboarded_in_sibling_project` only: the project of the organization that holds the consumer. */
                             holding_project_id?: string;
@@ -13289,7 +13271,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Two answers. `onboarding_outcome_unknown`: the proposal may have reached the provider and its answer was lost, and a query by this request's clientCode found nothing yet. Nothing was sent again. Repeat the SAME request after `Retry-After`: the same consumer and document reuse the clientCode, so no second proposal can be opened. E2: `onboarding_paused`, the server paused opening sandbox accounts (an operational switch); no proposal is opened, one already opened can still be read; `Retry-After` 3600. `onboarding_calls_unavailable`, the register of onboarding calls could not be written; `Retry-After` 30. `policy_denied`: The policy engine could not answer, so the call was refused fail-closed and nothing was dispatched. Infrastructure, not a rule: retry. Bare body. Bare body. */
+                /** @description Two answers. `onboarding_outcome_unknown`: the proposal may have reached the provider and its answer was lost, and a query by this request's clientCode found nothing yet. Nothing was sent again. Repeat the SAME request after `Retry-After`: the same consumer and document reuse the clientCode, so no second proposal can be opened. E2: `onboarding_paused`, the server paused opening sandbox accounts (an operational switch); no proposal is opened, one already opened can still be read; `Retry-After` 3600. `onboarding_calls_unavailable`, the register of onboarding calls could not be written; `Retry-After` 30. `onboarding_files_unavailable`, a `buyer.files[].file_id` was sent and no URL could be minted for it (file hosting not configured, or the database failed); nothing was sent. `policy_denied`: The policy engine could not answer, so the call was refused fail-closed and nothing was dispatched. Infrastructure, not a rule: retry. Bare body. Bare body. */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -13311,6 +13293,12 @@ export interface paths {
                         } | {
                             /** @enum {string} */
                             error: "onboarding_calls_unavailable";
+                            /** @enum {boolean} */
+                            retriable: true;
+                            message: string;
+                        } | {
+                            /** @enum {string} */
+                            error: "onboarding_files_unavailable";
                             /** @enum {boolean} */
                             retriable: true;
                             message: string;
@@ -13400,12 +13388,10 @@ export interface paths {
                             rejected_reason?: string;
                             /** @description The documentoscopia webview the consumer opens, taken from the proposal's first `documentscopys` entry. Null on `rejected` and on `approved`. */
                             hosted_url: string | null;
-                            /**
-                             * @description The provisioned account number once one exists, else null. Stringified: the provider returns it as either a string or a number.
-                             *
-                             *     The branch is resolved in the same fetch and is NOT returned by this operation; it is returned as the funding source's `branch`.
-                             */
+                            /** @description The provisioned account number once one exists, else null. Stringified: the provider returns it as either a string or a number. Its branch is `branch`. */
                             account: string | null;
+                            /** @description The provisioned account's branch (agência), resolved in the same fetch as `account`. Null while `account` is null, and when the provider's account read carried no branch. */
+                            branch: string | null;
                             /** @description The `pix-celcoin` funding source, or null before one exists. Deterministic — `fs_celcoin_` followed by the consumer id, one account per consumer — so a repeat call resolves the same row instead of opening a second one. */
                             funding_source_id: string | null;
                             /**
@@ -14445,7 +14431,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Onboarding collision: caller state, not a provider failure. `provider_code` carries OBE064, CBE022 or OBE062; CBE022 is attributed only on this organization's evidence. E2 adds `onboarding_attempt_in_progress`, `onboarding_client_code_conflict` and `onboarding_unreserved`. On the OBE062 recovery, `consumer_onboarded_in_sibling_project`: the consumer is already onboarded in another project of the caller's organization, and the body carries `holding_project_id`. Raw body. */
+                /** @description Onboarding collision: caller state, not a provider failure. `provider_code` carries OBE064, CBE022 or OBE062; CBE022 is attributed only on this organization's evidence. E2 adds `onboarding_attempt_in_progress`, `onboarding_client_code_conflict` and `onboarding_unreserved`. On the OBE062 recovery, `consumer_onboarded_in_sibling_project`: the consumer is already onboarded in another project of the caller's organization, and the body carries `holding_project_id`. Per document (B6, another consumer's clientCode only): `onboarding_document_in_review` (`next_step.code: in_review_check_later`) and `onboarding_document_cooldown` (`Retry-After`). Both unsent and retriable. A Live organization held by a go-live prepare (onboarding PF, 0468): `onboarding_document_not_holder` (`reason`: `not_pf` or `other_document`) when the application is not for the CPF of the organization's PF holder, bound by its first Live application; unsent, not retriable. Raw body. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -14453,9 +14439,23 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_account_exists_in_project" | "onboarding_account_exists_unattributed" | "onboarding_client_code_conflict" | "onboarding_attempt_in_progress" | "onboarding_unreserved" | "consumer_onboarded_in_sibling_project";
+                            error: "onboarding_proposal_open_elsewhere" | "onboarding_account_exists_elsewhere" | "onboarding_account_exists_in_project" | "onboarding_account_exists_unattributed" | "onboarding_client_code_conflict" | "onboarding_attempt_in_progress" | "onboarding_document_in_review" | "onboarding_document_cooldown" | "onboarding_document_not_holder" | "onboarding_unreserved" | "consumer_onboarded_in_sibling_project";
                             provider_code?: string;
                             retriable?: boolean;
+                            /** @description On `onboarding_document_cooldown` only: the same value as `Retry-After`. */
+                            retry_after_seconds?: number;
+                            /** @description On `onboarding_document_in_review` only. */
+                            next_step?: {
+                                /** @enum {string} */
+                                code: "in_review_check_later";
+                                message: string;
+                                retry_after_seconds: number;
+                            };
+                            /**
+                             * @description On `onboarding_document_not_holder` only.
+                             * @enum {string}
+                             */
+                            reason?: "not_pf" | "other_document";
                             message: string;
                             /** @description On `consumer_onboarded_in_sibling_project` only: the project of the organization that holds the consumer. */
                             holding_project_id?: string;
@@ -14627,6 +14627,8 @@ export interface paths {
                             hosted_url: string | null;
                             /** @description The provisioned account number, once one exists. */
                             account: string | null;
+                            /** @description The provisioned account's branch (agência), once there is an account and the provider returned one; else null. */
+                            branch: string | null;
                             /** @description The consumer's funding source, written when the application is approved. Provisioning is idempotent on a key derived from the consumer, so polling this endpoint repeatedly after approval returns the same id and creates nothing new. */
                             funding_source_id: string | null;
                             /**
