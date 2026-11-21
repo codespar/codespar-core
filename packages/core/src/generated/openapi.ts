@@ -1,6 +1,6 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 8550d2a77f6d950a981d704a1f32aa58ce32232a6b61332bf48ded14857d173f, fetched 2026-11-20T15:49:48.281Z
-//         from candidate:8be55ec18619ec2985fc0e6072b5f08c9d3d715d/openapi-candidate.json, API 0.3.0).
+// Source: openapi-snapshot.json (sha256 9294bc8051756c6a80bc797b9786ee3510346cbc8373c1c2c5d7e840672ebcbb, fetched 2026-11-21T16:57:44.521Z
+//         from candidate:8d48811adbbb26623d7793c5d9f5c1db9f2f8d61/openapi-candidate.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
     "/.well-known/oauth-protected-resource": {
@@ -22061,7 +22061,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Either a policy rule refused the spend (`policy_denied`, with `reason`, `ruleType` and `ruleId`, plus `approval_id` and `expires_at` when the rule opened an approval; since ent#1807 an approval also carries `payment_state: awaiting_approval`, `attempt_id` and `hold_ref`, the wallet hold that reserves the amount until the decision, released on deny or expiry; a payment that could not be reserved is answered with the refusal instead, e.g. `insufficient_funds`, and its approval is closed), or the destination is not on the mandate's signed withdrawal allowlist (`withdrawal_pin`, carrying the next consent step), or a Pix is above the mandate's per-transaction cap and waits for a person (`approval_required`, flat body like `policy_denied`: `reason: per_tx_cap_exceeded`, `approval_id`, `expires_at`, `payment_state: awaiting_approval`, `attempt_id`, `amount_minor`, `per_tx_cap_minor`, `hold_ref`). Approving it settles exactly that amount once, debiting the held amount; the cumulative cap still binds. A retry of a waiting `attempt_id` answers the same approval. Nothing was sent to the provider in any case. */
+                /** @description Either a policy rule refused the spend (`policy_denied`, with `reason`, `ruleType` and `ruleId`, plus `approval_id` and `expires_at` when the rule opened an approval; since ent#1807 an approval also carries `payment_state: awaiting_approval`, `attempt_id` and `hold_ref`, the wallet hold that reserves the amount until the decision, released on deny or expiry; a payment that could not be reserved is answered with the refusal instead, e.g. `insufficient_funds`, and its approval is closed), or the destination is not on the mandate's signed withdrawal allowlist (`withdrawal_pin`, carrying the next consent step). The mandate is asked BEFORE any rule (D3): a payment it refuses never opens an approval, and no approval lifts a ceiling the consumer signed (D1). Nothing was sent to the provider in any case. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -22070,7 +22070,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "policy_denied" | "withdrawal_pin" | "approval_required";
+                                code: "policy_denied" | "withdrawal_pin";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -22121,7 +22121,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. `carrier_crc_invalid`, `carrier_malformed`, `carrier_format_unsupported`: the payee is a Pix copia-e-cola that fails its own check (CRC, structure, or no usable Pix template); nothing was held or sent. `per_tx_cap_exceeded`: the amount is above the mandate's per-transaction cap and cannot wait for a person (not a Pix, or asked by a lane that does not park); `details` carries `amount_minor` and `per_tx_cap_minor` (integer strings in the mandate's own unit: minor for a v1 mandate, currency-native for `unit_version: 2`) and `currency`, beside the message "<amount> > <cap>". `psp_refused`: the provider answered and declined (in test mode, the sandbox's reserved refusal key); the hold is released and nothing moved. */
+                /** @description The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. `carrier_crc_invalid`, `carrier_malformed`, `carrier_format_unsupported`: the payee is a Pix copia-e-cola that fails its own check (CRC, structure, or no usable Pix template); nothing was held or sent. `per_tx_cap_exceeded`: the amount is above the mandate's per-transaction cap, on every rail; it never waits for a person (D1) and no approval is opened; `details` carries `amount_minor` and `per_tx_cap_minor` (integer strings in the mandate's own unit: minor for a v1 mandate, currency-native for `unit_version: 2`) and `currency`, beside the message "<amount> > <cap>". `psp_refused`: the provider answered and declined (in test mode, the sandbox's reserved refusal key); the hold is released and nothing moved. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -22292,7 +22292,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The destination is not on the signed withdrawal allowlist (`withdrawal_pin`), or a Pix is above the mandate's per-transaction cap and waits for a person (`approval_required`, same body as on the by-id route). Nothing was sent to the provider. */
+                /** @description The destination is not on the signed withdrawal allowlist (`withdrawal_pin`). A payment above the mandate's per-transaction cap is a 422 `per_tx_cap_exceeded`, never an approval (D1). Nothing was sent to the provider. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -22301,7 +22301,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "withdrawal_pin" | "approval_required";
+                                code: "withdrawal_pin";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -22475,7 +22475,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The destination is not on the signed withdrawal allowlist (`withdrawal_pin`), or a Pix is above the per-transaction cap and waits for a person (`approval_required`, sent as the `error` frame with `approval_id` and `payment_state`). */
+                /** @description The destination is not on the signed withdrawal allowlist (`withdrawal_pin`). A payment above the per-transaction cap is a 422 `per_tx_cap_exceeded`, never an approval (D1). */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -22484,7 +22484,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "withdrawal_pin" | "approval_required";
+                                code: "withdrawal_pin";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
