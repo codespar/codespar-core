@@ -530,6 +530,14 @@ export interface PayArgs {
    *  `method: "boleto"` (the runtime refuses a boleto pay without it);
    *  recommended for every money-moving call. */
   idempotency_key?: string;
+  /** Optional: the obligation this payment settles (an invoice, or one
+   *  installment), 1-128 characters with no control characters. Unique per
+   *  organization, project and the agent of the signed mandate: the same
+   *  reference again answers the ORIGINAL payment and sends nothing; with a
+   *  different amount or payee it is refused (`obligation_reference_conflict`).
+   *  Accepted on Pix and boleto payments a consumer mandate governs; refused
+   *  (`obligation_reference_unsupported`) on a direct Pix no mandate governs. */
+  obligation_reference?: string;
   /** Free-form metadata forwarded to the rail. */
   metadata?: Record<string, unknown>;
 }
