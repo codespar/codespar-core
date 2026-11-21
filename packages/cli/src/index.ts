@@ -36,7 +36,7 @@ import { paymentStatusCommand } from "./commands/payment-status.js";
 import { verificationStatusCommand } from "./commands/verification-status.js";
 import { wizardCommand } from "./commands/wizard.js";
 import { ledgerCommand } from "./commands/ledger.js";
-import { issueCommand } from "./commands/issue.js";
+import { cardCommand, cardReadinessCommand, type CardFlags } from "./commands/card.js";
 import {
   listMetaToolsCommand,
   metaToolCommand,
@@ -864,22 +864,72 @@ program
     },
   );
 
-program
-  .command("issue")
-  .description("Issue / freeze / read agent spend cards via codespar_issue (Pomelo)")
-  .option("-i, --input <json>", "Issue args as JSON string")
-  .option("-f, --input-file <path>", "Issue args from JSON file")
-  .option("-u, --user <id>", "User id for the session (default: cli-user)")
-  .action(
-    async (opts: { input?: string; inputFile?: string; user?: string }) => {
+// ============ card: codespar_card, one contract for Pomelo (BRL) and Rain (USD) ============
+const card = program
+  .command("card")
+  .description("Issue / read / list / freeze / unfreeze / cancel spend cards via codespar_card (BRL on Pomelo, USD on Rain)");
+
+type CardCliOpts = CardFlags & { input?: string; inputFile?: string; user?: string };
+
+function cardSubcommand(name: string, description: string, takesCardId: boolean) {
+  const cmd = card
+    .command(takesCardId ? `${name} <card-id>` : name)
+    .description(description)
+    .option("-i, --input <json>", "Card args as JSON string (flags win over it)")
+    .option("-f, --input-file <path>", "Card args from JSON file (flags win over it)")
+    .option("-u, --user <id>", "User id for the session (default: cli-user)");
+  return cmd;
+}
+
+cardSubcommand("issue", "Issue a card; the currency picks the program unless --provider names one", false)
+  .option("--currency <code>", "BRL | USD (required)")
+  .option("--provider <issuer>", "pomelo | rain (optional)")
+  .option("--mandate-id <id>", "Mandate the card spends under; its currency must equal the card's (required)")
+  .option("--consumer-id <id>", "Card holder, a consumer of this project (required)")
+  .option("--holder-consumer-id <id>", "A company's pomelo_brl card only (required there): the person who will hold it, as their own consumer")
+  .option("--idempotency-key <key>", "Required. The same key resumes the same request; it never issues a second card")
+  .option("--holder <json>", "Pomelo cardholder identity as JSON (pomelo_brl): full_name, email, birthdate, document, address, phone?")
+  .action(async (opts: CardCliOpts) => {
+    const auth = await resolveAuth();
+    await cardCommand("issue", undefined, { ...opts, ...auth, json: rootJsonFlag() });
+  });
+
+cardSubcommand("get", "Read one card (icrd_... Pomelo, rcrd_... Rain)", true).action(
+  async (cardId: string, opts: CardCliOpts) => {
+    const auth = await resolveAuth();
+    await cardCommand("get", cardId, { ...opts, ...auth, json: rootJsonFlag() });
+  },
+);
+
+cardSubcommand("list", "List cards of both issuers", false)
+  .option("--issuer <issuer>", "pomelo | rain")
+  .option("--mandate-id <id>", "Only cards under this mandate")
+  .option("--consumer-id <id>", "Only cards of this holder")
+  .action(async (opts: CardCliOpts) => {
+    const auth = await resolveAuth();
+    await cardCommand("list", undefined, { ...opts, ...auth, json: rootJsonFlag() });
+  });
+
+card
+  .command("readiness")
+  .description("Per program: ready or not, and what is missing (GET /v1/cards/readiness), each step naming who must act")
+  .action(async () => {
+    const auth = await resolveAuth();
+    await cardReadinessCommand({ ...auth, json: rootJsonFlag() });
+  });
+
+for (const [name, what] of [
+  ["freeze", "Freeze a card (when its available_actions allow it)"],
+  ["unfreeze", "Unfreeze a frozen card (when its available_actions allow it)"],
+  ["cancel", "Cancel a card for good (when its available_actions allow it)"],
+] as const) {
+  cardSubcommand(name, what, true)
+    .option("--reason <reason>", "client_request | lost | stolen | broken | upgrade")
+    .action(async (cardId: string, opts: CardCliOpts) => {
       const auth = await resolveAuth();
-      await issueCommand({
-        ...opts,
-        ...auth,
-        json: rootJsonFlag(),
-      });
-    },
-  );
+      await cardCommand(name, cardId, { ...opts, ...auth, json: rootJsonFlag() });
+    });
+}
 
 // ============ audit ============
 const audit = program

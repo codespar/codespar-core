@@ -609,43 +609,234 @@ class LedgerReceiptsResult:
     count: int = 0
 
 
-# ── codespar_issue wire shape ──────────────────────────────────────
+# ── codespar_card wire shape ───────────────────────────────────────
+#
+# One Cards contract across issuers: BRL on ``pomelo_brl`` (Pomelo), USD on
+# ``rain_usd`` (Rain). Mirrors the TS ``CardArgs``/``CardResult`` in
+# ``@codespar/types``. The server resolves program, market and every
+# requirement; the issuer of an existing card is read from the record
+# behind ``card_id``, never from the request.
 
-
-IssueAction = Literal["card-virtual", "card-physical", "card-control", "card-get"]
+CardAction = Literal["issue", "get", "list", "freeze", "unfreeze", "cancel"]
+CardControlAction = Literal["freeze", "unfreeze", "cancel"]
+CardIssuer = Literal["pomelo", "rain"]
+CardCurrency = Literal["BRL", "USD"]
+CardProgram = Literal["pomelo_brl", "rain_usd"]
+CardStatus = Literal["pending", "not_activated", "active", "blocked", "canceled"]
+CardControlReason = Literal["client_request", "lost", "stolen", "broken", "upgrade"]
+CardPendingActionKind = Literal[
+    "issuer_kyc",
+    "accept_terms",
+    "authorize_automated_issuance",
+    "bind_key_to_mandate",
+    "complete_holder_profile",
+]
+CardPendingActor = Literal["holder", "company_signatory", "org_admin"]
 
 
 @dataclass(slots=True)
-class IssueArgs:
-    """Input shape for ``Session.issue`` (Pomelo card issuing).
+class CardArgs:
+    """Input shape for ``Session.card``.
 
-    Mirrors the backend's MetaIssueArgs. Asset-agnostic — the program
-    currency is set on the card program, not per call.
-      - ``card-virtual``   Issue a virtual card (active immediately)
-      - ``card-physical``  Issue a physical card (needs shipping_address)
-      - ``card-control``   Freeze / unfreeze / cancel an existing card
-      - ``card-get``       Read a card's status
+    - ``issue``: ``currency``, ``mandate_id``, ``consumer_id`` and
+      ``idempotency_key`` (required: the same key resumes the same request
+      and never issues a second card); ``provider`` optional, omitted the
+      currency picks the program.
+    - ``get``: ``card_id`` (``icrd_...`` Pomelo, ``rcrd_...`` Rain).
+    - ``list``: optional filters ``issuer``, ``mandate_id``, ``consumer_id``.
+    - ``freeze`` / ``unfreeze`` / ``cancel``: ``card_id``, optional ``reason``.
     """
 
-    action: IssueAction
-    cardholder_id: str | None = None
-    program_id: str | None = None
+    action: CardAction
+    currency: CardCurrency | None = None
+    provider: CardIssuer | None = None
+    mandate_id: str | None = None
+    consumer_id: str | None = None
+    idempotency_key: str | None = None
+    #: A company's pomelo_brl card only, and required there: the person who
+    #: will hold the card, as their own consumer.
+    holder_consumer_id: str | None = None
+    #: Pomelo cardholder identity (pomelo_brl): full_name, email, birthdate,
+    #: document {type, value, issuing_country}, address {...}, phone. Rain refuses it.
+    holder: dict[str, Any] | None = None
     card_id: str | None = None
-    control: Literal["freeze", "unfreeze", "cancel"] | None = None
-    reason: str | None = None
-    shipping_address: dict[str, Any] | None = None
-    metadata: dict[str, Any] | None = None
+    issuer: CardIssuer | None = None
+    reason: CardControlReason | None = None
 
 
 @dataclass(slots=True)
-class IssueResult:
-    id: str | None = None
-    status: str | None = None
-    card_type: str | None = None
-    last_four: str | None = None
-    cardholder_id: str | None = None
-    program_id: str | None = None
+class CardSelection:
+    """How the program was chosen at issue."""
+
+    provider_requested: str | None = None
+    chosen_by: str = "currency"  # "provider" | "currency"
+
+
+@dataclass(slots=True)
+class CardFunding:
+    """What a card spends (rain_usd): the account's CodeSpar BRL wallet,
+    priced in BRL at authorization. Never the program's settlement asset."""
+
+    source: Literal["wallet"] = "wallet"
+    currency: Literal["BRL"] = "BRL"
+
+
+@dataclass(slots=True)
+class CardProgramSettlement:
+    """How CodeSpar settles a program with its issuer (a program fact)."""
+
+    asset: Literal["USDC"] = "USDC"
+    by: Literal["codespar"] = "codespar"
+
+
+@dataclass(slots=True)
+class CardView:
+    """The card view: get, controls, list items."""
+
+    id: str = ""
+    issuer: str = ""
+    program: str = ""
+    currency: str = ""
+    status: str = ""
+    issuer_status: str | None = None
+    last4: str | None = None
+    network: str | None = None
+    mandate_id: str | None = None
+    consumer_id: str | None = None
+    created_at: str | None = None
+    available_actions: list[str] = field(default_factory=list)
+    #: Rain cards: what the card spends (the account's CodeSpar BRL wallet).
+    funding: CardFunding | None = None
+    #: Pomelo cards: CDE tokenization state, "ready" | "pending" | "not_configured".
+    payment_token: str | None = None
+
+
+@dataclass(slots=True)
+class CardIssued:
+    """``action=issue``, card issued (first call or an idempotent replay).
+
+    The card view is nested in ``card``.
+    """
+
+    issue_request_id: str = ""
+    issuer: str = ""
+    program: str = ""
+    selection: CardSelection | None = None
+    card: CardView = field(default_factory=CardView)
+    #: The automated-issuance authorization the issue ran under.
+    authorization_id: str | None = None
+    authorization_active: bool = False
+    state: Literal["issued"] = "issued"
+
+
+@dataclass(slots=True)
+class CardPendingAction:
+    """A step only a person can take. Hand ``url`` to ``actor``; never act for them."""
+
+    id: str = ""
+    kind: str = ""
+    actor: str = ""
+    url: str | None = None
+
+
+@dataclass(slots=True)
+class CardPendingHuman:
+    """``action=issue`` waiting on a person. Retry with the SAME idempotency_key once done."""
+
+    issue_request_id: str = ""
+    issuer: str = ""
+    program: str = ""
+    pending_action: CardPendingAction = field(default_factory=CardPendingAction)
+    selection: CardSelection | None = None
+    state: Literal["pending_human"] = "pending_human"
+
+
+@dataclass(slots=True)
+class CardProcessing:
+    """``action=issue``: the issuer has not answered yet. Read it again with the SAME key."""
+
+    issue_request_id: str = ""
+    issuer: str = ""
+    program: str = ""
+    selection: CardSelection | None = None
+    #: When to read it again, with the SAME key.
+    retry_after_seconds: int | None = None
+    state: Literal["processing"] = "processing"
+
+
+@dataclass(slots=True)
+class CardUncertain:
+    """``action=issue``: timeout or ambiguous answer, the card MAY exist at the issuer.
+
+    Resolved by reconciliation on the SAME request (same ``idempotency_key``),
+    never by a new key: a new key would be a second issuance.
+    """
+
+    issue_request_id: str = ""
+    issuer: str = ""
+    program: str = ""
+    selection: CardSelection | None = None
+    retry_after_seconds: int | None = None
+    note: str | None = None
+    #: The issuer's raw code, when it sent one.
+    issuer_code: str | None = None
+    state: Literal["uncertain"] = "uncertain"
+
+
+@dataclass(slots=True)
+class CardList:
+    """``action=list``."""
+
+    cards: list[CardView] = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class CardProgramAvailability:
+    program: str = ""
+    issuer: str = ""
+    currency: str = ""
+    available: bool | None = None
+    reason: str | None = None
+    operations: list[str] = field(default_factory=list)
+    funding: CardFunding | None = None
+    settlement: CardProgramSettlement | None = None
+
+
+@dataclass(slots=True)
+class CardRefusal:
+    """A refusal with a stable code, RETURNED (not raised) by ``Session.card``.
+
+    ``state`` and ``http_status`` are stamped by the client (200 when the
+    refusal came inside the tool envelope); the rest comes from the
+    refusal body when the server sends it.
+    """
+
+    code: str
+    message: str | None = None
+    http_status: int = 200
+    reason: str | None = None
+    available_programs: list[CardProgramAvailability] | None = None
+    issuer: str | None = None
+    program: str | None = None
+    action: str | None = None
+    available_actions: list[str] | None = None
+    #: On ``card_issue_request_failed``: the failed request and why
+    #: (issuer_refused | issuer_revoked | reconciled_absent | a Pomelo code).
+    issue_request_id: str | None = None
+    failure_code: str | None = None
     raw: Any = None
+    state: Literal["refused"] = "refused"
+
+
+CardResult = (
+    CardIssued
+    | CardPendingHuman
+    | CardProcessing
+    | CardUncertain
+    | CardRefusal
+    | CardView
+    | CardList
+)
 
 
 # ── codespar_shop wire shape ───────────────────────────────────────

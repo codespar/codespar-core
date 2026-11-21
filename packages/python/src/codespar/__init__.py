@@ -29,6 +29,7 @@ from __future__ import annotations
 from ._async_client import AsyncCodeSpar
 from ._async_session import AsyncSession
 from ._sync_client import CodeSpar, Session
+from .cards import AsyncCards, CardProgramReadiness, CardReadiness, CardRequirement, Cards
 from .data_calls import (
     AsyncDataCalls,
     AsyncResearch,
@@ -109,6 +110,29 @@ from .types import (
     AssistantTextEvent,
     AuthConfig,
     AuthResult,
+    CardAction,
+    CardArgs,
+    CardControlAction,
+    CardControlReason,
+    CardCurrency,
+    CardFunding,
+    CardIssued,
+    CardIssuer,
+    CardList,
+    CardPendingAction,
+    CardPendingActionKind,
+    CardPendingActor,
+    CardPendingHuman,
+    CardProcessing,
+    CardProgram,
+    CardProgramAvailability,
+    CardProgramSettlement,
+    CardRefusal,
+    CardResult,
+    CardSelection,
+    CardStatus,
+    CardUncertain,
+    CardView,
     ChargeArgs,
     ChargeBuyer,
     ChargeMethod,
@@ -126,9 +150,6 @@ from .types import (
     DoneEvent,
     ErrorEvent,
     HttpMethod,
-    IssueAction,
-    IssueArgs,
-    IssueResult,
     LedgerAction,
     LedgerArgs,
     LedgerLeg,
@@ -198,7 +219,7 @@ from .wallet import (
     WalletPixKeys,
 )
 
-__version__ = "0.16.2"
+__version__ = "0.17.0"
 
 __all__ = [
     "APPROVAL_REQUIRED",
@@ -215,6 +236,7 @@ __all__ = [
     "ApprovalRequiredOutput",
     "AssistantTextEvent",
     "AsyncAccount",
+    "AsyncCards",
     "AsyncCodeSpar",
     "AsyncDataCalls",
     "AsyncPayables",
@@ -226,6 +248,34 @@ __all__ = [
     # Connect Links
     "AuthConfig",
     "AuthResult",
+    # Card (codespar_card)
+    "CardAction",
+    "CardArgs",
+    "CardControlAction",
+    "CardControlReason",
+    "CardCurrency",
+    "CardFunding",
+    "CardIssued",
+    "CardIssuer",
+    "CardList",
+    "CardPendingAction",
+    "CardPendingActionKind",
+    "CardPendingActor",
+    "CardPendingHuman",
+    "CardProcessing",
+    "CardProgram",
+    "CardProgramAvailability",
+    "CardProgramReadiness",
+    "CardProgramSettlement",
+    "CardReadiness",
+    "CardRefusal",
+    "CardRequirement",
+    "CardResult",
+    "CardSelection",
+    "CardStatus",
+    "CardUncertain",
+    "CardView",
+    "Cards",
     # Inbound charge (codespar_charge)
     "ChargeArgs",
     "ChargeBuyer",
@@ -258,10 +308,6 @@ __all__ = [
     "DoneEvent",
     "ErrorEvent",
     "HttpMethod",
-    # Issue (codespar_issue)
-    "IssueAction",
-    "IssueArgs",
-    "IssueResult",
     # Ledger (codespar_ledger)
     "LedgerAction",
     "LedgerArgs",

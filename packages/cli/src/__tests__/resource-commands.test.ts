@@ -237,6 +237,7 @@ const PINNED_COMMANDS = [
   "payment-links get → GET /v1/payment-links/{id}",
   "payment-links delete → DELETE /v1/payment-links/{id}",
   "payment-links update → PATCH /v1/payment-links/{id}",
+  "integrations card-issuing → GET /v1/integrations/card-issuing",
 ];
 
 

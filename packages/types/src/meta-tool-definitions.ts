@@ -462,17 +462,31 @@ const LEDGER_INPUT: MetaToolInputSchema = {
   required: ["action"],
 };
 
-const ISSUE_INPUT: MetaToolInputSchema = {
+const CARD_INPUT: MetaToolInputSchema = {
   type: "object",
   properties: {
-    action: { type: "string", description: "card-virtual | card-physical | card-control | card-get (default: card-virtual)", enum: ["card-virtual", "card-physical", "card-control", "card-get"] },
-    cardholder_id: { type: "string", description: "Cardholder id at the issuer. Required to issue a card." },
-    program_id: { type: "string", description: "Card program / BIN (issuer affinity group). Required to issue a card." },
-    card_id: { type: "string", description: "Card id — required for card-control and card-get." },
-    control: { type: "string", description: "freeze | unfreeze | cancel (card-control only)", enum: ["freeze", "unfreeze", "cancel"] },
-    reason: { type: "string", description: "Reason stamped on a control action" },
-    shipping_address: { type: "object", description: "Shipping address (card-physical only)" },
-    metadata: { type: "object", description: "Provider-specific overrides" },
+    action: { type: "string", description: "issue | get | list | freeze | unfreeze | cancel", enum: ["issue", "get", "list", "freeze", "unfreeze", "cancel"] },
+    currency: { type: "string", description: "Card currency, BRL | USD (action=issue, required). Picks the program when provider is omitted: BRL -> pomelo_brl, USD -> rain_usd.", enum: ["BRL", "USD"] },
+    provider: { type: "string", description: "Card issuer, pomelo | rain (action=issue, optional). Omit it and the currency picks the program.", enum: ["pomelo", "rain"] },
+    mandate_id: { type: "string", description: "The mandate the card spends under (action=issue, required; action=list filter). Its currency must equal the card currency; one card per mandate." },
+    consumer_id: { type: "string", description: "The card holder, a consumer of this project (action=issue, required; action=list filter)." },
+    holder_consumer_id: { type: "string", description: "A company's pomelo_brl card only, and required there (action=issue): the person who will hold the card, as their own consumer." },
+    idempotency_key: { type: "string", description: "Required on action=issue. A retry with the same key resumes the same request and never issues a second card; the same key with a different body is refused with idempotency_key_conflict." },
+    holder: {
+      type: "object",
+      description: "The Pomelo cardholder identity (action=issue on pomelo_brl): full_name, email, birthdate, document { type, value, issuing_country }, address { line1, line2?, street_number?, neighborhood?, city, state?, postal_code, municipality?, country }, phone?. Without it a pomelo_brl issue answers pending_human with complete_holder_profile. Rain refuses it.",
+      properties: {
+        full_name: { type: "string", description: "Holder's full name." },
+        email: { type: "string", description: "Holder's email." },
+        birthdate: { type: "string", description: "Holder's birthdate, YYYY-MM-DD." },
+        document: { type: "object", description: "Identity document: { type, value, issuing_country }." },
+        address: { type: "object", description: "Address: { line1, line2?, street_number?, neighborhood?, city, state?, postal_code, municipality?, country }." },
+        phone: { type: "string", description: "Holder's phone (optional)." },
+      },
+    },
+    card_id: { type: "string", description: "Card id, icrd_... (pomelo) or rcrd_... (rain). Required for get, freeze, unfreeze and cancel." },
+    issuer: { type: "string", description: "Filter cards by issuer, pomelo | rain (action=list).", enum: ["pomelo", "rain"] },
+    reason: { type: "string", description: "Why, on freeze, unfreeze or cancel: client_request | lost | stolen | broken | upgrade.", enum: ["client_request", "lost", "stolen", "broken", "upgrade"] },
   },
   required: ["action"],
 };
@@ -605,13 +619,13 @@ export const LEDGER_DEFINITION: SharedMetaToolDefinition = {
   contract: contractOf(LEDGER_INPUT),
 };
 
-/** Issue and control payment cards for AI agents or end-users. */
-export const ISSUE_DEFINITION: SharedMetaToolDefinition = {
-  name: "codespar_issue",
+/** Issue, read, and control payment cards across issuers (Pomelo BRL, Rain USD). */
+export const CARD_DEFINITION: SharedMetaToolDefinition = {
+  name: "codespar_card",
   description:
-    "Issue and control payment cards for AI agents or end-users. Routes to a card-issuing partner (pan-LATAM issuing-as-a-service). action=card-virtual issues a virtual card (active immediately); card-physical issues a physical card (needs shipping_address); card-control freezes/unfreezes/cancels an existing card; card-get reads a card's status. This is the agent-spend-card primitive — it creates SPEND INSTRUMENTS, distinct from codespar_pay/charge which move money.",
-  input_schema: ISSUE_INPUT,
-  contract: contractOf(ISSUE_INPUT),
+    "Issue, read, and control payment cards for AI agents or end-users through CodeSpar's card programs: pomelo_brl (BRL cards, Pomelo) and rain_usd (USD cards, Rain; a rain_usd card spends the account's CodeSpar BRL wallet, priced in BRL at authorization). action=issue issues a card for a holder (consumer_id) under a mandate (mandate_id) in a currency (currency); provider is optional, and when omitted the currency picks the program. idempotency_key is required on issue. The answer always names issuer, program and selection. A requirement only a person can satisfy (issuer KYC, terms, the authorization for automated issuance, binding the key to the mandate, the holder profile) answers state=pending_human with a pending_action { id, kind, actor, url } to hand to that person (actor holder, company_signatory or org_admin), never something to accept on their behalf; retry with the same idempotency_key once it is done. state=processing means the issuer has not answered yet, and state=uncertain means the card MAY exist at the issuer: both are resolved on the SAME idempotency_key, never by a new key, which would be a second card. A definitive refusal by the issuer is an error (card_issue_refused, or card_issue_request_failed with failure_code on a later call with the same key), not a state. action=get reads one card by card_id; action=list lists cards (filters issuer, mandate_id, consumer_id); action=freeze / unfreeze / cancel control a card on both programs (cancel is permanent), and each card's available_actions says which of them its state allows. This is the agent-spend-card primitive: it creates SPEND INSTRUMENTS, distinct from codespar_pay/charge which move money.",
+  input_schema: CARD_INPUT,
+  contract: contractOf(CARD_INPUT),
 };
 
 /**
@@ -636,7 +650,7 @@ export const SHARED_META_TOOL_DEFINITIONS = {
   codespar_crypto_pay: CRYPTO_PAY_DEFINITION,
   codespar_kyc: KYC_DEFINITION,
   codespar_ledger: LEDGER_DEFINITION,
-  codespar_issue: ISSUE_DEFINITION,
+  codespar_card: CARD_DEFINITION,
 } as const;
 
 /** Wire names that have a published shared definition. */

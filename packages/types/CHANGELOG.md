@@ -1,5 +1,47 @@
 # @codespar/types — CHANGELOG
 
+## 0.12.0 — unreleased (coordinated codespar_card release)
+
+### Breaking
+
+- **`codespar_card` replaces `codespar_issue`, with no alias.**
+  - The old definition (`ISSUE_DEFINITION`) is removed, and `SHARED_META_TOOL_DEFINITIONS` lists `codespar_card` in its place. `SharedMetaToolName` follows.
+  - `Session.issue()`, `IssueArgs` and `IssueResult` are removed. `Session` implementers must provide `card()`.
+
+| Before | Now |
+|---|---|
+| `session.issue({ action: "card-virtual", cardholder_id, program_id })` | `session.card({ action: "issue", currency, mandate_id, consumer_id, idempotency_key, provider? })` |
+| `session.issue({ action: "card-get", card_id })` | `session.card({ action: "get", card_id })` |
+| `session.issue({ action: "card-control", card_id, control: "freeze" })` | `session.card({ action: "freeze", card_id, reason? })` (and `unfreeze`, `cancel`) |
+| `IssueArgs` / `IssueResult` | `CardArgs` / `CardResult` |
+| `codespar_issue` (meta-tool) | `codespar_card` |
+
+### Added
+
+- `CARD_DEFINITION` / `CARD_INPUT`: one card contract for BRL on Pomelo (`pomelo_brl`) and USD on Rain (`rain_usd`).
+  - Actions: `issue | get | list | freeze | unfreeze | cancel`.
+  - Properties: `currency` (BRL | USD), `provider` (pomelo | rain), `mandate_id`, `consumer_id`, `idempotency_key`, `holder` (Pomelo cardholder identity, pomelo_brl only), `card_id`, `issuer` (pomelo | rain), `reason` (client_request | lost | stolen | broken | upgrade).
+  - `required` is `["action"]`. The server enforces `idempotency_key`, currency, mandate and holder on `issue`.
+- `Session.card(args: CardArgs): Promise<CardResult>`.
+  - `CardArgs` is `CardIssueArgs | CardGetArgs | CardListArgs | CardControlArgs`.
+  - `CardResult` narrows on `state`:
+    - `issued`: the card view nested in `card`, plus `authorization_id` / `authorization_active`;
+    - `pending_human`: a `pending_action` for `holder`, `company_signatory` or `org_admin`;
+    - `processing` / `uncertain`: `retry_after_seconds`, plus `note` and `issuer_code` on uncertain;
+    - `refused`.
+  - A definitive issuer failure is a refusal, never a state. A result with no `state` is a card view or a list.
+- `CardReadiness` / `CardProgramReadiness` / `CardRequirement`, for `GET /v1/cards/readiness`:
+  - `mode`;
+  - `missing_fields`, `mandate_id` and `bound_api_key_ids` on a requirement;
+  - the kinds `issuer_capability_pending` and `verify_company_representative`.
+- `CardFunding` (`{ source: "wallet", currency: "BRL" }`: what a rain_usd card spends) and `CardProgramSettlement` (`{ asset: "USDC", by: "codespar" }`: a program fact, never what a card spends), both on `CardProgramAvailability`.
+- `CardView.payment_token` (`ready | pending | not_configured`, Pomelo).
+- `CardView.network` (`visa | mastercard | null`).
+- `holder_consumer_id` on issue (a company's pomelo_brl card).
+- The refusal codes `card_control_failed` and `card_control_uncertain`.
+- Freeze, unfreeze and cancel on both programs.
+- The scenario manifest moves to 0.12.0.
+
 ## 0.11.8 — 2026-11-08
 
 ### Added

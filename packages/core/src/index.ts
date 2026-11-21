@@ -70,6 +70,7 @@ export type {
 } from "./types.js";
 export { PIX_KEY_DELETE_CONSEQUENCE, PixKeyDeleteNotConfirmedError } from "./wallet.js";
 export type { Wallet, WalletPixKeys } from "./wallet.js";
+export type { Cards } from "./cards.js";
 export { dataCallOutcome, DataCallNeedsPersonError, nextActionOfError } from "./data-calls.js";
 export type { DataCall, DataCallCreated, DataCallCreateInput, DataCallNextAction, DataCallOutcome, DataCallRead, DataCalls } from "./data-calls.js";
 export { filenameFromDisposition } from "./documents.js";
@@ -127,6 +128,7 @@ import { createSession } from "./session.js";
 import { ApiClient } from "./api/client.js";
 import { createPayables, type Payables } from "./payables.js";
 import { createWallet, type Wallet } from "./wallet.js";
+import { createCards, type Cards } from "./cards.js";
 import { createDataCalls, type DataCalls } from "./data-calls.js";
 import { createDocuments, type Account, type Receipts } from "./documents.js";
 import { validateTimeout } from "./internal/fetch.js";
@@ -178,6 +180,18 @@ export class CodeSpar {
    * ```
    */
   readonly wallet: Wallet;
+
+  /**
+   * Card reads outside the meta-tool: `cs.cards.readiness()` is
+   * `GET /v1/cards/readiness`, per program the checklist of what is
+   * missing and who must act. Issue, read and control cards through
+   * `session.card()`.
+   *
+   * ```ts
+   * const { programs } = await cs.cards.readiness();
+   * ```
+   */
+  readonly cards: Cards;
 
   /**
    * Shop G3.1 data calls (`/v1/shop/agent/data-calls`): draft one from a
@@ -265,6 +279,12 @@ export class CodeSpar {
       timeout: this.config.timeout,
     });
     this.wallet = createWallet({
+      baseUrl: this.config.baseUrl,
+      apiKey: this.config.apiKey,
+      projectId: this.config.projectId || undefined,
+      timeout: this.config.timeout,
+    });
+    this.cards = createCards({
       baseUrl: this.config.baseUrl,
       apiKey: this.config.apiKey,
       projectId: this.config.projectId || undefined,

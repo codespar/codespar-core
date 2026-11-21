@@ -154,7 +154,7 @@ sells), and shared infrastructure:
 | `codespar_wallet` | The agent's governed funds: balance, statement, top-up; per-currency slots |
 | `codespar_pay` | Outbound spend: money leaves the wallet the agent governs |
 | `codespar_crypto_pay` | On-chain spend and cross-border ramps (testnet today) |
-| `codespar_issue` | Spend cards bound to the same mandate governance |
+| `codespar_card` | Spend cards bound to the same mandate governance: BRL on Pomelo, USD on Rain, one contract |
 
 **Sell side**
 

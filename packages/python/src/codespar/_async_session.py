@@ -23,6 +23,19 @@ from .types import (
     AssistantTextEvent,
     AuthConfig,
     AuthResult,
+    CardArgs,
+    CardFunding,
+    CardIssued,
+    CardList,
+    CardPendingAction,
+    CardPendingHuman,
+    CardProcessing,
+    CardProgramAvailability,
+    CardRefusal,
+    CardResult,
+    CardSelection,
+    CardUncertain,
+    CardView,
     ChargeArgs,
     ChargeResult,
     ConnectionStatusRow,
@@ -35,8 +48,6 @@ from .types import (
     DiscoverToolMatch,
     DoneEvent,
     ErrorEvent,
-    IssueArgs,
-    IssueResult,
     LedgerArgs,
     LedgerResult,
     PaymentStatusEvent,
@@ -218,15 +229,185 @@ def _parse_ledger_result(raw: dict[str, Any]) -> LedgerResult:
     )
 
 
-def _parse_issue_result(raw: dict[str, Any]) -> IssueResult:
-    return IssueResult(
-        id=raw.get("id"),
-        status=raw.get("status"),
-        card_type=raw.get("card_type"),
-        last_four=raw.get("last_four"),
-        cardholder_id=raw.get("cardholder_id"),
-        program_id=raw.get("program_id"),
-        raw=raw.get("raw"),
+_CARD_CODE_CHARS = frozenset("abcdefghijklmnopqrstuvwxyz0123456789_")
+
+
+def _is_card_code(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and bool(value)
+        and value[0].isalpha()
+        and set(value) <= _CARD_CODE_CHARS
+    )
+
+
+def _str_list(value: Any) -> list[str]:
+    return [str(v) for v in value] if isinstance(value, list) else []
+
+
+def _parse_card_selection(raw: Any) -> CardSelection | None:
+    if not isinstance(raw, dict):
+        return None
+    return CardSelection(
+        provider_requested=raw.get("provider_requested"),
+        chosen_by=str(raw.get("chosen_by", "currency")),
+    )
+
+
+def _parse_card_funding(raw: Any) -> CardFunding | None:
+    if not isinstance(raw, dict):
+        return None
+    if raw.get("source") != "wallet" or raw.get("currency") != "BRL":
+        raise ApiError("card: funding outside the published contract", status=0, body=raw)
+    return CardFunding()
+
+
+def _card_view_fields(raw: dict[str, Any]) -> dict[str, Any]:
+    funding = raw.get("funding")
+    return {
+        "id": str(raw.get("id", "")),
+        "issuer": str(raw.get("issuer", "")),
+        "program": str(raw.get("program", "")),
+        "currency": str(raw.get("currency", "")),
+        "status": str(raw.get("status", "")),
+        "issuer_status": raw.get("issuer_status"),
+        "last4": raw.get("last4"),
+        "network": raw.get("network"),
+        "mandate_id": raw.get("mandate_id"),
+        "consumer_id": raw.get("consumer_id"),
+        "created_at": raw.get("created_at"),
+        "available_actions": _str_list(raw.get("available_actions")),
+        "funding": _parse_card_funding(funding),
+        "payment_token": (
+            raw.get("payment_token") if isinstance(raw.get("payment_token"), str) else None
+        ),
+    }
+
+
+def _parse_card_view(raw: dict[str, Any]) -> CardView:
+    return CardView(**_card_view_fields(raw))
+
+
+def _parse_card_result(raw: dict[str, Any], action: str) -> CardResult:
+    """Map a successful codespar_card payload to its dataclass (TS ``cardResultFrom``)."""
+    if action == "issue":
+        state = raw.get("state")
+        ref: dict[str, Any] = {
+            "issue_request_id": str(raw.get("issue_request_id", "")),
+            "issuer": str(raw.get("issuer", "")),
+            "program": str(raw.get("program", "")),
+            "selection": _parse_card_selection(raw.get("selection")),
+        }
+        if state == "pending_human":
+            pa = raw.get("pending_action")
+            pa = pa if isinstance(pa, dict) else {}
+            return CardPendingHuman(
+                **ref,
+                pending_action=CardPendingAction(
+                    id=str(pa.get("id", "")),
+                    kind=str(pa.get("kind", "")),
+                    actor=str(pa.get("actor", "")),
+                    url=pa.get("url"),
+                ),
+            )
+        def opt_str(key: str) -> str | None:
+            v = raw.get(key)
+            return v if isinstance(v, str) else None
+
+        retry = raw.get("retry_after_seconds")
+        retry_after = retry if isinstance(retry, int) else None
+        if state == "processing":
+            return CardProcessing(**ref, retry_after_seconds=retry_after)
+        if state == "uncertain":
+            return CardUncertain(
+                **ref,
+                retry_after_seconds=retry_after,
+                note=opt_str("note"),
+                issuer_code=opt_str("issuer_code"),
+            )
+        if state == "issued":
+            card = raw.get("card")
+            auth_id = raw.get("authorization_id")
+            return CardIssued(
+                **ref,
+                card=_parse_card_view(card if isinstance(card, dict) else {}),
+                authorization_id=auth_id if isinstance(auth_id, str) else None,
+                authorization_active=bool(raw.get("authorization_active", False)),
+            )
+        raise ApiError(f"card failed: unexpected issue state {state!r}", status=0, body=raw)
+    if action == "list":
+        cards = raw.get("cards")
+        return CardList(
+            cards=[_parse_card_view(c) for c in cards if isinstance(c, dict)]
+            if isinstance(cards, list)
+            else []
+        )
+    return _parse_card_view(raw)
+
+
+def _parse_card_refusal(
+    body: Any, http_status: int, fallback_message: str | None
+) -> CardRefusal | None:
+    """The refusal a failed answer carries, or None when it has no stable code."""
+    if not isinstance(body, dict):
+        return None
+    nested = body.get("error")
+    flat: dict[str, Any] = nested if isinstance(nested, dict) else body
+    code: str | None = None
+    if isinstance(flat.get("code"), str):
+        code = flat["code"]
+    elif _is_card_code(flat.get("error")):
+        code = flat["error"]
+    if not code:
+        return None
+    raw_details = flat.get("details")
+    details: dict[str, Any] = raw_details if isinstance(raw_details, dict) else {}
+
+    def pick(key: str) -> Any:
+        return details[key] if key in details else flat.get(key)
+
+    def pick_str(key: str) -> str | None:
+        value = pick(key)
+        return value if isinstance(value, str) else None
+
+    message = flat.get("message")
+    if not isinstance(message, str):
+        err = flat.get("error")
+        message = err if isinstance(err, str) and err != code else fallback_message
+    programs = pick("available_programs")
+    actions = pick("available_actions")
+    return CardRefusal(
+        code=code,
+        message=message,
+        http_status=(
+            body["http_status"] if isinstance(body.get("http_status"), int) else http_status
+        ),
+        reason=pick_str("reason"),
+        available_programs=(
+            [
+                CardProgramAvailability(
+                    program=str(p.get("program", "")),
+                    issuer=str(p.get("issuer", "")),
+                    currency=str(p.get("currency", "")),
+                    available=(
+                        p["available"] if isinstance(p.get("available"), bool) else None
+                    ),
+                    reason=p.get("reason"),
+                    operations=_str_list(p.get("operations")),
+                )
+                for p in programs
+                if isinstance(p, dict)
+            ]
+            if isinstance(programs, list)
+            else None
+        ),
+        issuer=pick_str("issuer"),
+        program=pick_str("program"),
+        action=pick_str("action"),
+        available_actions=_str_list(actions) if isinstance(actions, list) else None,
+        issue_request_id=pick_str("issue_request_id"),
+        failure_code=pick_str("failure_code"),
+        raw=body,
     )
 
 
@@ -679,42 +860,80 @@ class AsyncSession:
             raise ApiError("ledger: malformed response", status=0, body=result.data)
         return _parse_ledger_result(result.data)
 
-    async def issue(self, args: IssueArgs, *, timeout: float | None = None) -> IssueResult:
+    async def card(self, args: CardArgs, *, timeout: float | None = None) -> CardResult:
         """
-        Issue a virtual/physical card, control (freeze/unfreeze/cancel)
-        one, or read its status on the tenant's Pomelo card-issuing
-        program. Typed wrapper around ``execute("codespar_issue", {...})``.
+        Issue, read, list, freeze, unfreeze or cancel a card on whichever
+        issuer the server resolves (BRL -> pomelo_brl, USD -> rain_usd).
+        Typed wrapper around the ``codespar_card`` meta-tool.
 
-        ``args.action`` is one of ``card-virtual`` | ``card-physical`` |
-        ``card-control`` | ``card-get``. cardholder_id + program_id are
-        required to issue; card_id is required for control + get;
-        card-physical needs shipping_address.
+        Returns ``CardIssued`` | ``CardPendingHuman`` (a step only a person
+        can take; retry with the same ``idempotency_key`` once done) |
+        ``CardProcessing`` / ``CardUncertain`` (both resolved on the SAME
+        ``idempotency_key``, never a new one: the card may already exist) |
+        ``CardView`` | ``CardList`` | ``CardRefusal`` (a definitive issuer
+        failure is a refusal: ``card_issue_refused``, or
+        ``card_issue_request_failed`` with ``failure_code``). A refusal with a
+        stable code is RETURNED, whether it came inside the tool envelope
+        or as a non-2xx answer; only a failure with no code raises
+        ``ApiError``. ``idempotency_key`` is required on ``action="issue"``
+        and is checked before anything is sent.
         """
-        params: dict[str, Any] = {"action": args.action}
-        if args.cardholder_id is not None:
-            params["cardholder_id"] = args.cardholder_id
-        if args.program_id is not None:
-            params["program_id"] = args.program_id
-        if args.card_id is not None:
-            params["card_id"] = args.card_id
-        if args.control is not None:
-            params["control"] = args.control
-        if args.reason is not None:
-            params["reason"] = args.reason
-        if args.shipping_address is not None:
-            params["shipping_address"] = args.shipping_address
-        if args.metadata is not None:
-            params["metadata"] = args.metadata
-        result = await self.execute("codespar_issue", params, timeout=timeout)
-        if not result.success:
+        if args.action == "issue" and not args.idempotency_key:
             raise ApiError(
-                f"issue failed: {result.error or 'unknown'}",
+                "card: idempotency_key is required on action=issue",
                 status=0,
-                body=result.error,
+                code="invalid_args",
             )
-        if not isinstance(result.data, dict):
-            raise ApiError("issue: malformed response", status=0, body=result.data)
-        return _parse_issue_result(result.data)
+        params: dict[str, Any] = {"action": args.action}
+        for name in (
+            "currency",
+            "provider",
+            "mandate_id",
+            "consumer_id",
+            "holder_consumer_id",
+            "idempotency_key",
+            "holder",
+            "card_id",
+            "issuer",
+            "reason",
+        ):
+            value = getattr(args, name)
+            if value is not None:
+                params[name] = value
+        # Straight to /execute rather than through ``execute()``: a non-2xx
+        # refusal (scope, idempotency conflict) keeps its status and parsed
+        # body here, where ``execute()`` would flatten them into a string.
+        try:
+            data = await request_json(
+                self._client,
+                "POST",
+                f"/v1/sessions/{self.id}/execute",
+                api_key=self._api_key,
+                project_id=self._project_id,
+                body={"tool": "codespar_card", "input": params},
+                timeout=timeout,
+            )
+        except ApiError as exc:
+            if exc.status == 0:
+                raise
+            refusal = _parse_card_refusal(exc.body, exc.status, str(exc))
+            if refusal is not None:
+                return refusal
+            raise
+        if not isinstance(data, dict):
+            raise ApiError("card: malformed response", status=0, body=data)
+        if not data.get("success", False):
+            error = data.get("error")
+            refusal = _parse_card_refusal(
+                data.get("data"), 200, error if isinstance(error, str) else None
+            )
+            if refusal is not None:
+                return refusal
+            raise ApiError(f"card failed: {error or 'unknown'}", status=0, body=error)
+        payload = data.get("data")
+        if not isinstance(payload, dict):
+            raise ApiError("card: malformed response", status=0, body=payload)
+        return _parse_card_result(payload, args.action)
 
     async def shop(self, args: ShopArgs, *, timeout: float | None = None) -> ShopResult:
         """

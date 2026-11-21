@@ -2,14 +2,14 @@
 
 MCP server for CodeSpar — give Claude, Codex, Cursor, VS Code (and any MCP client)
 a Latin-American commerce agent: search & checkout, Pix, wallet/balance, spend
-mandates & limits, and Pomelo card issuing — all as MCP tools.
+mandates & limits, and spend cards (BRL on Pomelo, USD on Rain) — all as MCP tools.
 
 ## Run as a server (`codespar-mcp`)
 
 A stdio MCP server that bridges your MCP client to a CodeSpar session's tools. It
 talks to the CodeSpar REST API directly, so it works against the live meta-tools
 today (`codespar_pay`, `codespar_charge`, `codespar_discover`, wallet, mandates,
-and `codespar_issue` → Pomelo card). One env var (`CODESPAR_API_KEY`) and you're in.
+and `codespar_card` → spend cards, BRL on Pomelo and USD on Rain). One env var (`CODESPAR_API_KEY`) and you're in.
 
 **Claude Code / Claude Desktop**
 

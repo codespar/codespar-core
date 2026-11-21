@@ -11,8 +11,11 @@ import {
   type AgentFacingToolShape,
 } from "./meta-tool-definition-conformance.js";
 import type {
+  CardArgs,
+  CardControlReason,
+  CardCurrency,
+  CardIssuer,
   ChargeArgs,
-  IssueArgs,
   KycArgs,
   LedgerArgs,
   PayArgs,
@@ -43,13 +46,13 @@ function defWith(overrides: {
 describe("shared meta-tool definitions", () => {
   it("publishes ALL fifteen meta-tools keyed by wire name (ent#933: was 3 of 15)", () => {
     expect(Object.keys(SHARED_META_TOOL_DEFINITIONS).sort()).toEqual([
+      "codespar_card",
       "codespar_charge",
       "codespar_checkout",
       "codespar_crypto_pay",
       "codespar_discover",
       "codespar_get_started",
       "codespar_invoice",
-      "codespar_issue",
       "codespar_kyc",
       "codespar_ledger",
       "codespar_manage_connections",
@@ -520,24 +523,70 @@ describe("wire-shape arg unions match the published definition vocabularies (ent
     );
   });
 
-  it("IssueArgs.action + IssueArgs.control == codespar_issue enums", () => {
-    const actions: Record<IssueArgs["action"], true> = {
-      "card-virtual": true,
-      "card-physical": true,
-      "card-control": true,
-      "card-get": true,
-    };
-    expect(pinned(actions)).toEqual(
-      [...SHARED_META_TOOL_DEFINITIONS.codespar_issue.input_schema.properties.action!.enum!].sort(),
-    );
-    const controls: Record<NonNullable<IssueArgs["control"]>, true> = {
+  it("CardArgs.action/currency/provider/issuer == codespar_card enums", () => {
+    const card = SHARED_META_TOOL_DEFINITIONS.codespar_card;
+    const actions: Record<CardArgs["action"], true> = {
+      issue: true,
+      get: true,
+      list: true,
       freeze: true,
       unfreeze: true,
       cancel: true,
     };
-    expect(pinned(controls)).toEqual(
-      [...SHARED_META_TOOL_DEFINITIONS.codespar_issue.input_schema.properties.control!.enum!].sort(),
-    );
+    expect(pinned(actions)).toEqual([...card.input_schema.properties.action!.enum!].sort());
+    const currencies: Record<CardCurrency, true> = { BRL: true, USD: true };
+    expect(pinned(currencies)).toEqual([...card.input_schema.properties.currency!.enum!].sort());
+    const issuers: Record<CardIssuer, true> = { pomelo: true, rain: true };
+    expect(pinned(issuers)).toEqual([...card.input_schema.properties.provider!.enum!].sort());
+    expect(pinned(issuers)).toEqual([...card.input_schema.properties.issuer!.enum!].sort());
+    const reasons: Record<CardControlReason, true> = { client_request: true, lost: true, stolen: true, broken: true, upgrade: true };
+    expect(pinned(reasons)).toEqual([...card.input_schema.properties.reason!.enum!].sort());
+  });
+
+  it("codespar_card publishes the contract §6 surface, pinned (enterprise codespar_card)", () => {
+    const card = SHARED_META_TOOL_DEFINITIONS.codespar_card;
+    expect(card.name).toBe("codespar_card");
+    expect(Object.keys(card.input_schema.properties)).toEqual([
+      "action",
+      "currency",
+      "provider",
+      "mandate_id",
+      "consumer_id",
+      "holder_consumer_id",
+      "idempotency_key",
+      "holder",
+      "card_id",
+      "issuer",
+      "reason",
+    ]);
+    expect(card.input_schema.properties.reason!.enum).toEqual(["client_request", "lost", "stolen", "broken", "upgrade"]);
+    expect(Object.keys(card.input_schema.properties.holder!.properties!)).toEqual([
+      "full_name",
+      "email",
+      "birthdate",
+      "document",
+      "address",
+      "phone",
+    ]);
+    // The flat schema cannot say "required when action=issue": currency,
+    // mandate_id, consumer_id and idempotency_key are enforced by the server
+    // (and by the CLI/SDK callers) on issue, not by the required set.
+    expect(card.input_schema.required).toEqual(["action"]);
+    // No Pomelo-only vocabulary survives the rename.
+    const props = Object.keys(card.input_schema.properties);
+    for (const gone of ["cardholder_id", "program_id", "control", "shipping_address", "metadata"]) {
+      expect(props).not.toContain(gone);
+    }
+    expect(card.description).toMatch(/idempotency_key is required on issue/);
+    expect(card.description).toMatch(/pending_action/);
+    // 8.3: an uncertain issue is never "try again with another key".
+    expect(card.description).toMatch(/state=uncertain/);
+    expect(card.description).toMatch(/SAME idempotency_key, never by a new key/);
+  });
+
+  it("codespar_issue is gone: no alias, no shim (contract §10.1)", () => {
+    expect(Object.keys(SHARED_META_TOOL_DEFINITIONS)).not.toContain("codespar_issue");
+    for (const def of ALL) expect(def.name).not.toBe("codespar_issue");
   });
 
   it("ShopArgs.action == codespar_shop action enum", () => {

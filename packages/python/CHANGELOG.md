@@ -1,10 +1,34 @@
 # codespar (Python SDK) — CHANGELOG
 
-## Unreleased
+## 0.17.0 — unreleased (coordinated codespar_card release)
+
+In parity with `@codespar/sdk` 0.17.0.
+
+### Breaking
+
+- **`session.card(CardArgs(...))` replaces `session.issue(...)`, async and sync, with no alias.** `issue()`, `IssueArgs`, `IssueResult` and `IssueAction` are removed.
+
+| Before | Now |
+|---|---|
+| `session.issue(IssueArgs(action="card-virtual", cardholder_id=..., program_id=...))` | `session.card(CardArgs(action="issue", currency=..., mandate_id=..., consumer_id=..., idempotency_key=..., provider=None))` |
+| `session.issue(IssueArgs(action="card-get", card_id=...))` | `session.card(CardArgs(action="get", card_id=...))` |
+| `session.issue(IssueArgs(action="card-control", card_id=..., control="freeze"))` | `session.card(CardArgs(action="freeze", card_id=..., reason=None))` |
 
 ### Added
 
-- `cs.research` (create, get over `/v1/shop/agent/research`) and
+- `session.card(...)` calls `codespar_card` (BRL on Pomelo, USD on Rain). `idempotency_key` is required on `action="issue"` and is checked before anything is sent.
+- It returns:
+  - `CardIssued`;
+  - `CardPendingHuman` (`pending_action`);
+  - `CardProcessing` and `CardUncertain` (same key, never a new one);
+  - `CardView` and `CardList`;
+  - `CardRefusal`: a refusal with a stable code is returned, whether it came in the tool envelope or as a non-2xx answer (`http_status`), and a definitive issuer failure is one.
+- Only a failure with no code raises `ApiError`.
+- `cs.cards.readiness()` reads `GET /v1/cards/readiness`.
+- `CardFunding` / `CardProgramSettlement` are typed exactly. A funding outside the contract raises instead of passing through.
+- `CardView.payment_token`.
+- `holder_consumer_id` on `CardArgs`.
+- Shop G3.1, merged from main: `cs.research` (create, get over `/v1/shop/agent/research`) and
   `cs.data_calls` (create, get, execute over `/v1/shop/agent/data-calls`),
   with `data_call_outcome`, on the async and the sync client (Shop G3.1).
   `execute` with a key raises `ApiError` 403 `person_required`.

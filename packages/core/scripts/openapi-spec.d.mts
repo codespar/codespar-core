@@ -68,6 +68,14 @@ export function buildSnapshot(
 ): Snapshot;
 export function renderGenerated(snapshot: Snapshot): Promise<{ types: string; operations: string }>;
 export function readSnapshot(file?: string): Snapshot;
+/** `candidate:<ent-sha>/openapi-candidate.json`, the source a candidate snapshot records. */
+export const CANDIDATE_SOURCE: RegExp;
+export function readCandidate(file: string): {
+  document: OpenApiDocument;
+  source: string;
+  etag: null;
+  lastModified: null;
+};
 export function fetchServed(
   url?: string,
 ): Promise<{ document: OpenApiDocument; etag: string | null; lastModified: string | null }>;
