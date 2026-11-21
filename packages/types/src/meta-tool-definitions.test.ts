@@ -107,7 +107,36 @@ describe("shared meta-tool definitions", () => {
       "payment_id",
       "linha_digitavel",
       "idempotency_key",
+      "obligation_reference",
     ]);
+  });
+
+  it("codespar_pay publishes obligation_reference as an OPTIONAL bounded string with its conflict and replay semantics", () => {
+    // The managed runtime keeps an optional obligation reference (an invoice or
+    // installment) per organization, project and mandate agent: the same one
+    // answers the original payment, a different amount or payee is refused.
+    // `codespar pay --arg` only accepts names this definition publishes.
+    const pay = SHARED_META_TOOL_DEFINITIONS.codespar_pay;
+    const ref = pay.input_schema.properties.obligation_reference;
+    expect(ref?.type).toBe("string");
+    expect(ref?.enum).toBeUndefined();
+    // The bounds are stated, not encoded as JSON Schema keywords the strict
+    // tool modes do not all accept; the runtime enforces them.
+    expect(ref?.description).toMatch(/1 to 128 characters, no control characters/);
+    expect(ref?.description).toContain("obligation_reference_conflict");
+    expect(ref?.description).toContain("obligation_reference_unsupported");
+    expect(ref?.description).toMatch(/ORIGINAL payment/);
+    expect(pay.contract.properties).toContain("obligation_reference");
+    expect(pay.contract.required).not.toContain("obligation_reference");
+
+    const args: PayArgs = {
+      amount: 12500,
+      currency: "BRL",
+      description: "Invoice 2026-00001, installment 2",
+      method: "pix",
+      obligation_reference: "INV-2026-00001/2",
+    };
+    expect(args.obligation_reference).toBe("INV-2026-00001/2");
   });
 
   it("codespar_pay publishes idempotency_key as an OPTIONAL string (codespar-enterprise#1752)", () => {
