@@ -1,6 +1,6 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 7fd9095b81acda54a5b3021e7f1bc91c69a0842de9ac744db7bae20cc1d50889, fetched 2026-11-20T15:49:09.781Z
-//         from https://api.codespar.dev/openapi.json, API 0.3.0).
+// Source: openapi-snapshot.json (sha256 36280a12590d60a70bd60e95a34502f105e93c6390a02efe9b9b11d1ab4b4d2a, fetched 2026-11-24T11:26:06.386Z
+//         from candidate:cce55beec8344321fcb382580c9725560abb6ca9/openapi-candidate.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
 
@@ -127,13 +127,21 @@ export const API_OPERATIONS = [
   { method: "post", path: "/v1/cart/sessions", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/cart/checkout", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/cart/nuvemshop/connect/start", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
-  { method: "get", path: "/v1/cards", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
-  { method: "post", path: "/v1/cards", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
-  { method: "get", path: "/v1/cards/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/counterparties/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/servers/{id}/auth-schema", body: null, accept: "application/json", requiredQuery: [], deprecated: true },
   { method: "get", path: "/v1/servers/{id}/tools", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "post", path: "/v1/servers/{id}/verify-connection", body: null, accept: "application/json", requiredQuery: [], deprecated: true },
+  { method: "get", path: "/v1/cards", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/cards", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/cards/programs", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/cards/readiness", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/cards/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/cards/{id}/freeze", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/cards/{id}/unfreeze", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "post", path: "/v1/cards/{id}/cancel", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/cards/holder-profiles/{consumer_id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "put", path: "/v1/cards/holder-profiles/{consumer_id}", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
+  { method: "get", path: "/v1/integrations/card-issuing", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/funding-sources/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/consent-records/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/consent-records", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
@@ -142,8 +150,6 @@ export const API_OPERATIONS = [
   { method: "get", path: "/v1/account-applications/{id}", body: null, accept: "application/json", requiredQuery: ["document_number"], deprecated: false },
   { method: "post", path: "/v1/facilitator/x402/executions", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: false },
   { method: "get", path: "/v1/facilitator/x402/executions/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: false },
-  { method: "get", path: "/v1/issuer/cards/{id}", body: null, accept: "application/json", requiredQuery: [], deprecated: true },
-  { method: "post", path: "/v1/issuer/cards", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: true },
   { method: "post", path: "/v1/kyc/onboard", body: "application/json", accept: "application/json", requiredQuery: [], deprecated: true },
   { method: "get", path: "/v1/kyc/onboard/{proposalId}/status", body: null, accept: "application/json", requiredQuery: ["document_number"], deprecated: true },
   { method: "get", path: "/v1/providers/{slug}/auth-schema", body: null, accept: "application/json", requiredQuery: [], deprecated: false },

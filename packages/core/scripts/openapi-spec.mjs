@@ -10,6 +10,17 @@
 //   node scripts/openapi-spec.mjs generate   snapshot -> src/generated/*
 //   node scripts/openapi-spec.mjs refresh    served   -> snapshot -> src/generated/*
 //   node scripts/openapi-spec.mjs check      exit 1 when anything is stale
+//   node scripts/openapi-spec.mjs refresh --from-file <dir>/<ent-sha>/openapi-candidate.json
+//                                            a CANDIDATE document (enterprise head, not served)
+//                                            -> snapshot -> src/generated/*
+//   node scripts/openapi-spec.mjs assert-served
+//                                            exit 1 when the snapshot is a candidate
+//
+// A candidate snapshot records `source: "candidate:<ent-sha>/openapi-candidate.json"`.
+// It exists so a draft can be reviewed against the enterprise head before
+// that head is served (cards contract §8.6). It must never be published:
+// `assert-served` runs in the publish workflow and refuses it, so publish day
+// is `refresh` (from the served document) first.
 //
 // `check` answers three questions, in order:
 //   1. does the snapshot's recorded sha256 match its own document
@@ -273,10 +284,40 @@ async function generate() {
   return 0;
 }
 
-async function refresh() {
-  const served = await fetchServed();
+export const CANDIDATE_SOURCE = /^candidate:([0-9a-f]{7,40})\/openapi-candidate\.json$/;
+
+/** A candidate document from disk; the enterprise SHA is the name of its directory. */
+export function readCandidate(file) {
+  const sha = path.basename(path.dirname(path.resolve(file)));
+  if (!/^[0-9a-f]{7,40}$/.test(sha) || path.basename(file) !== "openapi-candidate.json") {
+    throw new Error(
+      `${file}: expected <dir>/<enterprise sha>/openapi-candidate.json, so the snapshot can record which head it came from`,
+    );
+  }
+  const document = JSON.parse(fs.readFileSync(file, "utf8"));
+  if (!document.openapi || !document.paths) {
+    throw new Error(`${file} is not an OpenAPI document (no openapi/paths)`);
+  }
+  return { document, source: `candidate:${sha}/openapi-candidate.json`, etag: null, lastModified: null };
+}
+
+async function assertServed() {
+  const snapshot = readSnapshot();
+  if (CANDIDATE_SOURCE.test(snapshot.snapshot.source)) {
+    console.error(
+      `assert-served: ${path.relative(PKG_ROOT, SNAPSHOT_PATH)} was generated from ${snapshot.snapshot.source}, an enterprise candidate, ` +
+        "not the served document. Run `npm run spec:refresh` against the served API before publishing.",
+    );
+    return 1;
+  }
+  console.log(`assert-served: snapshot source ${snapshot.snapshot.source}`);
+  return 0;
+}
+
+async function refresh(fromFile) {
+  const served = fromFile ? readCandidate(fromFile) : { ...(await fetchServed()), source: SPEC_URL };
   const snapshot = buildSnapshot(served.document, {
-    source: SPEC_URL,
+    source: served.source,
     fetchedAt: new Date().toISOString(),
     etag: served.etag,
     lastModified: served.lastModified,
@@ -284,7 +325,7 @@ async function refresh() {
   writeSnapshot(snapshot);
   await writeGenerated(snapshot);
   console.log(
-    `refresh: snapshot ${snapshot.snapshot.sha256.slice(0, 12)} from ${SPEC_URL} ` +
+    `refresh: snapshot ${snapshot.snapshot.sha256.slice(0, 12)} from ${served.source} ` +
       `(API ${snapshot.snapshot.info.version}, ${snapshot.snapshot.paths} paths, ` +
       `${snapshot.snapshot.operations} operations)`,
   );
@@ -397,12 +438,20 @@ async function main(argv) {
   switch (mode) {
     case "generate":
       return generate();
-    case "refresh":
-      return refresh();
+    case "refresh": {
+      const i = flags.indexOf("--from-file");
+      if (i !== -1 && !flags[i + 1]) {
+        console.error("usage: openapi-spec.mjs refresh [--from-file <dir>/<ent-sha>/openapi-candidate.json]");
+        return 2;
+      }
+      return refresh(i === -1 ? undefined : flags[i + 1]);
+    }
+    case "assert-served":
+      return assertServed();
     case "check":
       return check({ offline });
     default:
-      console.error("usage: openapi-spec.mjs <generate|refresh|check [--offline]>");
+      console.error("usage: openapi-spec.mjs <generate|refresh [--from-file <path>]|check [--offline]|assert-served>");
       return 2;
   }
 }

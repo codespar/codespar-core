@@ -1,5 +1,36 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.17.0 — unreleased (coordinated codespar_card release)
+
+### Breaking
+
+- **`session.card(args)` replaces `session.issue(args)`, with no alias.** It calls `codespar_card`: one contract for BRL on Pomelo (`pomelo_brl`) and USD on Rain (`rain_usd`). `session.issue` is removed.
+
+| Before | Now |
+|---|---|
+| `session.issue({ action: "card-virtual", cardholder_id, program_id })` | `session.card({ action: "issue", currency, mandate_id, consumer_id, idempotency_key, provider? })` |
+| `session.issue({ action: "card-get", card_id })` | `session.card({ action: "get", card_id })` |
+| `session.issue({ action: "card-control", card_id, control: "freeze" })` | `session.card({ action: "freeze", card_id, reason? })` (and `unfreeze`, `cancel`) |
+| `IssueArgs` / `IssueResult` | `CardArgs` / `CardResult` |
+| `codespar_issue` (meta-tool) | `codespar_card` |
+
+### Added
+
+- `session.card(args)`:
+  - `issue` takes `currency`, `mandate_id`, `consumer_id` and a required `idempotency_key`, checked before anything is sent. `provider` is optional, and the currency picks the program when it is omitted.
+  - Results narrow on `state`:
+    - `"issued"`;
+    - `"pending_human"`: a `pending_action` for `holder`, `company_signatory` or `org_admin`;
+    - `"processing"` and `"uncertain"`: the card MAY exist, so call again with the SAME key, never a new one;
+    - `"refused"`: also a definitive issuer failure (`card_issue_refused`; `card_issue_request_failed` with `failure_code` and `issue_request_id` on a later call with the same key). It carries a stable `code`, `reason`, `available_programs`, `available_actions` and `http_status`. The refusal is **returned**, whether it came in the tool envelope or as a non-2xx body.
+  - A result with no `state` is a card view or `{ cards }`. Only a failure with no code throws.
+- `cs.cards.readiness()` reads `GET /v1/cards/readiness`: per program, ready or not and the checklist of what is missing.
+- Freeze, unfreeze and cancel work on both programs, as each card's `available_actions` allows. Cancel is permanent.
+- `card_control_uncertain` comes back as a refusal: read the card again.
+- `card-wire.test.ts` pins every hand-written card type in `@codespar/types` to the type generated from the served schema.
+- `spec:refresh --from-file <dir>/<sha>/openapi-candidate.json` generates from an enterprise candidate document. `assert-served` refuses a candidate snapshot, and the publish workflow runs it.
+- Depends on `@codespar/types ^0.12.0`. The fake session in `@codespar/sdk/testing` implements `card()`.
+
 ## 0.16.31 — 2026-11-17
 
 ### Added

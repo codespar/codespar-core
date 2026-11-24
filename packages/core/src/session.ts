@@ -2,6 +2,7 @@
  * Session implementation for the CodeSpar managed runtime.
  */
 
+import { assertCardArgs, cardResultFrom } from "./card.js";
 import { CodesparApiError, networkErrorToApiError, throwFromInstrumentsResponse, throwFromResponse, TimeoutError } from "./errors.js";
 import type { SessionConfig, Tool, CallOptions } from "./types.js";
 import { fetchWithTimeout, validateTimeout } from "./internal/fetch.js";
@@ -31,8 +32,8 @@ import type {
   ShipResult,
   LedgerArgs,
   LedgerResult,
-  IssueArgs,
-  IssueResult,
+  CardArgs,
+  CardResult,
   ShopArgs,
   ShopResult,
   AgentInstrument,
@@ -394,21 +395,21 @@ export async function createSession(
     },
 
     /**
-     * codespar_issue wrapper. Issue a virtual/physical card, control
-     * (freeze/unfreeze/cancel) one, or read its status on the tenant's
-     * Pomelo card-issuing program. Same wire as
-     * `execute("codespar_issue", {...})` but returns a typed IssueResult.
+     * codespar_card wrapper. Issue, read, list or control a card on any
+     * issuer the server resolves (BRL -> pomelo_brl, USD -> rain_usd). Same
+     * wire as `execute("codespar_card", {...})`; a refusal with a stable code
+     * is RETURNED as `CardRefusal` (`state: "refused"`); a non-final issue
+     * as `pending_human` / `processing` / `uncertain` (resolve on the SAME
+     * idempotency_key). Only a failure with no code throws.
      */
-    async issue(args: IssueArgs, opts?: CallOptions): Promise<IssueResult> {
+    async card(args: CardArgs, opts?: CallOptions): Promise<CardResult> {
+      assertCardArgs(args);
       const result = await session.execute(
-        "codespar_issue",
+        "codespar_card",
         args as unknown as Record<string, unknown>,
         opts,
       );
-      if (!result.success) {
-        throw new Error(`issue failed: ${result.error ?? "unknown"}`);
-      }
-      return result.data as IssueResult;
+      return cardResultFrom(args, result);
     },
 
     /**

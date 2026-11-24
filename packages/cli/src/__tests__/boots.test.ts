@@ -93,6 +93,17 @@ describe("o programa sobe", () => {
     expect(pay.stdout).toContain("--list-hash");
   }, 30_000);
 
+  it("`card` sobe com os sete subcomandos, e `issue` é comando desconhecido (codespar_card sem alias)", () => {
+    const card = roda("card", "--help");
+    expect(card.status, `${card.stdout}${card.stderr}`).toBe(0);
+    for (const sub of ["issue", "get", "list", "freeze", "unfreeze", "cancel", "readiness"]) {
+      expect(card.stdout).toMatch(new RegExp(`\\b${sub}\\b`));
+    }
+    const issue = roda("issue");
+    expect(issue.status, "o programa ainda aceita `codespar issue`").not.toBe(0);
+    expect(`${issue.stdout}${issue.stderr}`).toMatch(/unknown command 'issue'/);
+  }, 30_000);
+
   it("CONTROLE: um comando que não existe sai não-zero", () => {
     const r = roda("comando-que-nao-existe-mesmo");
     expect(r.status, "o programa aceitou um comando inventado").not.toBe(0);

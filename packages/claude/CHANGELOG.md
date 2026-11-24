@@ -1,5 +1,11 @@
 # @codespar/claude — CHANGELOG
 
+## 0.4.9 — unreleased (coordinated codespar_card release)
+
+### Changed
+
+- The `@codespar/sdk` peer range accepts `^0.17.0`.
+
 ## 0.4.8 — 2026-10-29
 
 ### Fixed

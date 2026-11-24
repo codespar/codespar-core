@@ -1,5 +1,32 @@
 # @codespar/cli — changelog
 
+## 0.23.0 — unreleased (coordinated codespar_card release)
+
+### Breaking
+
+- **`codespar card` replaces `codespar issue`, with no alias.** `codespar issue` is removed.
+
+| Before | Now |
+|---|---|
+| `codespar issue -i '{"action":"card-virtual",...}'` | `codespar card issue --currency --mandate-id --consumer-id --idempotency-key [--provider] [--holder <json>]` |
+| `codespar issue -i '{"action":"card-get","card_id":"..."}'` | `codespar card get <card-id>` |
+| `codespar issue -i '{"action":"card-control","control":"freeze",...}'` | `codespar card freeze\|unfreeze\|cancel <card-id> [--reason]` |
+| — | `codespar card list [--issuer] [--mandate-id] [--consumer-id]`, `codespar card readiness` |
+
+### Added
+
+- `codespar card issue|get|list|freeze|unfreeze|cancel|readiness`, through `codespar_card` (BRL on Pomelo, USD on Rain).
+  - `-i/--input` and `-f/--input-file` take JSON, and flags win over it. `--json` prints the result document.
+  - Output: id, issuer, program, currency, status (with the issuer's raw status) and the available actions.
+- Exit codes:
+  - A refusal exits 1 (a definitive issuer failure is one), with an `api` error document carrying the `code`, `status` and the whole refusal as `body`.
+  - `pending_human`, `processing` and `uncertain` exit 0. They say to run the same command again with the SAME `--idempotency-key`, never a new key. `uncertain` says the card may exist.
+- Vocabularies (actions, currency, provider, issuer, reason) come from the published `codespar_card` definition.
+- `--holder-consumer-id` is required for a company's pomelo_brl card.
+- A `card_control_uncertain` refusal says to read the card again with `codespar card get <id>`.
+- `codespar integrations card-issuing` is derived from the served document.
+- Depends on `@codespar/sdk ^0.17.0`.
+
 ## 0.22.8 — 2026-11-17
 
 ### Added
