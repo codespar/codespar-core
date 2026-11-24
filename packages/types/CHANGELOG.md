@@ -1,5 +1,20 @@
 # @codespar/types — CHANGELOG
 
+## 0.11.9 — 2026-11-21
+
+### Added
+
+- `codespar_pay` publishes `obligation_reference` (optional string, 1-128
+  characters, no control characters), and `PayArgs` declares it: an optional
+  obligation reference (an invoice or one installment of it), unique per
+  organization, project and the agent of the signed mandate. The same
+  reference answers the original payment and sends nothing; a different amount
+  or payee under it is refused with `obligation_reference_conflict`; an
+  uncertain original answers `psp_attempt_uncertain`, to reconcile, never to
+  resend under another reference. Accepted on
+  Pix and boleto payments a consumer mandate governs; a direct Pix no mandate
+  governs is refused with `obligation_reference_unsupported`.
+
 ## 0.11.8 — 2026-11-08
 
 ### Added

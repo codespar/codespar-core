@@ -1,5 +1,23 @@
 # @codespar/sdk — CHANGELOG
 
+## 0.16.32 — 2026-11-24
+
+### Changed
+
+- OpenAPI snapshot and generated client refreshed from the served document
+  (397 operations). The spend route and `/v1/consumer-payments/execute` /
+  `execute-stream` no longer list `approval_required` among their 403s: a
+  payment above the mandate's per-transaction cap is a 422
+  `per_tx_cap_exceeded`, never an approval.
+- The spend route takes `obligation_reference` (an invoice or one installment
+  of it, unique per organization, project and the agent of the signed
+  mandate); the same reference answers the original payment, a different
+  amount or payee is `obligation_reference_conflict` (409), and an uncertain
+  original is reconciled, never resent under another reference.
+- The receipt read answers `settlement` with the provider's confirmation of a
+  governed Pix, and `commerce.pix_out.succeeded` names the receipt in
+  `receipt_id`.
+
 ## 0.16.31 — 2026-11-17
 
 ### Added
