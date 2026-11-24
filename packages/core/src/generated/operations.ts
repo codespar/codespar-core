@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 7fd9095b81acda54a5b3021e7f1bc91c69a0842de9ac744db7bae20cc1d50889, fetched 2026-11-20T15:49:09.781Z
+// Source: openapi-snapshot.json (sha256 457b288e263796bc7ac1e27f908b85922ab253edc34dd95057b36cb4a3d2d59d, fetched 2026-11-24T17:06:41.532Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";

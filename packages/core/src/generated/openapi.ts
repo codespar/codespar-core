@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 7fd9095b81acda54a5b3021e7f1bc91c69a0842de9ac744db7bae20cc1d50889, fetched 2026-11-20T15:49:09.781Z
+// Source: openapi-snapshot.json (sha256 457b288e263796bc7ac1e27f908b85922ab253edc34dd95057b36cb4a3d2d59d, fetched 2026-11-24T17:06:41.532Z
 //         from https://api.codespar.dev/openapi.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
@@ -3641,9 +3641,13 @@ export interface paths {
                                 display_name?: string;
                                 /** @enum {string} */
                                 network: "base" | "base-sepolia";
+                                /** @description The wallet's own bound address; null until it is bound, and in Live never derived before. */
                                 address: string | null;
-                                /** @enum {string} */
-                                state: "queued" | "syncing" | "ready" | "needs_attention";
+                                /**
+                                 * @description `not_served` (22/11): a Live consumer wallet the managed wallet does not serve; it has no address here.
+                                 * @enum {string}
+                                 */
+                                state: "not_served" | "queued" | "syncing" | "ready" | "needs_attention";
                                 faucet: string | null;
                                 reason: string | null;
                                 checked_at: string | null;
@@ -3658,6 +3662,16 @@ export interface paths {
                                     gas: string | null;
                                     reason: string | null;
                                 } | null;
+                                /** @description This wallet's own USDC (22/11), apart from BRL and from every other wallet. */
+                                usdc_balance?: {
+                                    balance_minor: string;
+                                    available_minor: string;
+                                    /**
+                                     * @description `confirmed_transfers`: credited by the importer from confirmed transfers to the bound address. `legacy`: this wallet's ledger balance from before any binding (another origin, never mixed in).
+                                     * @enum {string}
+                                     */
+                                    origin: "confirmed_transfers" | "legacy";
+                                };
                             }[];
                             /** @description The account's money only. Empty when `account.exists` is false (a Test project with no own account yet): the simulator's residue is never presented as the account's balance, nor as a zero one; it is in `simulator_legacy`. */
                             currencies: {
@@ -16728,6 +16742,8 @@ export interface paths {
          *
          *     USDC RETURNS A REAL ON-CHAIN ADDRESS and is the only currency that does. The address is resolved live from the custody provider for the consumer this wallet belongs to, so it is the same address the onramp delivers to and the same one the custody comparison is measured against. `network` follows the CREDENTIAL's environment, not a parameter: a live key gets `base`, a test key gets `base-sepolia`. Sending Base USDC to the address a test key returned is a transfer to a testnet address and the money does not exist on mainnet.
          *
+         *     A MANAGED WALLET ANSWERS ONLY ITS OWN BOUND ADDRESS. IN LIVE, A USDC WALLET WITH NO BINDING HAS NO ADDRESS: the answer is 409 `usdc_address_not_ready` with `error.details.preparation` `not_served` (the managed wallet does not serve it) or `queued`, and no address is derived or created for it.
+         *
          *     IN A TEST PROJECT, BRL ON A CONSUMER WALLET WHOSE ACCOUNT IS BOUND TO THE CONSUMER RETURNS THAT ACCOUNT'S PIX KEY as `address` (`rail: "pix"`, `network` and `asset_contract` null), and `note` names the same key: the account bound by the project's open account binding while its `collect` capability is active. It is read from the database; nothing is asked of the provider and no key is registered here. A live key, or a Test project with no bound account or no registered key, gets the BRL guidance below.
          *
          *     EVERY OTHER CURRENCY RETURNS GUIDANCE, NOT AN ADDRESS. `address`, `network` and `asset_contract` are all null and `note` is a sentence for a human, because the deposit path on those rails is a funding source rather than a destination you can hand out. BRL reads `pix`, USD reads `wire`, and anything else reads `unknown` — including a currency this deployment does not support at all, which is answered 200 with `unknown` rather than refused. `rail: "unknown"` is the signal that there is nothing to act on.
@@ -16800,7 +16816,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Conflict. `no_onchain_address`: USDC was asked for on a wallet that is not consumer-scoped, so there is no consumer whose custody address could be resolved. Org and seller wallets are always in this state. Terminal for the request — retrying cannot change it. */
+                /** @description Conflict. `no_onchain_address`: USDC was asked for on a wallet that is not consumer-scoped, so there is no consumer whose custody address could be resolved. Org and seller wallets are always in this state. Terminal for the request — retrying cannot change it. `usdc_address_not_ready`: the wallet's own address is not bound yet (`error.details.preparation`: `not_served`, `queued`, `syncing` or `needs_attention`); in Live this is the answer for every wallet with no binding. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -16809,7 +16825,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_onchain_address";
+                                code: "no_onchain_address" | "usdc_address_not_ready";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -21148,6 +21164,8 @@ export interface paths {
                         agent_id?: string;
                         /** @description Mandatory when `ted` is present. Present the same one again on every retry. */
                         attempt_id?: string;
+                        /** @description Optional. The obligation this payment settles: an invoice, or one installment of it, in the integration's own words (1-128 characters, no control characters). The integration is the agent of the signed mandate; a reference is unique per organization + project + agent + reference, so rotating the API key or renewing the mandate keeps it, and another agent of the project is another scope. Sending the same reference again answers the ORIGINAL payment (its recorded body, `idempotent_replay: true`), even under a mandate that changed since; nothing is held or sent. The same reference with a different `amount_minor` or `payee` is `obligation_reference_conflict` (409). The same obligation always keeps the same reference: a failed original frees it for a new attempt only with recorded proof that nothing moved; otherwise the answer is `psp_attempt_uncertain` (409) under the original's `attempt_id`, to reconcile, never to resend under another reference. Without it, nothing changes. */
+                        obligation_reference?: string;
                         ted?: components["schemas"]["TedDestination"];
                         quote?: components["schemas"]["SpendQuote"];
                         actor?: components["schemas"]["PaymentActor"];
@@ -21187,7 +21205,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Either a policy rule refused the spend (`policy_denied`, with `reason`, `ruleType` and `ruleId`, plus `approval_id` and `expires_at` when the rule opened an approval; since ent#1807 an approval also carries `payment_state: awaiting_approval`, `attempt_id` and `hold_ref`, the wallet hold that reserves the amount until the decision, released on deny or expiry; a payment that could not be reserved is answered with the refusal instead, e.g. `insufficient_funds`, and its approval is closed), or the destination is not on the mandate's signed withdrawal allowlist (`withdrawal_pin`, carrying the next consent step), or a Pix is above the mandate's per-transaction cap and waits for a person (`approval_required`, flat body like `policy_denied`: `reason: per_tx_cap_exceeded`, `approval_id`, `expires_at`, `payment_state: awaiting_approval`, `attempt_id`, `amount_minor`, `per_tx_cap_minor`, `hold_ref`). Approving it settles exactly that amount once, debiting the held amount; the cumulative cap still binds. A retry of a waiting `attempt_id` answers the same approval. Nothing was sent to the provider in any case. */
+                /** @description Either a policy rule refused the spend (`policy_denied`, with `reason`, `ruleType` and `ruleId`, plus `approval_id` and `expires_at` when the rule opened an approval; since ent#1807 an approval also carries `payment_state: awaiting_approval`, `attempt_id` and `hold_ref`, the wallet hold that reserves the amount until the decision, released on deny or expiry; a payment that could not be reserved is answered with the refusal instead, e.g. `insufficient_funds`, and its approval is closed), or the destination is not on the mandate's signed withdrawal allowlist (`withdrawal_pin`, carrying the next consent step). The mandate is asked BEFORE any rule (D3): a payment it refuses never opens an approval, and no approval lifts a ceiling the consumer signed (D1). Nothing was sent to the provider in any case. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -21196,7 +21214,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "policy_denied" | "withdrawal_pin" | "approval_required";
+                                code: "policy_denied" | "withdrawal_pin";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -21227,7 +21245,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Local state refuses. `psp_attempt_in_flight`: the same attempt is already in flight; retry the SAME `attempt_id` once it has answered, never a new one. `psp_attempt_uncertain`: an earlier attempt ended with an unknown outcome and this intent is PINNED to it, so present the same `attempt_id` again, never a new one. `psp_attempt_conflict`: the earlier attempt was already compensated. `attempt_id_conflict`: this `attempt_id` was already used for a different payment (`mismatched_fields` names what differs); nothing was held or sent. `attempt_id_unavailable`: another project of this organization holds this `attempt_id`; use a new one. `funding_source_executor_required` (Test only, ent#1983): the mandate's `pix-consent` source was signed without an executor; nothing was sent and the mandate is unchanged; `details.next` says to open a new consent naming `executor` (`codespar_simulator` or `provider_sandbox`). */
+                /** @description Local state refuses. `psp_attempt_in_flight`: the same attempt is already in flight; retry the SAME `attempt_id` once it has answered, never a new one. `psp_attempt_uncertain`: an earlier attempt ended with an unknown outcome and this intent is PINNED to it, so present the same `attempt_id` again, never a new one. `psp_attempt_conflict`: the earlier attempt was already compensated. `attempt_id_conflict`: this `attempt_id` was already used for a different payment (`mismatched_fields` names what differs); nothing was held or sent. `attempt_id_unavailable`: another project of this organization holds this `attempt_id`; use a new one. `obligation_reference_conflict`: this `obligation_reference` already names a payment with a different amount or payee (`mismatched_fields`, and `attempt_id` of the original); nothing was held or sent. `funding_source_executor_required` (Test only, ent#1983): the mandate's `pix-consent` source was signed without an executor; nothing was sent and the mandate is unchanged; `details.next` says to open a new consent naming `executor` (`codespar_simulator` or `provider_sandbox`). `pix_self_transfer`: the payee is the paying account's own registered Pix key; a Pix from an account to itself moves no money, so nothing was held or sent, and a retry is the same transfer. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -21236,7 +21254,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "funding_source_executor_required" | "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
+                                code: "funding_source_executor_required" | "pix_self_transfer" | "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable" | "obligation_reference_conflict";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -21247,7 +21265,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. `carrier_crc_invalid`, `carrier_malformed`, `carrier_format_unsupported`: the payee is a Pix copia-e-cola that fails its own check (CRC, structure, or no usable Pix template); nothing was held or sent. `per_tx_cap_exceeded`: the amount is above the mandate's per-transaction cap and cannot wait for a person (not a Pix, or asked by a lane that does not park); `details` carries `amount_minor` and `per_tx_cap_minor` (integer strings in the mandate's own unit: minor for a v1 mandate, currency-native for `unit_version: 2`) and `currency`, beside the message "<amount> > <cap>". `psp_refused`: the provider answered and declined (in test mode, the sandbox's reserved refusal key); the hold is released and nothing moved. */
+                /** @description The mandate refuses. `mandate_verify`: signature, agent, purpose or payee do not check out. `mandate_projection_mismatch`: the signature presented differs from the stored one, or the mandate is not active. `no_funding_source`: the consumer has no funding source that serves this rail; TED requires a registered bank account. `carrier_crc_invalid`, `carrier_malformed`, `carrier_format_unsupported`: the payee is a Pix copia-e-cola that fails its own check (CRC, structure, or no usable Pix template); nothing was held or sent. `per_tx_cap_exceeded`: the amount is above the mandate's per-transaction cap, on every rail; it never waits for a person (D1) and no approval is opened; `details` carries `amount_minor` and `per_tx_cap_minor` (integer strings in the mandate's own unit: minor for a v1 mandate, currency-native for `unit_version: 2`) and `currency`, beside the message "<amount> > <cap>". `psp_refused`: the provider answered and declined (in test mode, the sandbox's reserved refusal key); the hold is released and nothing moved. */
                 422: {
                     headers: {
                         [name: string]: unknown;
@@ -21287,7 +21305,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The provider refused or did not answer. `psp_dispatch_failed`: a known refusal, nothing left. `psp_dispatch_uncertain`: it is NOT known whether anything left, so the hold stands and the attempt stays pinned. */
+                /** @description The provider refused or did not answer. `psp_dispatch_failed`: a known refusal, nothing left; on a Pix, `details.provider_code` carries the provider's own error code when its answer had one (code-shaped only, never its text). `psp_dispatch_uncertain`: it is NOT known whether anything left, so the hold stands and the attempt stays pinned. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -21418,7 +21436,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The destination is not on the signed withdrawal allowlist (`withdrawal_pin`), or a Pix is above the mandate's per-transaction cap and waits for a person (`approval_required`, same body as on the by-id route). Nothing was sent to the provider. */
+                /** @description The destination is not on the signed withdrawal allowlist (`withdrawal_pin`). A payment above the mandate's per-transaction cap is a 422 `per_tx_cap_exceeded`, never an approval (D1). Nothing was sent to the provider. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -21427,7 +21445,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "withdrawal_pin" | "approval_required";
+                                code: "withdrawal_pin";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -21438,7 +21456,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Local state refuses, on the same conditions as the by-id route, `funding_source_executor_required` included. */
+                /** @description Local state refuses, on the same conditions as the by-id route, `funding_source_executor_required` and `pix_self_transfer` included. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -21447,7 +21465,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "funding_source_executor_required" | "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
+                                code: "funding_source_executor_required" | "pix_self_transfer" | "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -21601,7 +21619,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The destination is not on the signed withdrawal allowlist (`withdrawal_pin`), or a Pix is above the per-transaction cap and waits for a person (`approval_required`, sent as the `error` frame with `approval_id` and `payment_state`). */
+                /** @description The destination is not on the signed withdrawal allowlist (`withdrawal_pin`). A payment above the per-transaction cap is a 422 `per_tx_cap_exceeded`, never an approval (D1). */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -21610,7 +21628,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "withdrawal_pin" | "approval_required";
+                                code: "withdrawal_pin";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -31651,6 +31669,17 @@ export interface paths {
                                 branch: string | null;
                                 /** @description From the provider's answer only; null when it gave none or gave it fully masked. */
                                 account: string | null;
+                            } | null;
+                            /** @description On this point read only: the provider's settlement confirmation for this receipt's payment, the first `commerce.pix_out.succeeded` received for its attempt. Read-side, outside the sealed fields: the receipt keeps what was sealed when the payment was sent (`payment.money_moved` included) and is not re-sealed. Null while no confirmation has arrived, and for a payment that failed or is still unconfirmed. */
+                            settlement: {
+                                /** @enum {string} */
+                                status: "confirmed";
+                                /** @description The `commerce.pix_out.succeeded` event this confirmation is, as delivered in `X-CodeSpar-Event-Id`. */
+                                event_id: string;
+                                /** @enum {string} */
+                                event_type: "commerce.pix_out.succeeded";
+                                /** @description When the confirmation was received (ISO 8601). */
+                                confirmed_at: string;
                             } | null;
                         };
                     };
@@ -56949,6 +56978,12 @@ export interface components {
             attempt_id: string;
             /** @description True when this `attempt_id` had already settled and this is its recorded outcome, answered again: every other field is the ORIGINAL response, verbatim, and nothing was sent, held, sealed or published by this call. False on the call that settled it. */
             idempotent_replay: boolean;
+            /** @description Present only when a request named an `obligation_reference` that an EARLIER payment already settled under another `attempt_id`: that payment's reference, attempt and mandate (which can differ from the mandate in the URL when the authorization changed since). The rest of the body is that payment's recorded response, `idempotent_replay: true`. */
+            obligation?: {
+                reference: string;
+                attempt_id: string;
+                mandate_id: string;
+            };
         };
         /** @description The destination of a TED, the Brazilian same-day bank wire. Present this object on a spend to send a wire instead of a Pix: its presence is what switches the rail, and what makes the three TED requirements on those operations bind. Money leaves the consumer's own sub-account, never a pooled one. */
         TedDestination: {
