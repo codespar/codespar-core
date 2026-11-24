@@ -1,6 +1,6 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 9294bc8051756c6a80bc797b9786ee3510346cbc8373c1c2c5d7e840672ebcbb, fetched 2026-11-21T16:57:44.521Z
-//         from candidate:8d48811adbbb26623d7793c5d9f5c1db9f2f8d61/openapi-candidate.json, API 0.3.0).
+// Source: openapi-snapshot.json (sha256 36280a12590d60a70bd60e95a34502f105e93c6390a02efe9b9b11d1ab4b4d2a, fetched 2026-11-24T11:26:06.386Z
+//         from candidate:cce55beec8344321fcb382580c9725560abb6ca9/openapi-candidate.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 import type { ApiOperationRef } from "../api/types.js";
 

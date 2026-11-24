@@ -1,6 +1,6 @@
 // GENERATED FILE — do not edit.
-// Source: openapi-snapshot.json (sha256 9294bc8051756c6a80bc797b9786ee3510346cbc8373c1c2c5d7e840672ebcbb, fetched 2026-11-21T16:57:44.521Z
-//         from candidate:8d48811adbbb26623d7793c5d9f5c1db9f2f8d61/openapi-candidate.json, API 0.3.0).
+// Source: openapi-snapshot.json (sha256 36280a12590d60a70bd60e95a34502f105e93c6390a02efe9b9b11d1ab4b4d2a, fetched 2026-11-24T11:26:06.386Z
+//         from candidate:cce55beec8344321fcb382580c9725560abb6ca9/openapi-candidate.json, API 0.3.0).
 // Regenerate: npm run spec:generate (in packages/core)
 export interface paths {
     "/.well-known/oauth-protected-resource": {
@@ -3641,9 +3641,13 @@ export interface paths {
                                 display_name?: string;
                                 /** @enum {string} */
                                 network: "base" | "base-sepolia";
+                                /** @description The wallet's own bound address; null until it is bound, and in Live never derived before. */
                                 address: string | null;
-                                /** @enum {string} */
-                                state: "queued" | "syncing" | "ready" | "needs_attention";
+                                /**
+                                 * @description `not_served` (22/11): a Live consumer wallet the managed wallet does not serve; it has no address here.
+                                 * @enum {string}
+                                 */
+                                state: "not_served" | "queued" | "syncing" | "ready" | "needs_attention";
                                 faucet: string | null;
                                 reason: string | null;
                                 checked_at: string | null;
@@ -3658,6 +3662,16 @@ export interface paths {
                                     gas: string | null;
                                     reason: string | null;
                                 } | null;
+                                /** @description This wallet's own USDC (22/11), apart from BRL and from every other wallet. */
+                                usdc_balance?: {
+                                    balance_minor: string;
+                                    available_minor: string;
+                                    /**
+                                     * @description `confirmed_transfers`: credited by the importer from confirmed transfers to the bound address. `legacy`: this wallet's ledger balance from before any binding (another origin, never mixed in).
+                                     * @enum {string}
+                                     */
+                                    origin: "confirmed_transfers" | "legacy";
+                                };
                             }[];
                             /** @description The account's money only. Empty when `account.exists` is false (a Test project with no own account yet): the simulator's residue is never presented as the account's balance, nor as a zero one; it is in `simulator_legacy`. */
                             currencies: {
@@ -17602,6 +17616,8 @@ export interface paths {
          *
          *     USDC RETURNS A REAL ON-CHAIN ADDRESS and is the only currency that does. The address is resolved live from the custody provider for the consumer this wallet belongs to, so it is the same address the onramp delivers to and the same one the custody comparison is measured against. `network` follows the CREDENTIAL's environment, not a parameter: a live key gets `base`, a test key gets `base-sepolia`. Sending Base USDC to the address a test key returned is a transfer to a testnet address and the money does not exist on mainnet.
          *
+         *     A MANAGED WALLET ANSWERS ONLY ITS OWN BOUND ADDRESS. IN LIVE, A USDC WALLET WITH NO BINDING HAS NO ADDRESS: the answer is 409 `usdc_address_not_ready` with `error.details.preparation` `not_served` (the managed wallet does not serve it) or `queued`, and no address is derived or created for it.
+         *
          *     IN A TEST PROJECT, BRL ON A CONSUMER WALLET WHOSE ACCOUNT IS BOUND TO THE CONSUMER RETURNS THAT ACCOUNT'S PIX KEY as `address` (`rail: "pix"`, `network` and `asset_contract` null), and `note` names the same key: the account bound by the project's open account binding while its `collect` capability is active. It is read from the database; nothing is asked of the provider and no key is registered here. A live key, or a Test project with no bound account or no registered key, gets the BRL guidance below.
          *
          *     EVERY OTHER CURRENCY RETURNS GUIDANCE, NOT AN ADDRESS. `address`, `network` and `asset_contract` are all null and `note` is a sentence for a human, because the deposit path on those rails is a funding source rather than a destination you can hand out. BRL reads `pix`, USD reads `wire`, and anything else reads `unknown` — including a currency this deployment does not support at all, which is answered 200 with `unknown` rather than refused. `rail: "unknown"` is the signal that there is nothing to act on.
@@ -17674,7 +17690,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Conflict. `no_onchain_address`: USDC was asked for on a wallet that is not consumer-scoped, so there is no consumer whose custody address could be resolved. Org and seller wallets are always in this state. Terminal for the request — retrying cannot change it. */
+                /** @description Conflict. `no_onchain_address`: USDC was asked for on a wallet that is not consumer-scoped, so there is no consumer whose custody address could be resolved. Org and seller wallets are always in this state. Terminal for the request — retrying cannot change it. `usdc_address_not_ready`: the wallet's own address is not bound yet (`error.details.preparation`: `not_served`, `queued`, `syncing` or `needs_attention`); in Live this is the answer for every wallet with no binding. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -17683,7 +17699,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "no_onchain_address";
+                                code: "no_onchain_address" | "usdc_address_not_ready";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -22101,7 +22117,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Local state refuses. `psp_attempt_in_flight`: the same attempt is already in flight; retry the SAME `attempt_id` once it has answered, never a new one. `psp_attempt_uncertain`: an earlier attempt ended with an unknown outcome and this intent is PINNED to it, so present the same `attempt_id` again, never a new one. `psp_attempt_conflict`: the earlier attempt was already compensated. `attempt_id_conflict`: this `attempt_id` was already used for a different payment (`mismatched_fields` names what differs); nothing was held or sent. `attempt_id_unavailable`: another project of this organization holds this `attempt_id`; use a new one. `funding_source_executor_required` (Test only, ent#1983): the mandate's `pix-consent` source was signed without an executor; nothing was sent and the mandate is unchanged; `details.next` says to open a new consent naming `executor` (`codespar_simulator` or `provider_sandbox`). */
+                /** @description Local state refuses. `psp_attempt_in_flight`: the same attempt is already in flight; retry the SAME `attempt_id` once it has answered, never a new one. `psp_attempt_uncertain`: an earlier attempt ended with an unknown outcome and this intent is PINNED to it, so present the same `attempt_id` again, never a new one. `psp_attempt_conflict`: the earlier attempt was already compensated. `attempt_id_conflict`: this `attempt_id` was already used for a different payment (`mismatched_fields` names what differs); nothing was held or sent. `attempt_id_unavailable`: another project of this organization holds this `attempt_id`; use a new one. `funding_source_executor_required` (Test only, ent#1983): the mandate's `pix-consent` source was signed without an executor; nothing was sent and the mandate is unchanged; `details.next` says to open a new consent naming `executor` (`codespar_simulator` or `provider_sandbox`). `pix_self_transfer`: the payee is the paying account's own registered Pix key; a Pix from an account to itself moves no money, so nothing was held or sent, and a retry is the same transfer. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -22110,7 +22126,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "funding_source_executor_required" | "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
+                                code: "funding_source_executor_required" | "pix_self_transfer" | "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
@@ -22161,7 +22177,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description The provider refused or did not answer. `psp_dispatch_failed`: a known refusal, nothing left. `psp_dispatch_uncertain`: it is NOT known whether anything left, so the hold stands and the attempt stays pinned. */
+                /** @description The provider refused or did not answer. `psp_dispatch_failed`: a known refusal, nothing left; on a Pix, `details.provider_code` carries the provider's own error code when its answer had one (code-shaped only, never its text). `psp_dispatch_uncertain`: it is NOT known whether anything left, so the hold stands and the attempt stays pinned. */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -22312,7 +22328,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Local state refuses, on the same conditions as the by-id route, `funding_source_executor_required` included. */
+                /** @description Local state refuses, on the same conditions as the by-id route, `funding_source_executor_required` and `pix_self_transfer` included. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -22321,7 +22337,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "funding_source_executor_required" | "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
+                                code: "funding_source_executor_required" | "pix_self_transfer" | "psp_attempt_in_flight" | "psp_attempt_uncertain" | "psp_attempt_conflict" | "attempt_id_conflict" | "attempt_id_unavailable";
                                 message: string;
                                 details?: {
                                     [key: string]: unknown;
