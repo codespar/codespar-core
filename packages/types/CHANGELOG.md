@@ -9,7 +9,9 @@
   obligation reference (an invoice or one installment of it), unique per
   organization, project and the agent of the signed mandate. The same
   reference answers the original payment and sends nothing; a different amount
-  or payee under it is refused with `obligation_reference_conflict`. Accepted on
+  or payee under it is refused with `obligation_reference_conflict`; an
+  uncertain original answers `psp_attempt_uncertain`, to reconcile, never to
+  resend under another reference. Accepted on
   Pix and boleto payments a consumer mandate governs; a direct Pix no mandate
   governs is refused with `obligation_reference_unsupported`.
 
